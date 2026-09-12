@@ -263,14 +263,20 @@ evidence.
 
 | old → new | rows |
 |---|---|
-| `AWAY → AWAY` | 221 |
+| `AWAY → AWAY` | 245 |
 | `HOME → HOME` | 65 |
-| `None → None` | 113 |
-| `None → HOME` | 90 *(newly proven)* |
-| `AWAY → None` | 76 *(newly refused — the old code was inferring)* |
+| `None → None` | 83 |
+| `None → HOME` | 120 *(newly proven)* |
+| `AWAY → None` | 52 *(newly refused — the old code was inferring)* |
 | **hard flips (both confident, disagree)** | **0** |
 
-The 76 newly-refused are led by 42 YRFI rows the old code called `'AWAY'`.
+The 52 newly-refused break down as **42 YRFI**, 7 `Total`, 2 `NRFI`, 1
+`Team Total` — every one a market with no away/home side to own, which the old
+code nonetheless called `'AWAY'` from a substring of the free-text bet string.
+
+The 120 newly-proven are `ML` 41, `F5 ML` 35, `Team Total` 26, `Run Line` 12,
+unrecognised-market 6 — rows whose club was recorded only in the `bet` column
+and is now read by full tokenization instead of a substring scan.
 
 ### Settlement grade, old vs new (92 rows with a recorded final score)
 
@@ -292,6 +298,37 @@ All 7 newly-resolved rows match the committed ledger exactly, **including P/L
 to the cent** — the increase came from parsing recorded evidence, not from
 weaker inference.
 
+The single newly-refused row is `2026-06-03-062`, `'Sox TT Under 3.5'` in the
+game `'Sox @ Twins'`. **`Sox` is two clubs.** The old code picked one; refusing
+is the correct answer to an ambiguous question, and whether the ledger's
+recorded `LOSS` is right cannot be determined from the row.
+
+### Canonical CONTRACT side across the root ledger (565 rows)
+
+| | rows |
+|---|---|
+| proven `YES` | 124 |
+| proven `NO` | 0 |
+| refused | 441 |
+
+Of the 441 refusals, **429 are `SIDE_UNPROVEN_NO_MARKET_TICKER_ON_THE_ROW`** —
+only 128 of 565 root rows carry a ticker at all, so 76% of the root ledger
+cannot be bound to an exact Kalshi contract and therefore has no provable
+*contract* side. Those rows still settle through the score-based path
+(`determine_result`), which needs an orientation and a direction rather than a
+contract. The remaining refusals are 8 player props (#43) and 4 tickers whose
+series has no described contract grammar.
+
+There are **0 proven `NO` rows in the root ledger** because no ticketed root
+wager expresses a negation — the 10 rows that do say `(Kalshi NO)` in prose
+carry no ticker and refuse at the contract gate. The EdgeLab ledger carries 40
+`NO` rows, and the NO path is covered there and by the adversarial matrix.
+
+### Doubleheader exposure
+128 root rows carry a ticker; **3 (date, matchup) pairs resolve to more than one
+Kalshi event suffix**. A row with no ticker cannot be bound to a leg by date and
+clubs alone, and is refused rather than bound.
+
 The single row the new semantics grade differently from the ledger is the one
 where the **ledger carries the old code’s error** (§7).
 
@@ -301,14 +338,20 @@ where the **ledger carries the old code’s error** (§7).
 
 | Class | Rows | Detail |
 |---|---|---|
-| **SEMANTICALLY REPAIRABLE FROM EXISTING EVIDENCE** | 1 | `2026-06-02-COL-LAA-TT-HOME-OVER` |
-| **AMBIGUOUS / CONTRADICTORY** | 3 | root ledger vs exchange settlement disagree |
-| **NEWLY RESOLVABLE (exchange settled, ledger still pending)** | 3 | |
-| **SOURCE DATA ABSENT** | 429 | no `marketTicker` on the row → no contract → no contract side |
-| **OUT OF CORPUS WINDOW** | — | EdgeLab settlements begin 2026-08-02; wagers begin 2026-05-26 |
-| **PLAYER PROP / #43** | 45 | deferred, never graded |
+| **SEMANTICALLY REPAIRABLE FROM EXISTING EVIDENCE** | 8 | 1 proven mis-grade + 7 rows the old settler declined and the new one grades, all 7 matching the ledger exactly |
+| **AMBIGUOUS / CONTRADICTORY** | 4 | 3 root-ledger-vs-exchange contradictions, + 1 row naming a club (`Sox`) that is two clubs |
+| **NEWLY RESOLVABLE (exchange settled, ledger still pending)** | 3 | terminal on the exchange, still `pending` on the ledger |
+| **SOURCE DATA ABSENT** | 429 | no `marketTicker` on the row → no contract → no provable contract side |
+| **OUT OF CORPUS WINDOW** | — | EdgeLab settlements begin 2026-08-02; wagers begin 2026-05-26, so the earliest wagers have no exchange row to reconcile against. **No earlier provenance was invented for them.** |
+| **PLAYER PROP / #43** | 53 | 45 EdgeLab + 8 root; deferred, never graded |
 | **OTHER — multi-market combo** | 14 | no single contract side exists for a parlay |
-| **OTHER — undescribed series** | 8 | ticker whose series has no contract grammar |
+| **OTHER — undescribed series** | 4 | ticker whose series has no contract grammar |
+
+Across both ledgers the read-only rehearsal refuses 770 of 1022 wagers:
+**437 `MISSING_EVIDENCE`, 59 `DEFERRED`**, and the balance refused at the
+settlement stage rather than the side stage. No refusal was converted into a
+grade, and no `gamePk`, ticker, side, price or outcome was reconstructed from a
+guess anywhere in this subwave.
 
 ### The one proven mis-grade
 

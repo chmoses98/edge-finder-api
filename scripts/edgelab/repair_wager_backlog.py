@@ -243,12 +243,21 @@ def resolve_side(bet, away_abbr):
 
     if side not in ("AWAY", "HOME"):
         # Last resort: the row's own `bet` string names a team explicitly, e.g.
-        # "MIN F5 ML" for the game "KC @ MIN". clv_update.get_betside reads that
-        # string but has an AWAY branch with no HOME counterpart, so it returns
-        # None whenever the HOME team was backed -- an asymmetry in production,
-        # not real ambiguity. Resolved here only when the answer is unarguable:
-        # exactly one of the two teams appears, so there is nothing to choose
-        # between. If both or neither appear, this still refuses.
+        # "MIN F5 ML" for the game "KC @ MIN".
+        #
+        # WAVE 1, subwave A. This branch was written to compensate for a
+        # specific production asymmetry: clv_update.get_betside read the `bet`
+        # string but had an AWAY branch with no HOME counterpart, so it returned
+        # None whenever the HOME team was backed. That asymmetry is now FIXED AT
+        # THE SOURCE -- get_betside resolves both sides symmetrically through
+        # lib/wager_settlement_semantics.py -- so this branch no longer fires
+        # for that reason and the call above already answers most of these rows.
+        #
+        # It is kept rather than deleted because it is not identical to the
+        # canonical resolver: it refuses unless EXACTLY ONE of the two clubs
+        # appears in the string, which is a narrower and equally fail-closed
+        # rule, and removing a working guard is not what a settlement-semantics
+        # subwave is for. If both or neither appear, this still refuses.
         home_abbr = None
         text = str(bet.get("bet") or "").upper()
         if text:

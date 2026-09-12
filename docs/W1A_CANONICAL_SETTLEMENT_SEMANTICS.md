@@ -667,3 +667,28 @@ should compare against the merge base instead of the working tree, and whether
 the guarantee it asserts is still wanted now that a later authorized milestone
 has deliberately changed the function. Rescoping a merged milestone's test is
 outside this subwave.
+
+## A pre-existing time flake found while running the regression
+
+`tests/test_build_market_ledger_projection_boundary.py::TestEvaluateGameBackwardCompatibilityEdgeCases::test_extra_keys_in_context_are_ignored`
+failed in one of three full-suite runs on the corrected branch and passed in
+the other two. It was chased rather than written off:
+
+- the test calls `evaluate_game()` **twice** and asserts the two outputs are
+  equal;
+- the differing field is `quoteAgeSeconds` (`0.0` vs `1.0`), which is derived
+  from `_decision_instant()` — a **real clock read, per call** — against the
+  fixture's fixed `captured_at`;
+- so the assertion holds only while both calls land inside the same second,
+  and fails whenever they straddle a boundary.
+
+It is **not** W1-A's. Every file in the mechanism —
+`scripts/build_market_ledger.py`, `lib/edgelab/production_price.py`,
+`lib/kalshi_ticker_time.py` and the test itself — is **byte-identical to
+`main`**, and the failure reproduces on an unmodified `origin/main` checkout
+(`quoteAgeSeconds 0.0 vs 2.0` across a deliberate 1.2 s gap). Quote aging is
+W1-B2 territory; the fix would be to pin `W1_B2_DECISION_AT` for this test, and
+that belongs to whoever owns that suite.
+
+Reported so the run-to-run difference in this PR's evidence is explained rather
+than left looking like noise.

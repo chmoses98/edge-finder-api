@@ -523,10 +523,15 @@ def determine_result(b, scores, away_abbr, home_abbr, canonical_mkt):
                   end of free text with a regex when `line` was absent.
 
     Measured on the committed ledger, the side this function was handed was
-    unproven on 203 of 565 rows. All four defaults are gone. A row whose side,
+    unproven on 203 of 565 rows. Every default above is gone. A row whose side,
     direction or strike is not proven is REFUSED -- returned as None and left
     for a human -- because a wager may be called won or lost only when the
     exact side owned and the terminal truth are both proven.
+
+    The strike is still recoverable from the `bet` column when the `line`
+    column is empty, but by whole-string parsing rather than by the trailing-
+    number regex -- see the note at the call below for why those are not the
+    same operation.
 
     A refusal costs a row that has to be settled by hand. A default costs the
     wrong number in `pl`, silently, forever.

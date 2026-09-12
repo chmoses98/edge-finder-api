@@ -593,6 +593,14 @@ def test_derive_bet_side_refuses_rather_than_defaulting_to_yes():
     assert refusal == wss.SIDE_UNPROVEN_NO_CONTRACT
     assert refusal_class == wss.REFUSAL_MISSING_EVIDENCE
     assert basis is None
+    # The refusal is recorded under the SIDE-stage field names. The
+    # settlement-stage ones belong to a different owner and must stay untouched
+    # by ingest, or a nightly re-ingest would erase a settlement refusal.
+    from lib.edgelab.bets import _LEGACY_SOURCE_AUTHORED_FIELDS
+    assert "sideRefusalReason" in _LEGACY_SOURCE_AUTHORED_FIELDS
+    assert "sideResolutionBasis" in _LEGACY_SOURCE_AUTHORED_FIELDS
+    assert "settlementRefusalReason" not in _LEGACY_SOURCE_AUTHORED_FIELDS
+    assert "settlementRefusalClass" not in _LEGACY_SOURCE_AUTHORED_FIELDS
     # And an Under on a real contract is NO, which the old rule called YES.
     side, _, _, _ = edgelab_bets._derive_side(
         {"game": GAME, "market": "Total Under", "line": 9, "marketTicker": TOTAL_9})

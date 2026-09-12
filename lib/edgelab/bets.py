@@ -789,8 +789,8 @@ def from_legacy_root_bets_record(record, index, source_file="bets.json"):
         "selection": f"{record.get('market')} {record.get('side') or record.get('betSide') or ''}".strip(),
         "side": _side,
         "sideResolutionBasis": _side_basis,
-        "settlementRefusalReason": _side_refusal,
-        "settlementRefusalClass": _side_refusal_class,
+        "sideRefusalReason": _side_refusal,
+        "sideRefusalClass": _side_refusal_class,
         "threshold": record.get("line"),
         "stake": record.get("betSize") if record.get("betSize") is not None else record.get("stake"),
         "entryPrice": entry_price,
@@ -886,8 +886,8 @@ def from_legacy_session_bets_record(record, index, source_file="data/bets.json")
         "selection": f"{record.get('market')} {record.get('betTeam') or record.get('side') or ''}".strip(),
         "side": _side,
         "sideResolutionBasis": _side_basis,
-        "settlementRefusalReason": _side_refusal,
-        "settlementRefusalClass": _side_refusal_class,
+        "sideRefusalReason": _side_refusal,
+        "sideRefusalClass": _side_refusal_class,
         "threshold": None,
         "stake": record.get("stake"),
         "entryPrice": entry_price,
@@ -1147,6 +1147,19 @@ _LEGACY_SOURCE_AUTHORED_FIELDS = frozenset({
     # Derived from the legacy record's own columns.
     "gameId", "gameDate", "matchup", "marketTicker", "eventTicker",
     "seriesTicker", "marketFamily", "selection", "side", "threshold",
+    # WAVE 1, subwave A. These three travel with `side` and are re-derived
+    # from the legacy record's own columns every time `side` is, so they must
+    # be owned by the same authority -- otherwise a re-ingest could leave a
+    # stale basis attached to a freshly re-derived side.
+    #
+    # settlementRefusalReason/settlementRefusalClass are deliberately NOT here.
+    # Those are written by the SETTLEMENT pipeline
+    # (lib.edgelab.settlement.settle_bets_for_ticker) when a market settled but
+    # the wager could not be graded, and a legacy re-ingest knows nothing about
+    # that. Leaving them unowned is what preserves them by construction -- the
+    # exact class of silent data loss this owned-set exists to prevent (see the
+    # clvConvention/clvUnit incident above).
+    "sideResolutionBasis", "sideRefusalReason", "sideRefusalClass",
     "stake", "entryPrice", "entryOdds", "entryTimestamp", "scheduledStart",
     "source", "modelFairProbability", "estimatedEdgeAtEntry", "confidence",
     "dataQuality", "trackingType", "rationale",

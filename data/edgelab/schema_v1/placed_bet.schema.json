@@ -1112,6 +1112,26 @@
         null
       ],
       "description": "WAVE 1 subwave A. Which KIND of refusal. MISSING_EVIDENCE (we never recorded what we needed), CONTRADICTION (two proven facts disagree), DEFERRED (out of scope for automatic settlement, e.g. player props under issue #43). A single UNKNOWN would hide a contradiction inside a gap."
+    },
+    "sideRefusalReason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "WAVE 1 subwave A. Machine-readable reason lib/wager_settlement_semantics.py could not prove this row's purchased `side`, recorded at INGEST alongside `side` itself. Distinct from settlementRefusalReason so the two stages have unambiguous owners: this one travels with `side` and is re-derived by a legacy re-ingest, the settlement one is written by the settlement pipeline and is preserved across re-ingest."
+    },
+    "sideRefusalClass": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "MISSING_EVIDENCE",
+        "CONTRADICTION",
+        "DEFERRED",
+        null
+      ],
+      "description": "WAVE 1 subwave A. Which KIND of side refusal: MISSING_EVIDENCE (nothing recorded), CONTRADICTION (two proven facts disagree), DEFERRED (player props under issue #43, multi-market combos)."
     }
   },
   "additionalProperties": false,

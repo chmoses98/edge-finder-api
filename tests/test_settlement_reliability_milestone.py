@@ -24,9 +24,24 @@ coverage of each, even where no fix was needed):
   - Manual bets with no marketTicker still appear in the final bets.json
     after a full run (never silently dropped).
 
-Runs clv_update.main() fully offline: fetch_scores and
-fetch_mlb_schedule_gamepks are monkeypatched to fixed, deterministic
-values -- no network access, no live API dependency.
+Runs clv_update.main() fully offline: fetch_scores,
+fetch_mlb_schedule_games and fetch_final_score_for_game are monkeypatched
+to fixed, deterministic values -- no network access, no live API dependency.
+
+UPDATED BY THE CEO REVIEW OF PR #208 (blockers 1 and 2). These fixtures used
+to settle a moneyline row carrying NO marketTicker, because the pre-review
+money path graded from matchup + orientation + final score alone. That path is
+gone: clv_update.main() now runs
+wager_settlement_semantics.authorize_root_ledger_settlement() before anything
+may write result/status/pl, and a row with no exact Kalshi contract and no
+proven physical game is refused.
+
+So the positive-control fixtures below carry a REAL ticker and a REAL scheduled
+game, and the no-ticker case has been strengthened from "still visible" to
+"still visible AND never graded". Every behaviour these tests were written to
+lock in -- idempotent reruns, every tranche settled independently, malformed
+input skipped not crashed, F5/NRFI/YRFI never auto-graded -- is unchanged and
+still asserted.
 """
 import json
 import os
@@ -38,6 +53,8 @@ import pytest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
+from lib import wager_settlement_semantics as wss  # noqa: E402
+
 
 @pytest.fixture
 def cu(monkeypatch):
@@ -48,8 +65,24 @@ def cu(monkeypatch):
     monkeypatch.setattr(_cu, "fetch_scores", lambda date_str: {
         ("SD", "TEX"): {"away_score": 5, "home_score": 2, "completed": True},
     })
-    monkeypatch.setattr(_cu, "fetch_mlb_schedule_gamepks", lambda date_str: {})
+    # ONE physical game, in the list shape the canonical gate consumes. A dict
+    # keyed by team pair is deliberately not available to this path any more.
+    monkeypatch.setattr(_cu, "fetch_mlb_schedule_games", lambda date_str: [
+        {"gamePk": "999001", "gameNumber": 1, "awayAbbr": "SD", "homeAbbr": "TEX",
+         "gameDateIso": "2026-08-02", "startTime": "2026-08-02T23:05:00Z",
+         "abstractGameState": "Final"},
+    ])
+    # Terminal truth is fetched per PROVEN gamePk, never per team pair.
+    monkeypatch.setattr(_cu, "fetch_final_score_for_game", lambda game_pk: (
+        {"away_score": 5, "home_score": 2, "completed": True}
+        if str(game_pk) == "999001" else None))
     return _cu
+
+
+# A real, parseable contract on the one scheduled game above: SD @ TEX,
+# 2026-08-02, 19:05 ET. Rows that are meant to SETTLE must carry it, because
+# settling now requires an exact contract bound to an exact physical game.
+SD_TEX_TICKER = "KXMLBGAME-26AUG021905SDTEX-SD"
 
 
 def _wire(tmp_path, monkeypatch, bets):
@@ -71,7 +104,8 @@ class TestRepeatedSettlementReruns:
     def test_settled_bet_is_not_double_counted_on_rerun(self, cu, tmp_path, monkeypatch):
         bets = [
             {"id": "2026-08-02-001", "date": "2026-08-02", "game": "SD @ TEX", "market": "ML",
-             "betSide": "AWAY", "betTimeLine": -120, "status": "pending", "pl": None, "result": None},
+             "betSide": "AWAY", "betTimeLine": -120, "status": "pending", "pl": None,
+             "result": None, "marketTicker": SD_TEX_TICKER},
         ]
         root = _wire(tmp_path, monkeypatch, bets)
         first = _run(cu, root)
@@ -85,7 +119,8 @@ class TestRepeatedSettlementReruns:
     def test_rerun_with_unchanged_input_produces_byte_identical_ledger(self, cu, tmp_path, monkeypatch):
         bets = [
             {"id": "2026-08-02-001", "date": "2026-08-02", "game": "SD @ TEX", "market": "ML",
-             "betSide": "AWAY", "betTimeLine": -120, "status": "pending", "pl": None, "result": None},
+             "betSide": "AWAY", "betTimeLine": -120, "status": "pending", "pl": None,
+             "result": None, "marketTicker": SD_TEX_TICKER},
         ]
         root = _wire(tmp_path, monkeypatch, bets)
         first = _run(cu, root)
@@ -104,13 +139,13 @@ class TestMultipleTranchesOnOneTicker:
         bets = [
             {"id": "2026-08-02-001", "date": "2026-08-02", "game": "SD @ TEX", "market": "ML",
              "betSide": "AWAY", "betTimeLine": -120, "status": "pending", "betSize": 2.0,
-             "marketTicker": "KXMLBGAME-26AUG02-SD"},
+             "marketTicker": SD_TEX_TICKER},
             {"id": "2026-08-02-002", "date": "2026-08-02", "game": "SD @ TEX", "market": "ML",
              "betSide": "AWAY", "betTimeLine": -115, "status": "pending", "betSize": 3.0,
-             "marketTicker": "KXMLBGAME-26AUG02-SD"},
+             "marketTicker": SD_TEX_TICKER},
             {"id": "2026-08-02-003", "date": "2026-08-02", "game": "SD @ TEX", "market": "ML",
              "betSide": "AWAY", "betTimeLine": -110, "status": "pending", "betSize": 1.5,
-             "marketTicker": "KXMLBGAME-26AUG02-SD"},
+             "marketTicker": SD_TEX_TICKER},
         ]
         root = _wire(tmp_path, monkeypatch, bets)
         result = _run(cu, root)
@@ -200,8 +235,24 @@ class TestManualBetsWithoutTickerLinkageStayVisible:
         result = _run(cu, root)
         assert len(result) == 1
         assert result[0]["id"] == "2026-08-02-001"
-        # Still gradeable by score even without a ticker -- ML doesn't need one.
-        assert result[0]["result"] == "WIN"
+        # CEO review of PR #208, blocker 1. This assertion used to read:
+        #
+        #     # Still gradeable by score even without a ticker -- ML doesn't need one.
+        #     assert result[0]["result"] == "WIN"
+        #
+        # That was the defect, stated as a guarantee. A moneyline row with a
+        # team, an orientation and a final score but NO exchange contract was
+        # being turned into a monetary WIN -- and the exact contract, which is
+        # what a Kalshi wager actually owns, was never proven at any point.
+        #
+        # The row must still SURVIVE the run (that is what this test is for and
+        # it still holds), but it must not be graded, and it must say why.
+        assert result[0].get("result") is None
+        assert result[0].get("status") != "SETTLED"
+        assert result[0].get("pl") is None
+        assert result[0]["settlementRefusalReason"] == (
+            wss.SIDE_UNPROVEN_NO_CONTRACT)
+        assert result[0]["settlementRefusalClass"] == wss.REFUSAL_MISSING_EVIDENCE
 
 
 class TestNoProductionRecommendationChanges:

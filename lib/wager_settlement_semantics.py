@@ -222,6 +222,16 @@ SIDE_DEFERRED_MULTI_MARKET_COMBO = "SIDE_DEFERRED_MULTI_MARKET_COMBO_HAS_NO_SING
 
 # ── Settlement refusal reasons ───────────────────────────────────────────────
 SETTLEMENT_UNPROVEN_SIDE = "SETTLEMENT_UNPROVEN_PURCHASED_SIDE_NOT_PROVEN"
+# ── The physical-game gate (CEO review of PR #208, blockers 1 and 2) ─────────
+# Proving a side proves WHICH CONTRACT was bought. It does not prove WHICH
+# BASEBALL GAME that contract belongs to, and terminal truth is a property of
+# the game. These name the ways that second binding can fail.
+SETTLEMENT_UNPROVEN_NO_SCHEDULE = "SETTLEMENT_UNPROVEN_NO_SCHEDULE_TO_BIND_THE_CONTRACT_TO_A_GAME"
+SETTLEMENT_UNPROVEN_NO_PHYSICAL_GAME = "SETTLEMENT_UNPROVEN_NO_SCHEDULED_GAME_MATCHES_THIS_CONTRACTS_EVENT"
+SETTLEMENT_UNPROVEN_AMBIGUOUS_PHYSICAL_GAME = (
+    "SETTLEMENT_UNPROVEN_MORE_THAN_ONE_PHYSICAL_GAME_AND_THE_LEG_CANNOT_BE_PROVEN"
+)
+SETTLEMENT_UNPROVEN_NO_TERMINAL_SCORE = "SETTLEMENT_UNPROVEN_PROVEN_GAME_HAS_NO_FINAL_SCORE_YET"
 SETTLEMENT_UNPROVEN_NO_MARKET_SETTLEMENT = "SETTLEMENT_UNPROVEN_NO_TERMINAL_TRUTH_FOR_THIS_CONTRACT"
 SETTLEMENT_UNPROVEN_MARKET_RESULT_MISSING = "SETTLEMENT_UNPROVEN_MARKET_IS_SETTLED_BUT_CARRIES_NO_YES_NO_RESULT"
 SETTLEMENT_CONTRADICTED_TICKER = "SETTLEMENT_CONTRADICTED_SETTLEMENT_TICKER_IS_NOT_THE_WAGERS_TICKER"
@@ -250,6 +260,10 @@ REFUSAL_CLASS_BY_REASON = {
     SIDE_DEFERRED_PLAYER_PROP: REFUSAL_DEFERRED,
     SIDE_DEFERRED_MULTI_MARKET_COMBO: REFUSAL_DEFERRED,
     SETTLEMENT_UNPROVEN_SIDE: REFUSAL_MISSING_EVIDENCE,
+    SETTLEMENT_UNPROVEN_NO_SCHEDULE: REFUSAL_MISSING_EVIDENCE,
+    SETTLEMENT_UNPROVEN_NO_PHYSICAL_GAME: REFUSAL_MISSING_EVIDENCE,
+    SETTLEMENT_UNPROVEN_AMBIGUOUS_PHYSICAL_GAME: REFUSAL_MISSING_EVIDENCE,
+    SETTLEMENT_UNPROVEN_NO_TERMINAL_SCORE: REFUSAL_MISSING_EVIDENCE,
     SETTLEMENT_UNPROVEN_NO_MARKET_SETTLEMENT: REFUSAL_MISSING_EVIDENCE,
     SETTLEMENT_UNPROVEN_MARKET_RESULT_MISSING: REFUSAL_MISSING_EVIDENCE,
     SETTLEMENT_CONTRADICTED_TICKER: REFUSAL_CONTRADICTION,
@@ -1572,4 +1586,191 @@ def normalize_row_semantics(row):
         "canonicalOutcome": outcome,
         "canonicalLifecycle": lifecycle,
         "statusIsBetClass": is_bet_class_status(raw_status),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THE ROOT-LEDGER MONEY GATE
+# ─────────────────────────────────────────────────────────────────────────────
+# CEO review of PR #208, blockers 1 and 2.
+#
+# Proving a SIDE proves which contract was bought. It does not prove which
+# BASEBALL GAME that contract belongs to -- and terminal truth is a property of
+# the game, not of the contract string. Before this gate existed, clv_update.py
+# closed that second gap with a team-pair key:
+#
+#     gamepks[(away_abbr, home_abbr)] = gamePk        # built
+#     game_pk = f5_gamepks.get((away, home))          # read
+#
+# On a doubleheader both legs have the same date and the same two clubs, so the
+# second leg OVERWRITES the first in that dict and every wager on either leg is
+# graded from whichever game happened to be written last. W1-C removed team-pair
+# identity as canonical physical-game identity; this is the settlement-side form
+# of the same defect, and the same resolver fixes it.
+#
+# The non-F5 path had the identical hole one layer further out: its final scores
+# were keyed `scores[(away_abbr, home_abbr)]` too.
+#
+# THIS FUNCTION IS A GATE, NOT A PARSER. It contains no semantics of its own. It
+# composes, in order:
+#
+#     resolve_wager_side()                     W1-A -- which contract, which end
+#     kalshi_mlb_contract_parser.parse_event_suffix()
+#                                              W1-C -- the event the ticker names
+#     market_identity.resolve_physical_game()  W1-C -- which physical game, or refuse
+#
+# and returns a verdict. Adding a second contract grammar or a second
+# doubleheader rule here would be the very duplication W1-A exists to remove.
+
+AUTHORIZATION_BASIS_FIELDS = (
+    "marketTicker", "eventTickerSuffix", "physicalGameKey", "side",
+    "sideBasis", "physicalGameBasis", "contractCondition",
+)
+
+
+def _schedule_candidates(schedule_games, *, date_iso, away, home):
+    """
+    The scheduled games that a team-pair key could tell you about -- and no
+    more. Narrowing to date+clubs is this function's ONLY job; choosing between
+    what survives is resolve_physical_game's, which is the whole point.
+    """
+    out = []
+    for game in schedule_games or []:
+        if not game:
+            continue
+        if date_iso and game.get("gameDateIso") and game["gameDateIso"] != date_iso:
+            continue
+        if away and not same_team(game.get("awayAbbr"), away):
+            continue
+        if home and not same_team(game.get("homeAbbr"), home):
+            continue
+        out.append(game)
+    return out
+
+
+def authorize_root_ledger_settlement(wager, *, schedule_games=None, away=None, home=None):
+    """
+    MAY this root-ledger wager have a monetary result written for it?
+
+    Returns a verdict dict:
+
+        {"authorized": bool,
+         "side", "sideBasis",
+         "marketTicker", "eventTickerSuffix", "contractCondition",
+         "physicalGameKey", "physicalGameBasis", "physicalGame",
+         "refusalReason", "refusalClass",
+         "proof": {...}}
+
+    `authorized` is True only when EVERY link is proven:
+
+        1. the row is a canonical wager (not a recommendation -- callers pass
+           rows straight out of the wager ledger, and nothing here creates one);
+        2. an exact Kalshi marketTicker that parses to a contract;
+        3. a contract whose claim the row's own recorded fields agree with;
+        4. an exact purchased contract side (YES/NO), symmetric;
+        5. an exact Kalshi event, read from that ticker;
+        6. an exact physical game, resolved from the event by W1-C -- never
+           from date+clubs alone;
+        7. no contradiction between the resolved gamePk and any gamePk the row
+           already carries.
+
+    Anything else returns authorized=False with a machine-readable reason, and
+    THE CALLER MUST NOT WRITE result, status or P/L.
+
+    HISTORICAL ROWS WITHOUT A TICKER. Many older root rows have a team, a
+    direction, a line and a final score but no exchange contract. That is not a
+    licence to infer one: the verdict is UNRESOLVED / manual review. Free-text
+    semantics are NOT equivalent to an exact Kalshi contract, and this function
+    never treats them as such -- a row with no ticker refuses at step 2, before
+    any baseball truth is consulted.
+    """
+    wager = wager or {}
+    side_resolution = resolve_wager_side(wager, away=away, home=home)
+    proof = {
+        "sideRefusalReason": side_resolution.get("refusalReason"),
+        "sideRefusalClass": side_resolution.get("refusalClass"),
+    }
+
+    def refuse(reason, **extra):
+        proof.update(extra)
+        return {
+            "authorized": False,
+            "side": side_resolution.get("side"),
+            "sideBasis": side_resolution.get("basis"),
+            "marketTicker": wager.get("marketTicker") or wager.get("ticker"),
+            "eventTickerSuffix": None, "contractCondition": None,
+            "physicalGameKey": None, "physicalGameBasis": None, "physicalGame": None,
+            "refusalReason": reason,
+            "refusalClass": REFUSAL_CLASS_BY_REASON.get(reason),
+            "proof": proof,
+        }
+
+    # ── Links 1-4. The side carries the contract with it: resolve_wager_side
+    # refuses without an exact, parseable, claim-consistent ticker.
+    if side_resolution.get("side") not in VALID_SIDES:
+        reason = side_resolution.get("refusalReason")
+        if side_resolution.get("refusalClass") == REFUSAL_DEFERRED:
+            return refuse(reason)
+        return refuse(reason if reason in REFUSAL_CLASS_BY_REASON else SETTLEMENT_UNPROVEN_SIDE)
+
+    contract = side_resolution.get("contract") or {}
+    ticker = wager.get("marketTicker") or wager.get("ticker")
+    series = contract.get("seriesTicker")
+    suffix = contract.get("eventTickerSuffix")
+    proof["contractCondition"] = contract.get("condition")
+
+    # ── Link 5. The event, read from the ticker by W1-C's parser.
+    event = kmcp.parse_event_suffix(series, "%s-%s" % (series, suffix)) if series and suffix else {}
+    event_date = event.get("date")
+    event_away, event_home = event.get("away"), event.get("home")
+    proof["event"] = {"date": event_date, "timeStr": event.get("time_str"),
+                      "away": event_away, "home": event_home,
+                      "gameNumber": event.get("game_number")}
+
+    # ── Link 6. The physical game. Date+clubs only NARROWS; W1-C chooses.
+    if schedule_games is None:
+        return refuse(SETTLEMENT_UNPROVEN_NO_SCHEDULE)
+    candidates = _schedule_candidates(schedule_games, date_iso=event_date,
+                                      away=event_away, home=event_home)
+    game, outcome, evidence = mi.resolve_physical_game(
+        candidates,
+        event_time_hhmm=event.get("time_str"),
+        doubleheader_game_number=event.get("game_number"))
+    proof["physicalGameEvidence"] = evidence
+    proof["identityOutcome"] = outcome
+    if outcome != mi.IDENTITY_PROVEN:
+        reason = (SETTLEMENT_UNPROVEN_NO_PHYSICAL_GAME
+                  if outcome == mi.IDENTITY_REFUSED_NO_PHYSICAL_GAME_MATCH
+                  else SETTLEMENT_UNPROVEN_AMBIGUOUS_PHYSICAL_GAME)
+        return refuse(reason)
+
+    game_key = mi.physical_game_key(game)
+    if not game_key:
+        return refuse(SETTLEMENT_UNPROVEN_NO_PHYSICAL_GAME)
+
+    # ── Link 7. A gamePk already on the row must AGREE with the resolved one.
+    # Disagreement is a positive contradiction, never a preference.
+    recorded = wager.get("gamePk") or wager.get("gameId")
+    if recorded and str(recorded).strip() and str(recorded).strip() != str(game_key):
+        proof["recordedGamePk"] = str(recorded).strip()
+        proof["resolvedGamePk"] = str(game_key)
+        return refuse(SETTLEMENT_CONTRADICTED_GAME)
+
+    return {
+        "authorized": True,
+        "side": side_resolution["side"],
+        "sideBasis": side_resolution["basis"],
+        "marketTicker": ticker,
+        "eventTickerSuffix": suffix,
+        "contractCondition": contract.get("condition"),
+        # The contract's own rung, i.e. the smallest outcome that settles YES.
+        # Carried so a caller grading from baseball truth can use the CONTRACT's
+        # strike rather than the ledger's free-text `line`.
+        "contractMinimumInclusive": contract.get("minimumInclusive"),
+        "physicalGameKey": game_key,
+        "physicalGameBasis": evidence.get("basis"),
+        "physicalGame": game,
+        "refusalReason": None,
+        "refusalClass": None,
+        "proof": proof,
     }

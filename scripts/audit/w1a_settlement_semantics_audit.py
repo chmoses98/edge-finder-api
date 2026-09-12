@@ -39,6 +39,7 @@ Usage:
 
 import argparse
 import collections
+import glob
 import importlib.util
 import json
 import os
@@ -400,6 +401,7 @@ def main():
         "settlement": compare_settlement(root_rows, old_clv),
         "familyCoverage": family_coverage(root_rows),
         "doubleheaderExposure": doubleheader_exposure(root_rows),
+        "moneyPath": compare_money_path(root_rows, old_clv, load_committed_schedule()),
     }
     if old_clv is None:
         report["warning"] = (
@@ -426,9 +428,234 @@ def main():
     print("  settlement newly resolved   : %d" % settlement["newlyResolvedCount"])
     print("  settlement newly refused    : %d" % settlement["newlyRefusedCount"])
     print("  hypothetical P/L delta      : %+0.2f" % settlement["hypotheticalPlDelta"])
+    money = report["moneyPath"]["counts"]
+    print("  -- MONEY PATH (old vs new) --")
+    print("  committed schedule games    : %d" % report["moneyPath"]["scheduleGamesAvailable"])
+    print("  monetary unchanged          : %d" % money.get("monetaryResultUnchanged", 0))
+    print("  monetary newly proven       : %d" % money.get("monetaryResultNewlyProven", 0))
+    print("  monetary newly refused      : %d" % money.get("monetaryResultNewlyRefused", 0))
+    print("    .. exact contract absent  : %d" % money.get("monetaryResultNewlyRefused_exactContractAbsent", 0))
+    print("    .. physical game unproven : %d" % money.get("monetaryResultNewlyRefused_physicalGameUnproven", 0))
+    print("    .. contradiction          : %d" % money.get("monetaryResultNewlyRefused_contradiction", 0))
+    print("    .. deferred (props/combo) : %d" % money.get("monetaryResultNewlyRefused_deferred", 0))
+    print("  monetary changed            : %d" % money.get("monetaryResultChanged", 0))
+    print("  rows w/ no exact ticker     : %d" % money.get("rowsWithNoExactTicker", 0))
+    print("  rows w/ no exact gamePk     : %d" % money.get("rowsWithNoExactGamePk", 0))
+    print("  rows w/ neither             : %d" % money.get("rowsWithNeitherTickerNorGamePk", 0))
+    print("  doubleheader-affected rows  : %d" % money.get("doubleheaderAffectedRows", 0))
+    print("  already graded in ledger    : %d" % money.get("ledgerRowsAlreadyGraded", 0))
+    print("    .. with NO exact ticker   : %d" % money.get("ledgerRowsAlreadyGradedWithNoExactTicker", 0))
+    print("  -- where evidence actually exists --")
+    print("  schedule evidence starts    : %s" % money.get("scheduleEvidenceWindowStart"))
+    print("  ticketed rows in that window: %d" % money.get("ticketedRowsInsideScheduleEvidenceWindow", 0))
+    print("    .. AUTHORIZED             : %d" % money.get("authorizedWhereScheduleEvidenceExists", 0))
+    print("    .. refused                : %d" % money.get("refusedWhereScheduleEvidenceExists", 0))
+    print("  ticketed rows before window : %d (audit artifact; a live run fetches that date)"
+          % money.get("ticketedRowsOutsideScheduleEvidenceWindow", 0))
     print("  report                      : %s" % out_path)
     return 0
 
+
+
+
+# ── 5. The MONEY PATH, old vs new (CEO review of PR #208) ────────────────────
+#
+# Sections 2-4 compare SEMANTICS. This section compares what actually reaches
+# `result`/`status`/`pl`, because that is the thing the CEO review found was
+# still bypassing the canonical chain: a wager could become a monetary
+# WIN/LOSS/PUSH from matchup + orientation + line + final score, with its exact
+# Kalshi contract and its exact physical game never proven.
+#
+# THE SCHEDULE USED HERE IS COMMITTED EVIDENCE, NOT A LIVE FETCH. It is built
+# from data/edgelab/games/*.jsonl -- the archived Game rows -- deduplicated by
+# mlbGamePk. That corpus begins 2026-08-01 while the root ledger begins
+# 2026-05-26, so most historical rows have no schedule to be bound to at all.
+# That is not a defect in this audit; it is the finding. A row whose physical
+# game cannot be proven from any committed evidence is exactly a row that must
+# not be auto-settled, and it is counted as such rather than hidden.
+
+GAMES_DIR = os.path.join(ROOT, "data", "edgelab", "games")
+
+
+def load_committed_schedule():
+    """
+    Every physical game this repository has committed evidence for, in the
+    shape the canonical gate consumes. Deduplicated by mlbGamePk: the archive
+    appends a fresh Game row on every capture run, so the raw file holds many
+    copies of the same game and a naive read would invent doubleheaders.
+    """
+    by_pk = {}
+    for path in sorted(glob.glob(os.path.join(GAMES_DIR, "*.jsonl"))):
+        with open(path) as handle:
+            for line in handle:
+                if not line.strip():
+                    continue
+                try:
+                    row = json.loads(line)
+                except ValueError:
+                    continue
+                pk = row.get("mlbGamePk")
+                if not pk:
+                    continue
+                by_pk[str(pk)] = {
+                    "gamePk": str(pk),
+                    "gameNumber": row.get("doubleheaderGameNumber"),
+                    "awayAbbr": row.get("awayTeam"),
+                    "homeAbbr": row.get("homeTeam"),
+                    "gameDateIso": row.get("gameDate"),
+                    "startTime": row.get("scheduledStartTime") or row.get("actualStartTime"),
+                }
+    return list(by_pk.values())
+
+
+def _doubleheader_matchups(schedule):
+    seen = collections.Counter(
+        (g["gameDateIso"], g["awayAbbr"], g["homeAbbr"]) for g in schedule)
+    return {key for key, count in seen.items() if count > 1}
+
+
+def compare_money_path(root_rows, old_clv, schedule):
+    """
+    What the OLD money path would write, against what the NEW one will.
+
+    The score handed to both is the row's OWN recorded final score, so the two
+    see identical baseball truth and every difference is a difference in what
+    the path REQUIRED before it was willing to write money.
+    """
+    counts = collections.Counter()
+    newly_refused_no_contract = []
+    changed = []
+    newly_proven = []
+    doubleheader_rows = []
+    dh_matchups = _doubleheader_matchups(schedule)
+
+    for row in root_rows:
+        market = new_clv.normalize_market(row.get("market") or "")
+        away, home = new_clv.parse_game(row.get("game", ""))
+        ticker = row.get("marketTicker") or row.get("ticker")
+        game_pk = row.get("gamePk") or row.get("gameId")
+
+        # 8 / 9 / 10 -- the absence census, over EVERY row.
+        if not ticker:
+            counts["rowsWithNoExactTicker"] += 1
+        if not game_pk:
+            counts["rowsWithNoExactGamePk"] += 1
+        if not ticker and not game_pk:
+            counts["rowsWithNeitherTickerNorGamePk"] += 1
+
+        if (row.get("date"), away, home) in dh_matchups:
+            counts["doubleheaderAffectedRows"] += 1
+            doubleheader_rows.append({
+                "id": row.get("id"), "date": row.get("date"), "game": row.get("game"),
+                "market": row.get("market"), "marketTicker": ticker,
+                "recordedGamePk": game_pk, "ledgerResult": row.get("result"),
+            })
+
+        scores = _synthetic_scores(row)
+        if not scores or not market:
+            counts["notComparable_noRecordedScoreOrUnknownMarket"] += 1
+            continue
+        counts["comparable"] += 1
+
+        old_result = old_clv.determine_result(row, scores, away, home, market)[0] if old_clv else None
+
+        # The NEW money path, in the order production runs it.
+        auth = wss.authorize_root_ledger_settlement(row, schedule_games=schedule,
+                                                    away=away, home=home)
+        new_result = None
+        if auth["authorized"]:
+            graded = row
+            rung = auth.get("contractMinimumInclusive")
+            if rung is not None and market in ("Total", "Team Total"):
+                graded = dict(row, line=float(rung) - 0.5)
+            new_result = new_clv.determine_result(graded, scores, away, home, market)[0]
+
+        identity = {
+            "id": row.get("id"), "date": row.get("date"), "game": row.get("game"),
+            "market": row.get("market"), "marketTicker": ticker,
+            "recordedGamePk": game_pk,
+            "ledgerResult": row.get("result"), "ledgerPl": row.get("pl"),
+            "oldResult": old_result, "newResult": new_result,
+            "authorized": auth["authorized"],
+            "refusalReason": auth["refusalReason"],
+            "refusalClass": auth["refusalClass"],
+            "sideBasis": auth.get("sideBasis"),
+            "physicalGameKey": auth.get("physicalGameKey"),
+            "physicalGameBasis": auth.get("physicalGameBasis"),
+        }
+
+        if old_result == new_result:
+            counts["monetaryResultUnchanged"] += 1
+        elif new_result is None:
+            counts["monetaryResultNewlyRefused"] += 1
+            if not auth["authorized"]:
+                reason = auth["refusalReason"] or ""
+                if reason.startswith("SIDE_UNPROVEN_NO_MARKET_TICKER") or \
+                        reason.startswith("SIDE_UNPROVEN_SERIES") or \
+                        reason.startswith("SIDE_UNPROVEN_TICKER"):
+                    counts["monetaryResultNewlyRefused_exactContractAbsent"] += 1
+                elif reason.startswith("SETTLEMENT_UNPROVEN_NO_PHYSICAL_GAME") or \
+                        reason.startswith("SETTLEMENT_UNPROVEN_AMBIGUOUS"):
+                    counts["monetaryResultNewlyRefused_physicalGameUnproven"] += 1
+                elif auth["refusalClass"] == wss.REFUSAL_CONTRADICTION:
+                    counts["monetaryResultNewlyRefused_contradiction"] += 1
+                elif auth["refusalClass"] == wss.REFUSAL_DEFERRED:
+                    counts["monetaryResultNewlyRefused_deferred"] += 1
+                else:
+                    counts["monetaryResultNewlyRefused_otherMissingEvidence"] += 1
+            newly_refused_no_contract.append(identity)
+        elif old_result is None:
+            counts["monetaryResultNewlyProven"] += 1
+            newly_proven.append(identity)
+        else:
+            counts["monetaryResultChanged"] += 1
+            changed.append(identity)
+
+    # ── Separating a GENUINE refusal from an AUDIT-WINDOW artifact ──────────
+    # The committed Game corpus starts later than the wager ledger does, so a
+    # ticketed row for an earlier date has no committed physical game to bind
+    # to HERE even though a live settlement run -- which fetches that date's
+    # schedule from the MLB API -- would resolve it. Reporting those together
+    # with rows that have no ticker at all would overstate the permanent
+    # refusal count and understate the real one, so they are counted apart.
+    window_start = min((g["gameDateIso"] for g in schedule if g.get("gameDateIso")),
+                       default=None)
+    ticketed = [r for r in root_rows if (r.get("marketTicker") or r.get("ticker"))]
+    in_window = [r for r in ticketed
+                 if window_start and (r.get("date") or "") >= window_start]
+    counts["scheduleEvidenceWindowStart"] = window_start
+    counts["ticketedRows"] = len(ticketed)
+    counts["ticketedRowsInsideScheduleEvidenceWindow"] = len(in_window)
+    counts["ticketedRowsOutsideScheduleEvidenceWindow"] = len(ticketed) - len(in_window)
+    authorized_in_window = 0
+    for row in in_window:
+        away, home = new_clv.parse_game(row.get("game", ""))
+        if wss.authorize_root_ledger_settlement(
+                row, schedule_games=schedule, away=away, home=home)["authorized"]:
+            authorized_in_window += 1
+    counts["authorizedWhereScheduleEvidenceExists"] = authorized_in_window
+    counts["refusedWhereScheduleEvidenceExists"] = len(in_window) - authorized_in_window
+
+    # How much of the ledger's EXISTING settled state was reached without an
+    # exact contract at all. This is the number the CEO asked for by name.
+    graded_rows = [r for r in root_rows if r.get("result") in ("WIN", "LOSS", "PUSH", "VOID")]
+    counts["ledgerRowsAlreadyGraded"] = len(graded_rows)
+    counts["ledgerRowsAlreadyGradedWithNoExactTicker"] = sum(
+        1 for r in graded_rows if not (r.get("marketTicker") or r.get("ticker")))
+
+    return {
+        "counts": dict(counts),
+        "scheduleGamesAvailable": len(schedule),
+        "doubleheaderMatchupsInCommittedEvidence": len(dh_matchups),
+        "doubleheaderAffectedRows": doubleheader_rows,
+        "monetaryResultChanged": changed,
+        "monetaryResultNewlyProven": newly_proven,
+        "monetaryResultNewlyRefusedSample": newly_refused_no_contract[:40],
+        "note": "The NEW column is the production money path: the canonical gate "
+                "first, then the gated baseball-truth helper. Both columns are fed "
+                "the row's OWN recorded final score, so every difference is a "
+                "difference in required PROOF, never in available truth.",
+    }
 
 if __name__ == "__main__":
     sys.exit(main())

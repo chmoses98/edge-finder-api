@@ -326,7 +326,8 @@ def settle_date(date, dry_run=False):
         # correction round: an unrelated, already-correct bet must
         # never be rewritten just because settlement ran again).
         matching_bets = bets_by_ticker.get(market["marketTicker"], [])
-        settled_bets = settle_bets_for_ticker(matching_bets, status, result, now=ids.utc_now_iso())
+        settled_bets = settle_bets_for_ticker(matching_bets, status, result,
+                                              now=ids.utc_now_iso(), game_id=game_id)
         bets_needing_write = []
         for original_bet, computed_bet in zip(matching_bets, settled_bets):
             if bet_needs_settlement_update(original_bet, computed_bet):

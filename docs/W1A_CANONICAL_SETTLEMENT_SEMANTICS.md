@@ -455,3 +455,145 @@ selection, pricing, B1/B2 executable-price truth, W1-C game/contract identity.
 **Model-driven real-money authority remains OFF.** Nothing in this subwave
 touches `risk_gate.py`, `write_pending_bets.py` or `validate_slate_final.py`,
 and no wager is created anywhere in it.
+
+---
+
+# CEO REVIEW CORRECTION ROUND (PR #208)
+
+Reviewed head `134ba648`. Two substantive production-path blockers were found.
+The approved core — the refusal taxonomy, YES/NO symmetry, NRFI/YRFI semantics,
+non-binary F3/F5/F7 handling, player-prop deferral, evidence preservation and
+the read-only rehearsal — is unchanged.
+
+## Blocker 1 — the money-writing path bypassed the canonical chain
+
+`clv_update.main()` graded non-F5 wagers straight through `determine_result()`
+and wrote `result` / `status` / `pl` from matchup + orientation + direction +
+line + final score. The exact Kalshi contract was never required.
+
+**The gate.** `wager_settlement_semantics.authorize_root_ledger_settlement()`
+is now the single authority, called **before any market-family branch**:
+
+```
+canonical wager
+  -> exact marketTicker           (refuse if absent)
+  -> contract parsed by W1-C      (refuse if unparseable / undescribed series)
+  -> claim agrees with contract   (refuse on contradiction)
+  -> exact purchased side YES/NO  (symmetric, no default)
+  -> exact Kalshi event           (read from that ticker)
+  -> exact physical game          (W1-C resolve_physical_game, never date+clubs)
+  -> agreement with any recorded gamePk
+  => authorized, or a machine-readable refusal
+```
+
+It is a **composition, not a parser**: no contract grammar and no doubleheader
+rule of its own. `determine_result()` is reclassified in its own docstring as a
+**GATED PURE BASEBALL-TRUTH HELPER, NOT A MONEY AUTHORITY**, and keeps its own
+refusals because `repair_wager_backlog.py` and the audit call it directly.
+
+**The exact production call site** is `clv_update.py`'s settlement loop:
+`auth = wss.authorize_root_ledger_settlement(...)`; `if not auth["authorized"]:`
+record the reason and `continue`. No line below it can write money.
+
+## Blocker 2 — F5 physical-game identity was a team-pair key
+
+`fetch_mlb_schedule_gamepks()` returned `{(away, home): gamePk}`. A doubleheader
+shares date and clubs, so building that dict **discarded one game**, and
+`f5_gamepks.get((away, home))` graded both legs from whichever survived. The
+function is **deleted, not deprecated**; `fetch_mlb_schedule_games()` returns a
+**list**, so there is no dictionary left for a leg to be overwritten in.
+
+The non-F5 path had the same hole one layer out: `fetch_scores()` is keyed
+`(away_abbr, home_abbr)` too. Terminal truth now comes from
+`fetch_final_score_for_game(gamePk)` for the game the gate proved, and
+`determine_result()` receives a single-entry map holding only that score.
+
+## Newly exposed by proving the contract
+
+Kalshi integer-rung totals pay YES at `>= N`; `determine_result` compares with
+`>`. On a whole-number line it returned **PUSH exactly where Kalshi returns a
+WIN**. The proven rung is now restated as `> N - 0.5`, identical over integer
+run totals — no second comparison, no second authority.
+
+## EdgeLab path
+
+Ticker identity is proven by the **indexing**: `settle_markets.py` builds
+`bets_by_ticker[bet["marketTicker"]]` and reads it back with
+`bets_by_ticker.get(market["marketTicker"])`, so a bet can only ever meet the
+settlement of its own exact ticker string. No re-parse is added — that would be
+a second opinion without extra proof. **gamePk is the part the indexing does not
+prove**, so `settle_bets_for_ticker()` now refuses a bet whose own `gameId`
+contradicts the game the settlement was computed for. A stored side of `YES` or
+`NO` is not by itself permission to grade. A bet with *no* gameId still grades
+on ticker identity alone — absence must not become a refusal where the evidence
+was never required.
+
+## Blast radius after the correction
+
+Old money path vs new, both fed each row's **own recorded final score**, so
+every difference is a difference in required *proof*:
+
+| | rows |
+|---|---|
+| monetary result unchanged | 30 *(both declined — see below)* |
+| monetary result newly proven | 0 |
+| **monetary result newly refused** | **62** — all `exact contract absent` |
+| monetary result changed | 0 |
+| old graded **and** new graded, same answer | **0** |
+
+Of the 92 comparable rows, **none** authorize. That is the honest headline and
+it is not hidden: the historical root ledger predates exact ticker capture.
+
+### The absence census (all 565 root rows)
+
+| | count |
+|---|---|
+| no exact ticker | **437** |
+| no exact gamePk | **565** |
+| neither | **437** |
+| doubleheader-affected | 0 |
+| **already graded in the ledger** | **519** |
+| **…of those, with NO exact ticker** | **399** |
+
+**399 of 519 already-graded rows (77%) were auto-settled from generic baseball
+semantics with no exact contract identity.** That is the number this review
+asked for by name.
+
+### Genuine refusal vs audit-window artifact
+
+The committed Game corpus starts 2026-08-01; the wager ledger starts
+2026-05-26. Counting those together would overstate the permanent refusal rate,
+so they are separated:
+
+| | count |
+|---|---|
+| ticketed rows inside the schedule-evidence window | 49 |
+| **…authorized** | **44** |
+| …refused | 5 |
+| ticketed rows before the window | 79 — audit artifact; a live run fetches that date |
+| rows with no ticker at all | 437 — genuine, permanent |
+
+**Every one of the six most recent wagers authorizes**, each binding to a
+distinct real gamePk. Going-forward production is unaffected.
+
+## Disposition of the four open findings, re-run through the corrected chain
+
+| Wager | Disposition | Recorded | Canonical | Proof |
+|---|---|---|---|---|
+| `2026-06-02-COL-LAA-TT-HOME-OVER` | **UNRESOLVED** *(downgraded)* | `LOSS` / −$7.00 | — | **no ticker, no gamePk, no terminal truth** |
+| `2026-09-07-174` | **PROVEN CORRECTION** | `WIN` / pl `null` | **LOST** / −$3.44 | ticker `…CHCMIL-CHC4`, gamePk `823742`, side YES, exchange settlement |
+| `2026-09-07-175` | **PROVEN CORRECTION** | `PUSH` / pl `null` | **WON** / +$2.50 | ticker `…CHCMIL-MIL4`, gamePk `823742`, side YES, exchange settlement |
+| `2026-09-10-180` | **PROVEN CORRECTION** | `pending` | **LOST** | ticker `KXMLBF5-…PITCWS-CWS`, gamePk `824550`, side YES, exchange settlement |
+
+**The $13.25 is withdrawn as a proven monetary correction.** Its arithmetic is
+unambiguous from its own `betSide`, line and final score — which is why PR #208
+called it proven — but it carries no marketTicker, so its exact Kalshi contract
+cannot be proven. By this review's own rule, a missing required proof element
+means it is not a proven correction. It is UNRESOLVED / manual review.
+
+The two `CHC@MIL` rows bind to the **same single game** (`823742`), so a
+doubleheader is not what went wrong there — the ledger recorded the two sides
+swapped.
+
+**No ledger is mutated.** `bets.json`, `data/edgelab/bets/bets.jsonl` and
+`BET_LOG.md` remain byte-identical to `main`.

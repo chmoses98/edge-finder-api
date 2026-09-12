@@ -59,6 +59,9 @@ on:
       - "scripts/audit/w1a_settlement_semantics_audit.py"
       - "scripts/audit/w1a_settlement_rehearsal.py"
       - "tests/test_w1a_canonical_settlement_semantics.py"
+      - "tests/test_w1a_root_settlement_authority.py"
+      - "tests/test_settlement_reliability_milestone.py"
+      - "scripts/edgelab/settle_markets.py"
       - "data/edgelab/schema_v1/placed_bet.schema.json"
       # The subwave doc states the numbers these scripts produce. If its
       # claims change, the evidence behind them is re-run.
@@ -109,7 +112,8 @@ jobs:
       - name: W1-A adversarial matrix (fixtures)
         run: |
           set -euo pipefail
-          python3 -m pytest tests/test_w1a_canonical_settlement_semantics.py -q
+          python3 -m pytest tests/test_w1a_canonical_settlement_semantics.py \
+                           tests/test_w1a_root_settlement_authority.py -q
 
       - name: Composition with W1-C and W1-B (settlement must not weaken identity)
         run: |

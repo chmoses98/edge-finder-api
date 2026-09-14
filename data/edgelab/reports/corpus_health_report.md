@@ -1,5 +1,5 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-09-13T12:34:51Z
+Generated: 2026-09-14T13:42:58Z
 
 ## Enforcement
 - Status: **ACTIVE**
@@ -15,13 +15,13 @@ Generated: 2026-09-13T12:34:51Z
 
 ## Forward operational health (drives pass/fail)
 - Population note: expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates. snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.
-- Expected forward runs: 41
-- Forward snapshots captured: 36
+- Expected forward runs: 42
+- Forward snapshots captured: 37
 - Forward snapshots missing (no manifest at all): 5 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
 - Forward incomplete captures (manifest exists, missing a required component): 0 []
-- Forward dates pending today (not yet due): 1 ['2026-09-13']
-- Forward provenance coverage: 36/41
-- Forward replay: attempted 132, completed 79, failed 53
+- Forward dates pending today (not yet due): 1 ['2026-09-14']
+- Forward provenance coverage: 37/42
+- Forward replay: attempted 136, completed 80, failed 56
 - Forward CLV-linked markets: 44
 - Forward settlement-linked markets: 89
 - Consecutive degraded forward runs: 0
@@ -30,12 +30,12 @@ Generated: 2026-09-13T12:34:51Z
 - FORWARD_HEALTHY: 30
 - FORWARD_MISSING_SNAPSHOT: 5
 - FORWARD_PENDING_TODAY: 1
-- FORWARD_RESEARCH_ONLY_NO_DECISION: 6
+- FORWARD_RESEARCH_ONLY_NO_DECISION: 7
 
 ## Storage
-- Snapshots: 243,197,970 bytes
-- Replay runs: 18,057,566 bytes
-- Total: 261,255,536 bytes
+- Snapshots: 249,307,426 bytes
+- Replay runs: 18,312,094 bytes
+- Total: 267,619,520 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Stored Completeness | Effective Completeness | Research-Only | Commit SHA Known | Replay | Runs | Acknowledged Gap |
@@ -85,4 +85,5 @@ Generated: 2026-09-13T12:34:51Z
 | 2026-09-10 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 4 |  |
 | 2026-09-11 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 5 |  |
 | 2026-09-12 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 5 |  |
-| 2026-09-13 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |
+| 2026-09-13 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 4 |  |
+| 2026-09-14 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |

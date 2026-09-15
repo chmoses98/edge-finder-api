@@ -609,3 +609,163 @@ def test_single_game_date_game_resolution_is_unchanged(tmp_path, monkeypatch):
     rows = list(storage.read_records(BETS_PATH))
     assert rows[0]["gameId"] == "9001"
     assert rows[0]["scheduledStart"] == "2026-08-03T23:00:00Z"
+
+
+# ===========================================================================
+# THE ROUTER CONTRACT
+#
+# kalshi-bet-router delivers real Kalshi executions through THIS importer.
+# On the first genuine delivery (2026-09-15) the wager was recorded with a
+# stake and a price and NOTHING ELSE: contracts, contractCost, totalFees and
+# actualCashConsumed were all null, because the router emitted the economics
+# as FLAT top-level keys and this importer reads them from a NESTED
+# `executionEconomics` object. The row was accepted, so nothing failed --
+# it was simply hollow, and `totalFees` is the whole reason for routing from
+# actual fills instead of reconstructing a fee schedule.
+#
+# ROUTER_ROW below is captured verbatim from
+# `kalshi_router.production.to_import_row`, so this is a genuine
+# cross-repository contract test rather than a hand-written guess at the
+# router's shape. If the router changes what it emits, this stops matching.
+# ===========================================================================
+
+#: The exact execution this importer failed to record in full.
+ROUTER_CONTRACTS = 33.0
+ROUTER_PRICE = 0.6
+ROUTER_FEES = 0.1982
+ROUTER_CONTRACT_COST = 19.8          # 33 x 0.6
+ROUTER_CASH = 19.9982                # 19.8 + 0.1982
+
+ROUTER_ROW = {
+    "sourceBetKey": "kalshi:v1:f84706dea7af2740bb0f6f61d3b5e6598f71aeadbbed75cd1db08163d5f4a9cf",
+    "gameDate": "2026-08-03",
+    "marketTicker": "SF-TT-3.5",
+    "side": "YES",
+    "stake": ROUTER_CASH,
+    "entryPrice": ROUTER_PRICE,
+    "contracts": ROUTER_CONTRACTS,
+    "executionEconomics": {
+        "contractCost": ROUTER_CONTRACT_COST,
+        "averageFillPrice": ROUTER_PRICE,
+        "totalFees": ROUTER_FEES,
+        "actualCashConsumed": ROUTER_CASH,
+        "executionStatus": "HELD_TO_SETTLEMENT",
+        "feeStatus": "ACTUAL_API_FILL",
+        "feeSource": "EXACT_ORDER_EXECUTION",
+        "economicsSource": "EXACT_API_EXECUTION",
+        "economicsConfidence": "HIGH",
+    },
+    "status": "pending",
+    "source": "OTHER",
+    "entryMethod": "IMPORTED_RECEIPT",
+    "trackingType": "REAL",
+}
+
+
+def _import_router_row(monkeypatch, tmp_path, **overrides):
+    """Run a router-shaped row through the REAL importer and return the row."""
+    monkeypatch.chdir(tmp_path)
+    _seed_corpus()
+    row = dict(ROUTER_ROW)
+    row.update(overrides)
+    payload = {"importBatchId": "kalshi-router-v1", "rows": [row]}
+    monkeypatch.setattr(sys, "argv", ["import_bet_batch.py", "--json", json.dumps(payload)])
+    assert import_script.main() == 0
+    written = list(storage.read_records(BETS_PATH))
+    assert len(written) == 1
+    return written[0]
+
+
+def test_router_execution_economics_survive_the_importer(tmp_path, monkeypatch):
+    """Every exact number the exchange reported reaches the canonical row.
+
+    This is the assertion that would have caught the hollow first delivery.
+    """
+    row = _import_router_row(monkeypatch, tmp_path)
+
+    assert row["contracts"] == ROUTER_CONTRACTS
+    assert row["entryPrice"] == ROUTER_PRICE
+    assert row["averageFillPrice"] == ROUTER_PRICE
+    assert row["contractCost"] == ROUTER_CONTRACT_COST
+    assert row["totalFees"] == ROUTER_FEES
+    assert row["actualCashConsumed"] == ROUTER_CASH
+    assert row["stake"] == ROUTER_CASH
+
+    assert row["executionStatus"] == "HELD_TO_SETTLEMENT"
+    assert row["feeStatus"] == "ACTUAL_API_FILL"
+    assert row["feeSource"] == "EXACT_ORDER_EXECUTION"
+    assert row["economicsSource"] == "EXACT_API_EXECUTION"
+    assert row["economicsConfidence"] == "HIGH"
+
+
+def test_the_opening_execution_accounting_identity_holds(tmp_path, monkeypatch):
+    """contracts x VWAP = contractCost; + fees = cash consumed = stake.
+
+    Asserted on the STORED row, so it proves the relationship survived the
+    import rather than merely holding in the router's own arithmetic.
+    """
+    row = _import_router_row(monkeypatch, tmp_path)
+
+    assert round(row["contracts"] * row["averageFillPrice"], 4) == row["contractCost"]
+    assert round(row["contractCost"] + row["totalFees"], 4) == row["actualCashConsumed"]
+    assert row["actualCashConsumed"] == row["stake"]
+
+
+def test_economics_are_not_identity(tmp_path, monkeypatch):
+    """The bet id must not move when the economics do.
+
+    Identity is hash(importBatchId, sourceBetKey, marketTicker, side). Fixing
+    the economics plumbing therefore must not re-identify an already-recorded
+    wager -- so the SAME wager imported with and without execution economics
+    has to land on the same betId. If this ever fails, economics have leaked
+    into identity and a correction would silently fork the ledger.
+    """
+    rich = tmp_path / "with-economics"
+    bare = tmp_path / "without-economics"
+    rich.mkdir()
+    bare.mkdir()
+
+    with_economics = _import_router_row(monkeypatch, rich)
+    without = _import_router_row(
+        monkeypatch, bare, executionEconomics=None, contracts=None
+    )
+
+    assert without["betId"] == with_economics["betId"]
+    assert without["sourceBetKey"] == with_economics["sourceBetKey"]
+    # ...and the economics really did differ between the two, so the equality
+    # above is a property of the identity function and not of two identical rows.
+    assert with_economics["contracts"] == ROUTER_CONTRACTS
+    assert without["contracts"] is None
+    assert without["totalFees"] is None
+
+
+def test_router_rows_carry_receipt_provenance_and_no_model_provenance(tmp_path, monkeypatch):
+    """A Kalshi execution proves a bet was placed, not that anything called it."""
+    row = _import_router_row(monkeypatch, tmp_path)
+
+    assert row["entryMethod"] == "IMPORTED_RECEIPT"
+    for field in ("recommendationId", "modelEvaluationId", "modelFairProbability",
+                  "productionRunId", "modelSupported"):
+        assert row[field] is None, f"{field} was fabricated for a routed execution"
+
+
+def test_an_unknown_economics_key_still_fails_loudly(tmp_path, monkeypatch):
+    """The refusal that makes the nested shape safe to rely on.
+
+    A typo must fail the import rather than vanish into a null -- which is
+    exactly the failure mode the flat payload produced. Keeping this refusal
+    is what lets the router trust that a key it sends is a key that landed.
+    """
+    monkeypatch.chdir(tmp_path)
+    _seed_corpus()
+    row = dict(ROUTER_ROW)
+    row["executionEconomics"] = dict(ROUTER_ROW["executionEconomics"], contractsCost=1.0)
+    payload = {"importBatchId": "kalshi-router-v1", "rows": [row]}
+    monkeypatch.setattr(sys, "argv", ["import_bet_batch.py", "--json", json.dumps(payload)])
+
+    try:
+        exit_code = import_script.main()
+    except ValueError as exc:
+        assert "contractsCost" in str(exc)
+        return
+    assert exit_code != 0, "an unknown execution-economics key was silently accepted"

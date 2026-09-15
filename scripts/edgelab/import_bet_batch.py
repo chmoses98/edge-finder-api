@@ -444,6 +444,14 @@ def process_row(row, index, import_batch_id):
         matchup=f"{away} @ {home}" if away and home else row.get("matchup"),
         market_family=market_family, market_horizon=market_horizon,
         side=side, threshold=threshold, scheduled_start=scheduled_start,
+        # The canonical builder has always accepted `contracts`; this importer
+        # simply never passed it, so every imported row recorded a stake and a
+        # price with no quantity behind them. A row that supplies an exact
+        # contract count from exchange fill evidence should keep it -- and one
+        # that does not is unchanged, because the builder's own default is None.
+        # NOT derived from stake/price here: a count divided back out of money
+        # is a rounding artefact wearing a quantity's clothes.
+        contracts=row.get("contracts"),
         entry_odds=entry_odds, source="MANUAL", entry_method="IMPORTED_RECEIPT",
         recommendation_id=recommendation_id,
         model_evaluation_id=model_evaluation_id, model_supported=True if model_evaluation_id else None,

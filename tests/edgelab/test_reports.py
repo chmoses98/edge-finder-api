@@ -562,3 +562,104 @@ def test_render_rolling_window_markdown_includes_key_sections():
     assert "Market family breakdown" in md
     assert "Calibration" in md
     assert "CLV coverage" in md
+
+
+# ---------------------------------------------------------------------------
+# entryProvenance: HOW each bet reached the ledger.
+#
+# Added when the Kalshi bet router began importing rows built from the
+# exchange's own fills (entryMethod IMPORTED_RECEIPT). Those rows carry no
+# recommendationId and no modelFairProbability -- a Kalshi execution proves the
+# owner placed the bet, not that anything recommended it -- so they fall into
+# the existing "manual" bucket, which means NOT MODEL-BACKED and is not a claim
+# about how the row was entered. These tests pin that the two questions stay
+# separate and that neither is derived from the other.
+# ---------------------------------------------------------------------------
+
+
+def _provenance_bets():
+    return [
+        {"betId": "b1", "gameDate": DATE, "stake": 5.0, "entryMethod": "IMPORTED_RECEIPT",
+         "source": "OTHER", "trackingType": "REAL"},
+        {"betId": "b2", "gameDate": DATE, "stake": 3.0, "entryMethod": "IMPORTED_RECEIPT",
+         "source": "OTHER", "trackingType": "REAL"},
+        {"betId": "b3", "gameDate": DATE, "stake": 2.0, "entryMethod": "MANUAL_GITHUB_FORM",
+         "source": "MODEL", "modelSupported": True, "trackingType": "REAL"},
+        {"betId": "b4", "gameDate": DATE, "stake": 1.0, "trackingType": "REAL"},
+    ]
+
+
+def _report_with(bets):
+    """The POSTMORTEM, not the daily report: modelSupportedVsManual and
+    entryProvenance both live there, because both are about placed bets."""
+    return build_postmortem(DATE, bets)
+
+
+def test_entry_provenance_groups_by_entry_method():
+    report = _report_with(_provenance_bets())
+
+    provenance = report["entryProvenance"]
+    assert provenance["IMPORTED_RECEIPT"]["count"] == 2
+    assert provenance["IMPORTED_RECEIPT"]["stake"] == 8.0
+    assert provenance["MANUAL_GITHUB_FORM"]["count"] == 1
+
+
+def test_a_bet_with_no_entry_method_is_counted_not_dropped():
+    """Dropping it would make the buckets stop summing to the total; folding it
+    into a real method would assert something that is not known."""
+    report = _report_with(_provenance_bets())
+
+    assert report["entryProvenance"]["UNRECORDED"]["count"] == 1
+
+
+def test_entry_provenance_buckets_sum_to_the_real_bet_total():
+    bets = _provenance_bets()
+    report = _report_with(bets)
+
+    total = sum(stats["count"] for stats in report["entryProvenance"].values())
+    assert total == len(bets)
+
+
+def test_an_imported_receipt_is_not_counted_as_model_supported():
+    """A Kalshi execution proves the bet was placed, not that a model backed it."""
+    report = _report_with(_provenance_bets())
+
+    assert report["modelSupportedVsManual"]["modelSupported"]["count"] == 1
+    assert report["modelSupportedVsManual"]["manual"]["count"] == 3
+    assert report["recommendedVsNonRecommended"]["recommended"]["count"] == 0
+
+
+def test_the_two_breakdowns_answer_different_questions():
+    """An IMPORTED_RECEIPT row is in 'manual' AND in its own provenance bucket.
+
+    If a future change made one derive from the other, this would break.
+    """
+    report = _report_with(_provenance_bets())
+
+    assert report["entryProvenance"]["IMPORTED_RECEIPT"]["count"] == 2
+    assert report["modelSupportedVsManual"]["manual"]["count"] == 3
+    assert (
+        report["modelSupportedVsManual"]["manual"]["count"]
+        != report["entryProvenance"]["IMPORTED_RECEIPT"]["count"]
+    )
+
+
+def test_markdown_renders_the_provenance_section():
+    report = _report_with(_provenance_bets())
+    markdown = render_postmortem_markdown(report)
+
+    assert "## How each bet reached the ledger" in markdown
+    assert "IMPORTED_RECEIPT: 2 bets" in markdown
+    # And it says what it is NOT, so the two sections are not confused.
+    assert "not whether a model backed it" in markdown
+
+
+def test_markdown_still_renders_a_postmortem_built_before_this_field_existed():
+    """A stored postmortem or a replayed run has no entryProvenance key."""
+    report = _report_with(_provenance_bets())
+    del report["entryProvenance"]
+
+    markdown = render_postmortem_markdown(report)
+
+    assert "## How each bet reached the ledger" not in markdown
+    assert "## Model-supported vs. manual" in markdown

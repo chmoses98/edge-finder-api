@@ -281,6 +281,21 @@ def _bucket_stats(bets):
     }
 
 
+def _group_by_entry_method(bets):
+    """Group bets by entryMethod, with a named bucket for rows that carry none.
+
+    A row with no entryMethod is a real row with a missing field, so it is
+    counted under UNRECORDED rather than dropped (which would make the buckets
+    stop summing to the total) or folded into one of the real methods (which
+    would assert something about it that is not known).
+    """
+    grouped = {}
+    for bet in bets:
+        method = bet.get("entryMethod") or "UNRECORDED"
+        grouped.setdefault(method, []).append(bet)
+    return grouped
+
+
 def build_postmortem(date, bets, bankroll_summary=None):
     """
     Daily postmortem (Canonical Placed-Bet Ledger milestone, requirement
@@ -407,9 +422,33 @@ def build_postmortem(date, bets, bankroll_summary=None):
         # automatic settlement pipeline has caught up to yet.
         "realizedEconomics": realized_economics,
         "performanceByMarketFamilyRealizedEconomics": performance_by_family_realized_economics,
+        # NOTE ON THE "manual" KEY: it means NOT MODEL-BACKED. It is not a
+        # claim about how the row reached the ledger, and it never was -- a
+        # bet imported from an exchange receipt is not model-backed and lands
+        # here too. Use entryProvenance below to ask the how-it-got-here
+        # question; these two buckets answer different things and neither is
+        # derived from the other.
         "modelSupportedVsManual": {
             "modelSupported": _bucket_stats(model_supported_bets),
             "manual": _bucket_stats(manual_only_bets),
+        },
+        # HOW each bet reached the ledger, keyed by its own entryMethod.
+        #
+        # Additive and non-breaking: nothing above changes meaning. It exists
+        # because rows now arrive by more than one route -- a bet typed into
+        # the GitHub form, a legacy backfill, and (since the Kalshi router) an
+        # IMPORTED_RECEIPT built from the exchange's own fills -- and those
+        # have genuinely different evidentiary strength. An imported receipt
+        # carries exact contracts, VWAP and actual API fees; a legacy backfill
+        # carries a remembered stake and no contract count at all.
+        #
+        # Keys are whatever entryMethods are actually present, so a new one
+        # appears here the day it is used rather than being silently pooled
+        # into an "other". A row with no entryMethod is counted under
+        # UNRECORDED rather than being dropped or guessed at.
+        "entryProvenance": {
+            method: _bucket_stats(rows)
+            for method, rows in sorted(_group_by_entry_method(real_bets).items())
         },
         "recommendedVsNonRecommended": {
             "recommended": _bucket_stats(recommended_bets),
@@ -501,6 +540,23 @@ def render_postmortem_markdown(report):
         f"- Model-supported: {ms['modelSupported']['count']} bets, P/L ${ms['modelSupported']['netProfitLoss']}",
         f"- Manual (no model support): {ms['manual']['count']} bets, P/L ${ms['manual']['netProfitLoss']}",
     ]
+
+    # `.get` with a default: a report dict built by an older version of this
+    # module (a stored postmortem, a replayed run) has no entryProvenance, and
+    # rendering it must not crash on the absence.
+    provenance = report.get("entryProvenance") or {}
+    if provenance:
+        lines += [
+            "",
+            "## How each bet reached the ledger",
+            "- This says how the row was ENTERED, not whether a model backed it"
+            " -- see \"Model-supported vs. manual\" for that.",
+        ]
+        for method, stats in sorted(provenance.items()):
+            lines.append(
+                f"- {method}: {stats['count']} bets, stake ${stats['stake']},"
+                f" P/L ${stats['netProfitLoss']}"
+            )
 
     rv = report["recommendedVsNonRecommended"]
     lines += [

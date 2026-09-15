@@ -1,10 +1,12 @@
 {
-  "checkedAt": "2026-09-14T18:17:44Z",
+  "checkedAt": "2026-09-15T17:28:35Z",
   "summary": {
-    "overall": "HEALTHY",
-    "criticalFailureCount": 0,
+    "overall": "CRITICAL",
+    "criticalFailureCount": 1,
     "researchDegradationCount": 0,
-    "criticalFailureIds": [],
+    "criticalFailureIds": [
+      "PROD-5"
+    ],
     "researchDegradationIds": []
   },
   "assertions": [
@@ -12,9 +14,9 @@
       "id": "PROD-1",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Slate pipeline active: last slate 2026-09-13 (1 day(s) old)",
+      "summary": "Slate pipeline active: last slate 2026-09-14 (1 day(s) old)",
       "detail": {
-        "slateDate": "2026-09-13",
+        "slateDate": "2026-09-14",
         "lagDays": 1
       }
     },
@@ -22,9 +24,9 @@
       "id": "PROD-2",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Settlement corpus current: latest partition 2026-09-13 (1 day(s) old)",
+      "summary": "Settlement corpus current: latest partition 2026-09-14 (1 day(s) old)",
       "detail": {
-        "latestPartition": "2026-09-13",
+        "latestPartition": "2026-09-14",
         "lagDays": 1,
         "maxLagDays": 2
       }
@@ -33,9 +35,9 @@
       "id": "PROD-3",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Recommendation ledger current: latest partition 2026-09-13 (1 day(s) old)",
+      "summary": "Recommendation ledger current: latest partition 2026-09-14 (1 day(s) old)",
       "detail": {
-        "latestPartition": "2026-09-13",
+        "latestPartition": "2026-09-14",
         "lagDays": 1,
         "maxLagDays": 2
       }
@@ -44,7 +46,7 @@
       "id": "PROD-4",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Prediction and settlement partitions are in step (evaluations 2026-09-13, settlements 2026-09-13)",
+      "summary": "Prediction and settlement partitions are in step (evaluations 2026-09-14, settlements 2026-09-14)",
       "detail": {
         "divergenceDays": 0
       }
@@ -52,19 +54,20 @@
     {
       "id": "PROD-5",
       "severity": "CRITICAL_PRODUCTION",
-      "status": "PASS",
-      "summary": "Ledger persisted recently: bets.json last committed 2026-09-11 (3 day(s) ago)",
+      "status": "FAIL",
+      "summary": "Canonical ledger bets.json has not been committed for 4 days (limit 3, last commit 2026-09-11) while the slate pipeline is active -- settlement output is being computed and discarded rather than persisted",
       "detail": {
-        "lagDays": 3
+        "betsLedgerCommitDate": "2026-09-11",
+        "lagDays": 4
       }
     },
     {
       "id": "PROD-6",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Model-evaluation corpus current: latest partition 2026-09-13 (1 day(s) old)",
+      "summary": "Model-evaluation corpus current: latest partition 2026-09-14 (1 day(s) old)",
       "detail": {
-        "latestPartition": "2026-09-13",
+        "latestPartition": "2026-09-14",
         "lagDays": 1,
         "maxLagDays": 2
       }
@@ -90,7 +93,7 @@
       "id": "RSCH-1",
       "severity": "RESEARCH_DEGRADATION",
       "status": "PASS",
-      "summary": "Research heartbeat current (latest 2026-09-13)",
+      "summary": "Research heartbeat current (latest 2026-09-14)",
       "detail": {}
     }
   ],

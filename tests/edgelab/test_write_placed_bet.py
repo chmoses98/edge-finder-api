@@ -272,6 +272,99 @@ def test_identical_retry_after_settlement_is_still_a_noop_not_a_conflict(tmp_pat
     assert row["status"] == "settled"  # untouched by the no-op
 
 
+def test_identical_retry_after_clv_scoring_is_a_noop_not_a_conflict(tmp_path):
+    """
+    THE 2026-09-16 ROUTER CONFLICT.
+
+    lib.edgelab.clv writes FIVE fields together -- clv, clvQuoteId,
+    closingPrice, clvConvention and clvUnit -- but only the first three were
+    listed in _ALWAYS_PRESERVE_FIELDS. So once a row had been CLV-scored, a
+    faithful resubmission of its own entry-time fields was refused as a
+    CONFLICT on clvConvention/clvUnit alone: values the caller never supplied,
+    has no parameter for, and could not know.
+
+    In production the Kalshi router resubmitted the single wager it had already
+    delivered -- identical contracts, VWAP, fee, ticker, side and game date --
+    and was refused. Nothing about the bet had changed.
+
+    The test above this one settles only status/result/netProfitLoss, which is
+    why it stayed green while this was broken. This one scores the CLV group
+    the way collect_clv.py actually does.
+    """
+    path = str(tmp_path / "bets.jsonl")
+    rec = _rec()
+    write_placed_bet(rec, path=path)
+    _settle_in_place(
+        path, rec["betId"], status="settled", result="WIN", netProfitLoss=4.9,
+        clv=2.5, closingPrice=0.48, clvQuoteId="clvq-123",
+        clvConvention="POSITIVE_IS_GOOD_V1", clvUnit="PERCENTAGE_POINTS",
+    )
+
+    retry = _rec(created_at=rec["createdAt"])
+    receipt = write_placed_bet(retry, path=path)
+    assert receipt["duplicateStatus"] == "DUPLICATE_NOOP", receipt.get("conflictingFields")
+    assert receipt["success"] is True
+
+    row = list(storage.read_records(path))[0]
+    assert row["clvConvention"] == "POSITIVE_IS_GOOD_V1"
+    assert row["clvUnit"] == "PERCENTAGE_POINTS"
+    assert row["clv"] == 2.5
+    assert row["status"] == "settled"
+
+
+def test_correction_never_resets_the_clv_convention_group(tmp_path):
+    """An unrelated entry-time correction must not null the CLV provenance
+    either -- the same failure, reached through on_conflict='overwrite'."""
+    path = str(tmp_path / "bets.jsonl")
+    rec = _rec()
+    write_placed_bet(rec, path=path)
+    _settle_in_place(
+        path, rec["betId"], clv=2.5, closingPrice=0.48, clvQuoteId="clvq-123",
+        clvConvention="POSITIVE_IS_GOOD_V1", clvUnit="PERCENTAGE_POINTS",
+    )
+
+    receipt = write_placed_bet(_rec(stake=6.0), path=path, on_conflict="overwrite")
+    assert receipt["duplicateStatus"] == "CORRECTED"
+
+    row = list(storage.read_records(path))[0]
+    assert row["stake"] == 6.0
+    assert row["clvConvention"] == "POSITIVE_IS_GOOD_V1"
+    assert row["clvUnit"] == "PERCENTAGE_POINTS"
+
+
+def test_inheriting_a_preserved_field_never_invents_it_on_the_candidate(tmp_path):
+    """
+    Preserving a field must MIRROR the stored row's key presence, not assign
+    `existing.get(field)` unconditionally.
+
+    clvConvention/clvUnit are absent entirely from a row no CLV pass has
+    touched. Assigning None would add a key the stored row does not have, the
+    two fingerprints would then differ by key PRESENCE alone, and an ordinary
+    retry of a never-CLV-scored bet would be refused as a CONFLICT -- turning
+    a fix for one spurious conflict into a broader one. (Caught exactly that
+    way: this file's own retry tests went red.)
+    """
+    path = str(tmp_path / "bets.jsonl")
+    rec = _rec()
+    write_placed_bet(rec, path=path)
+
+    stored = list(storage.read_records(path))[0]
+    assert "clvConvention" not in stored or stored["clvConvention"] is None
+
+    receipt = write_placed_bet(_rec(created_at=rec["createdAt"]), path=path)
+    assert receipt["duplicateStatus"] == "DUPLICATE_NOOP", receipt.get("conflictingFields")
+
+
+def test_every_field_the_clv_pipeline_writes_is_preserved(tmp_path):
+    """The defect was a LIST that drifted from the pipeline that fills it.
+    Asserting the membership directly is what stops it drifting again -- a
+    sixth CLV field added later fails here rather than in production."""
+    from lib.edgelab import bets as bets_module
+
+    for field in ("clv", "clvQuoteId", "closingPrice", "clvConvention", "clvUnit"):
+        assert field in bets_module._ALWAYS_PRESERVE_FIELDS, field
+
+
 def test_correction_never_resets_recommendation_or_model_linkage(tmp_path):
     """
     scripts/edgelab/build_recommendations.py backfills recommendationId/

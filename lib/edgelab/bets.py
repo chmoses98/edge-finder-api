@@ -1074,9 +1074,32 @@ def _find_near_duplicates(record, existing_rows, window_seconds):
 # built record's value for every one of them is ALWAYS None/"pending"/
 # "ACTIVE", never anything else -- so unconditionally taking the
 # existing row's value is always correct for this group.
+#
+# clvConvention/clvUnit are here for the SAME REASON as the three CLV fields
+# beside them, and their absence was a real defect. lib.edgelab.clv writes all
+# five together (clv, clvQuoteId, closingPrice, clvConvention, clvUnit), but
+# only three were ever listed, so once a row had been CLV-scored, ANY faithful
+# resubmission of its own entry-time fields conflicted on the two that were
+# missed -- against values the caller never supplied and could not know.
+#
+# That is the clvConvention/clvUnit incident described at
+# _LEGACY_SOURCE_AUTHORED_FIELDS below, recurring in the sibling code path.
+# It was fixed there by replacing the allow-list with an owned-set; this path
+# still uses the allow-list, so the same two fields were still missing from it.
+#
+# It cost a production delivery. On 2026-09-16 the Kalshi router resubmitted
+# the one wager it had already delivered -- identical contracts, VWAP, fee,
+# ticker, side and game date, every economics field byte-identical -- and the
+# canonical write path refused it as a CONFLICT on clvConvention and clvUnit
+# alone. It should have been a DUPLICATE_NOOP.
+#
+# They meet this group's stated criterion exactly: neither has a caller-facing
+# parameter in build_manual_bet_record, so a freshly built record never carries
+# a value for either, and taking the existing row's is always correct.
 _ALWAYS_PRESERVE_FIELDS = (
     "status", "result", "returnAmount", "netProfitLoss",
-    "closingPrice", "clv", "clvQuoteId", "recordStatus",
+    "closingPrice", "clv", "clvQuoteId", "clvConvention", "clvUnit",
+    "recordStatus",
 )
 
 # Fields that CAN be legitimately supplied by a caller (a correction may
@@ -1190,7 +1213,15 @@ def _inherit_lifecycle_fields(record, existing):
         return record
     merged = dict(record)
     for field in _ALWAYS_PRESERVE_FIELDS:
-        merged[field] = existing.get(field)
+        # MIRROR THE EXISTING ROW'S KEY PRESENCE, never `existing.get(field)`
+        # unconditionally. Some of these fields are absent entirely from a row
+        # that no pipeline has touched yet -- build_manual_bet_record does not
+        # emit clvConvention/clvUnit at all -- and assigning None would ADD a
+        # key to the candidate that the stored row does not have. The
+        # fingerprints would then differ by key presence alone and an ordinary
+        # retry of a never-CLV-scored bet would be refused as a CONFLICT.
+        if field in existing:
+            merged[field] = existing[field]
     for field in _PRESERVE_IF_NOT_SUPPLIED_FIELDS:
         if merged.get(field) is None:
             merged[field] = existing.get(field)

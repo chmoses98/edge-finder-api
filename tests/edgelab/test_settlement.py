@@ -617,3 +617,95 @@ def test_absent_horizon_still_means_full_game_for_score_based_families():
     assert settle_market({"marketFamily": GAME_TOTAL, "threshold": 7.5}, outcome)[:2] == ("SETTLED", "YES")
     assert settle_market({"marketFamily": TEAM_TOTAL, "team": "PIT", "threshold": 3.5}, outcome)[:2] == ("SETTLED", "YES")
     assert settle_market({"marketFamily": WINNING_MARGIN, "team": "PIT", "threshold": 2.5}, outcome)[:2] == ("SETTLED", "YES")
+
+
+# ---------------------------------------------------------------------------
+# EXACT EXECUTION EVIDENCE MUST BEAT RECONSTRUCTION (settlement seam)
+#
+# lib.edgelab.execution_economics.realized_pl_for_bet documents an evidence
+# precedence for the HELD_TO_SETTLEMENT cash basis:
+#
+#   1. actual_cash_consumed AND contracts both supplied -- "exact evidence,
+#      e.g. a real receipt/fill -- used directly, no simulation."
+#   2. otherwise stake is treated as an ALLOCATED BUDGET and simulated.
+#
+# docs/KALSHI_FEE_AWARE_EXECUTION_ECONOMICS.md's correction pass states the
+# same rule for the settlement path: net P/L is
+# "settlementCashReturned - actualCashConsumed", and the simulation is what
+# happens "when exact actualCashConsumed evidence isn't available".
+#
+# settle_bets_for_ticker did not pass actual_cash_consumed, so tier 1 was
+# unreachable from the canonical settlement path and every settled bet was
+# graded by simulating an order against its stake -- including bets carrying
+# exact exchange fill evidence. The spec's tier 2 ("exact API execution") was
+# written when this repo had no authenticated Kalshi read access (§7); the
+# wager router now supplies exactly that evidence.
+# ---------------------------------------------------------------------------
+
+def _exact_evidence_bet(**over):
+    """A wager carrying exact exchange execution evidence, fractional-quantity.
+
+    These numbers are a real delivered row: 32.87 contracts at a 0.6 VWAP,
+    $19.722 principal + $0.2762 exchange fee = $19.9982 actually debited.
+    """
+    bet = {
+        "betId": "exact-1", "marketTicker": "KXMLBTEAMTOTAL-26SEP142040SDCOL-SD6",
+        "side": "YES", "gameDate": "2026-09-14",
+        "executionStatus": "HELD_TO_SETTLEMENT",
+        "stake": 19.9982, "entryPrice": 0.6, "contracts": 32.87,
+        "contractCost": 19.722, "totalFees": 0.2762,
+        "actualCashConsumed": 19.9982,
+        "economicsSource": "EXACT_API_EXECUTION",
+    }
+    bet.update(over)
+    return bet
+
+
+def test_settlement_uses_exact_actual_cash_consumed_on_a_win():
+    """WIN: payout is contracts x $1, basis is the cash actually debited."""
+    settled = settle_bets_for_ticker([_exact_evidence_bet()], "SETTLED", "YES")[0]
+    assert settled["result"] == "WIN"
+    # 32.87 - 19.9982
+    assert settled["netProfitLoss"] == 12.8718
+    assert settled["returnAmount"] == 12.8718
+
+
+def test_settlement_uses_exact_actual_cash_consumed_on_a_loss():
+    """LOSS: nothing is returned, so the loss is exactly the cash deployed --
+    never a simulated order's cash basis."""
+    settled = settle_bets_for_ticker([_exact_evidence_bet(side="NO")], "SETTLED", "YES")[0]
+    assert settled["result"] == "LOSS"
+    assert settled["netProfitLoss"] == -19.9982
+
+
+def test_settlement_does_not_invent_unused_budget_that_never_existed():
+    """The simulation models an allocated budget that could not be fully
+    deployed into whole contracts. A wager executed at a FRACTIONAL quantity
+    consumed exactly what the exchange debited -- there is no unspent
+    remainder to model, and simulating one fabricates a gap."""
+    bet = _exact_evidence_bet()
+    settled = settle_bets_for_ticker([bet], "SETTLED", "YES")[0]
+    exact = round(bet["contracts"] - bet["actualCashConsumed"], 4)
+    assert settled["netProfitLoss"] == exact
+
+
+def test_settlement_still_simulates_when_no_exact_evidence_exists():
+    """The fallback is untouched: a bet with no actualCashConsumed is still
+    graded by the fee-aware simulation, exactly as before."""
+    bet = _exact_evidence_bet(actualCashConsumed=None, contracts=None,
+                              economicsSource=None, betId="no-evidence")
+    settled = settle_bets_for_ticker([bet], "SETTLED", "YES")[0]
+    assert settled["netProfitLoss"] is not None
+    assert settled["result"] == "WIN"
+
+
+def test_exact_evidence_never_changes_settlement_truth_or_identity():
+    """The cash basis is the ONLY thing this affects. Result, side, ticker,
+    contracts, stake and entry price are untouched by settlement."""
+    bet = _exact_evidence_bet()
+    before = dict(bet)
+    settled = settle_bets_for_ticker([bet], "SETTLED", "YES")[0]
+    for field in ("betId", "marketTicker", "side", "stake", "entryPrice",
+                  "contracts", "actualCashConsumed", "economicsSource"):
+        assert settled[field] == before[field], field
+    assert settled["result"] == "WIN"

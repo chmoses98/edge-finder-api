@@ -3,27 +3,27 @@
     "direction": {
       "groups": {
         "MODEL_ABOVE_MARKET": {
-          "brierDelta": -0.134032,
+          "brierDelta": -0.151515,
           "brierDeltaCI": {
-            "high": -0.1058,
-            "low": -0.1599,
+            "high": -0.1268,
+            "low": -0.1745,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 301,
-          "logLossDelta": -0.920339,
-          "n": 4256,
+          "games": 333,
+          "logLossDelta": -1.058193,
+          "n": 5173,
           "status": "SCORED"
         },
         "MODEL_BELOW_MARKET": {
-          "brierDelta": 0.028977,
+          "brierDelta": 0.028949,
           "brierDeltaCI": {
-            "high": 0.0373,
-            "low": 0.0203,
+            "high": 0.0374,
+            "low": 0.0208,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 273,
-          "logLossDelta": 0.144124,
-          "n": 4053,
+          "games": 276,
+          "logLossDelta": 0.143981,
+          "n": 4057,
           "status": "SCORED"
         }
       },
@@ -32,51 +32,51 @@
     "disagreementBands": {
       "groups": {
         "0.00_0.05": {
-          "brierDelta": 0.000266,
+          "brierDelta": 3.7e-05,
           "brierDeltaCI": {
-            "high": 0.0012,
-            "low": -0.0006,
-            "method": "GAME_CLUSTERED_BOOTSTRAP"
-          },
-          "games": 248,
-          "logLossDelta": 0.006167,
-          "n": 2107,
-          "status": "SCORED"
-        },
-        "0.05_0.10": {
-          "brierDelta": 0.003282,
-          "brierDeltaCI": {
-            "high": 0.0065,
-            "low": 0.0,
-            "method": "GAME_CLUSTERED_BOOTSTRAP"
-          },
-          "games": 254,
-          "logLossDelta": -0.019109,
-          "n": 2072,
-          "status": "SCORED"
-        },
-        "0.10_0.20": {
-          "brierDelta": 0.011541,
-          "brierDeltaCI": {
-            "high": 0.0212,
-            "low": 0.0019,
+            "high": 0.0009,
+            "low": -0.0008,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
           "games": 264,
-          "logLossDelta": -0.044785,
-          "n": 1969,
+          "logLossDelta": -0.006034,
+          "n": 2184,
+          "status": "SCORED"
+        },
+        "0.05_0.10": {
+          "brierDelta": 0.002499,
+          "brierDeltaCI": {
+            "high": 0.0056,
+            "low": -0.0007,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "games": 271,
+          "logLossDelta": -0.03702,
+          "n": 2147,
+          "status": "SCORED"
+        },
+        "0.10_0.20": {
+          "brierDelta": 0.008465,
+          "brierDeltaCI": {
+            "high": 0.0175,
+            "low": -0.0006,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "games": 282,
+          "logLossDelta": -0.087793,
+          "n": 2114,
           "status": "SCORED"
         },
         "0.20_1.01": {
-          "brierDelta": -0.223545,
+          "brierDelta": -0.247641,
           "brierDeltaCI": {
-            "high": -0.172,
-            "low": -0.2698,
+            "high": -0.2067,
+            "low": -0.2872,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 215,
-          "logLossDelta": -1.489148,
-          "n": 2161,
+          "games": 246,
+          "logLossDelta": -1.655888,
+          "n": 2785,
           "status": "SCORED"
         }
       },
@@ -85,111 +85,111 @@
     "familyRanking": {
       "groups": {
         "first_inning_run": {
-          "brierDelta": -0.044814,
+          "brierDelta": -0.062682,
           "brierDeltaCI": {
-            "high": -0.0113,
-            "low": -0.0799,
+            "high": -0.0277,
+            "low": -0.1006,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 121,
-          "logLossDelta": -0.384588,
-          "n": 121,
+          "games": 129,
+          "logLossDelta": -0.518233,
+          "n": 129,
           "status": "SCORED"
         },
         "game_result": {
-          "brierDelta": -0.074011,
+          "brierDelta": -0.085057,
           "brierDeltaCI": {
-            "high": -0.0499,
-            "low": -0.1002,
+            "high": -0.0609,
+            "low": -0.1112,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 143,
-          "logLossDelta": -0.53156,
-          "n": 247,
+          "games": 156,
+          "logLossDelta": -0.649189,
+          "n": 272,
           "status": "SCORED"
         },
         "game_total": {
-          "brierDelta": -0.110081,
+          "brierDelta": -0.136343,
           "brierDeltaCI": {
-            "high": -0.0704,
-            "low": -0.1548,
+            "high": -0.0969,
+            "low": -0.1794,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 146,
-          "logLossDelta": -0.660352,
-          "n": 1178,
+          "games": 161,
+          "logLossDelta": -0.821812,
+          "n": 1318,
           "status": "SCORED"
         },
         "inning_result": {
-          "brierDelta": -0.024705,
+          "brierDelta": -0.034963,
           "brierDeltaCI": {
-            "high": -0.0109,
-            "low": -0.0394,
+            "high": -0.0221,
+            "low": -0.0491,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 170,
-          "logLossDelta": -0.191063,
-          "n": 966,
+          "games": 199,
+          "logLossDelta": -0.305287,
+          "n": 1073,
           "status": "SCORED"
         },
         "inning_total": {
-          "brierDelta": -0.117292,
+          "brierDelta": -0.140915,
           "brierDeltaCI": {
-            "high": -0.075,
-            "low": -0.1629,
+            "high": -0.0996,
+            "low": -0.1856,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 112,
-          "logLossDelta": -0.748342,
-          "n": 756,
+          "games": 127,
+          "logLossDelta": -0.894453,
+          "n": 851,
           "status": "SCORED"
         },
         "pitcher_outs": {
-          "brierDelta": -0.023708,
+          "brierDelta": -0.047356,
           "brierDeltaCI": {
-            "high": 0.0053,
-            "low": -0.0538,
+            "high": -0.0179,
+            "low": -0.077,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 145,
-          "logLossDelta": -0.374875,
-          "n": 245,
+          "games": 160,
+          "logLossDelta": -0.549427,
+          "n": 273,
           "status": "SCORED"
         },
         "pitcher_strikeouts": {
-          "brierDelta": -0.025632,
+          "brierDelta": -0.049491,
           "brierDeltaCI": {
-            "high": -0.0004,
-            "low": -0.0512,
+            "high": -0.0233,
+            "low": -0.0769,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 142,
-          "logLossDelta": -0.269379,
-          "n": 1781,
+          "games": 157,
+          "logLossDelta": -0.41844,
+          "n": 1978,
           "status": "SCORED"
         },
         "team_total": {
-          "brierDelta": -0.064984,
+          "brierDelta": -0.079354,
           "brierDeltaCI": {
-            "high": -0.0433,
-            "low": -0.0883,
+            "high": -0.0577,
+            "low": -0.101,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 287,
-          "logLossDelta": -0.451268,
-          "n": 1864,
+          "games": 317,
+          "logLossDelta": -0.563228,
+          "n": 2059,
           "status": "SCORED"
         },
         "winning_margin": {
-          "brierDelta": -0.012591,
+          "brierDelta": -0.018618,
           "brierDeltaCI": {
-            "high": 0.0012,
-            "low": -0.0263,
+            "high": -0.0065,
+            "low": -0.0321,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 169,
-          "logLossDelta": -0.185943,
-          "n": 1151,
+          "games": 185,
+          "logLossDelta": -0.264068,
+          "n": 1277,
           "status": "SCORED"
         }
       },
@@ -199,38 +199,38 @@
     "inputQuality": {
       "groups": {
         "HIGH_QUALITY_INPUT": {
-          "brierDelta": -0.066308,
+          "brierDelta": -0.075067,
           "brierDeltaCI": {
-            "high": -0.0382,
-            "low": -0.0943,
+            "high": -0.0466,
+            "low": -0.102,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 153,
-          "logLossDelta": -0.538488,
-          "n": 499,
+          "games": 168,
+          "logLossDelta": -0.647931,
+          "n": 562,
           "status": "SCORED"
         },
         "LOWER_OR_UNKNOWN_INPUT": {
-          "brierDelta": -0.053766,
+          "brierDelta": -0.072007,
           "brierDeltaCI": {
-            "high": -0.0334,
-            "low": -0.0759,
+            "high": -0.0525,
+            "low": -0.0923,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 213,
-          "logLossDelta": -0.392334,
-          "n": 7810,
+          "games": 244,
+          "logLossDelta": -0.522123,
+          "n": 8668,
           "status": "SCORED"
         }
       },
       "segment": "inputQuality"
     },
     "marketM0": {
-      "brier": 0.255999,
-      "ece": 0.129536,
-      "independentGames": 349,
-      "logLoss": 1.03027,
-      "n": 8309
+      "brier": 0.273492,
+      "ece": 0.159715,
+      "independentGames": 381,
+      "logLoss": 1.155599,
+      "n": 9230
     },
     "perDateDirection": {
       "byDate": {
@@ -301,24 +301,28 @@
         "2026-09-14": {
           "brierDelta": -0.262515,
           "n": 628
+        },
+        "2026-09-15": {
+          "brierDelta": -0.231644,
+          "n": 921
         }
       },
-      "datesFavourable": 6,
-      "datesTotal": 17,
+      "datesFavourable": 7,
+      "datesTotal": 18,
       "majorityFavourable": false
     },
     "priceBands": {
       "groups": {
         "0.0_0.2": {
-          "brierDelta": -0.172039,
+          "brierDelta": -0.184938,
           "brierDeltaCI": {
-            "high": -0.1423,
-            "low": -0.1998,
+            "high": -0.1599,
+            "low": -0.2068,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 232,
-          "logLossDelta": -1.150291,
-          "n": 3335,
+          "games": 264,
+          "logLossDelta": -1.267221,
+          "n": 4256,
           "status": "SCORED"
         },
         "0.2_0.4": {
@@ -373,196 +377,196 @@
       "segment": "priceBand"
     },
     "productionM1": {
-      "brier": 0.20148,
-      "ece": 0.083275,
-      "independentGames": 349,
-      "logLoss": 0.629159,
-      "n": 8309
+      "brier": 0.201299,
+      "ece": 0.081511,
+      "independentGames": 381,
+      "logLoss": 0.625816,
+      "n": 9230
     },
     "productionMinusMarket": {
-      "brierDelta": -0.054519,
+      "brierDelta": -0.072193,
       "brierDeltaCI": {
-        "high": -0.0348,
-        "low": -0.0737,
+        "high": -0.0527,
+        "low": -0.0911,
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
-      "independentGames": 349,
+      "independentGames": 381,
       "interpretation": "negative == candidate better than reference",
-      "logLossDelta": -0.401111,
-      "n": 8309
+      "logLossDelta": -0.529784,
+      "n": 9230
     },
     "status": "INTERMEDIATE_UNCONFIRMED",
     "statusReasons": [
-      "mixed evidence: brierDelta=-0.054519 logLossDelta=-0.401111",
-      "datesFavourable=6/17"
+      "mixed evidence: brierDelta=-0.072193 logLossDelta=-0.529784",
+      "datesFavourable=7/18"
     ]
   },
   "MLB-RSCH-0024": {
     "M0_market": {
-      "brier": 0.255999,
-      "ece": 0.129536,
-      "independentGames": 349,
-      "logLoss": 1.03027,
-      "n": 8309
+      "brier": 0.273492,
+      "ece": 0.159715,
+      "independentGames": 381,
+      "logLoss": 1.155599,
+      "n": 9230
     },
     "M1_minus_M0": {
-      "brierDelta": -0.054519,
+      "brierDelta": -0.072193,
       "brierDeltaCI": {
-        "high": -0.0348,
-        "low": -0.0737,
+        "high": -0.0527,
+        "low": -0.0911,
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
-      "independentGames": 349,
+      "independentGames": 381,
       "interpretation": "negative == candidate better than reference",
-      "logLossDelta": -0.401111,
-      "n": 8309
+      "logLossDelta": -0.529784,
+      "n": 9230
     },
     "M1_production": {
-      "brier": 0.20148,
-      "ece": 0.083275,
-      "independentGames": 349,
-      "logLoss": 0.629159,
-      "n": 8309
+      "brier": 0.201299,
+      "ece": 0.081511,
+      "independentGames": 381,
+      "logLoss": 0.625816,
+      "n": 9230
     },
     "M2_frozenResidual": {
-      "brier": 0.255048,
-      "ece": 0.128046,
-      "independentGames": 349,
-      "logLoss": 0.957205,
-      "n": 8309
+      "brier": 0.272289,
+      "ece": 0.157823,
+      "independentGames": 381,
+      "logLoss": 1.062742,
+      "n": 9230
     },
     "M2_minus_M0": {
-      "brierDelta": -0.000951,
+      "brierDelta": -0.001203,
       "brierDeltaCI": {
-        "high": -0.0007,
-        "low": -0.0012,
+        "high": -0.001,
+        "low": -0.0014,
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
-      "independentGames": 349,
+      "independentGames": 381,
       "interpretation": "negative == candidate better than reference",
-      "logLossDelta": -0.073065,
-      "n": 8309
+      "logLossDelta": -0.092858,
+      "n": 9230
     },
     "alphaRefit": false,
     "alphaUsed": 0.0004,
     "economics": {
-      "fees": 20.12,
-      "grossPl": 957.88,
-      "netPl": 937.76,
+      "fees": 29.11,
+      "grossPl": 1350.89,
+      "netPl": 1321.78,
       "note": "descriptive only -- executable prices, canonical taker fee; no threshold fitted, no betting rule implied",
-      "opportunities": 2012,
-      "roiPerContract": 0.4661,
-      "winRate": 0.4861,
-      "wins": 978
+      "opportunities": 2911,
+      "roiPerContract": 0.4541,
+      "winRate": 0.4741,
+      "wins": 1380
     },
     "familySegments": {
       "groups": {
         "first_inning_run": {
-          "brierDelta": -0.00101,
+          "brierDelta": -0.001326,
           "brierDeltaCI": {
-            "high": -0.0006,
-            "low": -0.0015,
+            "high": -0.0008,
+            "low": -0.0018,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 121,
-          "logLossDelta": -0.071256,
-          "n": 121,
+          "games": 129,
+          "logLossDelta": -0.09319,
+          "n": 129,
           "status": "SCORED"
         },
         "game_result": {
-          "brierDelta": -0.001196,
+          "brierDelta": -0.001533,
           "brierDeltaCI": {
-            "high": -0.0009,
-            "low": -0.0015,
+            "high": -0.0012,
+            "low": -0.0019,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 143,
-          "logLossDelta": -0.081638,
-          "n": 247,
+          "games": 156,
+          "logLossDelta": -0.106739,
+          "n": 272,
           "status": "SCORED"
         },
         "game_total": {
-          "brierDelta": -0.001105,
+          "brierDelta": -0.001326,
           "brierDeltaCI": {
-            "high": -0.0008,
-            "low": -0.0015,
+            "high": -0.001,
+            "low": -0.0017,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 146,
-          "logLossDelta": -0.081863,
-          "n": 1178,
+          "games": 161,
+          "logLossDelta": -0.097559,
+          "n": 1318,
           "status": "SCORED"
         },
         "inning_result": {
-          "brierDelta": -0.001083,
+          "brierDelta": -0.001386,
           "brierDeltaCI": {
-            "high": -0.0008,
-            "low": -0.0014,
+            "high": -0.0011,
+            "low": -0.0017,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 170,
-          "logLossDelta": -0.089844,
-          "n": 966,
+          "games": 199,
+          "logLossDelta": -0.114274,
+          "n": 1073,
           "status": "SCORED"
         },
         "inning_total": {
-          "brierDelta": -0.001174,
+          "brierDelta": -0.001362,
           "brierDeltaCI": {
-            "high": -0.0008,
-            "low": -0.0016,
+            "high": -0.001,
+            "low": -0.0018,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 112,
-          "logLossDelta": -0.083918,
-          "n": 756,
+          "games": 127,
+          "logLossDelta": -0.095719,
+          "n": 851,
           "status": "SCORED"
         },
         "pitcher_outs": {
-          "brierDelta": -0.001108,
+          "brierDelta": -0.001516,
           "brierDeltaCI": {
-            "high": -0.0007,
-            "low": -0.0015,
+            "high": -0.0011,
+            "low": -0.002,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 145,
-          "logLossDelta": -0.07793,
-          "n": 245,
+          "games": 160,
+          "logLossDelta": -0.106761,
+          "n": 273,
           "status": "SCORED"
         },
         "pitcher_strikeouts": {
-          "brierDelta": -0.000696,
-          "brierDeltaCI": {
-            "high": -0.0005,
-            "low": -0.0009,
-            "method": "GAME_CLUSTERED_BOOTSTRAP"
-          },
-          "games": 142,
-          "logLossDelta": -0.052884,
-          "n": 1781,
-          "status": "SCORED"
-        },
-        "team_total": {
-          "brierDelta": -0.000951,
+          "brierDelta": -0.00093,
           "brierDeltaCI": {
             "high": -0.0007,
             "low": -0.0012,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 287,
-          "logLossDelta": -0.071049,
-          "n": 1864,
+          "games": 157,
+          "logLossDelta": -0.071771,
+          "n": 1978,
+          "status": "SCORED"
+        },
+        "team_total": {
+          "brierDelta": -0.001185,
+          "brierDeltaCI": {
+            "high": -0.0009,
+            "low": -0.0014,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "games": 317,
+          "logLossDelta": -0.089011,
+          "n": 2059,
           "status": "SCORED"
         },
         "winning_margin": {
-          "brierDelta": -0.000839,
+          "brierDelta": -0.001117,
           "brierDeltaCI": {
-            "high": -0.0006,
-            "low": -0.0011,
+            "high": -0.0008,
+            "low": -0.0015,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 169,
-          "logLossDelta": -0.074657,
-          "n": 1151,
+          "games": 185,
+          "logLossDelta": -0.101005,
+          "n": 1277,
           "status": "SCORED"
         }
       },
@@ -637,16 +641,20 @@
         "2026-09-14": {
           "brierDelta": -0.003627,
           "n": 628
+        },
+        "2026-09-15": {
+          "brierDelta": -0.003473,
+          "n": 921
         }
       },
-      "datesFavourable": 10,
-      "datesTotal": 17,
+      "datesFavourable": 11,
+      "datesTotal": 18,
       "majorityFavourable": true
     },
     "status": "FORWARD_SUPPORTS_FROZEN_FINDING",
     "statusReasons": [
-      "beats benchmark on Brier (-0.000951) and log loss (-0.073065)",
-      "direction holds on 10/17 forward dates",
+      "beats benchmark on Brier (-0.001203) and log loss (-0.092858)",
+      "direction holds on 11/18 forward dates",
       "improvement spread across 9/9 scored families"
     ]
   },
@@ -655,134 +663,134 @@
     "betaRefit": false,
     "betaUsed": 0.9833,
     "economics": {
-      "fees": 20.78,
-      "grossPl": 960.22,
-      "netPl": 939.44,
+      "fees": 29.99,
+      "grossPl": 1353.01,
+      "netPl": 1323.02,
       "note": "descriptive only -- executable prices, canonical taker fee; no threshold fitted, no betting rule implied",
-      "opportunities": 2078,
-      "roiPerContract": 0.4521,
-      "winRate": 0.4721,
-      "wins": 981
+      "opportunities": 2999,
+      "roiPerContract": 0.4412,
+      "winRate": 0.4612,
+      "wins": 1383
     },
     "familySegments": {
       "groups": {
         "first_inning_run": {
-          "brierDelta": -0.00127,
+          "brierDelta": -0.001625,
           "brierDeltaCI": {
-            "high": -0.0007,
-            "low": -0.0018,
+            "high": -0.0011,
+            "low": -0.0022,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 121,
-          "logLossDelta": -0.07834,
-          "n": 121,
+          "games": 129,
+          "logLossDelta": -0.102519,
+          "n": 129,
           "status": "SCORED"
         },
         "game_result": {
-          "brierDelta": -0.001369,
+          "brierDelta": -0.001752,
           "brierDeltaCI": {
-            "high": -0.001,
-            "low": -0.0018,
+            "high": -0.0014,
+            "low": -0.0022,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 143,
-          "logLossDelta": -0.090787,
-          "n": 247,
+          "games": 156,
+          "logLossDelta": -0.118079,
+          "n": 272,
           "status": "SCORED"
         },
         "game_total": {
-          "brierDelta": -0.001357,
+          "brierDelta": -0.001633,
           "brierDeltaCI": {
-            "high": -0.0009,
-            "low": -0.0018,
+            "high": -0.0012,
+            "low": -0.0021,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 146,
-          "logLossDelta": -0.093788,
-          "n": 1178,
+          "games": 161,
+          "logLossDelta": -0.112154,
+          "n": 1318,
           "status": "SCORED"
         },
         "inning_result": {
-          "brierDelta": -0.001181,
+          "brierDelta": -0.001523,
           "brierDeltaCI": {
-            "high": -0.0009,
-            "low": -0.0015,
-            "method": "GAME_CLUSTERED_BOOTSTRAP"
-          },
-          "games": 170,
-          "logLossDelta": -0.095908,
-          "n": 966,
-          "status": "SCORED"
-        },
-        "inning_total": {
-          "brierDelta": -0.00142,
-          "brierDeltaCI": {
-            "high": -0.0009,
+            "high": -0.0012,
             "low": -0.0019,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 112,
-          "logLossDelta": -0.096658,
-          "n": 756,
+          "games": 199,
+          "logLossDelta": -0.122155,
+          "n": 1073,
+          "status": "SCORED"
+        },
+        "inning_total": {
+          "brierDelta": -0.001663,
+          "brierDeltaCI": {
+            "high": -0.0012,
+            "low": -0.0021,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "games": 127,
+          "logLossDelta": -0.111049,
+          "n": 851,
           "status": "SCORED"
         },
         "pitcher_outs": {
-          "brierDelta": -0.001172,
+          "brierDelta": -0.001651,
           "brierDeltaCI": {
-            "high": -0.0007,
-            "low": -0.0017,
+            "high": -0.0012,
+            "low": -0.0022,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 145,
-          "logLossDelta": -0.085584,
-          "n": 245,
+          "games": 160,
+          "logLossDelta": -0.117424,
+          "n": 273,
           "status": "SCORED"
         },
         "pitcher_strikeouts": {
-          "brierDelta": -0.000809,
-          "brierDeltaCI": {
-            "high": -0.0005,
-            "low": -0.0011,
-            "method": "GAME_CLUSTERED_BOOTSTRAP"
-          },
-          "games": 142,
-          "logLossDelta": -0.059844,
-          "n": 1781,
-          "status": "SCORED"
-        },
-        "team_total": {
-          "brierDelta": -0.001127,
+          "brierDelta": -0.001095,
           "brierDeltaCI": {
             "high": -0.0008,
             "low": -0.0014,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 287,
-          "logLossDelta": -0.079183,
-          "n": 1864,
+          "games": 157,
+          "logLossDelta": -0.081121,
+          "n": 1978,
+          "status": "SCORED"
+        },
+        "team_total": {
+          "brierDelta": -0.001402,
+          "brierDeltaCI": {
+            "high": -0.0011,
+            "low": -0.0017,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "games": 317,
+          "logLossDelta": -0.099159,
+          "n": 2059,
           "status": "SCORED"
         },
         "winning_margin": {
-          "brierDelta": -0.001017,
+          "brierDelta": -0.001313,
           "brierDeltaCI": {
-            "high": -0.0007,
-            "low": -0.0014,
+            "high": -0.001,
+            "low": -0.0017,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 169,
-          "logLossDelta": -0.079138,
-          "n": 1151,
+          "games": 185,
+          "logLossDelta": -0.106801,
+          "n": 1277,
           "status": "SCORED"
         }
       },
       "segment": "family"
     },
     "frozenShrink": {
-      "brier": 0.254879,
-      "ece": 0.127786,
-      "independentGames": 349,
-      "logLoss": 0.949111,
-      "n": 8309
+      "brier": 0.272076,
+      "ece": 0.157517,
+      "independentGames": 381,
+      "logLoss": 1.052479,
+      "n": 9230
     },
     "perDateDirection": {
       "byDate": {
@@ -853,24 +861,28 @@
         "2026-09-14": {
           "brierDelta": -0.004276,
           "n": 628
+        },
+        "2026-09-15": {
+          "brierDelta": -0.004086,
+          "n": 921
         }
       },
-      "datesFavourable": 11,
-      "datesTotal": 17,
+      "datesFavourable": 12,
+      "datesTotal": 18,
       "majorityFavourable": true
     },
     "priceBands": {
       "groups": {
         "0.0_0.2": {
-          "brierDelta": -0.0028,
+          "brierDelta": -0.003078,
           "brierDeltaCI": {
-            "high": -0.0024,
-            "low": -0.0032,
+            "high": -0.0027,
+            "low": -0.0034,
             "method": "GAME_CLUSTERED_BOOTSTRAP"
           },
-          "games": 232,
-          "logLossDelta": -0.202199,
-          "n": 3335,
+          "games": 264,
+          "logLossDelta": -0.223636,
+          "n": 4256,
           "status": "SCORED"
         },
         "0.2_0.4": {
@@ -925,36 +937,36 @@
       "segment": "priceBand"
     },
     "rawMarket": {
-      "brier": 0.255999,
-      "ece": 0.129536,
-      "independentGames": 349,
-      "logLoss": 1.03027,
-      "n": 8309
+      "brier": 0.273492,
+      "ece": 0.159715,
+      "independentGames": 381,
+      "logLoss": 1.155599,
+      "n": 9230
     },
     "shrinkMinusMarket": {
-      "brierDelta": -0.00112,
+      "brierDelta": -0.001416,
       "brierDeltaCI": {
-        "high": -0.0008,
-        "low": -0.0014,
+        "high": -0.0011,
+        "low": -0.0017,
         "method": "GAME_CLUSTERED_BOOTSTRAP"
       },
-      "independentGames": 349,
+      "independentGames": 381,
       "interpretation": "negative == candidate better than reference",
-      "logLossDelta": -0.081158,
-      "n": 8309
+      "logLossDelta": -0.103121,
+      "n": 9230
     },
     "status": "FORWARD_SUPPORTS_FROZEN_FINDING",
     "statusReasons": [
-      "beats benchmark on Brier (-0.00112) and log loss (-0.081158)",
-      "direction holds on 11/17 forward dates",
+      "beats benchmark on Brier (-0.001416) and log loss (-0.103121)",
+      "direction holds on 12/18 forward dates",
       "improvement spread across 9/9 scored families"
     ]
   },
   "checkpoint": {
     "checkpoint": "CHECKPOINT_4",
-    "games": 349,
+    "games": 381,
     "label": "STRONGER_CONFIRMATION",
-    "rows": 8309
+    "rows": 9230
   },
   "coverage": {
     "dates": [
@@ -974,10 +986,11 @@
       "2026-09-11",
       "2026-09-12",
       "2026-09-13",
-      "2026-09-14"
+      "2026-09-14",
+      "2026-09-15"
     ],
-    "excludedNoEvaluation": 64759,
-    "excludedNoFairPrice": 407,
+    "excludedNoEvaluation": 68768,
+    "excludedNoFairPrice": 470,
     "families": [
       "first_inning_run",
       "game_result",
@@ -989,12 +1002,12 @@
       "team_total",
       "winning_margin"
     ],
-    "independentDates": 17,
-    "independentGames": 349,
-    "joinedRows": 8309,
-    "rows": 8309,
-    "settledForwardTickers": 73475,
-    "tickers": 8309
+    "independentDates": 18,
+    "independentGames": 381,
+    "joinedRows": 9230,
+    "rows": 9230,
+    "settledForwardTickers": 78468,
+    "tickers": 9230
   },
   "forwardWindow": "settlement date strictly after 2026-08-28",
   "frozenArtifacts": {

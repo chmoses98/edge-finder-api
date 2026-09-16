@@ -1,37 +1,37 @@
 # Daily Postmortem — 2026-09-11
 
-_Generated 2026-09-15T21:04:23Z_
+_Generated 2026-09-16T21:39:28Z_
 
 - Bets placed: 10
 - Record: 4-4-0 (pushes), 0 void, 2 still pending
 - Total risked: $144.98 ($124.99 settled)
-- Total returned: $81.78
-- Net P/L: $-42.13
-- ROI: -33.71%
-- Avg CLV (cents): None
+- Total returned: $83.94
+- Net P/L: $-41.05
+- ROI: -32.84%
+- Avg CLV (cents): -46.78
 - Snapshot-linked: 0 / Replay-linked: 0
 - Unresolved (still pending): 2
 
 ## Performance by market family
-- team_total: 4-1, stake $52.49, P/L $29.42
-- winning_margin: 0-1, stake $40.0, P/L $-39.97
-- first_inning_run: 0-1, stake $25.0, P/L $-24.53
-- inning_result: 0-1, stake $7.5, P/L $-7.05
+- team_total: 4-1, stake $52.49, P/L $31.45
+- winning_margin: 0-1, stake $40.0, P/L $-40.0
+- first_inning_run: 0-1, stake $25.0, P/L $-25.0
+- inning_result: 0-1, stake $7.5, P/L $-7.5
 
 ## Model-supported vs. manual
 - Model-supported: 0 bets, P/L $0
-- Manual (no model support): 10 bets, P/L $-42.13
+- Manual (no model support): 10 bets, P/L $-41.05
 
 ## How each bet reached the ledger
 - This says how the row was ENTERED, not whether a model backed it -- see "Model-supported vs. manual" for that.
-- IMPORTED_RECEIPT: 10 bets, stake $144.98, P/L $-42.13
+- IMPORTED_RECEIPT: 10 bets, stake $144.98, P/L $-41.05
 
 ## Recommended vs. non-recommended
 - Recommended: 0 bets, P/L $0
-- Non-recommended: 10 bets, P/L $-42.13
+- Non-recommended: 10 bets, P/L $-41.05
 
 ## Bankroll
-- Available: $-554.77 / Settled: $-150.04 / Exposure: $404.73
+- Available: $-752.4 / Settled: $-347.67 / Exposure: $404.73
 
 ## Unresolved bets (still pending)
 - 6bbf8e17a19f872534c4297d8d3d0fdaf06588ad

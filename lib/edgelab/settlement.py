@@ -437,6 +437,35 @@ def settle_bets_for_ticker(matching_bets, settlement_status, result, *, now=None
             entry_price=bet.get("entryPrice"),
             contracts=bet.get("contracts"),
             exit_sale_proceeds=bet.get("exitSaleProceeds"),
+            # EXACT EVIDENCE BEATS RECONSTRUCTION, and omitting this made the
+            # rule unreachable from the only path that settles real money.
+            #
+            # realized_pl_for_bet documents the precedence: actualCashConsumed
+            # + contracts is "exact evidence, e.g. a real receipt/fill -- used
+            # directly, no simulation", and `stake` as an allocated budget run
+            # through simulate_settlement_order is what happens "when exact
+            # actualCashConsumed evidence isn't available"
+            # (docs/KALSHI_FEE_AWARE_EXECUTION_ECONOMICS.md, correction pass).
+            # This call never passed it, so tier 1 could not be reached and
+            # every settled bet was graded by simulating an order against its
+            # stake -- including bets carrying exact exchange fill evidence.
+            #
+            # The spec placed "exact API execution" at tier 2 of the stake-
+            # evidence ladder but noted (§7) this repo had no authenticated
+            # Kalshi read access, so nothing could supply it. The wager router
+            # now does, and the gap became visible as soon as it did.
+            #
+            # WHY THIS MATTERS MOST FOR FRACTIONAL QUANTITIES. The simulation
+            # models a budget that cannot be fully deployed into WHOLE
+            # contracts and leaves an unspent remainder. A position filled at a
+            # fractional quantity consumed exactly what the exchange debited --
+            # there is no remainder, so simulating one invents a gap that never
+            # existed, understating wins and misstating losses alike.
+            #
+            # Deliberately NOT also passing quantity_granularity: that changes
+            # the SIMULATED branch for rows with no exact evidence, which is a
+            # separate question with a far wider blast radius.
+            actual_cash_consumed=bet.get("actualCashConsumed"),
         )
         updated_bet = dict(bet)
         updated_bet["result"] = bet_result

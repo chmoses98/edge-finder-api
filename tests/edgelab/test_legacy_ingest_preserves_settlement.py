@@ -30,7 +30,12 @@ def _settled(**over):
         "betId": "b1", "marketTicker": "KXMLBGAME-26AUG091915SFATL-SF",
         "side": "YES", "stake": 10.0, "entryPrice": 0.5, "createdAt": "2026-08-09T00:00:00Z",
         "status": "settled", "result": "WIN", "netProfitLoss": 9.7, "returnAmount": 9.7,
-        "closingPrice": 0.61, "clv": 0.11, "clvQuoteId": "q1", "recordStatus": "ACTIVE",
+        "closingPrice": 0.61, "clv": 0.11, "clvQuoteId": "q1",
+        # The CLV pass writes all five of these together; leaving the last two
+        # out of this fixture is how they went unnoticed when they were
+        # missing from _ALWAYS_PRESERVE_FIELDS.
+        "clvConvention": "POSITIVE_IS_GOOD_V1", "clvUnit": "PERCENTAGE_POINTS",
+        "recordStatus": "ACTIVE",
         "recommendationId": "rec-1", "modelEvaluationId": "me-1", "modelSupported": True,
         "snapshotId": "snap-1", "productionRunId": "prod-1", "replayRunId": "replay-1",
     }

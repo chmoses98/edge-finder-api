@@ -1,20 +1,20 @@
 {
-  "generatedAt": "2026-09-16T19:00:26.669447+00:00",
+  "generatedAt": "2026-09-16T19:22:50.235691+00:00",
   "date": "2026-09-16",
   "realMoney": [
     {
-      "game": "DET@TOR",
-      "market": "TT_Away_Over",
-      "side": "TT_Away_Over",
-      "ticker": "KXMLBTEAMTOTAL-26SEP161507DETTOR-DET4",
-      "modelProb": "82.79%",
-      "execPrice": "56.0\u00a2",
-      "rawEdge": "+26.79%",
-      "calEdge": "+6.83%",
+      "game": "LAD@CIN",
+      "market": "F5_ML_Away",
+      "side": "F5_ML_Away",
+      "ticker": "KXMLBF5-26SEP161840LADCIN-LAD",
+      "modelProb": "69.14%",
+      "execPrice": "60.0\u00a2",
+      "rawEdge": "+9.14%",
+      "calEdge": "+2.33%",
       "conf": "MEDIUM",
-      "betSize": 4.0,
-      "maxBetPrice": "77.65\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "betSize": 4.5,
+      "maxBetPrice": "63.6\u00a2 or better",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "MARKET_REAL_MONEY_ELIGIBLE",
         "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
@@ -23,9 +23,33 @@
         "LINEUP_ADJ_APPLIED",
         "PRICE_WITHIN_MAX"
       ],
-      "gatesFired": [
-        "Tier cap: model/market disagreement 27.3pt > 7pt -- Tier A withheld pending explanation"
+      "gatesFired": [],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "LAD@CIN",
+      "market": "TT_Away_Over",
+      "side": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26SEP161840LADCIN-LAD5",
+      "modelProb": "62.89%",
+      "execPrice": "54.0\u00a2",
+      "rawEdge": "+8.89%",
+      "calEdge": "+2.27%",
+      "conf": "MEDIUM",
+      "betSize": 4.0,
+      "maxBetPrice": "57.26\u00a2 or better",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG",
+        "LINEUP_CONFIRMED_OFFICIAL",
+        "LINEUP_ADJ_APPLIED",
+        "PRICE_WITHIN_MAX"
       ],
+      "gatesFired": [],
       "rejectionReason": null,
       "status": "Accepted",
       "lineupStatus": "confirmed"
@@ -44,7 +68,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "46.54\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "PRICE_MOVED_BEYOND_MAX",
         "LINEUP_MISSING"
@@ -54,31 +78,6 @@
         "Executable EV: price 48.0\u00a2 exceeds fee-aware bet-up-to 46.54\u00a2 (gross ceiling was 48.28\u00a2) -- PRICE_MOVED_BEYOND_MAX"
       ],
       "rejectionReason": "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only; Executable EV: price 48.0\u00a2 exceeds fee-aware bet-up-to 46.54\u00a2 (gross ceiling was 48.28\u00a2) -- PRICE_MOVED_BEYOND_MAX",
-      "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "MIL@PIT",
-      "market": "TT_Home_Over",
-      "side": "TT_Home_Over",
-      "ticker": "KXMLBTEAMTOTAL-26SEP161840MILPIT-PIT4",
-      "modelProb": "39.88%",
-      "execPrice": "46.0\u00a2",
-      "rawEdge": "-6.12%",
-      "calEdge": "-1.56%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "34.38\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [
-        "PRICE_MOVED_BEYOND_MAX",
-        "LINEUP_MISSING"
-      ],
-      "gatesFired": [
-        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only",
-        "Executable EV: price 46.0\u00a2 exceeds fee-aware bet-up-to 34.38\u00a2 (gross ceiling was 35.96\u00a2) -- PRICE_MOVED_BEYOND_MAX"
-      ],
-      "rejectionReason": "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only; Executable EV: price 46.0\u00a2 exceeds fee-aware bet-up-to 34.38\u00a2 (gross ceiling was 35.96\u00a2) -- PRICE_MOVED_BEYOND_MAX",
       "status": "Rejected",
       "lineupStatus": "missing"
     },
@@ -94,7 +93,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "16.82\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "PRICE_MOVED_BEYOND_MAX",
         "LINEUP_MISSING"
@@ -113,22 +112,22 @@
       "side": "TT_Home_Over",
       "ticker": "KXMLBTEAMTOTAL-26SEP161845PHIWSH-WSH4",
       "modelProb": "52.06%",
-      "execPrice": "49.0\u00a2",
-      "rawEdge": "+3.06%",
-      "calEdge": "+0.78%",
+      "execPrice": "48.0\u00a2",
+      "rawEdge": "+4.06%",
+      "calEdge": "+1.03%",
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "46.39\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "PRICE_MOVED_BEYOND_MAX",
         "LINEUP_MISSING"
       ],
       "gatesFired": [
         "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only",
-        "Executable EV: price 49.0\u00a2 exceeds fee-aware bet-up-to 46.39\u00a2 (gross ceiling was 48.13\u00a2) -- PRICE_MOVED_BEYOND_MAX"
+        "Executable EV: price 48.0\u00a2 exceeds fee-aware bet-up-to 46.39\u00a2 (gross ceiling was 48.13\u00a2) -- PRICE_MOVED_BEYOND_MAX"
       ],
-      "rejectionReason": "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only; Executable EV: price 49.0\u00a2 exceeds fee-aware bet-up-to 46.39\u00a2 (gross ceiling was 48.13\u00a2) -- PRICE_MOVED_BEYOND_MAX",
+      "rejectionReason": "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only; Executable EV: price 48.0\u00a2 exceeds fee-aware bet-up-to 46.39\u00a2 (gross ceiling was 48.13\u00a2) -- PRICE_MOVED_BEYOND_MAX",
       "status": "Rejected",
       "lineupStatus": "missing"
     },
@@ -144,7 +143,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "47.52\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "PRICE_MOVED_BEYOND_MAX",
         "LINEUP_MISSING"
@@ -169,7 +168,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "46.88\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "PRICE_MOVED_BEYOND_MAX",
         "LINEUP_MISSING"
@@ -194,7 +193,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "43.64\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "PRICE_MOVED_BEYOND_MAX",
         "LINEUP_MISSING"
@@ -219,7 +218,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "53.89\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "PRICE_MOVED_BEYOND_MAX",
         "LINEUP_MISSING"
@@ -244,7 +243,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "32.54\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "PRICE_MOVED_BEYOND_MAX",
         "LINEUP_MISSING"
@@ -269,7 +268,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "29.6\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "PRICE_MOVED_BEYOND_MAX",
         "LINEUP_MISSING"
@@ -294,7 +293,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "45.98\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "PRICE_MOVED_BEYOND_MAX",
         "LINEUP_MISSING"
@@ -319,7 +318,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "42.61\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "PRICE_MOVED_BEYOND_MAX",
         "LINEUP_MISSING"
@@ -344,7 +343,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "45.28\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "PRICE_MOVED_BEYOND_MAX",
         "LINEUP_MISSING"
@@ -369,7 +368,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "36.39\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "PRICE_MOVED_BEYOND_MAX",
         "LINEUP_MISSING"
@@ -385,304 +384,72 @@
   ],
   "paperOnly": [
     {
-      "game": "DET@TOR",
-      "market": "NRFI",
-      "side": "NRFI",
-      "ticker": "KXMLBRFI-26SEP161507DETTOR",
-      "modelProb": "33.53%",
-      "execPrice": "51.0\u00a2",
-      "rawEdge": "-17.47%",
-      "calEdge": "-4.46%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "28.19\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [
-        "FIRST_INNING_NATIVE_EVIDENCE"
-      ],
-      "gatesFired": [
-        "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-        "Rule 34: NRFI blocked \u2014 Kalshi total line=9 >= 8.0",
-        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
-      ],
-      "rejectionReason": "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-      "status": "Rejected",
-      "lineupStatus": "confirmed"
-    },
-    {
-      "game": "DET@TOR",
-      "market": "YRFI",
-      "side": "YRFI",
-      "ticker": "KXMLBRFI-26SEP161507DETTOR",
-      "modelProb": "66.47%",
-      "execPrice": "50.0\u00a2",
-      "rawEdge": "+16.47%",
-      "calEdge": "+4.20%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "60.88\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [
-        "FIRST_INNING_NATIVE_EVIDENCE"
-      ],
-      "gatesFired": [
-        "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
-      ],
-      "rejectionReason": "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-      "status": "Rejected",
-      "lineupStatus": "confirmed"
-    },
-    {
-      "game": "DET@TOR",
-      "market": "Game_Total",
-      "side": "Game_Total",
-      "ticker": "KXMLBTOTAL-26SEP161507DETTOR-9",
-      "modelProb": "64.83%",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [],
-      "gatesFired": [],
-      "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
-      "status": "Rejected",
-      "lineupStatus": "confirmed"
-    },
-    {
-      "game": "DET@TOR",
-      "market": "RL_Away",
-      "side": "RL_Away",
-      "ticker": null,
-      "modelProb": "\u2014",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [],
-      "gatesFired": [],
-      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
-      "status": "Rejected",
-      "lineupStatus": "confirmed"
-    },
-    {
-      "game": "DET@TOR",
-      "market": "RL_Home",
-      "side": "RL_Home",
-      "ticker": "KXMLBSPREAD-26SEP161507DETTOR-TOR2",
-      "modelProb": "\u2014",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [],
-      "gatesFired": [],
-      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
-      "status": "Rejected",
-      "lineupStatus": "confirmed"
-    },
-    {
       "game": "LAD@CIN",
       "market": "NRFI",
       "side": "NRFI",
       "ticker": "KXMLBRFI-26SEP161840LADCIN",
-      "modelProb": "39.06%",
-      "execPrice": "53.0\u00a2",
-      "rawEdge": "-13.94%",
-      "calEdge": "-3.56%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "33.58\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [
-        "LINEUP_MISSING",
-        "FIRST_INNING_NATIVE_EVIDENCE"
-      ],
-      "gatesFired": [
-        "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-        "Rule 34: NRFI blocked \u2014 Kalshi total line=9 >= 8.0",
-        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
-        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
-      ],
-      "rejectionReason": "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-      "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "LAD@CIN",
-      "market": "YRFI",
-      "side": "YRFI",
-      "ticker": "KXMLBRFI-26SEP161840LADCIN",
-      "modelProb": "60.94%",
-      "execPrice": "48.0\u00a2",
-      "rawEdge": "+12.94%",
-      "calEdge": "+3.30%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "55.29\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [
-        "LINEUP_MISSING",
-        "FIRST_INNING_NATIVE_EVIDENCE"
-      ],
-      "gatesFired": [
-        "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
-        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
-      ],
-      "rejectionReason": "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-      "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "LAD@CIN",
-      "market": "F5_ML_Away",
-      "side": "F5_ML_Away",
-      "ticker": "KXMLBF5-26SEP161840LADCIN-LAD",
-      "modelProb": "69.44%",
-      "execPrice": "60.0\u00a2",
-      "rawEdge": "+9.44%",
-      "calEdge": "+2.41%",
-      "conf": "PAPER",
-      "betSize": 1.5,
-      "maxBetPrice": "63.9\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [
-        "MARKET_REAL_MONEY_ELIGIBLE",
-        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
-        "RAW_EDGE_STRONG",
-        "PRICE_WITHIN_MAX"
-      ],
-      "gatesFired": [
-        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER"
-      ],
-      "rejectionReason": null,
-      "status": "Accepted",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "LAD@CIN",
-      "market": "F5_ML_Home",
-      "side": "F5_ML_Home",
-      "ticker": "KXMLBF5-26SEP161840LADCIN-CIN",
-      "modelProb": "15.5%",
-      "execPrice": "26.0\u00a2",
-      "rawEdge": "-10.50%",
-      "calEdge": "-2.68%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "10.89\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [
-        "LINEUP_PROJECTED_ONLY"
-      ],
-      "gatesFired": [
-        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER"
-      ],
-      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
-      "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "LAD@CIN",
-      "market": "TT_Away_Over",
-      "side": "TT_Away_Over",
-      "ticker": "KXMLBTEAMTOTAL-26SEP161840LADCIN-LAD5",
-      "modelProb": "63.46%",
+      "modelProb": "39.21%",
       "execPrice": "54.0\u00a2",
-      "rawEdge": "+9.46%",
-      "calEdge": "+2.41%",
-      "conf": "PAPER",
-      "betSize": 1.0,
-      "maxBetPrice": "57.84\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "rawEdge": "-14.79%",
+      "calEdge": "-3.77%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "33.73\u00a2 or better",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
-        "MARKET_REAL_MONEY_ELIGIBLE",
-        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
-        "RAW_EDGE_STRONG",
-        "PRICE_WITHIN_MAX"
+        "FIRST_INNING_NATIVE_EVIDENCE"
       ],
       "gatesFired": [
-        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only"
+        "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
+        "Rule 34: NRFI blocked \u2014 Kalshi total line=9 >= 8.0",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
       ],
-      "rejectionReason": null,
-      "status": "Accepted",
-      "lineupStatus": "missing"
+      "rejectionReason": "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
     },
     {
       "game": "LAD@CIN",
-      "market": "ML_Away",
-      "side": "ML_Away",
-      "ticker": "KXMLBGAME-26SEP161840LADCIN-LAD",
-      "modelProb": "72.0%",
-      "execPrice": "67.0\u00a2",
-      "rawEdge": "+5.00%",
-      "calEdge": "+1.27%",
+      "market": "YRFI",
+      "side": "YRFI",
+      "ticker": "KXMLBRFI-26SEP161840LADCIN",
+      "modelProb": "60.79%",
+      "execPrice": "47.0\u00a2",
+      "rawEdge": "+13.79%",
+      "calEdge": "+3.52%",
       "conf": "\u2014",
       "betSize": null,
-      "maxBetPrice": "66.52\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "maxBetPrice": "55.13\u00a2 or better",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
-        "LINEUP_MISSING"
+        "FIRST_INNING_NATIVE_EVIDENCE"
       ],
       "gatesFired": [
-        "Rule 51: lineupConfirmedOfficial=False (away) \u2014 ML downgraded to PAPER"
+        "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
+        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
       ],
-      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away) \u2014 ML downgraded to PAPER",
+      "rejectionReason": "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
       "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "LAD@CIN",
-      "market": "ML_Home",
-      "side": "ML_Home",
-      "ticker": "KXMLBGAME-26SEP161840LADCIN-CIN",
-      "modelProb": "16.91%",
-      "execPrice": "34.0\u00a2",
-      "rawEdge": "-17.09%",
-      "calEdge": "-4.36%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "12.24\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [
-        "LINEUP_PROJECTED_ONLY"
-      ],
-      "gatesFired": [
-        "Rule 51: lineupConfirmedOfficial=False (away) \u2014 ML downgraded to PAPER",
-        "Rule71: model 16.9% vs PinVF 34.3% = 17.4% gap > 8%"
-      ],
-      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away) \u2014 ML downgraded to PAPER; Rule71: model 16.9% vs PinVF 34.3% = 17.4% gap > 8%",
-      "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "LAD@CIN",
       "market": "Game_Total",
       "side": "Game_Total",
       "ticker": "KXMLBTOTAL-26SEP161840LADCIN-9",
-      "modelProb": "47.15%",
+      "modelProb": "46.66%",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
       "calEdge": "\u2014",
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "LAD@CIN",
@@ -696,12 +463,12 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "LAD@CIN",
@@ -715,12 +482,12 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "ATH@TB",
@@ -734,7 +501,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "32.86\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -761,7 +528,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "56.03\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -781,19 +548,19 @@
       "side": "F5_ML_Home",
       "ticker": "KXMLBF5-26SEP161840ATHTB-TB",
       "modelProb": "21.64%",
-      "execPrice": "50.0\u00a2",
-      "rawEdge": "-28.36%",
-      "calEdge": "-7.23%",
+      "execPrice": "51.0\u00a2",
+      "rawEdge": "-29.36%",
+      "calEdge": "-7.49%",
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "16.74\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
       "gatesFired": [
         "Rule 53: F5 requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
-        "Rule71-F5: model 21.6% vs KalshiF5VF 49.5% = 27.9% > 12%"
+        "Rule71-F5: model 21.6% vs KalshiF5VF 49.8% = 28.1% > 12%"
       ],
       "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
       "status": "Rejected",
@@ -811,7 +578,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "30.03\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -834,7 +601,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "58.96\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -857,7 +624,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
@@ -876,7 +643,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -895,7 +662,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -907,14 +674,14 @@
       "market": "NRFI",
       "side": "NRFI",
       "ticker": "KXMLBRFI-26SEP161840MILPIT",
-      "modelProb": "40.21%",
+      "modelProb": "40.19%",
       "execPrice": "56.0\u00a2",
-      "rawEdge": "-15.79%",
+      "rawEdge": "-15.81%",
       "calEdge": "-4.03%",
       "conf": "\u2014",
       "betSize": null,
-      "maxBetPrice": "34.7\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "maxBetPrice": "34.69\u00a2 or better",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -922,7 +689,7 @@
       "gatesFired": [
         "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
         "Rule 34: NRFI blocked \u2014 Kalshi total line=8 >= 8.0",
-        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
         "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
       ],
       "rejectionReason": "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
@@ -934,21 +701,21 @@
       "market": "YRFI",
       "side": "YRFI",
       "ticker": "KXMLBRFI-26SEP161840MILPIT",
-      "modelProb": "59.79%",
+      "modelProb": "59.81%",
       "execPrice": "45.0\u00a2",
-      "rawEdge": "+14.79%",
-      "calEdge": "+3.77%",
+      "rawEdge": "+14.81%",
+      "calEdge": "+3.78%",
       "conf": "\u2014",
       "betSize": null,
-      "maxBetPrice": "54.13\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "maxBetPrice": "54.15\u00a2 or better",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
       ],
       "gatesFired": [
         "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
         "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
       ],
       "rejectionReason": "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
@@ -960,14 +727,14 @@
       "market": "F5_ML_Away",
       "side": "F5_ML_Away",
       "ticker": "KXMLBF5-26SEP161840MILPIT-MIL",
-      "modelProb": "56.1%",
+      "modelProb": "56.06%",
       "execPrice": "45.0\u00a2",
-      "rawEdge": "+11.10%",
-      "calEdge": "+2.83%",
+      "rawEdge": "+11.06%",
+      "calEdge": "+2.82%",
       "conf": "PAPER",
       "betSize": 1.5,
-      "maxBetPrice": "50.43\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "maxBetPrice": "50.39\u00a2 or better",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "MARKET_REAL_MONEY_ELIGIBLE",
         "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
@@ -975,7 +742,7 @@
         "PRICE_WITHIN_MAX"
       ],
       "gatesFired": [
-        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER"
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER"
       ],
       "rejectionReason": null,
       "status": "Accepted",
@@ -986,22 +753,22 @@
       "market": "F5_ML_Home",
       "side": "F5_ML_Home",
       "ticker": "KXMLBF5-26SEP161840MILPIT-PIT",
-      "modelProb": "24.93%",
+      "modelProb": "24.97%",
       "execPrice": "38.0\u00a2",
-      "rawEdge": "-13.07%",
-      "calEdge": "-3.33%",
+      "rawEdge": "-13.03%",
+      "calEdge": "-3.32%",
       "conf": "\u2014",
       "betSize": null,
-      "maxBetPrice": "19.89\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "maxBetPrice": "19.93\u00a2 or better",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
       "gatesFired": [
-        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
-        "Rule71-F5: model 24.9% vs KalshiF5VF 37.3% = 12.4% > 12%"
+        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+        "Rule71-F5: model 25.0% vs KalshiF5VF 37.3% = 12.3% > 12%"
       ],
-      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
+      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
       "status": "Rejected",
       "lineupStatus": "missing"
     },
@@ -1017,7 +784,7 @@
       "conf": "PAPER",
       "betSize": 1.0,
       "maxBetPrice": "67.95\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "MARKET_REAL_MONEY_ELIGIBLE",
         "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
@@ -1044,16 +811,16 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "66.52\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
       "gatesFired": [
         "Tier cap: model/market disagreement 18.5pt > 7pt -- Tier A withheld pending explanation",
-        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
+        "Rule 51: lineupConfirmedOfficial=False (away) \u2014 ML downgraded to PAPER",
         "Rule71: model 72.0% vs PinVF 53.3% = 18.7% gap > 8%"
       ],
-      "rejectionReason": "Tier cap: model/market disagreement 18.5pt > 7pt -- Tier A withheld pending explanation; Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER; Rule71: model 72.0% vs PinVF 53.3% = 18.7% gap > 8%",
+      "rejectionReason": "Tier cap: model/market disagreement 18.5pt > 7pt -- Tier A withheld pending explanation; Rule 51: lineupConfirmedOfficial=False (away) \u2014 ML downgraded to PAPER; Rule71: model 72.0% vs PinVF 53.3% = 18.7% gap > 8%",
       "status": "Rejected",
       "lineupStatus": "missing"
     },
@@ -1062,22 +829,22 @@
       "market": "ML_Home",
       "side": "ML_Home",
       "ticker": "KXMLBGAME-26SEP161840MILPIT-PIT",
-      "modelProb": "23.74%",
+      "modelProb": "23.8%",
       "execPrice": "47.0\u00a2",
-      "rawEdge": "-23.26%",
-      "calEdge": "-5.93%",
+      "rawEdge": "-23.20%",
+      "calEdge": "-5.92%",
       "conf": "\u2014",
       "betSize": null,
-      "maxBetPrice": "18.75\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "maxBetPrice": "18.81\u00a2 or better",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
-        "LINEUP_MISSING"
+        "LINEUP_PROJECTED_ONLY"
       ],
       "gatesFired": [
-        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
-        "Rule71: model 23.7% vs PinVF 46.7% = 23.0% gap > 8%"
+        "Rule 51: lineupConfirmedOfficial=False (away) \u2014 ML downgraded to PAPER",
+        "Rule71: model 23.8% vs PinVF 46.7% = 22.9% gap > 8%"
       ],
-      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER; Rule71: model 23.7% vs PinVF 46.7% = 23.0% gap > 8%",
+      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away) \u2014 ML downgraded to PAPER; Rule71: model 23.8% vs PinVF 46.7% = 22.9% gap > 8%",
       "status": "Rejected",
       "lineupStatus": "missing"
     },
@@ -1086,14 +853,14 @@
       "market": "Game_Total",
       "side": "Game_Total",
       "ticker": "KXMLBTOTAL-26SEP161840MILPIT-8",
-      "modelProb": "57.45%",
+      "modelProb": "57.5%",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
       "calEdge": "\u2014",
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
@@ -1112,7 +879,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -1131,7 +898,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -1150,7 +917,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "36.56\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_GENERIC_FALLBACK"
@@ -1177,7 +944,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "52.23\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_GENERIC_FALLBACK"
@@ -1203,7 +970,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "36.32\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -1226,7 +993,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "30.92\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -1249,7 +1016,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "47.94\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -1273,7 +1040,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "40.78\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -1297,7 +1064,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
@@ -1316,7 +1083,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -1335,7 +1102,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -1354,7 +1121,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "28.39\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_GENERIC_FALLBACK"
@@ -1381,7 +1148,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "60.67\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_GENERIC_FALLBACK"
@@ -1407,7 +1174,7 @@
       "conf": "PAPER",
       "betSize": 1.5,
       "maxBetPrice": "41.3\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "MARKET_REAL_MONEY_ELIGIBLE",
         "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
@@ -1433,7 +1200,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "30.23\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -1450,13 +1217,13 @@
       "side": "TT_Away_Over",
       "ticker": "KXMLBTEAMTOTAL-26SEP161910BALNYM-BAL5",
       "modelProb": "54.79%",
-      "execPrice": "45.0\u00a2",
-      "rawEdge": "+9.79%",
-      "calEdge": "+2.50%",
+      "execPrice": "46.0\u00a2",
+      "rawEdge": "+8.79%",
+      "calEdge": "+2.24%",
       "conf": "PAPER",
       "betSize": 1.0,
       "maxBetPrice": "49.11\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "MARKET_REAL_MONEY_ELIGIBLE",
         "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
@@ -1482,7 +1249,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "45.5\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -1505,7 +1272,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "43.2\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -1528,7 +1295,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
@@ -1547,7 +1314,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -1566,7 +1333,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -1585,7 +1352,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "28.04\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -1612,7 +1379,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "61.04\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -1638,7 +1405,7 @@
       "conf": "PAPER",
       "betSize": 1.5,
       "maxBetPrice": "33.13\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "MARKET_REAL_MONEY_ELIGIBLE",
         "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
@@ -1664,7 +1431,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "38.2\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -1687,7 +1454,7 @@
       "conf": "PAPER",
       "betSize": 1.0,
       "maxBetPrice": "64.58\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "MARKET_REAL_MONEY_ELIGIBLE",
         "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
@@ -1714,7 +1481,7 @@
       "conf": "PAPER",
       "betSize": 1.0,
       "maxBetPrice": "69.56\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "MARKET_REAL_MONEY_ELIGIBLE",
         "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
@@ -1741,7 +1508,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "40.03\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -1764,7 +1531,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "48.69\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -1787,7 +1554,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
@@ -1806,7 +1573,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -1825,7 +1592,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -1844,7 +1611,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "38.21\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -1871,7 +1638,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "50.54\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -1897,7 +1664,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "33.35\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -1914,13 +1681,13 @@
       "side": "F5_ML_Home",
       "ticker": "KXMLBF5-26SEP162005BOSTEX-TEX",
       "modelProb": "40.08%",
-      "execPrice": "44.0\u00a2",
-      "rawEdge": "-3.92%",
-      "calEdge": "-1.00%",
+      "execPrice": "43.0\u00a2",
+      "rawEdge": "-2.92%",
+      "calEdge": "-0.74%",
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "34.58\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -1943,7 +1710,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "46.72\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -1966,7 +1733,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "41.99\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -1989,7 +1756,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
@@ -2008,7 +1775,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -2027,7 +1794,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -2046,7 +1813,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "34.72\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -2073,7 +1840,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "54.11\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -2099,7 +1866,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "49.94\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -2124,7 +1891,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "17.78\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -2148,7 +1915,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "45.86\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -2172,7 +1939,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "42.84\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -2196,7 +1963,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
@@ -2215,7 +1982,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -2234,7 +2001,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -2253,7 +2020,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "25.92\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -2280,7 +2047,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "63.26\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -2306,7 +2073,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "41.15\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -2329,7 +2096,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "30.91\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -2352,7 +2119,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "56.21\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -2375,7 +2142,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "32.68\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -2398,7 +2165,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
@@ -2417,7 +2184,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -2436,7 +2203,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -2455,7 +2222,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "34.29\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -2482,7 +2249,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "54.55\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -2508,7 +2275,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "41.21\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -2531,7 +2298,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "28.37\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -2554,7 +2321,7 @@
       "conf": "PAPER",
       "betSize": 1.0,
       "maxBetPrice": "56.4\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "MARKET_REAL_MONEY_ELIGIBLE",
         "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
@@ -2580,7 +2347,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "32.5\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -2603,7 +2370,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
@@ -2622,7 +2389,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -2641,7 +2408,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -2660,7 +2427,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "29.25\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -2687,7 +2454,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "59.78\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
@@ -2713,7 +2480,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "58.02\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -2738,7 +2505,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "15.95\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_PROJECTED_ONLY"
       ],
@@ -2756,13 +2523,13 @@
       "side": "TT_Away_Over",
       "ticker": "KXMLBTEAMTOTAL-26SEP162140MIAAZ-MIA5",
       "modelProb": "61.05%",
-      "execPrice": "45.0\u00a2",
-      "rawEdge": "+16.05%",
-      "calEdge": "+4.09%",
+      "execPrice": "46.0\u00a2",
+      "rawEdge": "+15.05%",
+      "calEdge": "+3.84%",
       "conf": "PAPER",
       "betSize": 1.0,
       "maxBetPrice": "55.4\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "MARKET_REAL_MONEY_ELIGIBLE",
         "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
@@ -2771,7 +2538,7 @@
       ],
       "gatesFired": [
         "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only",
-        "Tier cap: model/market disagreement 16.5pt > 7pt -- Tier A withheld pending explanation"
+        "Tier cap: model/market disagreement 16.0pt > 7pt -- Tier A withheld pending explanation"
       ],
       "rejectionReason": null,
       "status": "Accepted",
@@ -2789,7 +2556,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "57.92\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -2814,7 +2581,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "31.04\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LINEUP_MISSING"
       ],
@@ -2838,7 +2605,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
@@ -2857,7 +2624,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -2876,7 +2643,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
@@ -2897,7 +2664,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -2920,7 +2687,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -2943,7 +2710,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -2966,7 +2733,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -2989,7 +2756,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "EXECUTABLE_EDGE_BELOW_THRESHOLD",
         "LIVE_GAME_BLOCKED"
@@ -3005,7 +2772,7 @@
       "game": "CWS@CLE",
       "market": "TT_Home_Over",
       "side": "TT_Home_Over",
-      "ticker": "KXMLBTEAMTOTAL-26SEP161310CWSCLE-CLE8",
+      "ticker": "KXMLBTEAMTOTAL-26SEP161310CWSCLE-CLE7",
       "modelProb": "\u2014",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
@@ -3013,7 +2780,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "EXECUTABLE_EDGE_BELOW_THRESHOLD",
         "LIVE_GAME_BLOCKED"
@@ -3037,7 +2804,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3060,7 +2827,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3083,7 +2850,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3106,7 +2873,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3129,7 +2896,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3152,7 +2919,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3175,7 +2942,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3198,7 +2965,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3221,7 +2988,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3236,7 +3003,7 @@
       "game": "SF@STL",
       "market": "TT_Away_Over",
       "side": "TT_Away_Over",
-      "ticker": "KXMLBTEAMTOTAL-26SEP161315SFSTL-SF5",
+      "ticker": "KXMLBTEAMTOTAL-26SEP161315SFSTL-SF4",
       "modelProb": "\u2014",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
@@ -3244,7 +3011,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "MARKET_REAL_MONEY_ELIGIBLE",
         "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
@@ -3265,7 +3032,7 @@
       "game": "SF@STL",
       "market": "TT_Home_Over",
       "side": "TT_Home_Over",
-      "ticker": "KXMLBTEAMTOTAL-26SEP161315SFSTL-STL2",
+      "ticker": "KXMLBTEAMTOTAL-26SEP161315SFSTL-STL3",
       "modelProb": "\u2014",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
@@ -3273,7 +3040,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "MARKET_REAL_MONEY_ELIGIBLE",
         "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
@@ -3302,9 +3069,8 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
-        "EXECUTABLE_EDGE_BELOW_THRESHOLD",
         "LIVE_GAME_BLOCKED"
       ],
       "gatesFired": [
@@ -3326,14 +3092,8 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
-        "MARKET_REAL_MONEY_ELIGIBLE",
-        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
-        "RAW_EDGE_STRONG",
-        "LINEUP_CONFIRMED_OFFICIAL",
-        "LINEUP_ADJ_APPLIED",
-        "PRICE_WITHIN_MAX",
         "LIVE_GAME_BLOCKED"
       ],
       "gatesFired": [
@@ -3347,7 +3107,7 @@
       "game": "SF@STL",
       "market": "Game_Total",
       "side": "Game_Total",
-      "ticker": "KXMLBTOTAL-26SEP161315SFSTL-6",
+      "ticker": "KXMLBTOTAL-26SEP161315SFSTL-7",
       "modelProb": "\u2014",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
@@ -3355,7 +3115,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3370,7 +3130,7 @@
       "game": "SF@STL",
       "market": "RL_Away",
       "side": "RL_Away",
-      "ticker": "KXMLBSPREAD-26SEP161315SFSTL-SF4",
+      "ticker": "KXMLBSPREAD-26SEP161315SFSTL-SF2",
       "modelProb": "\u2014",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
@@ -3378,7 +3138,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3401,7 +3161,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3424,7 +3184,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3447,7 +3207,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3470,7 +3230,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3493,7 +3253,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3508,7 +3268,7 @@
       "game": "NYY@MIN",
       "market": "TT_Away_Over",
       "side": "TT_Away_Over",
-      "ticker": "KXMLBTEAMTOTAL-26SEP161340NYYMIN-NYY3",
+      "ticker": "KXMLBTEAMTOTAL-26SEP161340NYYMIN-NYY2",
       "modelProb": "\u2014",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
@@ -3516,7 +3276,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "MARKET_REAL_MONEY_ELIGIBLE",
         "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
@@ -3545,7 +3305,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "EXECUTABLE_EDGE_BELOW_THRESHOLD",
         "LIVE_GAME_BLOCKED"
@@ -3569,7 +3329,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3592,7 +3352,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3607,7 +3367,7 @@
       "game": "NYY@MIN",
       "market": "Game_Total",
       "side": "Game_Total",
-      "ticker": "KXMLBTOTAL-26SEP161340NYYMIN-6",
+      "ticker": "KXMLBTOTAL-26SEP161340NYYMIN-5",
       "modelProb": "\u2014",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
@@ -3615,7 +3375,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3638,7 +3398,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3661,7 +3421,7 @@
       "conf": "\u2014",
       "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "LIVE_GAME_BLOCKED"
       ],
@@ -3674,108 +3434,284 @@
     },
     {
       "game": "DET@TOR",
+      "market": "NRFI",
+      "side": "NRFI",
+      "ticker": "KXMLBRFI-26SEP161507DETTOR",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [
+        "FIRST_INNING_GENERIC_FALLBACK",
+        "LIVE_GAME_BLOCKED"
+      ],
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: DET@TOR status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
+      "status": "Rejected",
+      "lineupStatus": "\u2014"
+    },
+    {
+      "game": "DET@TOR",
+      "market": "YRFI",
+      "side": "YRFI",
+      "ticker": "KXMLBRFI-26SEP161507DETTOR",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [
+        "FIRST_INNING_GENERIC_FALLBACK",
+        "LIVE_GAME_BLOCKED"
+      ],
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: DET@TOR status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
+      "status": "Rejected",
+      "lineupStatus": "\u2014"
+    },
+    {
+      "game": "DET@TOR",
       "market": "F5_ML_Away",
       "side": "F5_ML_Away",
       "ticker": "KXMLBF5-26SEP161507DETTOR-DET",
-      "modelProb": "56.68%",
-      "execPrice": "41.0\u00a2",
-      "rawEdge": "+15.69%",
-      "calEdge": "+4.00%",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
       "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "51.01\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [],
-      "gatesFired": [
-        "Tier cap: model/market disagreement 16.2pt > 7pt -- Tier A withheld pending explanation",
-        "Rule71-F5: model 56.7% vs KalshiF5VF 40.5% = 16.2% > 12%"
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
       ],
-      "rejectionReason": "Tier cap: model/market disagreement 16.2pt > 7pt -- Tier A withheld pending explanation",
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: DET@TOR status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
       "status": "Rejected",
-      "lineupStatus": "confirmed"
+      "lineupStatus": "\u2014"
     },
     {
       "game": "DET@TOR",
       "market": "F5_ML_Home",
       "side": "F5_ML_Home",
       "ticker": "KXMLBF5-26SEP161507DETTOR-TOR",
-      "modelProb": "26.58%",
-      "execPrice": "45.0\u00a2",
-      "rawEdge": "-18.42%",
-      "calEdge": "-4.70%",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
       "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "21.47\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [],
-      "gatesFired": [
-        "Rule71-F5: model 26.6% vs KalshiF5VF 44.0% = 17.5% > 12%"
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
       ],
-      "rejectionReason": "Rule71-F5: model 26.6% vs KalshiF5VF 44.0% = 17.5% > 12%",
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: DET@TOR status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
       "status": "Rejected",
-      "lineupStatus": "confirmed"
+      "lineupStatus": "\u2014"
+    },
+    {
+      "game": "DET@TOR",
+      "market": "TT_Away_Over",
+      "side": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26SEP161507DETTOR-DET5",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG",
+        "LINEUP_CONFIRMED_OFFICIAL",
+        "LINEUP_ADJ_APPLIED",
+        "PRICE_WITHIN_MAX",
+        "LIVE_GAME_BLOCKED"
+      ],
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: DET@TOR status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
+      "status": "Rejected",
+      "lineupStatus": "\u2014"
     },
     {
       "game": "DET@TOR",
       "market": "TT_Home_Over",
       "side": "TT_Home_Over",
       "ticker": "KXMLBTEAMTOTAL-26SEP161507DETTOR-TOR5",
-      "modelProb": "38.23%",
-      "execPrice": "44.0\u00a2",
-      "rawEdge": "-5.77%",
-      "calEdge": "-1.47%",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
       "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "32.77\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
-        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD",
+        "LIVE_GAME_BLOCKED"
       ],
-      "gatesFired": [],
-      "rejectionReason": "edge -1.911% below 1.0% floor",
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: DET@TOR status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
       "status": "Rejected",
-      "lineupStatus": "confirmed"
+      "lineupStatus": "\u2014"
     },
     {
       "game": "DET@TOR",
       "market": "ML_Away",
       "side": "ML_Away",
       "ticker": "KXMLBGAME-26SEP161507DETTOR-DET",
-      "modelProb": "72.0%",
-      "execPrice": "46.0\u00a2",
-      "rawEdge": "+26.00%",
-      "calEdge": "+6.63%",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
       "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "66.52\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [],
-      "gatesFired": [
-        "Tier cap: model/market disagreement 26.1pt > 7pt -- Tier A withheld pending explanation",
-        "Rule71: model 72.0% vs PinVF 45.9% = 26.1% gap > 8%"
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
       ],
-      "rejectionReason": "Tier cap: model/market disagreement 26.1pt > 7pt -- Tier A withheld pending explanation; Rule71: model 72.0% vs PinVF 45.9% = 26.1% gap > 8%",
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: DET@TOR status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
       "status": "Rejected",
-      "lineupStatus": "confirmed"
+      "lineupStatus": "\u2014"
     },
     {
       "game": "DET@TOR",
       "market": "ML_Home",
       "side": "ML_Home",
       "ticker": "KXMLBGAME-26SEP161507DETTOR-TOR",
-      "modelProb": "26.74%",
-      "execPrice": "54.0\u00a2",
-      "rawEdge": "-27.26%",
-      "calEdge": "-6.95%",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: DET@TOR status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
+      "status": "Rejected",
+      "lineupStatus": "\u2014"
+    },
+    {
+      "game": "DET@TOR",
+      "market": "Game_Total",
+      "side": "Game_Total",
+      "ticker": "KXMLBTOTAL-26SEP161507DETTOR-10",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: DET@TOR status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
+      "status": "Rejected",
+      "lineupStatus": "\u2014"
+    },
+    {
+      "game": "DET@TOR",
+      "market": "RL_Away",
+      "side": "RL_Away",
+      "ticker": null,
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: DET@TOR status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
+      "status": "Rejected",
+      "lineupStatus": "\u2014"
+    },
+    {
+      "game": "DET@TOR",
+      "market": "RL_Home",
+      "side": "RL_Home",
+      "ticker": "KXMLBSPREAD-26SEP161507DETTOR-TOR2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: DET@TOR status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
+      "status": "Rejected",
+      "lineupStatus": "\u2014"
+    },
+    {
+      "game": "LAD@CIN",
+      "market": "F5_ML_Home",
+      "side": "F5_ML_Home",
+      "ticker": "KXMLBF5-26SEP161840LADCIN-CIN",
+      "modelProb": "15.68%",
+      "execPrice": "26.0\u00a2",
+      "rawEdge": "-10.32%",
+      "calEdge": "-2.63%",
       "conf": "\u2014",
       "betSize": null,
-      "maxBetPrice": "21.63\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
-      "reasonCodes": [],
-      "gatesFired": [
-        "Rule71: model 26.7% vs PinVF 54.1% = 27.4% gap > 8%"
+      "maxBetPrice": "11.07\u00a2 or better",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
       ],
-      "rejectionReason": "Rule71: model 26.7% vs PinVF 54.1% = 27.4% gap > 8%",
+      "gatesFired": [],
+      "rejectionReason": "edge -2.976% below threshold",
       "status": "Rejected",
       "lineupStatus": "confirmed"
     },
@@ -3791,14 +3727,56 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "30.13\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "EXECUTABLE_EDGE_BELOW_THRESHOLD"
       ],
       "gatesFired": [],
       "rejectionReason": "edge -2.344% below 1.0% floor",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "LAD@CIN",
+      "market": "ML_Away",
+      "side": "ML_Away",
+      "ticker": "KXMLBGAME-26SEP161840LADCIN-LAD",
+      "modelProb": "72.0%",
+      "execPrice": "67.0\u00a2",
+      "rawEdge": "+5.00%",
+      "calEdge": "+1.27%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "66.52\u00a2 or better",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+      ],
+      "gatesFired": [],
+      "rejectionReason": "edge 0.88% below 1.0% floor",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "LAD@CIN",
+      "market": "ML_Home",
+      "side": "ML_Home",
+      "ticker": "KXMLBGAME-26SEP161840LADCIN-CIN",
+      "modelProb": "17.21%",
+      "execPrice": "34.0\u00a2",
+      "rawEdge": "-16.79%",
+      "calEdge": "-4.28%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "12.53\u00a2 or better",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [],
+      "gatesFired": [
+        "Rule71: model 17.2% vs PinVF 34.3% = 17.0% gap > 8%"
+      ],
+      "rejectionReason": "Rule71: model 17.2% vs PinVF 34.3% = 17.0% gap > 8%",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
     },
     {
       "game": "ATH@TB",
@@ -3812,7 +3790,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [],
       "gatesFired": [
         "Rule24"
@@ -3833,7 +3811,7 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "47.67\u00a2 or better",
-      "snapshotTs": "2026-09-16T19:00:17Z",
+      "snapshotTs": "2026-09-16T19:22:42Z",
       "reasonCodes": [
         "EXECUTABLE_EDGE_BELOW_THRESHOLD"
       ],
@@ -3841,18 +3819,40 @@
       "rejectionReason": "edge 0.915% below 1.0% floor",
       "status": "Rejected",
       "lineupStatus": "missing"
+    },
+    {
+      "game": "MIL@PIT",
+      "market": "TT_Home_Over",
+      "side": "TT_Home_Over",
+      "ticker": "KXMLBTEAMTOTAL-26SEP161840MILPIT-PIT4",
+      "modelProb": "39.97%",
+      "execPrice": "46.0\u00a2",
+      "rawEdge": "-6.03%",
+      "calEdge": "-1.54%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "34.47\u00a2 or better",
+      "snapshotTs": "2026-09-16T19:22:42Z",
+      "reasonCodes": [
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+      ],
+      "gatesFired": [],
+      "rejectionReason": "edge -1.981% below 1.0% floor",
+      "status": "Rejected",
+      "lineupStatus": "missing"
     }
   ],
   "liveGameBlockedGames": [
     "CWS@CLE",
     "SF@STL",
-    "NYY@MIN"
+    "NYY@MIN",
+    "DET@TOR"
   ],
   "summary": {
-    "realMoneyCount": 1,
-    "priceMovedCount": 14,
-    "paperOnlyCount": 109,
-    "rejectedBlockedCount": 41,
-    "liveGameBlockedCount": 3
+    "realMoneyCount": 2,
+    "priceMovedCount": 13,
+    "paperOnlyCount": 99,
+    "rejectedBlockedCount": 51,
+    "liveGameBlockedCount": 4
   }
 }

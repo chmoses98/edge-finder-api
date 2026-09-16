@@ -1293,7 +1293,13 @@ def _inherit_lifecycle_if_not_supplied(record, existing):
     merged = dict(record)
     if _has_canonical_outcome(existing) or record.get("result") is None:
         for field in _ALWAYS_PRESERVE_FIELDS:
-            merged[field] = existing.get(field)
+            # Mirror key presence, exactly as _inherit_lifecycle_fields does
+            # and for the same reason -- see the comment there. Assigning
+            # None for a field the stored row does not carry (clvConvention/
+            # clvUnit on a never-CLV-scored row) would add a key and make an
+            # otherwise-unchanged re-ingest rewrite the row.
+            if field in existing:
+                merged[field] = existing[field]
     for field in _PRESERVE_IF_NOT_SUPPLIED_FIELDS:
         if merged.get(field) is None:
             merged[field] = existing.get(field)

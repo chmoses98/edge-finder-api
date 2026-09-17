@@ -141,3 +141,20 @@ def test_reconciler_script_is_the_only_settlement_entry_point_used():
     a grading script of its own."""
     source = _source()
     assert "scripts/edgelab/reconcile_settlement_catchup.py" in source
+
+
+def test_commit_scope_excludes_partitions_owned_by_the_capture_workflow():
+    """
+    data/edgelab/markets/ and data/edgelab/observations/ belong to
+    "EdgeLab Market Capture", which is NOT in this job's concurrency
+    group and gzips finalized partitions. git_data_commit.py cannot
+    prove a .jsonl.gz conflict is a pure append, so including them would
+    let a benign concurrent capture fail this commit closed and discard
+    the settlement work with it.
+    """
+    source = _source()
+    commit_block = source.split("FILES=(", 1)[1].split(")", 1)[0]
+    assert '"data/edgelab/bets/bets.jsonl"' in commit_block
+    assert '"data/edgelab/settlements/"' in commit_block
+    assert '"data/edgelab/markets/"' not in commit_block
+    assert '"data/edgelab/observations/"' not in commit_block

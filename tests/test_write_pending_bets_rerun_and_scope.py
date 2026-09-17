@@ -355,7 +355,32 @@ class TestChangedFileScope:
              # never the production risk/execution/bet-logging pipeline
              # this test guards -- excluded, same pattern as every prior
              # addition.
-             ":!.github/workflows/research-sharp-market-probe.yml"],
+             ":!.github/workflows/research-sharp-market-probe.yml",
+             # Automatic Settlement Catch-Up milestone
+             # (docs/SETTLEMENT_RECONCILIATION.md):
+             # .github/workflows/edgelab-settlement-reconcile.yml is a
+             # brand-new, wholly-additive workflow that reconciles wagers
+             # reaching the canonical EdgeLab ledger after the nightly
+             # postgame pass. It writes exclusively under data/edgelab/
+             # (bets.jsonl, settlements/, games/, research_runs/, reports,
+             # and its own operational_health receipts) via the SAME
+             # canonical settler edgelab-postgame.yml already calls, and
+             # contains no grading logic of its own -- never the production
+             # risk/execution/bet-logging pipeline this test guards --
+             # excluded, same pattern as every prior addition above.
+             ":!.github/workflows/edgelab-settlement-reconcile.yml",
+             # Single-Game Fetch milestone (docs/SINGLE_GAME_FETCH.md):
+             # .github/workflows/fetch-single-game.yml is a brand-new,
+             # manual workflow_dispatch-only workflow that writes
+             # exclusively under data/single_game/ plus an additive
+             # timestamped complete-universe capture in
+             # data/kalshi_registry_snapshots/. It never writes
+             # data/slate.json, bets.json, marketLedger or risk_gate
+             # output, and computes no probability, edge or recommendation
+             # -- never the production risk/execution/bet-logging pipeline
+             # this test guards -- excluded, same pattern as every prior
+             # addition above.
+             ":!.github/workflows/fetch-single-game.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

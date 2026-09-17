@@ -1,0 +1,1145 @@
+{
+  "controlModelId": "CTRL-7252463d722626e6",
+  "coverage": {
+    "marketLineArchive": {
+      "dates": 48,
+      "firstDate": "2026-08-01",
+      "lastDate": "2026-09-17",
+      "status": "LOADED",
+      "teamGameLines": 1001
+    },
+    "meetsMinimumExpectedSample": true,
+    "minimumExpected": 10000,
+    "perSeason": {
+      "2022": {
+        "games": 2137,
+        "teamGames": 4262,
+        "uniqueTeams": 30
+      },
+      "2023": {
+        "games": 2135,
+        "teamGames": 4274,
+        "uniqueTeams": 30
+      },
+      "2024": {
+        "games": 2139,
+        "teamGames": 4264,
+        "uniqueTeams": 30
+      },
+      "2025": {
+        "games": 2137,
+        "teamGames": 4268,
+        "uniqueTeams": 30
+      },
+      "2026": {
+        "games": 1710,
+        "teamGames": 3410,
+        "uniqueTeams": 30
+      }
+    },
+    "totalTeamGames": 20478
+  },
+  "disposition": "RESEARCH_CANDIDATE",
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "experimentId": "MLB-RSCH-0036",
+  "experimentReportId": "RPT-fd7a7ba5e4ea93a1",
+  "finding": "DESCRIPTIVE_ONLY",
+  "formWindows": [
+    5,
+    7,
+    10
+  ],
+  "frozenCoefficients": {
+    "consistency": {
+      "formEwma_10": -0.681791,
+      "formEwma_5": -0.073444,
+      "formEwma_7": 0.70219,
+      "formGe4Rate_10": -0.566798,
+      "formGe4Rate_5": 0.247935,
+      "formGe4Rate_7": 0.329822,
+      "formGe5Rate_10": 0.960463,
+      "formGe5Rate_5": -0.104951,
+      "formGe5Rate_7": -0.533235,
+      "formMeanMinusTrimmed_10": -0.006973,
+      "formMeanMinusTrimmed_5": -0.057903,
+      "formMeanMinusTrimmed_7": -0.065343,
+      "formMedian_10": 0.015022,
+      "formMedian_5": 0.059306,
+      "formMedian_7": -0.009967,
+      "formTopGameShare_10": 1.55434,
+      "formTopGameShare_5": -0.225631,
+      "formTopGameShare_7": -0.857443,
+      "formTrimmedMean_10": 0.425508,
+      "formTrimmedMean_5": -0.202256,
+      "formTrimmedMean_7": -0.230723,
+      "intercept": 0.132972,
+      "isHome": 0.006356,
+      "opponentSeasonToDateRunsAllowedPerGame": 0.516867,
+      "seasonToDateRunsPerGame": 0.427116
+    },
+    "control": {
+      "intercept": 0.027936,
+      "isHome": 0.008076,
+      "opponentSeasonToDateRunsAllowedPerGame": 0.528663,
+      "seasonToDateRunsPerGame": 0.469179
+    },
+    "meanOnly": {
+      "formMean_10": 0.07719,
+      "formMean_5": -0.067104,
+      "formMean_7": 0.029993,
+      "intercept": 0.025467,
+      "isHome": 0.006252,
+      "opponentSeasonToDateRunsAllowedPerGame": 0.530137,
+      "seasonToDateRunsPerGame": 0.428089
+    }
+  },
+  "frozenProbabilityCoefficients": {
+    "consistency": {
+      "formEwma_10": -0.198338,
+      "formEwma_5": -0.094276,
+      "formEwma_7": 0.299938,
+      "formGe4Rate_10": -0.021278,
+      "formGe4Rate_5": -0.02808,
+      "formGe4Rate_7": 0.06696,
+      "formGe5Rate_10": 0.114248,
+      "formGe5Rate_5": -0.037983,
+      "formGe5Rate_7": -0.092187,
+      "formMeanMinusTrimmed_10": 0.055531,
+      "formMeanMinusTrimmed_5": 0.011312,
+      "formMeanMinusTrimmed_7": -0.106505,
+      "formMedian_10": 0.007114,
+      "formMedian_5": 0.003586,
+      "formMedian_7": -0.007847,
+      "formTopGameShare_10": 0.105387,
+      "formTopGameShare_5": -0.017995,
+      "formTopGameShare_7": -0.014962,
+      "formTrimmedMean_10": 0.105156,
+      "formTrimmedMean_5": 0.015269,
+      "formTrimmedMean_7": -0.126725,
+      "intercept": -0.059934,
+      "isHome": 0.018469,
+      "opponentSeasonToDateRunsAllowedPerGame": 0.071366,
+      "seasonToDateRunsPerGame": 0.059805
+    },
+    "control": {
+      "intercept": -0.054111,
+      "isHome": 0.018526,
+      "opponentSeasonToDateRunsAllowedPerGame": 0.073087,
+      "seasonToDateRunsPerGame": 0.062341
+    },
+    "meanOnly": {
+      "formMean_10": 0.007875,
+      "formMean_5": -0.00539,
+      "formMean_7": -0.000112,
+      "intercept": -0.055109,
+      "isHome": 0.018308,
+      "opponentSeasonToDateRunsAllowedPerGame": 0.073399,
+      "seasonToDateRunsPerGame": 0.059886
+    }
+  },
+  "generatedAt": "2026-09-17T18:00:00Z",
+  "marketRelativeArm": {
+    "development": {
+      "coverageRate": 0.0,
+      "predictors": {
+        "formTtMeanMargin_10": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtMeanMargin_5": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtMeanMargin_7": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtMedianMargin_10": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtMedianMargin_5": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtMedianMargin_7": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtOverRate_10": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtOverRate_5": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtOverRate_7": {
+          "insufficientSample": true,
+          "n": 0
+        }
+      },
+      "rowsTotal": 12800,
+      "rowsWithAnyMarketRelativeFeature": 0
+    },
+    "holdout": {
+      "coverageRate": 0.19,
+      "predictors": {
+        "formTtMeanMargin_10": {
+          "ci": {
+            "high": 0.0958,
+            "level": 0.95,
+            "low": -0.002,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 648,
+          "spearman": 0.055586842457995514
+        },
+        "formTtMeanMargin_5": {
+          "ci": {
+            "high": 0.0809,
+            "level": 0.95,
+            "low": -0.0407,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 648,
+          "spearman": 0.026445951751831565
+        },
+        "formTtMeanMargin_7": {
+          "ci": {
+            "high": 0.0948,
+            "level": 0.95,
+            "low": -0.0242,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 648,
+          "spearman": 0.042368743839308165
+        },
+        "formTtMedianMargin_10": {
+          "ci": {
+            "high": 0.0927,
+            "level": 0.95,
+            "low": -0.026,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 648,
+          "spearman": 0.03908924733306162
+        },
+        "formTtMedianMargin_5": {
+          "ci": {
+            "high": 0.0767,
+            "level": 0.95,
+            "low": -0.0668,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 648,
+          "spearman": 0.011618600733909473
+        },
+        "formTtMedianMargin_7": {
+          "ci": {
+            "high": 0.097,
+            "level": 0.95,
+            "low": -0.0292,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 648,
+          "spearman": 0.04081118778052114
+        },
+        "formTtOverRate_10": {
+          "ci": {
+            "high": 0.0423,
+            "level": 0.95,
+            "low": -0.0683,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 648,
+          "spearman": -0.009531248370433799
+        },
+        "formTtOverRate_5": {
+          "ci": {
+            "high": 0.0682,
+            "level": 0.95,
+            "low": -0.0778,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 648,
+          "spearman": -0.0005746619978558964
+        },
+        "formTtOverRate_7": {
+          "ci": {
+            "high": 0.0743,
+            "level": 0.95,
+            "low": -0.0614,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 648,
+          "spearman": 0.009819651317393449
+        }
+      },
+      "rowsTotal": 3410,
+      "rowsWithAnyMarketRelativeFeature": 648
+    },
+    "validation": {
+      "coverageRate": 0.0,
+      "predictors": {
+        "formTtMeanMargin_10": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtMeanMargin_5": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtMeanMargin_7": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtMedianMargin_10": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtMedianMargin_5": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtMedianMargin_7": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtOverRate_10": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtOverRate_5": {
+          "insufficientSample": true,
+          "n": 0
+        },
+        "formTtOverRate_7": {
+          "insufficientSample": true,
+          "n": 0
+        }
+      },
+      "rowsTotal": 4268,
+      "rowsWithAnyMarketRelativeFeature": 0
+    }
+  },
+  "methodologicalLimitations": [
+    "A team's first 20 completed games of each season are excluded -- no reliable baseline or 10-game window exists yet; never approximated.",
+    "The frozen regressions are simple closed-form OLS with no regularization, interactions or nonlinear terms -- a non-tuned comparator, not a production-grade scoring model.",
+    "Starting-pitcher identity/quality, park and weather are NOT controlled for. This experiment measures what a form statistic adds over a season/opponent baseline only.",
+    "The probability arm uses a LINEAR probability model, which can predict outside [0,1]; predictions are clipped to [0.01, 0.99] purely for scoring safety.",
+    "H7's market-relative arm is bounded by this repository's Kalshi observation archive (48 archived dates, 1001 team-game lines, 2026-08-01..2026-09-17). That is a few weeks, not a few seasons: treat every H7 number as descriptive coverage evidence, NOT as a validated predictive result."
+  ],
+  "persistence": {
+    "development": {
+      "n": 12800,
+      "predictors": {
+        "formEwma_10": {
+          "ci": {
+            "high": 0.0835,
+            "level": 0.95,
+            "low": 0.0317,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.058852784883363686
+        },
+        "formEwma_5": {
+          "ci": {
+            "high": 0.0696,
+            "level": 0.95,
+            "low": 0.0255,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.04837606439444036
+        },
+        "formEwma_7": {
+          "ci": {
+            "high": 0.0771,
+            "level": 0.95,
+            "low": 0.0285,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.053673863262632425
+        },
+        "formGe4Rate_10": {
+          "ci": {
+            "high": 0.078,
+            "level": 0.95,
+            "low": 0.0287,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.05454890635997693
+        },
+        "formGe4Rate_5": {
+          "ci": {
+            "high": 0.0569,
+            "level": 0.95,
+            "low": 0.0127,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.03613572217794987
+        },
+        "formGe4Rate_7": {
+          "ci": {
+            "high": 0.0668,
+            "level": 0.95,
+            "low": 0.0175,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.04321999853013374
+        },
+        "formGe5Rate_10": {
+          "ci": {
+            "high": 0.0818,
+            "level": 0.95,
+            "low": 0.0313,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.057122247417076145
+        },
+        "formGe5Rate_5": {
+          "ci": {
+            "high": 0.0523,
+            "level": 0.95,
+            "low": 0.0049,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.02981866926440334
+        },
+        "formGe5Rate_7": {
+          "ci": {
+            "high": 0.0658,
+            "level": 0.95,
+            "low": 0.0156,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.041155434425701215
+        },
+        "formMeanMinusTrimmed_10": {
+          "ci": {
+            "high": 0.0122,
+            "level": 0.95,
+            "low": -0.0299,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": -0.009427243963778382
+        },
+        "formMeanMinusTrimmed_5": {
+          "ci": {
+            "high": 0.0157,
+            "level": 0.95,
+            "low": -0.0166,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": -0.00038791295204648973
+        },
+        "formMeanMinusTrimmed_7": {
+          "ci": {
+            "high": 0.0188,
+            "level": 0.95,
+            "low": -0.0145,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.0013702409486980641
+        },
+        "formMedian_10": {
+          "ci": {
+            "high": 0.0803,
+            "level": 0.95,
+            "low": 0.032,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.057141321796481126
+        },
+        "formMedian_5": {
+          "ci": {
+            "high": 0.0584,
+            "level": 0.95,
+            "low": 0.0102,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.03486249998631066
+        },
+        "formMedian_7": {
+          "ci": {
+            "high": 0.066,
+            "level": 0.95,
+            "low": 0.0124,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.04023085442860796
+        },
+        "formTopGameShare_10": {
+          "ci": {
+            "high": -0.0045,
+            "level": 0.95,
+            "low": -0.049,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": -0.02765999332068285
+        },
+        "formTopGameShare_5": {
+          "ci": {
+            "high": 0.0057,
+            "level": 0.95,
+            "low": -0.0339,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": -0.01454493484430391
+        },
+        "formTopGameShare_7": {
+          "ci": {
+            "high": 0.0053,
+            "level": 0.95,
+            "low": -0.0341,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": -0.015304372200624274
+        },
+        "formTrimmedMean_10": {
+          "ci": {
+            "high": 0.0861,
+            "level": 0.95,
+            "low": 0.0309,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.05978509010340737
+        },
+        "formTrimmedMean_5": {
+          "ci": {
+            "high": 0.0587,
+            "level": 0.95,
+            "low": 0.0096,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.03497911027430464
+        },
+        "formTrimmedMean_7": {
+          "ci": {
+            "high": 0.0729,
+            "level": 0.95,
+            "low": 0.0198,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 12800,
+          "spearman": 0.047207880225824235
+        }
+      },
+      "uniqueGames": 6411,
+      "uniqueTeams": 30
+    },
+    "holdout": {
+      "n": 3410,
+      "predictors": {
+        "formEwma_10": {
+          "ci": {
+            "high": 0.0536,
+            "level": 0.95,
+            "low": -0.0108,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.022368686386677984
+        },
+        "formEwma_5": {
+          "ci": {
+            "high": 0.0352,
+            "level": 0.95,
+            "low": -0.0277,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.004324092846778006
+        },
+        "formEwma_7": {
+          "ci": {
+            "high": 0.0416,
+            "level": 0.95,
+            "low": -0.0223,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.01035883589454479
+        },
+        "formGe4Rate_10": {
+          "ci": {
+            "high": 0.0624,
+            "level": 0.95,
+            "low": -0.0079,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.0286143789040178
+        },
+        "formGe4Rate_5": {
+          "ci": {
+            "high": 0.0213,
+            "level": 0.95,
+            "low": -0.0372,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": -0.007321283887489186
+        },
+        "formGe4Rate_7": {
+          "ci": {
+            "high": 0.0483,
+            "level": 0.95,
+            "low": -0.024,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.013359389215718526
+        },
+        "formGe5Rate_10": {
+          "ci": {
+            "high": 0.0598,
+            "level": 0.95,
+            "low": -0.004,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.029428907487902327
+        },
+        "formGe5Rate_5": {
+          "ci": {
+            "high": 0.0298,
+            "level": 0.95,
+            "low": -0.0298,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.0008330333955496576
+        },
+        "formGe5Rate_7": {
+          "ci": {
+            "high": 0.0436,
+            "level": 0.95,
+            "low": -0.0155,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.014816504204137111
+        },
+        "formMeanMinusTrimmed_10": {
+          "ci": {
+            "high": 0.0276,
+            "level": 0.95,
+            "low": -0.035,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": -0.004635683273801971
+        },
+        "formMeanMinusTrimmed_5": {
+          "ci": {
+            "high": 0.0596,
+            "level": 0.95,
+            "low": 0.0063,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.03234254661354109
+        },
+        "formMeanMinusTrimmed_7": {
+          "ci": {
+            "high": 0.0532,
+            "level": 0.95,
+            "low": -0.0008,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.025450841048702506
+        },
+        "formMedian_10": {
+          "ci": {
+            "high": 0.0529,
+            "level": 0.95,
+            "low": -0.0132,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.02196424310850167
+        },
+        "formMedian_5": {
+          "ci": {
+            "high": 0.0255,
+            "level": 0.95,
+            "low": -0.0344,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": -0.004267593823376566
+        },
+        "formMedian_7": {
+          "ci": {
+            "high": 0.0382,
+            "level": 0.95,
+            "low": -0.018,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.010741341996991822
+        },
+        "formTopGameShare_10": {
+          "ci": {
+            "high": 0.0347,
+            "level": 0.95,
+            "low": -0.0269,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.0026853455512585644
+        },
+        "formTopGameShare_5": {
+          "ci": {
+            "high": 0.0575,
+            "level": 0.95,
+            "low": -0.0025,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.027481992558150346
+        },
+        "formTopGameShare_7": {
+          "ci": {
+            "high": 0.0553,
+            "level": 0.95,
+            "low": -0.0021,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.02612703599999027
+        },
+        "formTrimmedMean_10": {
+          "ci": {
+            "high": 0.0589,
+            "level": 0.95,
+            "low": 0.0013,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.03275152987544326
+        },
+        "formTrimmedMean_5": {
+          "ci": {
+            "high": 0.0207,
+            "level": 0.95,
+            "low": -0.0351,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": -0.006747024023814906
+        },
+        "formTrimmedMean_7": {
+          "ci": {
+            "high": 0.0413,
+            "level": 0.95,
+            "low": -0.0191,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 3410,
+          "spearman": 0.012054107044648927
+        }
+      },
+      "uniqueGames": 1710,
+      "uniqueTeams": 30
+    },
+    "validation": {
+      "n": 4268,
+      "predictors": {
+        "formEwma_10": {
+          "ci": {
+            "high": 0.0791,
+            "level": 0.95,
+            "low": 0.0165,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.05077632419261926
+        },
+        "formEwma_5": {
+          "ci": {
+            "high": 0.0925,
+            "level": 0.95,
+            "low": 0.0244,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.06043406852898175
+        },
+        "formEwma_7": {
+          "ci": {
+            "high": 0.0889,
+            "level": 0.95,
+            "low": 0.0213,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.05855492232926654
+        },
+        "formGe4Rate_10": {
+          "ci": {
+            "high": 0.0637,
+            "level": 0.95,
+            "low": -0.0028,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.033086370274432994
+        },
+        "formGe4Rate_5": {
+          "ci": {
+            "high": 0.077,
+            "level": 0.95,
+            "low": 0.008,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.04409835966945219
+        },
+        "formGe4Rate_7": {
+          "ci": {
+            "high": 0.0718,
+            "level": 0.95,
+            "low": -0.003,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.037055318760458776
+        },
+        "formGe5Rate_10": {
+          "ci": {
+            "high": 0.0514,
+            "level": 0.95,
+            "low": -0.007,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.024837706159565865
+        },
+        "formGe5Rate_5": {
+          "ci": {
+            "high": 0.0744,
+            "level": 0.95,
+            "low": 0.0124,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.04436555816092642
+        },
+        "formGe5Rate_7": {
+          "ci": {
+            "high": 0.065,
+            "level": 0.95,
+            "low": 0.0033,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.036043681968057455
+        },
+        "formMeanMinusTrimmed_10": {
+          "ci": {
+            "high": 0.0319,
+            "level": 0.95,
+            "low": -0.0126,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.009676206176600767
+        },
+        "formMeanMinusTrimmed_5": {
+          "ci": {
+            "high": 0.0582,
+            "level": 0.95,
+            "low": -0.0172,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.021011505757760632
+        },
+        "formMeanMinusTrimmed_7": {
+          "ci": {
+            "high": 0.0585,
+            "level": 0.95,
+            "low": 0.0051,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.03219258803052653
+        },
+        "formMedian_10": {
+          "ci": {
+            "high": 0.0569,
+            "level": 0.95,
+            "low": -0.0016,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.029806979214144408
+        },
+        "formMedian_5": {
+          "ci": {
+            "high": 0.0779,
+            "level": 0.95,
+            "low": 0.0091,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.044950830747096576
+        },
+        "formMedian_7": {
+          "ci": {
+            "high": 0.064,
+            "level": 0.95,
+            "low": -0.0037,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.03126536579653832
+        },
+        "formTopGameShare_10": {
+          "ci": {
+            "high": 0.0146,
+            "level": 0.95,
+            "low": -0.0293,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": -0.008291529951864595
+        },
+        "formTopGameShare_5": {
+          "ci": {
+            "high": 0.0278,
+            "level": 0.95,
+            "low": -0.0331,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": -0.0038385853116503564
+        },
+        "formTopGameShare_7": {
+          "ci": {
+            "high": 0.0368,
+            "level": 0.95,
+            "low": -0.0133,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.0102834945962663
+        },
+        "formTrimmedMean_10": {
+          "ci": {
+            "high": 0.062,
+            "level": 0.95,
+            "low": 0.0009,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.034655142697159164
+        },
+        "formTrimmedMean_5": {
+          "ci": {
+            "high": 0.0806,
+            "level": 0.95,
+            "low": 0.0111,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.048071925914439886
+        },
+        "formTrimmedMean_7": {
+          "ci": {
+            "high": 0.0721,
+            "level": 0.95,
+            "low": 0.0054,
+            "method": "GAME_CLUSTERED_BOOTSTRAP"
+          },
+          "n": 4268,
+          "spearman": 0.04096760076571276
+        }
+      },
+      "uniqueGames": 2137,
+      "uniqueTeams": 30
+    }
+  },
+  "productionBehaviorChanged": false,
+  "productionChangeProposed": false,
+  "runsPrediction": {
+    "development": {
+      "consistency": {
+        "mae": 2.4303,
+        "meanPoissonDeviance": 2.2442,
+        "n": 12800,
+        "rmse": 3.1042,
+        "rowsScored": 12800
+      },
+      "control": {
+        "mae": 2.4325,
+        "meanPoissonDeviance": 2.2479,
+        "n": 12800,
+        "rmse": 3.107,
+        "rowsScored": 12800
+      },
+      "meanOnly": {
+        "mae": 2.432,
+        "meanPoissonDeviance": 2.2471,
+        "n": 12800,
+        "rmse": 3.1063,
+        "rowsScored": 12800
+      },
+      "n": 12800
+    },
+    "holdout": {
+      "consistency": {
+        "mae": 2.514,
+        "meanPoissonDeviance": 2.3497,
+        "n": 3410,
+        "rmse": 3.2259,
+        "rowsScored": 3410
+      },
+      "control": {
+        "mae": 2.5169,
+        "meanPoissonDeviance": 2.3486,
+        "n": 3410,
+        "rmse": 3.2252,
+        "rowsScored": 3410
+      },
+      "meanOnly": {
+        "mae": 2.515,
+        "meanPoissonDeviance": 2.347,
+        "n": 3410,
+        "rmse": 3.2241,
+        "rowsScored": 3410
+      },
+      "n": 3410
+    },
+    "validation": {
+      "consistency": {
+        "mae": 2.5019,
+        "meanPoissonDeviance": 2.3681,
+        "n": 4268,
+        "rmse": 3.2216,
+        "rowsScored": 4268
+      },
+      "control": {
+        "mae": 2.5011,
+        "meanPoissonDeviance": 2.3642,
+        "n": 4268,
+        "rmse": 3.219,
+        "rowsScored": 4268
+      },
+      "meanOnly": {
+        "mae": 2.5036,
+        "meanPoissonDeviance": 2.3678,
+        "n": 4268,
+        "rmse": 3.2213,
+        "rowsScored": 4268
+      },
+      "n": 4268
+    }
+  },
+  "scoringThresholds": [
+    3,
+    4,
+    5,
+    6
+  ],
+  "thresholdProbabilityPrediction": {
+    "development": {
+      "alwaysBaseRate": {
+        "brier": 0.247203,
+        "logLoss": 0.687542,
+        "rowsScored": 12800
+      },
+      "baseRate": 0.5529,
+      "consistency": {
+        "brier": 0.243221,
+        "logLoss": 0.679365,
+        "rowsScored": 12800
+      },
+      "control": {
+        "brier": 0.243632,
+        "logLoss": 0.680231,
+        "rowsScored": 12800
+      },
+      "meanOnly": {
+        "brier": 0.243597,
+        "logLoss": 0.68015,
+        "rowsScored": 12800
+      },
+      "n": 12800,
+      "outcome": "scored4Plus"
+    },
+    "holdout": {
+      "alwaysBaseRate": {
+        "brier": 0.247426,
+        "logLoss": 0.687991,
+        "rowsScored": 3410
+      },
+      "baseRate": 0.5507,
+      "consistency": {
+        "brier": 0.246493,
+        "logLoss": 0.686078,
+        "rowsScored": 3410
+      },
+      "control": {
+        "brier": 0.246316,
+        "logLoss": 0.685714,
+        "rowsScored": 3410
+      },
+      "meanOnly": {
+        "brier": 0.24628,
+        "logLoss": 0.685642,
+        "rowsScored": 3410
+      },
+      "n": 3410,
+      "outcome": "scored4Plus"
+    },
+    "validation": {
+      "alwaysBaseRate": {
+        "brier": 0.247245,
+        "logLoss": 0.687628,
+        "rowsScored": 4268
+      },
+      "baseRate": 0.5525,
+      "consistency": {
+        "brier": 0.244208,
+        "logLoss": 0.681524,
+        "rowsScored": 4268
+      },
+      "control": {
+        "brier": 0.243794,
+        "logLoss": 0.680633,
+        "rowsScored": 4268
+      },
+      "meanOnly": {
+        "brier": 0.244029,
+        "logLoss": 0.681109,
+        "rowsScored": 4268
+      },
+      "n": 4268,
+      "outcome": "scored4Plus"
+    }
+  }
+}

@@ -253,6 +253,15 @@ def write_receipt(receipt, receipt_out):
     # Rolling status file: the small, stable thing a human (or a fresh
     # ChatGPT session asking "is yesterday finished?") can read without
     # parsing a full receipt.
+    #
+    # A dry run deliberately does NOT touch it. A dry run computes what
+    # WOULD happen; letting it overwrite the record of what actually did
+    # happen would make the one file people trust for "is yesterday
+    # finished?" describe a run that wrote nothing. The receipt above is
+    # still written, which is the whole point of a dry run.
+    if receipt.get("dryRun"):
+        return
+
     status = {
         "schemaVersion": "1",
         "lastRunAt": receipt["completedAt"],
@@ -281,7 +290,9 @@ def main():
     parser.add_argument("--lookback-days", type=int, default=recon.DEFAULT_LOOKBACK_DAYS,
                         help=f"Sweep window for still-pending wagers (default {recon.DEFAULT_LOOKBACK_DAYS}; 0 disables)")
     parser.add_argument("--max-dates", type=int, default=recon.MAX_DATES_PER_RUN)
-    parser.add_argument("--dry-run", action="store_true", help="Compute everything, write nothing")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Compute everything; write only the receipt -- never settlements, "
+                             "the bet ledger, a daily report, or the rolling status file")
     parser.add_argument("--skip-ingest", action="store_true",
                         help="Skip the market-observation ingest/identity-repair steps (settlement only)")
     parser.add_argument("--skip-report", action="store_true", help="Never regenerate daily reports")

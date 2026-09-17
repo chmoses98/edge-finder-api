@@ -160,7 +160,15 @@ for game in slate.get('games', []):
         # total. Context ONLY -- offenseBaselineRaw/Bayes/OppAdj below
         # are computed from exactly the same inputs as before.
         team_form = offense_form_teams.get(abbr)
-        stats['offenseForm'] = team_form
+        if team_form:
+            # The full per-game log stays in data/team_offense_form.json --
+            # attaching it to every team block would repeat ~30 rows per
+            # team inside data/slate.json for no added information: each
+            # window profile already carries its own `scores` vector,
+            # which is the consistency evidence a handicapper reads.
+            stats['offenseForm'] = {k: v for k, v in team_form.items() if k != 'gameLog'}
+        else:
+            stats['offenseForm'] = None
         if team_form:
             stats['offenseFormLine']  = (team_form.get('formLines') or {}).get('L7')
             stats['offenseFormLabel'] = (team_form.get('formLabel') or {}).get('label')

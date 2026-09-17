@@ -421,3 +421,28 @@ def test_dry_run_writes_nothing(sandbox, final_game_feed):
     assert result["counts"]["betsSettled"] >= 0
     assert _read_bets()["bet-dry"]["result"] is None
     assert not os.path.exists(storage.partition_path("settlements", DATE))
+
+
+def test_a_dry_run_never_overwrites_the_rolling_status_file(sandbox, final_game_feed):
+    """
+    settlement_reconciliation_status.json is what a human (or a fresh
+    chat asking "is yesterday finished?") reads. A dry run computes what
+    WOULD happen; it must never rewrite the record of what actually did.
+    """
+    _seed(bets=[_bet("bet-1")])
+    live = reconcile.reconcile_date(DATE, skip_ingest=True, skip_report=True)
+    reconcile.write_receipt(
+        recon.build_receipt(dates=[DATE], per_date=[live], trigger="SCHEDULED_SWEEP", dry_run=False,
+                            started_at="2026-09-16T01:00:00Z", completed_at="2026-09-16T01:00:05Z"),
+        reconcile.RECEIPT_PATH)
+    real_status = open(reconcile.STATUS_PATH, "rb").read()
+
+    dry = reconcile.reconcile_date(DATE, dry_run=True, skip_ingest=True, skip_report=True)
+    reconcile.write_receipt(
+        recon.build_receipt(dates=[DATE], per_date=[dry], trigger="MANUAL_DISPATCH", dry_run=True,
+                            started_at="2026-09-16T02:00:00Z", completed_at="2026-09-16T02:00:05Z"),
+        reconcile.RECEIPT_PATH)
+
+    assert open(reconcile.STATUS_PATH, "rb").read() == real_status
+    with open(reconcile.RECEIPT_PATH) as f:
+        assert json.load(f)["dryRun"] is True, "the dry run's own receipt IS still written"

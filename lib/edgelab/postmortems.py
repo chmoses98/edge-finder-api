@@ -76,11 +76,15 @@ def compute_canonical_totals(linked_bets):
     lib.edgelab.mlb_schedule). This is never a guess: a bet with neither
     contributes nothing beyond its stake to totalRisked, exactly as
     before. totalReturned/netProfitLoss themselves use
-    lib.edgelab.bets.realized_bet_economics, which already prefers a
-    manually confirmed real receipt over this system's own derived
-    binary WIN/LOSS/PUSH/VOID economics whenever canonical settlement
-    HAS run and the two disagree -- see lib.edgelab.settlement.
-    compare_confirmed_receipt_to_settlement for that separate flag.
+    lib.edgelab.bets.realized_bet_economics, which reports CANONICAL
+    netProfitLoss and nothing else -- the same field the bankroll reads,
+    so this total and the bankroll cannot disagree. A confirmed receipt
+    that contradicts it stays visible as evidence through
+    lib.edgelab.bets.confirmed_receipt_economics/
+    realized_economics_disagreement and settlement's own
+    compare_confirmed_receipt_to_settlement flag; it no longer silently
+    replaces the accounting figure. A bet known ONLY through a receipt
+    has no canonical P/L and so contributes nothing here.
     """
     real = [
         b for b in linked_bets

@@ -862,7 +862,7 @@
         "number",
         "null"
       ],
-      "description": "Manually confirmed REAL net P/L (confirmedReceiptReturn minus stake) corresponding to confirmedReceiptReturn. lib.edgelab.bets.realized_bet_economics() prefers this pair over the derived returnAmount/netProfitLoss whenever it is present; result/status (the objective contract settlement outcome) are never affected either way."
+      "description": "Manually confirmed REAL net P/L (confirmedReceiptReturn minus stake) corresponding to confirmedReceiptReturn. EVIDENCE AND AUDIT METADATA ONLY -- canonical netProfitLoss is the single accounting authority for realized P/L, and every reporting surface (daily reports, postmortems, bankroll, aggregate performance, ROI) reads that canonical field. Read this pair back through lib.edgelab.bets.confirmed_receipt_economics(); it is displayed alongside the canonical figure, with any disagreement surfaced by lib.edgelab.bets.realized_economics_disagreement() and lib.edgelab.settlement.compare_confirmed_receipt_to_settlement, never silently substituted for it. Note the two are not interchangeable: this one is computed against the ALLOCATED stake rather than the cash actually consumed. result/status (the objective contract settlement outcome) are never affected either way."
     },
     "confirmedReceiptSource": {
       "type": [

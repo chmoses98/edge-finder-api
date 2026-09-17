@@ -1538,10 +1538,12 @@ def confirm_realized_return(bet_id, receipt_return, receipt_net_profit_loss, sou
     derived, OBJECTIVE contract-outcome fields (write_placed_bet /
     scripts/edgelab/settle_markets.py), completely untouched by a
     confirmed receipt. Only the separate confirmedReceipt* fields are
-    ever set here; realized_bet_economics() is the one place that reads
-    them back to prefer real receipt economics over the derived ones for
-    reporting/reconciliation. A LOSS can therefore still report a
-    nonzero confirmed gross return -- that is the whole point, not a bug.
+    ever set here; confirmed_receipt_economics() is the one place that
+    reads them back, and it is a DIAGNOSTIC surface -- canonical
+    netProfitLoss remains the accounting authority for realized P/L
+    everywhere (see realized_bet_economics). A LOSS can therefore still
+    report a nonzero confirmed gross return -- that is the whole point,
+    not a bug.
 
     Idempotent: confirming the identical (receipt_return,
     receipt_net_profit_loss, source, note) tuple again is a no-op.
@@ -1602,27 +1604,81 @@ def confirm_realized_return(bet_id, receipt_return, receipt_net_profit_loss, sou
 
 def realized_bet_economics(bet):
     """
-    Pure. Returns (gross_return, net_profit_loss) reflecting this bet's
-    actual realized economics -- preferring a manually confirmed receipt
-    (confirmedReceiptReturn/confirmedReceiptNetProfitLoss, set only via
-    confirm_realized_return above) over the value this system's own
-    binary WIN/LOSS/PUSH/VOID settlement model derived (returnAmount/
-    netProfitLoss). Settlement's own objective result/status fields are
-    never read or affected here -- this function is only ever about the
-    dollar amounts.
+    Pure. Returns (gross_return, net_profit_loss) from the CANONICAL ledger
+    fields, and only those.
 
-    Falls back to the ordinary derived economics (stake + netProfitLoss
-    for a WIN/PUSH/VOID, 0.0 for a LOSS, mirroring
-    lib.edgelab.reports._postmortem_bet_row's existing convention) when
-    no confirmed receipt is present. Returns (None, None) for a bet with
-    neither a confirmed receipt nor a derived netProfitLoss (still
-    pending) -- never a guess.
+    THERE IS ONE ACCOUNTING AUTHORITY FOR REALIZED P/L, AND IT IS
+    `netProfitLoss`. This function used to prefer a manually confirmed
+    receipt (confirmedReceiptNetProfitLoss) whenever one was present, while
+    lib.edgelab.bankroll.compute_bankroll_summary read `netProfitLoss`
+    directly. Both shipped at once, so the same wager could report two
+    different realized P/Ls depending on which surface a reader happened to
+    look at -- reports and postmortems said one number, the bankroll said
+    another, and neither announced the disagreement. A 2026-09-17 audit
+    measured the gap across the 304 settled rows carrying a receipt:
+    +85.76 signed, 173.40 absolute, 237 rows differing by more than a cent.
+
+    A confirmed receipt is EVIDENCE, not the accounting answer, and it is not
+    even the same economic quantity: the schema defines
+    confirmedReceiptNetProfitLoss as `confirmedReceiptReturn - stake`, a
+    hand-computed figure whose basis is the ALLOCATED stake rather than the
+    cash actually consumed -- the very basis
+    docs/KALSHI_FEE_AWARE_EXECUTION_ECONOMICS.md's correction pass rejected.
+    It stays fully visible through confirmed_receipt_economics below and the
+    confirmedReceipt* fields, and settlement's own
+    compare_confirmed_receipt_to_settlement still flags every disagreement.
+    Nothing is hidden; it simply no longer silently outranks the ledger.
+
+    Returns (None, None) when the bet has no canonical netProfitLoss (still
+    pending) -- never a guess, and never a receipt value standing in for one.
     """
-    if bet.get("confirmedReceiptNetProfitLoss") is not None:
-        return bet.get("confirmedReceiptReturn"), bet.get("confirmedReceiptNetProfitLoss")
     net_pl = bet.get("netProfitLoss")
     if net_pl is None:
         return None, None
     stake = bet.get("stake") or 0
     gross_return = round(stake + net_pl, 2) if bet.get("result") in ("WIN", "PUSH", "VOID") else 0.0
     return gross_return, net_pl
+
+
+def confirmed_receipt_economics(bet):
+    """
+    Pure. Returns (receipt_gross_return, receipt_net_profit_loss) exactly as
+    a human confirmed them via confirm_realized_return -- the DIAGNOSTIC
+    counterpart to realized_bet_economics above.
+
+    This is the one sanctioned way to read receipt dollars for display. It is
+    deliberately a separate function from realized_bet_economics so that
+    showing the receipt and ACCOUNTING with it cannot be confused again:
+    callers must ask for the receipt by name.
+
+    (None, None) when this bet carries no confirmed receipt.
+    """
+    if bet.get("confirmedReceiptNetProfitLoss") is None:
+        return None, None
+    return bet.get("confirmedReceiptReturn"), bet.get("confirmedReceiptNetProfitLoss")
+
+
+def realized_economics_disagreement(bet):
+    """
+    Pure. A small, display-ready record of whether this bet's confirmed
+    receipt disagrees with the canonical accounting -- so a surface that
+    shows canonical P/L can also show, in the same place, that a human's
+    receipt says something different and by how much.
+
+    None when there is no receipt, or no canonical netProfitLoss to compare
+    against yet. `agrees` uses the same one-cent tolerance as
+    lib.edgelab.settlement.compare_confirmed_receipt_to_settlement.
+    """
+    receipt = bet.get("confirmedReceiptNetProfitLoss")
+    canonical = bet.get("netProfitLoss")
+    if receipt is None or canonical is None:
+        return None
+    difference = round(receipt - canonical, 4)
+    return {
+        "canonicalNetProfitLoss": canonical,
+        "confirmedReceiptNetProfitLoss": receipt,
+        "confirmedReceiptReturn": bet.get("confirmedReceiptReturn"),
+        "confirmedReceiptSource": bet.get("confirmedReceiptSource"),
+        "difference": difference,
+        "agrees": abs(difference) <= 0.01,
+    }

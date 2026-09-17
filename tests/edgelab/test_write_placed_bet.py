@@ -511,8 +511,16 @@ def test_confirm_realized_return_never_touches_objective_settlement_fields(tmp_p
     assert row["confirmedReceiptSource"] == "MANUAL_POSTMORTEM_RECEIPT"
     assert schema.validate_record("placed_bet", row) == []
 
+    # The receipt is recorded, but it does not become the accounting answer:
+    # realized_bet_economics reports canonical netProfitLoss, the same field
+    # the bankroll reads. The receipt is read back by name instead.
     gross, net = realized_bet_economics(row)
-    assert (gross, net) == (1.45, -3.55)  # confirmed receipt wins over the derived LOSS/-5.0
+    assert (gross, net) == (0.0, -5.0)
+    from lib.edgelab.bets import confirmed_receipt_economics, realized_economics_disagreement
+    assert confirmed_receipt_economics(row) == (1.45, -3.55)
+    disagreement = realized_economics_disagreement(row)
+    assert disagreement["agrees"] is False
+    assert disagreement["difference"] == round(-3.55 - (-5.0), 4)
 
 
 def test_realized_bet_economics_falls_back_to_derived_settlement_when_no_receipt(tmp_path):

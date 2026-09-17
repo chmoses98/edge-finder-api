@@ -226,7 +226,14 @@ def _postmortem_bet_row(bet):
     gross_return, net_pl, economics_source = None, None, None
     if _has_known_economics(bet):
         gross_return, net_pl = bets_lib.realized_bet_economics(bet)
-        economics_source = "CONFIRMED_RECEIPT" if bet.get("confirmedReceiptNetProfitLoss") is not None else "SETTLEMENT"
+        # The dollars above are ALWAYS canonical settlement's, so this label
+        # only ever has one honest value. It used to read CONFIRMED_RECEIPT
+        # whenever a receipt existed, because the numbers really did come
+        # from the receipt then; canonical netProfitLoss is the single
+        # accounting authority now (see bets_lib.realized_bet_economics), so
+        # claiming a receipt provenance for a canonical figure would be the
+        # mislabeling this field exists to prevent.
+        economics_source = "SETTLEMENT" if net_pl is not None else None
     return {
         "betId": bet.get("betId"),
         "marketTicker": bet.get("marketTicker"),
@@ -242,6 +249,14 @@ def _postmortem_bet_row(bet):
         "netProfitLoss": net_pl,
         "economicsSource": economics_source,
         "confirmedReceipt": bet.get("confirmedReceiptNetProfitLoss") is not None,
+        # THE RECEIPT IS STILL HERE, next to the canonical figure rather than
+        # replacing it. A reader sees both numbers and the disagreement in one
+        # place, which is strictly more information than the old behaviour of
+        # silently showing the receipt as though it were the accounting.
+        "confirmedReceiptReturn": bet.get("confirmedReceiptReturn"),
+        "confirmedReceiptNetProfitLoss": bet.get("confirmedReceiptNetProfitLoss"),
+        "confirmedReceiptSource": bet.get("confirmedReceiptSource"),
+        "realizedEconomicsDisagreement": bets_lib.realized_economics_disagreement(bet),
         "clv": bet.get("clv"),
         "source": bet.get("source"),
         "entryMethod": bet.get("entryMethod"),
@@ -268,6 +283,12 @@ def _bucket_stats(bets):
     known_bets = [b for b in bets if _has_known_economics(b)]
     economics = [bets_lib.realized_bet_economics(b) for b in known_bets]
     results = [_known_bet_result(b) for b in known_bets]
+    # netProfitLoss is CANONICAL ONLY. wins/losses may additionally count a
+    # bet known solely through a confirmed receipt (_known_bet_result), and
+    # such a bet has no canonical P/L to contribute -- so the count and the
+    # money can legitimately cover different rows. That gap is reported
+    # rather than hidden: netProfitLossUnavailableCount says exactly how many
+    # of the counted outcomes carry no canonical dollar figure yet.
     return {
         "count": len(bets),
         "settledCount": sum(1 for b in known_bets if b.get("status") == "settled"),
@@ -276,6 +297,7 @@ def _bucket_stats(bets):
         ),
         "stake": round(sum(b.get("stake") or 0 for b in bets), 2),
         "netProfitLoss": round(sum(n or 0 for _g, n in economics), 2),
+        "netProfitLossUnavailableCount": sum(1 for _g, n in economics if n is None),
         "wins": sum(1 for r in results if r == "WIN"),
         "losses": sum(1 for r in results if r == "LOSS"),
     }
@@ -325,9 +347,11 @@ def build_postmortem(date, bets, bankroll_summary=None):
 
     total_risked = round(sum(b.get("stake") or 0 for b in real_bets), 2)
     total_risked_settled = round(sum(b.get("stake") or 0 for b in settled_bets), 2)
-    # Prefers a manually confirmed real receipt over derived binary
-    # settlement economics when present -- see
-    # lib.edgelab.bets.realized_bet_economics/confirm_realized_return.
+    # CANONICAL netProfitLoss only -- the single accounting authority for
+    # realized P/L, the same field lib.edgelab.bankroll reads, so the
+    # headline here and the bankroll can no longer disagree. A confirmed
+    # receipt is evidence and is surfaced separately (see the per-bet row's
+    # confirmedReceipt*/realizedEconomicsDisagreement fields).
     _economics = [bets_lib.realized_bet_economics(b) for b in settled_bets]
     total_net_pl = round(sum(net for _gross, net in _economics if net is not None), 2)
     total_returned = round(sum(gross for gross, _net in _economics if gross is not None), 2)
@@ -368,6 +392,7 @@ def build_postmortem(date, bets, bankroll_summary=None):
     known_economics = [bets_lib.realized_bet_economics(b) for b in known_bets]
     known_results = [_known_bet_result(b) for b in known_bets]
     known_stake = round(sum(b.get("stake") or 0 for b in known_bets), 2)
+    known_net_unavailable = sum(1 for _g, n in known_economics if n is None)
     known_net_pl = round(sum(net for _gross, net in known_economics if net is not None), 2)
     known_returned = round(sum(gross for gross, _net in known_economics if gross is not None), 2)
     realized_economics = {
@@ -382,6 +407,7 @@ def build_postmortem(date, bets, bankroll_summary=None):
         "stake": known_stake,
         "totalReturned": known_returned,
         "netProfitLoss": known_net_pl,
+        "netProfitLossUnavailableCount": known_net_unavailable,
         "roiPct": round((known_net_pl / known_stake) * 100, 2) if known_stake else None,
     }
     known_family_stats = {}
@@ -613,9 +639,11 @@ def build_canonical_era_summary(bets, bankroll_summary=None, *, include_legacy=F
 
     total_risked = round(sum(b.get("stake") or 0 for b in real_bets), 2)
     total_risked_settled = round(sum(b.get("stake") or 0 for b in settled_bets), 2)
-    # Prefers a manually confirmed real receipt over derived binary
-    # settlement economics when present -- see
-    # lib.edgelab.bets.realized_bet_economics/confirm_realized_return.
+    # CANONICAL netProfitLoss only -- the single accounting authority for
+    # realized P/L, the same field lib.edgelab.bankroll reads, so the
+    # headline here and the bankroll can no longer disagree. A confirmed
+    # receipt is evidence and is surfaced separately (see the per-bet row's
+    # confirmedReceipt*/realizedEconomicsDisagreement fields).
     _economics = [bets_lib.realized_bet_economics(b) for b in settled_bets]
     total_net_pl = round(sum(net for _gross, net in _economics if net is not None), 2)
     total_returned = round(sum(gross for gross, _net in _economics if gross is not None), 2)
@@ -711,11 +739,11 @@ def _rolling_window_order_key(bet):
 
 def _tier_bucket_stats(bets):
     """
-    Record/risked/return/P&L/ROI for one bucket of bets, using confirmed-
-    receipt-aware economics (lib.edgelab.bets.realized_bet_economics --
-    a manually confirmed real receipt takes priority over this system's
-    own derived binary settlement economics, exactly like every other
-    bucket helper in this module). winRate's denominator is WIN+LOSS
+    Record/risked/return/P&L/ROI for one bucket of bets, using CANONICAL
+    economics (lib.edgelab.bets.realized_bet_economics -- canonical
+    netProfitLoss is the single accounting authority for realized P/L,
+    exactly like every other bucket helper in this module and like the
+    bankroll). winRate's denominator is WIN+LOSS
     only (pushes/voids have no win/loss to rate, matching
     lib.edgelab.calibration's "decided bets" convention) -- sampleStatus
     reuses that same module's three-tier INSUFFICIENT_SAMPLE/

@@ -208,8 +208,9 @@ class TestScoreReplayResultWagerLifecycle:
 
     def test_null_recommendation_realized_economics_uses_canonical_helper(self):
         """netProfitLoss/grossReturn must come from
-        lib.edgelab.bets.realized_bet_economics -- a confirmed-receipt
-        override must be honored exactly like it is everywhere else."""
+        lib.edgelab.bets.realized_bet_economics, which reports CANONICAL
+        netProfitLoss -- a confirmed receipt is evidence and never silently
+        replaces it, exactly as everywhere else."""
         result = _replay_result()
         bet = {
             "betId": "bet-1", "result": "WIN", "stake": 10.0, "netProfitLoss": 8.0,
@@ -217,8 +218,8 @@ class TestScoreReplayResultWagerLifecycle:
             "recordStatus": "ACTIVE",
         }
         scored = sr.score_replay_result(result, bet_record=bet, scored_at="t")
-        assert scored["wager"]["grossReturn"] == 19.5
-        assert scored["wager"]["netProfitLoss"] == 9.5
+        assert scored["wager"]["grossReturn"] == 18.0   # stake + canonical net
+        assert scored["wager"]["netProfitLoss"] == 8.0  # canonical, not the receipt's 9.5
 
 
 class TestScoreReplayResultBrierScore:

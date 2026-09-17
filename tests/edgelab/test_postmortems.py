@@ -53,8 +53,16 @@ def test_compute_canonical_totals_prefers_confirmed_receipt_over_derived_loss():
     }
     totals = compute_canonical_totals([BET_A, bet_c])
     assert totals["totalRisked"] == 15.0
-    assert totals["netProfitLoss"] == round(5.0 + (-3.55), 2)  # confirmed receipt, not the derived -5.0
-    assert totals["totalReturned"] == round(15.0 + 1.45, 2)  # BET_A's WIN return plus betC's confirmed partial return
+    # CANONICAL netProfitLoss, not the receipt. These totals feed the same
+    # reporting surfaces the bankroll must agree with, and the bankroll reads
+    # canonical netProfitLoss -- preferring the receipt here is what let one
+    # wager report two different realized P/Ls at once. The receipt's real
+    # partial return stays on the row and is surfaced by
+    # lib.edgelab.bets.confirmed_receipt_economics / the per-bet row's
+    # realizedEconomicsDisagreement.
+    assert totals["netProfitLoss"] == round(5.0 + (-5.0), 2)
+    assert totals["totalReturned"] == 15.0  # BET_A's WIN return; a LOSS returns 0 canonically
+    assert bet_c["confirmedReceiptNetProfitLoss"] == -3.55  # evidence preserved, not consumed
 
 
 def test_build_postmortem_record_never_substitutes_recommendation_for_missing_bet():

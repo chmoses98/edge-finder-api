@@ -1,0 +1,314 @@
+name: EdgeLab Settlement Reconcile
+
+# DESTINATION-SIDE SETTLEMENT CATCH-UP.
+#
+# "EdgeLab Postgame Settlement" runs once a night, off the CLV chain. Any
+# wager that reaches the canonical ledger (data/edgelab/bets/bets.jsonl)
+# AFTER that pass -- which is exactly what happens when the Kalshi bet
+# router imports a wager later in the evening -- used to sit ungraded
+# until a human noticed and dispatched a rerun by hand.
+#
+# This workflow closes that gap from the DESTINATION side, so it works
+# regardless of which entry surface wrote the wager and without the
+# router (or anything else) having to remember to fire a "now settle
+# this" event. Three independent ways in:
+#
+#   1. push        -- the canonical ledger changing on main IS the
+#                     signal. The affected wager dates are derived from
+#                     the actual before/after diff of that one file, so a
+#                     bet imported at 11pm for a game that ended at 10pm
+#                     is settled within minutes.
+#   2. schedule    -- a sweep over a recent lookback window. This is the
+#                     one that handles the completely normal case the
+#                     push path CANNOT: a bet imported BEFORE its game
+#                     ends. Nothing about the import is late; the RESULT
+#                     is simply not knowable yet. The sweep keeps looking
+#                     until it is.
+#   3. dispatch    -- explicit date or date range, plus a dry-run mode,
+#                     for recovery and debugging.
+#
+# WHAT IT NEVER DOES
+# ------------------
+# It contains no settlement logic of its own. Every grade comes from
+# scripts/edgelab/settle_markets.py's settle_date() -- the same canonical
+# settler edgelab-postgame.yml calls -- which records
+# SETTLEMENT_UNRESOLVED with an explicit reason whenever the game is not
+# final, the fetch fails, the gamePk is unresolved, or the market family
+# has no settlement support. A market family the canonical system does
+# not support stays unresolved here too. No result is ever manufactured,
+# and no recommendation is ever recorded as a placed wager: this only
+# reads rows a user-confirmed entry surface already wrote.
+#
+# Only ever writes under data/edgelab/ -- never bets.json, data/bets.json,
+# data/slate.json, marketLedger, or any other production file.
+#
+# RECURSION SAFETY
+# ----------------
+# Settlement writes back onto the very file the push trigger watches.
+# Two independent brakes (see lib/edgelab/settlement_reconciliation.py's
+# "RECURSION SAFETY" note):
+#   * this job skips outright when the head commit is one of its OWN
+#     commits (the "edgelab settlement reconcile" marker) -- the
+#     `if:` on the job below; and
+#   * a row whose only changed fields are ones settlement itself
+#     maintains is classified SETTLEMENT_ECHO and never makes a date
+#     affected, so even if the marker check were bypassed the diff
+#     signal is already empty.
+# Combined with "commit only if something actually changed"
+# (scripts/ci/git_data_commit.py) and reports regenerating only when
+# settlement genuinely changed canonical state, a no-op run produces no
+# commit at all -- and therefore no further push event.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/edgelab/bets/bets.jsonl'
+  schedule:
+    # Two sweeps a day, both after the nightly postgame chain has had its
+    # chance (clv-update 06:00 UTC -> edgelab-postgame). 13:00 UTC (~9am
+    # ET) catches anything last night's pass could not yet prove; 03:00
+    # UTC (~11pm ET) catches same-day afternoon/early-evening games whose
+    # wagers were imported before first pitch.
+    - cron: '0 13 * * *'
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Single date to reconcile (YYYY-MM-DD). Leave blank to use the range or the lookback sweep.'
+        required: false
+        default: ''
+      start_date:
+        description: 'First date of an inclusive range (YYYY-MM-DD). Requires end_date.'
+        required: false
+        default: ''
+      end_date:
+        description: 'Last date of an inclusive range (YYYY-MM-DD). Requires start_date.'
+        required: false
+        default: ''
+      lookback_days:
+        description: 'Sweep window in days when no explicit date/range is given (default 5).'
+        required: false
+        default: '5'
+      dry_run:
+        description: 'true = compute and report only, write nothing.'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  # Shared with "EdgeLab Postgame Settlement": both call settle_date() and
+  # both upsert data/edgelab/settlements/<date>.jsonl and the canonical
+  # bets ledger. Serializing them against EACH OTHER (not merely against
+  # themselves) is the point -- two concurrent settlers on the same date
+  # would race on the same partitions. Never cancel-in-progress: a queued
+  # run must WAIT for the current settler, never kill it mid-write.
+  group: edgelab-postgame
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    # Recursion brake #1: never react to this workflow's own commit.
+    # github.event.head_commit is null for schedule/workflow_dispatch, so
+    # the startsWith() only ever fires on the push path.
+    if: >-
+      github.event_name != 'push' ||
+      !startsWith(github.event.head_commit.message, 'edgelab settlement reconcile')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          # Full history: the push path resolves the ledger's content at
+          # github.event.before with `git show <sha>:<path>`.
+          fetch-depth: 0
+
+      # Same fail-closed resolver clv-update.yml / edgelab-postgame.yml use
+      # (Wave 0.05): a dispatch from a feature branch can never persist to
+      # main. Context arrives through env:, never interpolated into the
+      # script body.
+      - name: Resolve commit target branch
+        id: target
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_REF_TYPE: ${{ github.ref_type }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          BRANCH="$(python3 scripts/ci/resolve_commit_branch.py)"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "This run may persist ONLY to: $BRANCH"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      # Every workflow_dispatch input is passed through env: and read from
+      # the environment -- never interpolated as ${{ inputs.x }} inside a
+      # shell/python body (see import-manual-bets.yml's SECURITY note and
+      # tests/edgelab/test_import_workflows_structure.py).
+      - name: Build reconciliation arguments
+        id: args
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IN_DATE: ${{ github.event.inputs.date }}
+          IN_START: ${{ github.event.inputs.start_date }}
+          IN_END: ${{ github.event.inputs.end_date }}
+          IN_LOOKBACK: ${{ github.event.inputs.lookback_days }}
+          IN_DRY_RUN: ${{ github.event.inputs.dry_run }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+          import re
+          import shlex
+
+          event = os.environ.get("EVENT_NAME", "")
+          argv = []
+
+          def clean(name):
+              return (os.environ.get(name) or "").strip()
+
+          date, start, end = clean("IN_DATE"), clean("IN_START"), clean("IN_END")
+          for value, flag in ((date, "--date"), (start, "--start-date"), (end, "--end-date")):
+              if value:
+                  if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+                      raise SystemExit(f"{flag} must be YYYY-MM-DD, got {value!r}")
+                  argv += [flag, value]
+
+          lookback = clean("IN_LOOKBACK") or "5"
+          if not re.fullmatch(r"\d{1,3}", lookback):
+              raise SystemExit(f"lookback_days must be a small integer, got {lookback!r}")
+          argv += ["--lookback-days", lookback]
+
+          if clean("IN_DRY_RUN").lower() == "true":
+              argv.append("--dry-run")
+
+          before = clean("PUSH_BEFORE")
+          # An all-zero/absent `before` (a branch's first push) is not a
+          # usable base revision -- the script itself also refuses to
+          # treat an unresolvable base as "every row is new", but not
+          # passing it at all keeps the intent obvious in the run log.
+          if event == "push" and re.fullmatch(r"[0-9a-f]{40}", before) and set(before) != {"0"}:
+              argv += ["--changed-from", before]
+
+          trigger = {"push": "PUSH_CANONICAL_LEDGER", "schedule": "SCHEDULED_SWEEP"}.get(event, "MANUAL_DISPATCH")
+          print(f"argv={shlex.join(argv)}")
+          print(f"trigger={trigger}")
+          PY
+
+      - name: Reconcile settlement catch-up
+        id: reconcile
+        continue-on-error: true
+        env:
+          RECONCILE_TRIGGER: ${{ steps.args.outputs.trigger }}
+          RECON_ARGV: ${{ steps.args.outputs.argv }}
+        run: |
+          set -euo pipefail
+          # Deliberately read from the environment and word-split by the
+          # shell rather than interpolated as ${{ }} into this body: every
+          # element of RECON_ARGV was regex-validated in the step above,
+          # and nothing user-supplied ever reaches the shell verbatim.
+          # shellcheck disable=SC2086
+          python3 scripts/edgelab/reconcile_settlement_catchup.py $RECON_ARGV
+
+      - name: Write job summary
+        if: always()
+        env:
+          RECONCILE_TRIGGER: ${{ steps.args.outputs.trigger }}
+          RECON_ARGV: ${{ steps.args.outputs.argv }}
+        run: |
+          RECEIPT=data/edgelab/operational_health/settlement_reconciliation_receipt.json
+          {
+            echo "## EdgeLab Settlement Reconcile"
+            echo ""
+            echo "- Trigger: \`${RECONCILE_TRIGGER}\`"
+            echo "- Arguments: \`${RECON_ARGV}\`"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ ! -f "$RECEIPT" ]; then
+            echo "**No receipt produced -- the reconciler failed before writing one; see the step log.**" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          with open("data/edgelab/operational_health/settlement_reconciliation_receipt.json") as f:
+              r = json.load(f)
+          c = r["counts"]
+          print(f"- Dates considered: {c['datesConsidered']} {r['datesConsidered']}")
+          print(f"- Dates whose canonical state changed: {c['datesChanged']}")
+          print(f"- Bets newly settled: {c['betsSettled']}")
+          print(f"- Daily reports regenerated: {c['reportsRegenerated']}")
+          print(f"- Wagers still pending after this run: {c['wagersStillPending']}")
+          if r.get("refusalReason"):
+              print(f"- **Refused:** {r['refusalReason']}")
+          print("")
+          if r["perDate"]:
+              print("| date | settled bets | meaningful settlement changes | report | pending before -> after |")
+              print("|---|---|---|---|---|")
+              for d in r["perDate"]:
+                  counts = d.get("counts") or {}
+                  print(
+                      f"| {d['date']} | {counts.get('betsSettled', 0)} | "
+                      f"{counts.get('settlementsMeaningfullyChanged', 0)} | "
+                      f"{'regenerated' if d.get('reportRegenerated') else '-'} | "
+                      f"{d.get('pendingWagersBefore')} -> {d.get('pendingWagersAfter')} |"
+                  )
+          else:
+              print("_Nothing to reconcile -- no affected wager dates._")
+          PY
+
+      - name: Upload reconciliation receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: settlement-reconciliation-receipt-${{ github.run_id }}
+          path: data/edgelab/operational_health/settlement_reconciliation_receipt.json
+          retention-days: 90
+          if-no-files-found: warn
+
+      # Persist FIRST, then fail loudly -- same order, and same reason, as
+      # edgelab-postgame.yml's commit/gate pair: partial settlement that was
+      # computed must never be discarded just because a later date errored.
+      # git_data_commit.py is a no-op when nothing changed, so a clean
+      # "nothing to reconcile" run commits nothing and pushes nothing.
+      - name: Commit reconciliation output (only if changed)
+        if: ${{ always() && github.event.inputs.dry_run != 'true' }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          FILES=(
+            "data/edgelab/bets/bets.jsonl"
+            "data/edgelab/settlements/"
+            "data/edgelab/games/"
+            "data/edgelab/markets/"
+            "data/edgelab/observations/"
+            "data/edgelab/research_runs/"
+            "data/edgelab/operational_health/settlement_reconciliation_receipt.json"
+            "data/edgelab/operational_health/settlement_reconciliation_status.json"
+          )
+          for f in data/edgelab/reports/*.json data/edgelab/reports/*.md data/edgelab/reports/*_calibration.jsonl; do
+            [ -f "$f" ] && FILES+=("$f")
+          done
+
+          python3 scripts/ci/git_data_commit.py \
+            --message "edgelab settlement reconcile: $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --branch "${{ steps.target.outputs.branch }}" \
+            "${FILES[@]}"
+
+      - name: Fail the job if reconciliation reported an error
+        if: steps.reconcile.outcome == 'failure'
+        run: |
+          echo "::error title=EdgeLab settlement reconcile::The reconciler exited nonzero. Whatever settlement DID complete has already been committed above -- this is a signal, not a rollback. Reconciliation is idempotent; re-running is safe."
+          exit 1

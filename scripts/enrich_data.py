@@ -47,6 +47,24 @@ except Exception as e:
     savant_teams   = {}
     savant_batters = {}
 
+# Recent offensive FORM (distribution, not just a rolling mean) --
+# written by scripts/fetch_team_offense_form.py earlier in the same
+# workflow run. Purely additive handicapping context: it is attached to
+# each team block below and is NEVER read by compute_offense_baseline()
+# or by any projection/pricing math. A missing/stale file degrades to
+# `offenseForm: None` with an explicit reason -- never a fabricated
+# profile, and never a reason to fail the slate.
+try:
+    with open('data/team_offense_form.json') as f:
+        offense_form_payload = json.load(f)
+    offense_form_teams = offense_form_payload.get('teams', {})
+    print(f"team_offense_form.json: {len(offense_form_teams)} teams "
+          f"(as of {offense_form_payload.get('asOfDate')})")
+except Exception as e:
+    print(f'WARNING: team_offense_form.json not found ({e}) — offenseForm context will be null')
+    offense_form_payload = {}
+    offense_form_teams = {}
+
 ts_teams = ts.get('teams', {})
 
 # Abbr normalization: some sources use non-standard abbreviations.
@@ -130,6 +148,32 @@ for game in slate.get('games', []):
         stats['last7RpG']    = td.get('last7RpG')
         stats['last15RpG']   = td.get('last15RpG')
         stats['runsPerGame'] = td.get('runsPerGame')
+
+        # ── Recent offensive FORM (shape, not just the mean) ────────────
+        # A rolling mean is dominated by its largest value: an offense
+        # that scored 3,4,2,20,5,1,1 has an L7 mean of 5.1 while its
+        # median is 3 and it cleared 5 runs twice in seven games.
+        # last7RpG alone cannot show that, so every team block now also
+        # carries the scores themselves, the median, threshold clears,
+        # the max and its share of the window, and (where this repo's
+        # Kalshi archive supports it) performance against its own team
+        # total. Context ONLY -- offenseBaselineRaw/Bayes/OppAdj below
+        # are computed from exactly the same inputs as before.
+        team_form = offense_form_teams.get(abbr)
+        stats['offenseForm'] = team_form
+        if team_form:
+            stats['offenseFormLine']  = (team_form.get('formLines') or {}).get('L7')
+            stats['offenseFormLabel'] = (team_form.get('formLabel') or {}).get('label')
+            stats['offenseFormReason'] = (team_form.get('formLabel') or {}).get('reason')
+            stats['offenseFormAsOf']  = team_form.get('asOfDate')
+        else:
+            stats['offenseFormLine']  = None
+            stats['offenseFormLabel'] = 'UNKNOWN'
+            stats['offenseFormReason'] = (
+                'no team_offense_form.json entry for this team — run '
+                'scripts/fetch_team_offense_form.py'
+            )
+            stats['offenseFormAsOf']  = None
 
         # Savant team batting metrics
         sv = savant_teams.get(abbr, {})
@@ -276,3 +320,9 @@ print(f'Opp quality: {opp_quality_resolved} resolved, {opp_quality_missing} miss
 print(f'Individual batter wOBA: {len(savant_batters)} batters in teamstats.batterWOBA')
 print(f'Lineup adj applied: {lineup_adj_applied} | skipped (unconfirmed): {lineup_adj_skipped}')
 print(f'offenseBaselineAdj written to all {enriched} team blocks')
+_form_attached = sum(
+    1 for g in slate.get('games', []) for k in ('awayTeamStats', 'homeTeamStats')
+    if (g.get(k) or {}).get('offenseForm')
+)
+print(f'offenseForm context attached to {_form_attached} team blocks '
+      f'(descriptive only — no projection weight reads it)')

@@ -1,0 +1,50 @@
+{
+  "candidateModelId": null,
+  "candidateVariantId": null,
+  "chronologicalSplitPolicy": "SEASON_BASED: development=2022-2024, validation=2025, holdout=2026 (locked). Every regression coefficient set is fit ONCE on development and reused unchanged on validation and holdout, never refit.",
+  "clusteringUnit": "team",
+  "controlModelId": "CTRL-7252463d722626e6",
+  "eligibilityCriteria": [
+    "team has >= 20 prior completed games this season, strictly before the target game",
+    "the target game's own runsScored is present",
+    "the opponent's prior-game log is available for the opponent baseline",
+    "H7 only: the prior game has a usable archived Kalshi team-total ladder for that team"
+  ],
+  "evidenceLevel": "E2_PIT_HISTORICAL",
+  "exclusionCriteria": [
+    "a team's first 20 completed games of a season",
+    "a game with no cached schedule entry for either team",
+    "H7 only: a game whose team-total ladder does not bracket 50%, is non-monotone, or is absent"
+  ],
+  "expectedDirection": null,
+  "experimentId": "MLB-RSCH-0036",
+  "experimentType": "CONFIRMATORY",
+  "falseDiscoveryHandling": "BONFERRONI",
+  "hypothesis": "H1 median recent runs predicts next-game scoring beyond the PIT season baseline. H2 threshold-clear rate (>=3/4/5/6) predicts it. H3 outlier dependence (mean minus trimmed mean, top-game share of window runs) predicts it, in either direction. H4 a trimmed mean / EWMA predicts it better than the plain mean. H5 a frozen consistency regression beats a frozen control AND a frozen mean-only candidate at predicting next-game runs out of sample. H6 the same comparison for the PROBABILITY of clearing the next team-total threshold, scored with Brier and log loss. H7 market-relative form (games beating the team's own closing team total, and the mean/median margin versus that line) predicts next-game scoring and threshold clearing.",
+  "marketFamilies": [
+    "team_total"
+  ],
+  "minimumSampleRequirement": {
+    "independentGames": 10000
+  },
+  "notes": "No new fetch. Reuses MLB-RSCH-0003's committed schedule cache read-only for runs, and this repository's own committed Kalshi observation archive for team-total lines (zero Kalshi API calls). Windows (5/7/10), thresholds (3/4/5/6) and the 20-prior-game floor are preregistered constants in lib/team_offense_form.py -- the SAME module the production slate context uses, so a research number and a displayed number cannot drift. Production behaviour is NOT changed by this experiment under any outcome.",
+  "owner": "edgelab_research_lab",
+  "permittedParameterVariants": [],
+  "pitRequirements": {
+    "archived_kalshi_market_observation": "PREDICTIVE_INPUT",
+    "team_recent_game_log_reconstruction": "PREDICTIVE_INPUT"
+  },
+  "predictionCheckpoints": [
+    "PREGAME_AS_OF_GAME_START"
+  ],
+  "primaryMetric": "team-clustered bootstrap Spearman correlation between each preregistered consistency predictor and next-game runs scored, 95% CI; frozen control vs mean-only vs consistency regression MAE/RMSE for runs, and Brier/log loss for clearing the next threshold",
+  "registeredAt": "2026-09-17T18:00:00Z",
+  "researchQuestion": "MLB-RSCH-0005 showed recent runs/game deviation is noise. A mean is one number about a distribution -- does the SHAPE it discards (median, threshold-clear rate, outlier dependence, trimmed mean, EWMA), or performance relative to the market's own team-total line, carry out-of-sample predictive value the mean does not?",
+  "secondaryMetrics": [
+    "scored 3+/4+/5+/6+ indicators",
+    "market-relative over rate and mean/median margin versus the team's own closing team total"
+  ],
+  "status": "REGISTERED",
+  "targetPopulation": "Every MLB regular-season team-game 2022-2026 in the already-committed schedule cache, one row per team entering one game, with at least 20 strictly-prior completed games that season. The market-relative arm (H7) is restricted to the subset of dates this repository's Kalshi observation archive actually covers.",
+  "title": "Team Offensive-Form Consistency and Market-Relative Form"
+}

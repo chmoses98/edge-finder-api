@@ -9,8 +9,19 @@ MLB sports betting model — Poisson probability engine, Savant metrics, Kalshi 
 
 ## ▶️ HOW TO RUN A SLATE
 
-**Read `RUN_THE_SLATE.md`.** It is the single authoritative execution file.
-Every startup sequence, market list, sizing rule, and output format is there.
+**Read `HANDICAPPING_PLAYBOOK.md` first, then `RUN_THE_SLATE.md`.**
+
+- `HANDICAPPING_PLAYBOOK.md` — the ONE canonical handicapping methodology,
+  versioned (`PLAYBOOK_VERSION`) and short enough to read on every run.
+  Thesis before market; compare every expression; price, uncertainty and
+  correlation; how to read recent form. Required reading at the start of every
+  slate analysis. `RUN_THE_SLATE.md` carries a copy/paste startup prompt for a
+  fresh chat.
+- `PLAYBOOK_LESSONS.md` — evidence-graded lessons earned from past postmortems
+  (`HYPOTHESIS` / `SUPPORTED` / `REJECTED` / `RETIRED`). Generated from
+  `config/playbook_lessons.json`; see `scripts/playbook_lessons.py`.
+- `RUN_THE_SLATE.md` — the single authoritative EXECUTION file: startup
+  sequence, market list, sizing, output format.
 
 ---
 
@@ -19,6 +30,8 @@ Every startup sequence, market list, sizing rule, and output format is there.
 ### Primary Execution (start here every session)
 | File | Purpose |
 |------|---------|
+| `HANDICAPPING_PLAYBOOK.md` | **One canonical handicapping methodology. Read before every slate.** |
+| `PLAYBOOK_LESSONS.md` | Evidence-graded lessons from postmortems (generated — edit `config/playbook_lessons.json`) |
 | `RUN_THE_SLATE.md` | **One startup sequence. One market list. One output format.** |
 | `config/rules.json` | Machine-readable thresholds: calibration, multipliers, gates, park factors |
 | `scripts/validate_slate_final.py` | Pre-analysis gate — fails if any game missing required fields or marketLedger incomplete |
@@ -43,12 +56,18 @@ Every startup sequence, market list, sizing rule, and output format is there.
 |------|--------|---------|
 | `fetch-slate.yml` | ✅ Production | Fetches all slate data, writes data/ files |
 | `update-clv.yml` | ✅ Production | Settles bets, computes CLV |
+| `edgelab-postgame.yml` | ✅ Production | Nightly canonical settlement for a date |
+| `edgelab-settlement-reconcile.yml` | ✅ Production | Automatic settlement catch-up for wagers that arrive late (or before their game ends) — see `docs/SETTLEMENT_RECONCILIATION.md` |
+| `fetch-single-game.yml` | ✅ Production | Fresh data for exactly ONE matchup — see `docs/SINGLE_GAME_FETCH.md` |
 
 ### Documentation
 | File | Purpose |
 |------|---------|
 | `docs/GITHUB_WRITE_GUIDE.md` | How to write files to repo from Claude |
 | `docs/MODEL_HISTORY.md` | Version changelog |
+| `docs/SETTLEMENT_RECONCILIATION.md` | What causes settlement catch-up, and what it will never do |
+| `docs/SINGLE_GAME_FETCH.md` | Single-game fetch: selectors, doubleheaders, the archive invariant |
+| `docs/RESEARCH_OFFENSIVE_FORM.md` | Offensive-form consistency and market-relative form: what the evidence supports |
 
 ### Data Files (written by Actions — never commit manually)
 | File | Contents |
@@ -59,6 +78,8 @@ Every startup sequence, market list, sizing rule, and output format is there.
 | `data/weather.json` | Park weather |
 | `data/meta.json` | Fetch timestamp — verify before using |
 | `data/kalshi_search.json` | All Kalshi market prices indexed by event_ticker |
+| `data/team_offense_form.json` | Recent offensive form as a DISTRIBUTION (scores, median, threshold clears, outlier dependence, team-total line-relative record). Descriptive context — no model weight reads it |
+| `data/single_game/<date>/<gamePk>.json` | Single-game handicapping bundle (`data/single_game/latest.json` points at the newest) |
 
 ### Archived (not current — do not use as instructions)
 | File | Reason |
@@ -71,6 +92,7 @@ Every startup sequence, market list, sizing rule, and output format is there.
 
 | What | Authority |
 |------|-----------|
+| Handicapping methodology | `HANDICAPPING_PLAYBOOK.md` (+ `PLAYBOOK_LESSONS.md`) |
 | Execution order | `RUN_THE_SLATE.md` |
 | Numeric thresholds | `config/rules.json` |
 | Rule definitions | `RULES.md` |
@@ -78,7 +100,9 @@ Every startup sequence, market list, sizing rule, and output format is there.
 | Bet prices / edge target | Kalshi VF |
 | Sanity check | Pinnacle VF |
 | CLV source | Kalshi historical |
-| Bet ledger | `bets.json` |
+| Bet ledger (legacy root) | `bets.json` |
+| Canonical wager ledger | `data/edgelab/bets/bets.jsonl` |
+| Daily results ("how did we do yesterday?") | `data/edgelab/reports/<date>.md` |
 
 ---
 

@@ -1,10 +1,55 @@
 # RUN_THE_SLATE.md
 # The one file to rule them all.
-# Last updated: June 17, 2026 — v1.2 (bet persistence chain + session ingestion path)
+# Last updated: September 17, 2026 — v1.3 (canonical handicapping playbook + short startup prompt)
 #
 # USAGE: When the user says "run the slate", execute this document top-to-bottom.
 # Every other doc is either archived or subordinate to this one.
 # ─────────────────────────────────────────────────────────────────────────────
+
+---
+
+## STEP 0 (MANDATORY) — READ THE CANONICAL HANDICAPPING PLAYBOOK
+
+**Before any analysis, before any price, read
+[`HANDICAPPING_PLAYBOOK.md`](HANDICAPPING_PLAYBOOK.md) and
+[`PLAYBOOK_LESSONS.md`](PLAYBOOK_LESSONS.md), in full.**
+
+They are short on purpose (playbook ≈ 950 words of methodology). Together they
+are the repository's durable handicapping memory: thesis-before-market, market
+expression, price discipline, correlation control, how to read recent form, and
+the evidence-graded lessons earned from past postmortems. Without them, every
+new chat re-derives the same lessons from scratch and re-makes the same
+mistakes.
+
+**Record the playbook version in the slate output**, so a later postmortem knows
+which methodology produced the card:
+
+```bash
+grep -m1 PLAYBOOK_VERSION HANDICAPPING_PLAYBOOK.md
+python3 scripts/playbook_lessons.py --list        # what is SUPPORTED vs HYPOTHESIS
+```
+
+Nothing below this line overrides the playbook's methodology; `RULES.md` and
+`config/rules.json` still own the numeric thresholds and hard gates.
+
+---
+
+## START-OF-SLATE PROMPT (copy/paste into a fresh chat)
+
+```
+Read HANDICAPPING_PLAYBOOK.md and PLAYBOOK_LESSONS.md from
+chmoses98/edge-finder-api (main) first, and follow them.
+Then use the newest valid slate/research data in that repo.
+Analyze EVERY available market for EVERY unstarted game.
+For each game build your own baseball thesis BEFORE choosing a market,
+then compare the alternative expressions of that thesis.
+Respect price, uncertainty and correlation; do not stack one thesis.
+Use current lineups, news and weather.
+State the strongest evidence AGAINST each proposed bet.
+Return only wagers that actually clear the betting threshold; passing is fine.
+Never assume a recommendation was placed — I confirm every wager myself.
+Report the PLAYBOOK_VERSION you used.
+```
 
 ---
 
@@ -171,8 +216,19 @@ Current market multipliers (from `config/rules.json` → `multipliers`):
 For every game on the slate, produce in this exact structure:
 
 ```
-PRE-SCAN: [Team] | L7: X.X | L15: X.X | Szn: X.X | Flag: BOUNCEBACK/REGRESSION/NEUTRAL
+PRE-SCAN: [Team] | L7: <avg> avg | <med> med | <game-by-game scores> |
+          <n>/<w> >=4 | <n>/<w> >=5 | max <r> (<pct>% of L7 runs) |
+          [OUTLIER-DEPENDENT] | [TT overs <n>/<w>] | Form: HOT/NEUTRAL/COLD/OUTLIER_INFLATED |
+          L15: X.X | Szn: X.X
 (one line per team — required before any game analysis)
+
+Take this line VERBATIM from the slate: it is `awayTeamStats.offenseFormLine` /
+`homeTeamStats.offenseFormLine` (and `offenseFormLabel`), written by
+scripts/fetch_team_offense_form.py -> scripts/enrich_data.py. Do NOT recompute
+it and do NOT summarise an offense with the mean alone: a single 20-run game
+can lift a 7-game mean above league average while the median sits at 3. A team
+labelled OUTLIER_INFLATED is NOT hot. See HANDICAPPING_PLAYBOOK.md §5 and
+docs/RESEARCH_OFFENSIVE_FORM.md.
 
 GAME: [AWAY @ HOME] — Date/Time
 LINEUP CHECK:
@@ -416,6 +472,47 @@ listed but that isn't one of the 11 required markets — it never makes a
 market real-money eligible on its own; that still requires the market to
 be in `REQUIRED_MARKETS` and clear every gate in `scripts/build_market_ledger.py`
 and `scripts/risk_gate.py`, unchanged.
+
+---
+
+## SINGLE-GAME FETCH (one matchup, not the whole slate)
+
+When you want fresh data for exactly ONE game — not a slate run — use the
+**Fetch Single Game** workflow. It never touches `data/slate.json`, and it
+archives the COMPLETE unfiltered Kalshi universe before filtering to your game.
+
+```
+POST /repos/chmoses98/edge-finder-api/actions/workflows/fetch-single-game.yml/dispatches
+Body: {"ref":"main","inputs":{"date":"YYYY-MM-DD","game":"Yankees vs Red Sox"}}
+```
+
+Result: `data/single_game/<date>/<gamePk>.json`, discoverable via
+`data/single_game/latest.json`. A doubleheader FAILS CLOSED and prints both
+gamePks — re-dispatch with `{"game_pk":"<gamePk>"}`. Full documentation and the
+three worked examples: **[`docs/SINGLE_GAME_FETCH.md`](docs/SINGLE_GAME_FETCH.md)**.
+
+---
+
+## "HOW DID WE DO YESTERDAY?" — SETTLEMENT IS SELF-HEALING
+
+A wager imported after the nightly postgame pass (e.g. by the Kalshi bet router)
+no longer sits ungraded. **EdgeLab Settlement Reconcile** runs on every change to
+the canonical ledger, on a twice-daily sweep, and on manual dispatch; it re-runs
+the canonical settlement path for the affected dates and regenerates the daily
+report whenever settlement actually changes canonical state.
+
+To answer "how did we do yesterday", read the finished canonical report directly:
+
+```
+data/edgelab/reports/<YYYY-MM-DD>.md     (and .json)
+data/edgelab/operational_health/settlement_reconciliation_status.json
+```
+
+`settlement_reconciliation_status.json` says when reconciliation last ran and
+what, if anything, is **still pending**. A wager left pending is an honest
+"not settleable yet", never a guessed result — unsupported market families stay
+explicitly unresolved. Full lifecycle:
+**[`docs/SETTLEMENT_RECONCILIATION.md`](docs/SETTLEMENT_RECONCILIATION.md)**.
 
 ---
 

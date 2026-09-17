@@ -385,6 +385,28 @@ jobs:
     - name: Fetch opponent quality (rolling 15-game starter xFIP per team)
       run: python3 scripts/fetch_opp_quality.py
 
+    # Recent offensive FORM as a DISTRIBUTION, not a single rolling mean
+    # (data/team_offense_form.json). A mean over a handful of games is
+    # dominated by its largest value -- one 20-run night can make an
+    # offense that has not cleared 5 runs in any other recent game read
+    # as "hot". This capture adds the actual scores, median, threshold
+    # clears, max-share, trimmed mean/EWMA and (from this repo's own
+    # archived Kalshi ladder, no Kalshi API call) team-total line-
+    # relative performance, which scripts/enrich_data.py attaches to
+    # every team block below.
+    #
+    # STRICTLY ADDITIVE: no projection, pricing or gate reads it --
+    # enrich_data.py's offense-baseline blend is unchanged (see
+    # docs/RESEARCH_OFFENSIVE_FORM.md for why the research evidence does
+    # not support promoting it into the model). continue-on-error for
+    # the same reason as the F5 audit / projection board steps: an
+    # analysis-only artifact must never be able to block slate
+    # publication; a missing file degrades to offenseForm=null with an
+    # explicit reason.
+    - name: Fetch recent offensive form (distribution + consistency context)
+      continue-on-error: true
+      run: python3 scripts/fetch_team_offense_form.py
+
     - name: Regression test — F5 parse_suffix (guards 2026-06-08 backfill bug)
       run: python3 scripts/test_f5_parse_suffix.py
 

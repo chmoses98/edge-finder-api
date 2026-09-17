@@ -1,0 +1,181 @@
+name: Fetch Single Game
+
+# ONE game, fresh data, one file.
+#
+# "Fetch Slate Data" is the right tool for the whole slate and the wrong
+# one when you just want current numbers for a single matchup: it
+# republishes the authoritative data/slate.json, runs the full
+# execution/logging chain, and takes many minutes of metered API calls.
+#
+# This workflow does the single-game job and nothing else:
+#   * pick a game the way a human says it -- date + "Yankees vs Red Sox",
+#     or a team abbreviation, or (for a doubleheader) an exact gamePk;
+#   * resolve it against the real MLB schedule and FAIL CLOSED, printing
+#     every candidate gamePk, if the selector could mean more than one
+#     game. A doubleheader can never silently resolve to the wrong leg;
+#   * capture the COMPLETE, UNFILTERED Kalshi market universe into the
+#     production snapshot archive FIRST, verify it round-trips, and only
+#     then filter down to the requested game (the archival invariant is
+#     checked, not assumed -- see scripts/fetch_single_game.py);
+#   * write a self-contained artifact at
+#     data/single_game/<date>/<gamePk>.json, plus a per-date index.json
+#     and a repo-wide data/single_game/latest.json pointer so a fresh
+#     ChatGPT/Claude session can find it without knowing any gamePk.
+#
+# It NEVER writes data/slate.json, bets.json, marketLedger, risk_gate
+# output, or any pipeline artifact -- it only reads them for context.
+# Market normalization, the strict single-game registry gate and the
+# game filter are the production modules (lib/kalshi_price_check.py,
+# lib/kalshi_mlb_single_game_registry.py) reused unchanged; no
+# probability, edge or recommendation is computed anywhere here.
+#
+# See docs/SINGLE_GAME_FETCH.md for the three worked examples.
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Slate date (YYYY-MM-DD). Leave blank for today, America/New_York.'
+        required: false
+        default: ''
+      game:
+        description: "Game or team: 'Yankees vs Red Sox', 'NYY@BOS', 'Brewers', 'MIL'. Ignored if game_pk is set."
+        required: false
+        default: ''
+      game_pk:
+        description: 'Exact MLB gamePk. Required to pick one leg of a doubleheader.'
+        required: false
+        default: ''
+      source:
+        description: "live = fetch + archive a fresh complete universe (default). snapshot = reuse this date's newest archived capture."
+        required: false
+        default: 'live'
+        type: choice
+        options:
+          - live
+          - snapshot
+
+permissions:
+  contents: write
+
+concurrency:
+  # Its own group: this job writes only data/single_game/ and appends a
+  # new timestamped file to data/kalshi_registry_snapshots/ -- it shares
+  # no mutable file with the slate/settlement writers, so serializing it
+  # against them would only add latency to an on-demand lookup. Two
+  # single-game runs ARE serialized against each other, because both
+  # append to that snapshot archive and rewrite the latest.json pointer.
+  group: fetch-single-game
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve commit target branch
+        id: target
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_REF_TYPE: ${{ github.ref_type }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          BRANCH="$(python3 scripts/ci/resolve_commit_branch.py)"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "This run may persist ONLY to: $BRANCH"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Inputs reach the shell only through env: -- never interpolated as
+      # ${{ inputs.x }} into a run body (see import-manual-bets.yml's
+      # SECURITY note). `game` in particular is free text.
+      - name: Fetch single game
+        id: fetch
+        continue-on-error: true
+        env:
+          IN_DATE: ${{ github.event.inputs.date }}
+          IN_GAME: ${{ github.event.inputs.game }}
+          IN_GAME_PK: ${{ github.event.inputs.game_pk }}
+          IN_SOURCE: ${{ github.event.inputs.source }}
+        run: |
+          set -uo pipefail
+          ARGS=()
+          [ -n "$IN_DATE" ]    && ARGS+=(--date "$IN_DATE")
+          [ -n "$IN_GAME_PK" ] && ARGS+=(--game-pk "$IN_GAME_PK")
+          [ -n "$IN_GAME" ]    && ARGS+=(--game "$IN_GAME")
+          [ -n "$IN_SOURCE" ]  && ARGS+=(--source "$IN_SOURCE")
+
+          python3 scripts/fetch_single_game.py "${ARGS[@]}" 2>&1 | tee fetch_single_game.log
+          STATUS=${PIPESTATUS[0]}
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit $STATUS
+
+      - name: Write job summary
+        if: always()
+        run: |
+          {
+            echo "## Fetch Single Game"
+            echo ""
+            if [ "${{ steps.fetch.outputs.exit_code }}" = "3" ]; then
+              echo ":warning: **Ambiguous selection -- nothing was fetched or written.**"
+              echo ""
+              echo "The selector matched more than one game (most often a doubleheader). Re-run this"
+              echo "workflow with \`game_pk\` set to one of the candidates listed below."
+            fi
+            echo ""
+            echo '```'
+            cat fetch_single_game.log 2>/dev/null || echo "(no log produced)"
+            echo '```'
+            if [ -f data/single_game/latest.json ]; then
+              echo ""
+              echo "### Artifact"
+              echo '```json'
+              cat data/single_game/latest.json
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload single-game artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: single-game-${{ github.run_id }}
+          path: |
+            data/single_game/
+            fetch_single_game.log
+          retention-days: 30
+          if-no-files-found: warn
+
+      # Commits the single-game bundle AND the complete unfiltered Kalshi
+      # capture this run archived -- the raw universe is repository
+      # evidence and must be preserved even when the filtered artifact is
+      # what the operator asked for. No-op when nothing changed.
+      - name: Commit single-game artifact and raw universe archive (only if changed)
+        if: ${{ always() && steps.fetch.outputs.exit_code == '0' }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "single-game fetch $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --branch "${{ steps.target.outputs.branch }}" \
+            "data/single_game/" \
+            "data/kalshi_registry_snapshots/"
+
+      - name: Fail the job if the fetch did not produce an artifact
+        if: steps.fetch.outcome == 'failure'
+        run: |
+          if [ "${{ steps.fetch.outputs.exit_code }}" = "3" ]; then
+            echo "::error title=Ambiguous game selector::More than one game matched. Re-run with an exact game_pk -- the candidates are listed in the job summary. Nothing was written."
+          else
+            echo "::error title=Single-game fetch failed::See the job summary for the full log."
+          fi
+          exit 1

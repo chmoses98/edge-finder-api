@@ -340,12 +340,20 @@ def test_report_state_only_confirmed_receipts_no_canonical_settlement():
     assert re["losses"] == 1
     assert re["settledCanonicallyCount"] == 0
     assert re["confirmedReceiptOnlyCount"] == 2
-    assert re["netProfitLoss"] == round(21.07 - 19.64, 2)
-    # Per-bet rows: economics known, correctly attributed to the receipt.
+    # MONEY IS CANONICAL ONLY. These bets have no canonical settlement, so
+    # they contribute no dollars -- the receipt's 21.07/-19.64 are evidence,
+    # not accounting (canonical netProfitLoss is the single authority; see
+    # lib.edgelab.bets.realized_bet_economics). The shortfall is counted
+    # rather than hidden, and the outcome view still reports the real record.
+    assert re["netProfitLoss"] == 0
+    assert re["netProfitLossUnavailableCount"] == 2
+    # Per-bet rows: the receipt stays fully visible beside the canonical figure.
     by_id = {b["betId"]: b for b in report["bets"]}
-    assert by_id["b1"]["economicsSource"] == "CONFIRMED_RECEIPT"
+    assert by_id["b1"]["economicsSource"] is None      # no canonical dollars to label
     assert by_id["b1"]["knownResult"] == "WIN"
-    assert by_id["b1"]["netProfitLoss"] == 21.07
+    assert by_id["b1"]["netProfitLoss"] is None        # never the receipt's 21.07
+    assert by_id["b1"]["confirmedReceiptNetProfitLoss"] == 21.07
+    assert by_id["b1"]["confirmedReceiptReturn"] == 45.66
     assert by_id["b1"]["status"] == "pending"  # raw ledger status/result never overwritten
     assert by_id["b1"]["result"] is None
     # unresolvedCount stays canonical-strict (still pending), but the
@@ -394,8 +402,13 @@ def test_report_state_mixed_settlement_and_receipt_only():
     assert "Realized economics (canonical settlement + confirmed receipts): 1-1" in md
 
 
-def test_report_confirmed_receipt_never_mislabeled_as_settlement_and_vice_versa():
-    """economicsSource is the one place a reader learns provenance -- must never say SETTLEMENT for a receipt-only bet or CONFIRMED_RECEIPT for a plain canonical settlement."""
+def test_report_economics_source_describes_where_the_shown_dollars_came_from():
+    """economicsSource is the one place a reader learns provenance. Since the
+    shown dollars are now ALWAYS canonical settlement's, it may only ever say
+    SETTLEMENT -- and must say nothing at all when there are no canonical
+    dollars to describe. Claiming CONFIRMED_RECEIPT for a canonical figure, or
+    SETTLEMENT for a bet settlement never graded, are both the mislabeling
+    this field exists to prevent."""
     bets = [
         _bet("settled_only", status="settled", result="LOSS", net_pl=-10.0),
         _bet("receipt_only", status="pending", confirmed_net_pl=3.0, confirmed_return=8.0),
@@ -403,7 +416,11 @@ def test_report_confirmed_receipt_never_mislabeled_as_settlement_and_vice_versa(
     report = build_postmortem("2026-08-11", bets)
     by_id = {b["betId"]: b for b in report["bets"]}
     assert by_id["settled_only"]["economicsSource"] == "SETTLEMENT"
-    assert by_id["receipt_only"]["economicsSource"] == "CONFIRMED_RECEIPT"
+    assert by_id["settled_only"]["netProfitLoss"] == -10.0
+    assert by_id["receipt_only"]["economicsSource"] is None
+    assert by_id["receipt_only"]["netProfitLoss"] is None
+    # ...and the receipt is still readable on the row.
+    assert by_id["receipt_only"]["confirmedReceiptNetProfitLoss"] == 3.0
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -466,17 +483,20 @@ def test_rolling_window_smaller_than_requested_reports_true_size_not_padded():
     assert report["windowSampleStatus"] == "INSUFFICIENT_SAMPLE"
 
 
-def test_confirmed_receipt_economics_used_for_pl():
-    """A manually confirmed real receipt overrides the system's own
-    derived netProfitLoss/return -- same priority
-    lib.edgelab.bets.realized_bet_economics already documents."""
+def test_rolling_window_pl_is_canonical_not_the_confirmed_receipt():
+    """The rolling window is an accounting surface, so it reports canonical
+    netProfitLoss. A confirmed receipt that disagrees is evidence, surfaced
+    separately (lib.edgelab.bets.confirmed_receipt_economics /
+    realized_economics_disagreement), never substituted for the ledger --
+    otherwise this window and the bankroll would describe the same wagers
+    differently, which is exactly the inconsistency this replaced."""
     bets = [
         _rolling_bet("b1", result="WIN", net_pl=100.0, stake=10.0,
                       confirmed_net_pl=42.0, confirmed_return=52.0),
     ]
     report = build_rolling_window_report(bets)
-    assert report["overall"]["netProfitLoss"] == 42.0
-    assert report["overall"]["realizedReturn"] == 52.0
+    assert report["overall"]["netProfitLoss"] == 100.0
+    assert report["overall"]["realizedReturn"] == 110.0   # stake + canonical net
 
 
 def test_missing_fair_probability_and_clv_stay_unavailable():
@@ -663,3 +683,103 @@ def test_markdown_still_renders_a_postmortem_built_before_this_field_existed():
 
     assert "## How each bet reached the ledger" not in markdown
     assert "## Model-supported vs. manual" in markdown
+
+
+# ---------------------------------------------------------------------------
+# ONE ACCOUNTING AUTHORITY FOR REALIZED P/L.
+#
+# The repository used to ship two answers at once: reports and postmortems
+# called realized_bet_economics, which PREFERRED confirmedReceiptNetProfitLoss,
+# while lib.edgelab.bankroll read canonical netProfitLoss directly. The same
+# wager therefore reported different realized P/L depending on which surface a
+# reader looked at, and nothing announced the disagreement. A 2026-09-17 audit
+# measured it across the 304 settled rows carrying a receipt: +85.76 signed,
+# 173.40 absolute, 237 rows differing by more than a cent.
+#
+# Canonical netProfitLoss is now the single authority. The receipt is still
+# fully visible -- beside the canonical figure, with the difference stated --
+# it simply no longer replaces it.
+# ---------------------------------------------------------------------------
+
+CANONICAL_NET_PL = 10.0      # X -- what the ledger says
+RECEIPT_NET_PL = 25.0        # Y -- what the human's receipt says
+RECEIPT_GROSS = 35.0
+
+
+def _disagreeing_bet(bet_id="dis1"):
+    return _bet(bet_id, status="settled", result="WIN", net_pl=CANONICAL_NET_PL,
+                confirmed_net_pl=RECEIPT_NET_PL, confirmed_return=RECEIPT_GROSS, stake=10.0)
+
+
+def test_postmortem_headline_reports_canonical_not_receipt():
+    report = build_postmortem("2026-08-11", [_disagreeing_bet()])
+    assert report["totalNetProfitLoss"] == CANONICAL_NET_PL
+    assert report["realizedEconomics"]["netProfitLoss"] == CANONICAL_NET_PL
+    assert report["performanceByMarketFamily"]["game_result"]["netProfitLoss"] == CANONICAL_NET_PL
+    assert report["totalNetProfitLoss"] != RECEIPT_NET_PL
+
+
+def test_postmortem_roi_uses_canonical():
+    report = build_postmortem("2026-08-11", [_disagreeing_bet()])
+    # 10.00 on a 10.00 stake settled == 100%, not the receipt's 250%
+    assert report["roiPct"] == 100.0
+
+
+def test_bankroll_reports_canonical_and_agrees_with_the_postmortem():
+    from lib.edgelab.bankroll import compute_bankroll_summary
+    bet = _disagreeing_bet()
+    txns = [{"type": "STARTING_BALANCE", "amount": 100.0}]
+    summary = compute_bankroll_summary(txns, [bet])
+    report = build_postmortem("2026-08-11", [bet])
+    assert summary["settledBankroll"] == round(100.0 + CANONICAL_NET_PL, 2)
+    # THE WHOLE POINT: the two surfaces now describe the same wager identically.
+    assert summary["settledBankroll"] - 100.0 == report["totalNetProfitLoss"]
+
+
+def test_daily_report_aggregate_uses_canonical():
+    from lib.edgelab import bets as bets_lib
+    gross, net = bets_lib.realized_bet_economics(_disagreeing_bet())
+    assert net == CANONICAL_NET_PL
+    assert gross == 20.0          # stake + canonical net, never the receipt's 35.00
+
+
+def test_receipt_evidence_is_still_visible_and_the_disagreement_is_stated():
+    """Suppressing the receipt would be its own failure -- it must remain
+    readable beside the canonical figure, with the gap spelled out."""
+    report = build_postmortem("2026-08-11", [_disagreeing_bet()])
+    row = report["bets"][0]
+    assert row["netProfitLoss"] == CANONICAL_NET_PL
+    assert row["confirmedReceipt"] is True
+    assert row["confirmedReceiptNetProfitLoss"] == RECEIPT_NET_PL
+    assert row["confirmedReceiptReturn"] == RECEIPT_GROSS
+    disagreement = row["realizedEconomicsDisagreement"]
+    assert disagreement["agrees"] is False
+    assert disagreement["canonicalNetProfitLoss"] == CANONICAL_NET_PL
+    assert disagreement["confirmedReceiptNetProfitLoss"] == RECEIPT_NET_PL
+    assert disagreement["difference"] == round(RECEIPT_NET_PL - CANONICAL_NET_PL, 4)
+
+
+def test_economics_source_never_claims_receipt_provenance_for_canonical_money():
+    """The label must describe where the shown dollars actually came from."""
+    report = build_postmortem("2026-08-11", [_disagreeing_bet()])
+    assert report["bets"][0]["economicsSource"] == "SETTLEMENT"
+
+
+def test_receipt_only_bet_contributes_no_canonical_money_and_says_so():
+    """A bet known only through a receipt has NO canonical P/L. It must not
+    quietly contribute the receipt's dollars, and the gap must be counted
+    rather than hidden."""
+    bets = [_bet("r1", status="pending", confirmed_net_pl=21.07, confirmed_return=45.66, stake=24.59)]
+    report = build_postmortem("2026-08-11", bets)
+    realized = report["realizedEconomics"]
+    assert realized["netProfitLoss"] == 0
+    assert realized["confirmedReceiptOnlyCount"] == 1
+    assert realized["netProfitLossUnavailableCount"] == 1
+    # ...and the receipt itself is still on the row.
+    assert report["bets"][0]["confirmedReceiptNetProfitLoss"] == 21.07
+
+
+def test_confirmed_receipt_economics_still_returns_the_receipt_pair():
+    from lib.edgelab import bets as bets_lib
+    assert bets_lib.confirmed_receipt_economics(_disagreeing_bet()) == (RECEIPT_GROSS, RECEIPT_NET_PL)
+    assert bets_lib.confirmed_receipt_economics(_bet("none", status="settled", result="WIN", net_pl=1.0)) == (None, None)

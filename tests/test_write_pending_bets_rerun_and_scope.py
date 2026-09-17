@@ -155,7 +155,18 @@ class TestChangedFileScope:
              ":!data/research", ":!data/kalshi",
              ":!data/bet_backlog_remediation_plan.json",
              ":!data/kalshi_snapshot_retention_plan.json",
-             ":!data/edgelab"],
+             ":!data/edgelab",
+             # Confirmed-lineup handicapping card and single-game bundles:
+             # both are analysis-only artifacts produced by
+             # scripts/build_handicapping_card.py and
+             # scripts/fetch_single_game.py. Neither is read by the
+             # production betting/pricing pipeline this scope lock guards
+             # -- they carry no model probability, no edge and no
+             # recommendation, and nothing in risk_gate.py /
+             # write_pending_bets.py / build_market_ledger.py reads them.
+             # Excluded for the same reason as data/research and
+             # data/kalshi above.
+             ":!data/handicapping_card", ":!data/single_game"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected working-tree changes: {result.stdout}"

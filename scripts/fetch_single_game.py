@@ -176,7 +176,7 @@ def select_game_markets(raw_markets, game, date, *, retrieved_at=None, source_us
     """
     The canonical normalize -> strict single-game registry gate ->
     game filter chain, reused unchanged. Returns
-    (kept, excluded_for_this_game, stage_report, status_counts).
+    (kept, excluded_for_this_game, stage_report, status_counts, all_records).
 
     `excluded_for_this_game` is the audit trail: markets the strict
     registry gate rejected that nonetheless name this matchup. They are
@@ -197,7 +197,131 @@ def select_game_markets(raw_markets, game, date, *, retrieved_at=None, source_us
         r for r in registry_excluded
         if (r.get("matchup") or "").upper() == game["matchup"].upper()
     ]
-    return kept, excluded_here, stage_report, status_counts
+    return kept, excluded_here, stage_report, status_counts, records
+
+
+
+# ── Exhaustiveness accounting: nothing attributable may vanish ──────────
+
+def _raw_ticker(raw):
+    return (raw or {}).get("ticker") or (raw or {}).get("market_ticker")
+
+
+def _raw_event_ticker(raw):
+    return (raw or {}).get("event_ticker") or (raw or {}).get("eventTicker")
+
+
+def account_for_game_contracts(raw_markets, kept, excluded, all_records):
+    """
+    Pure. Prove that EVERY raw Kalshi contract attributable to this game
+    is represented somewhere in the bundle.
+
+    The failure this prevents: Kalshi introduces a new single-game family,
+    the strict registry does not recognise its series, and its contracts
+    quietly disappear -- the artifact still looks complete because the
+    families it does understand are all present. "Every market for this
+    game" then silently means "every market we happen to parse".
+
+    Attribution is by EVENT TICKER, which is Kalshi's own grouping key,
+    not by a guess: the event tickers are learned from the normalized
+    records that DID resolve to this matchup, and every raw contract
+    sharing one of those event tickers is then required to appear either
+    in the normalized markets or in the excluded/unresolved collection
+    (with its raw payload and reason).
+
+    A raw contract carrying no event ticker at all cannot be safely
+    attributed to any game. It is reported in `unattributableRawContracts`
+    rather than being guessed into or out of this game -- ambiguity is
+    retained explicitly, never resolved by assumption.
+
+    Returns an accounting dict. `silentRemainderCount == 0` is the
+    invariant a successful artifact must satisfy.
+    """
+    kept_tickers = {r.get("ticker") for r in kept if r.get("ticker")}
+    excluded_tickers = {r.get("ticker") for r in excluded if r.get("ticker")}
+
+    # Event tickers this game is known to own, learned from every
+    # normalized record (kept OR excluded) that resolved to this matchup.
+    event_keys = {
+        r.get("eventTicker") for r in list(kept) + list(excluded)
+        if r.get("eventTicker")
+    }
+
+    attributable, unattributable = [], []
+    for raw in raw_markets:
+        event_ticker = _raw_event_ticker(raw)
+        ticker = _raw_ticker(raw)
+        if not event_ticker:
+            # Only report the ones that are not already accounted for --
+            # a contract we normalized fine needs no ambiguity note.
+            if ticker and ticker not in kept_tickers and ticker not in excluded_tickers:
+                unattributable.append(ticker)
+            continue
+        if event_ticker in event_keys:
+            attributable.append(ticker)
+
+    attributable_set = {t for t in attributable if t}
+    accounted = attributable_set & (kept_tickers | excluded_tickers)
+    silent_remainder = sorted(attributable_set - accounted)
+
+    return {
+        "attributionMethod": "KALSHI_EVENT_TICKER",
+        "rawGameAttributableContracts": len(attributable_set),
+        "normalizedMarkets": len(kept_tickers),
+        "excludedOrUnresolved": len(excluded_tickers),
+        "accountedContracts": len(accounted),
+        "silentRemainderCount": len(silent_remainder),
+        "silentRemainderTickers": silent_remainder[:50],
+        "gameEventTickers": sorted(k for k in event_keys if k),
+        # Explicitly retained ambiguity -- never attributed by guessing.
+        "unattributableRawContracts": len(unattributable),
+        "unattributableSampleTickers": sorted(t for t in unattributable if t)[:20],
+        "rawUniverseContracts": len(raw_markets),
+        "normalizedUniverseRecords": len(all_records),
+        "invariant": "silentRemainderCount == 0",
+        "invariantHolds": len(silent_remainder) == 0,
+    }
+
+
+def lineup_confirmation_for_single_game(slate_context):
+    """
+    Pure. Whether BOTH official lineups are confirmed for this game, read
+    from the canonical slate block this artifact already carries.
+
+    A single-game fetch is ALSO a research tool, so the artifact is
+    produced regardless. But if it is used for REAL-MONEY handicapping
+    the confirmed-lineup gate still applies, so the answer is stated
+    explicitly here rather than left for a reader to infer -- a fresh
+    fetch must never look like a way around the gate.
+    """
+    game = (slate_context or {}).get("game")
+    if not game:
+        return {
+            "bothOfficialLineupsConfirmed": False,
+            "realMoneyEligible": False,
+            "status": "UNKNOWN_NO_SLATE_CONTEXT",
+            "reason": (
+                "no canonical slate block for this game, so official-lineup confirmation cannot be "
+                "established; treat as NOT real-money eligible until it can"
+            ),
+            "sides": None,
+        }
+    from lib.betting_eligibility import classify_game_eligibility, lineup_confirmation
+
+    lineups = lineup_confirmation(game)
+    verdict = classify_game_eligibility(game)
+    return {
+        "bothOfficialLineupsConfirmed": lineups["bothConfirmed"],
+        "realMoneyEligible": verdict["eligible"],
+        "status": verdict["status"],
+        "reason": verdict["reason"],
+        "sides": {side: lineups[side] for side in ("away", "home")},
+        "note": (
+            "This artifact is produced regardless of lineup confirmation because it is also a "
+            "research tool. It does NOT bypass the confirmed-lineup betting gate: realMoneyEligible "
+            "false means this game must not produce a real-money recommendation."
+        ),
+    }
 
 
 def _load_json(path):
@@ -206,6 +330,24 @@ def _load_json(path):
             return json.load(f)
     except (OSError, ValueError):
         return None
+
+
+def unwrap_pipeline_artifact(payload):
+    """
+    Pure. A pipeline artifact wraps its payload in a versioned envelope
+    (`lib/pipeline_artifacts.py`: `{"meta": {...}, "data": <payload>}`).
+    A plain file is its own payload. `payload` is also accepted for
+    forward/backward compatibility with any other envelope shape in the
+    tree -- reading the wrong key is how a slate silently comes back
+    empty.
+    """
+    if not isinstance(payload, dict):
+        return payload
+    for key in ("data", "payload"):
+        inner = payload.get(key)
+        if isinstance(inner, dict) and ("games" in inner or "date" in inner):
+            return inner
+    return payload
 
 
 def load_slate_context(date, game_pk):
@@ -222,8 +364,7 @@ def load_slate_context(date, game_pk):
         payload = _load_json(path)
         if payload is None:
             continue
-        # A pipeline artifact wraps its payload in a versioned envelope.
-        slate = payload.get("payload") if isinstance(payload.get("payload"), dict) else payload
+        slate = unwrap_pipeline_artifact(payload)
         if (slate or {}).get("date") != date:
             continue
         for game in (slate.get("games") or []):
@@ -269,7 +410,11 @@ def load_full_market_coverage(date, matchup):
         payload = _load_json(path)
         if payload is None:
             continue
-        body = payload.get("payload") if isinstance(payload.get("payload"), dict) else payload
+        body = payload if not isinstance(payload, dict) else (
+            payload.get("data") if isinstance(payload.get("data"), dict)
+            else payload.get("payload") if isinstance(payload.get("payload"), dict)
+            else payload
+        )
         contracts = body.get("contracts") or body.get("rows") or []
         rows = [c for c in contracts if (c.get("matchup") or "").upper() == matchup.upper()]
         return {"status": "LOADED", "sourceFile": label, "rows": rows, "rowCount": len(rows)}
@@ -293,7 +438,8 @@ def summarize_markets(records):
 
 
 def build_artifact(*, date, game, markets, excluded, stage_report, status_counts,
-                   slate_context, coverage, archive_info, generated_at, warnings):
+                   slate_context, coverage, archive_info, generated_at, warnings,
+                   accounting=None, lineup_status=None):
     return {
         "schemaVersion": ARTIFACT_SCHEMA_VERSION,
         "artifactType": "SINGLE_GAME_HANDICAPPING_BUNDLE",
@@ -313,6 +459,8 @@ def build_artifact(*, date, game, markets, excluded, stage_report, status_counts
         "markets": markets,
         "marketSummary": summarize_markets(markets),
         "registryExcludedForThisGame": excluded,
+        "contractAccounting": accounting,
+        "lineupConfirmation": lineup_status,
         "marketFilterStageReport": stage_report,
         "rawNormalizationStatusCounts": status_counts,
         "slateContext": slate_context,
@@ -324,6 +472,11 @@ def build_artifact(*, date, game, markets, excluded, stage_report, status_counts
             "No probability, edge, price adjustment or recommendation is computed in this artifact.",
             "Model/handicapping context is this game's canonical slate block verbatim, or an "
             "explicit absence reason -- never fabricated.",
+            "EXHAUSTIVE: every raw Kalshi contract attributable to this game appears either in "
+            "`markets` or in `registryExcludedForThisGame` with its reason. "
+            "`contractAccounting.silentRemainderCount` is 0 on every successful artifact.",
+            "`lineupConfirmation` states whether BOTH official lineups are confirmed. A single-game "
+            "fetch never bypasses the confirmed-lineup real-money gate.",
         ],
     }
 
@@ -457,10 +610,21 @@ def main():
 
     # ── NOW filter to the one game ────────────────────────────────────
     generated_at = utc_now_iso()
-    markets, excluded, stage_report, status_counts = select_game_markets(
+    markets, excluded, stage_report, status_counts, all_records = select_game_markets(
         raw_markets, game, date, retrieved_at=generated_at,
         source_used="live" if args.source == "live" else "snapshot",
     )
+    accounting = account_for_game_contracts(raw_markets, markets, excluded, all_records)
+    if not accounting["invariantHolds"]:
+        print(
+            "ERROR: exhaustiveness invariant violated -- "
+            f"{accounting['silentRemainderCount']} raw contract(s) attributable to "
+            f"{game['matchup']} are in neither the normalized markets nor the excluded "
+            f"collection: {accounting['silentRemainderTickers']}. Refusing to write an artifact "
+            "that silently drops contracts.",
+            file=sys.stderr,
+        )
+        return EXIT_ERROR
     if not markets:
         warnings.append(
             f"no Kalshi markets matched {game['matchup']} on {date} -- the complete archive above is "
@@ -477,16 +641,37 @@ def main():
         warnings.append(f"slate context {slate_context['status']}: {slate_context.get('reason', '')}".strip())
     coverage = load_full_market_coverage(date, game["matchup"])
 
+    lineup_status = lineup_confirmation_for_single_game(slate_context)
+    if not lineup_status["realMoneyEligible"]:
+        warnings.append(
+            f"NOT REAL-MONEY ELIGIBLE ({lineup_status['status']}): {lineup_status['reason']} -- "
+            f"this artifact is research/early-value context only"
+        )
+    if accounting["unattributableRawContracts"]:
+        warnings.append(
+            f"{accounting['unattributableRawContracts']} raw contract(s) carry no event ticker and "
+            f"could not be attributed to any game; retained as explicit ambiguity, never guessed "
+            f"into this game"
+        )
+
     artifact = build_artifact(
         date=date, game=game, markets=markets, excluded=excluded, stage_report=stage_report,
         status_counts=status_counts, slate_context=slate_context, coverage=coverage,
         archive_info=archive_info, generated_at=generated_at, warnings=warnings,
+        accounting=accounting, lineup_status=lineup_status,
     )
     path, index_path, latest_path = write_artifact(artifact, root=args.out_root)
 
     summary = artifact["marketSummary"]
     print(f"[fetch_single_game] {game['matchup']} gamePk={game['gamePk']}: {summary['total']} markets "
           f"({summary['byFamily']})")
+    print(f"[fetch_single_game] accounting: attributable={accounting['rawGameAttributableContracts']} "
+          f"normalized={accounting['normalizedMarkets']} excluded={accounting['excludedOrUnresolved']} "
+          f"accounted={accounting['accountedContracts']} "
+          f"silentRemainder={accounting['silentRemainderCount']}")
+    print(f"[fetch_single_game] lineups: bothOfficialConfirmed="
+          f"{lineup_status['bothOfficialLineupsConfirmed']} "
+          f"realMoneyEligible={lineup_status['realMoneyEligible']} ({lineup_status['status']})")
     print(f"[fetch_single_game] wrote {path}")
     print(f"[fetch_single_game] index: {index_path} | latest pointer: {latest_path}")
     for warning in warnings:

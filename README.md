@@ -21,7 +21,30 @@ MLB sports betting model — Poisson probability engine, Savant metrics, Kalshi 
   (`HYPOTHESIS` / `SUPPORTED` / `REJECTED` / `RETIRED`). Generated from
   `config/playbook_lessons.json`; see `scripts/playbook_lessons.py`.
 - `RUN_THE_SLATE.md` — the single authoritative EXECUTION file: startup
-  sequence, market list, sizing, output format.
+  sequence, eligibility, market list, sizing, output format.
+
+### The two boundaries that decide what gets bet
+
+1. **Game eligibility.** Only games that have **not started** and have **BOTH
+   official lineups confirmed** (`lineupConfirmedOfficial` on the away *and*
+   home team) are eligible for real-money evaluation. Probable/projected
+   lineups are never treated as confirmed. Every other game stays archived and
+   researchable — the Early Value surface — and must not produce a real-money
+   recommendation. Build the card with
+   `python3 scripts/build_handicapping_card.py`.
+2. **Full market universe.** For each eligible game, **every** Kalshi market
+   attributable to it is comparable — F3/F7, alternate totals, winning margin,
+   props included. The 11-row `g['marketLedger']` is the **production-model and
+   risk-gate** universe, not the manual handicapper's. A market with no
+   production adapter is still comparable; a market with no automatic
+   settlement support is comparable but flagged for manual reconciliation.
+
+**Bankroll.** Stake sizing uses the read-only bankroll context
+(`lib/bankroll_context.py`): a `kalshi-bet-router`-published artifact when one
+exists, otherwise this repo's existing canonical ledger, always with an
+explicit freshness status. A `STALE`/`UNAVAILABLE` bankroll disables stake
+sizing rather than falling back to a remembered number — see
+`docs/BANKROLL_CONTEXT.md`.
 
 ---
 
@@ -68,6 +91,7 @@ MLB sports betting model — Poisson probability engine, Savant metrics, Kalshi 
 | `docs/SETTLEMENT_RECONCILIATION.md` | What causes settlement catch-up, and what it will never do |
 | `docs/SINGLE_GAME_FETCH.md` | Single-game fetch: selectors, doubleheaders, the archive invariant |
 | `docs/RESEARCH_OFFENSIVE_FORM.md` | Offensive-form consistency and market-relative form: what the evidence supports |
+| `docs/BANKROLL_CONTEXT.md` | Where the bankroll comes from, its freshness rules, and why the router has none |
 
 ### Data Files (written by Actions — never commit manually)
 | File | Contents |
@@ -80,6 +104,7 @@ MLB sports betting model — Poisson probability engine, Savant metrics, Kalshi 
 | `data/kalshi_search.json` | All Kalshi market prices indexed by event_ticker |
 | `data/team_offense_form.json` | Recent offensive form as a DISTRIBUTION (scores, median, threshold clears, outlier dependence, team-total line-relative record). Descriptive context — no model weight reads it |
 | `data/single_game/<date>/<gamePk>.json` | Single-game handicapping bundle (`data/single_game/latest.json` points at the newest) |
+| `data/handicapping_card/<date>.json` | The real-money card: betting-eligible games + every market for each, plus the bankroll context (`latest.json` points at the newest) |
 
 ### Archived (not current — do not use as instructions)
 | File | Reason |
@@ -94,6 +119,10 @@ MLB sports betting model — Poisson probability engine, Savant metrics, Kalshi 
 |------|-----------|
 | Handicapping methodology | `HANDICAPPING_PLAYBOOK.md` (+ `PLAYBOOK_LESSONS.md`) |
 | Execution order | `RUN_THE_SLATE.md` |
+| Game eligibility (real money) | both official lineups confirmed + not started — `lib/betting_eligibility.py` |
+| Manual handicapping market universe | `data/handicapping_card/<date>.json` |
+| Production-model / risk-gate coverage | `g['marketLedger']` (11 rows/game) |
+| Bankroll for sizing | `lib/bankroll_context.py` |
 | Numeric thresholds | `config/rules.json` |
 | Rule definitions | `RULES.md` |
 | Math engine | `MODEL_CORE.md` |

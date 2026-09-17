@@ -1,6 +1,7 @@
 # RUN_THE_SLATE.md
 # The one file to rule them all.
-# Last updated: September 17, 2026 — v1.3 (canonical handicapping playbook + short startup prompt)
+# Last updated: September 18, 2026 — v1.4 (confirmed-lineup eligibility, bankroll context,
+#                                          full-market manual handicapping)
 #
 # USAGE: When the user says "run the slate", execute this document top-to-bottom.
 # Every other doc is either archived or subordinate to this one.
@@ -15,11 +16,11 @@
 [`PLAYBOOK_LESSONS.md`](PLAYBOOK_LESSONS.md), in full.**
 
 They are short on purpose (playbook ≈ 950 words of methodology). Together they
-are the repository's durable handicapping memory: thesis-before-market, market
-expression, price discipline, correlation control, how to read recent form, and
-the evidence-graded lessons earned from past postmortems. Without them, every
-new chat re-derives the same lessons from scratch and re-makes the same
-mistakes.
+are the repository's durable handicapping memory: game eligibility, thesis
+before market, market expression, price and bankroll discipline, correlation
+control, how to read recent form, and the evidence-graded lessons earned from
+past postmortems. Without them, every new chat re-derives the same lessons from
+scratch and re-makes the same mistakes.
 
 **Record the playbook version in the slate output**, so a later postmortem knows
 which methodology produced the card:
@@ -37,18 +38,20 @@ Nothing below this line overrides the playbook's methodology; `RULES.md` and
 ## START-OF-SLATE PROMPT (copy/paste into a fresh chat)
 
 ```
-Read HANDICAPPING_PLAYBOOK.md and PLAYBOOK_LESSONS.md from
+Read HANDICAPPING_PLAYBOOK.md and PLAYBOOK_LESSONS.md in
 chmoses98/edge-finder-api (main) first, and follow them.
-Then use the newest valid slate/research data in that repo.
-Analyze EVERY available market for EVERY unstarted game.
-For each game build your own baseball thesis BEFORE choosing a market,
-then compare the alternative expressions of that thesis.
-Respect price, uncertainty and correlation; do not stack one thesis.
-Use current lineups, news and weather.
+Load the newest valid MLB slate/market evidence in that repo.
+Load the current canonical bankroll context; if it is stale or unavailable,
+  handicap anyway but do NOT present stake sizes -- say why.
+Exclude games that have already started.
+Exclude games without BOTH official lineups confirmed from real-money analysis.
+For each remaining eligible game, inspect EVERY available Kalshi market.
+Build the baseball thesis BEFORE choosing a market, then compare expressions.
+Respect price, uncertainty, correlation and bankroll.
 State the strongest evidence AGAINST each proposed bet.
-Return only wagers that actually clear the betting threshold; passing is fine.
-Never assume a recommendation was placed — I confirm every wager myself.
-Report the PLAYBOOK_VERSION you used.
+Return only wagers clearing the betting threshold; passing is fine.
+Never assume a recommendation was placed -- I confirm every wager myself.
+Report the PLAYBOOK_VERSION and the bankroll you sized against.
 ```
 
 ---
@@ -156,7 +159,13 @@ Only after full output is confirmed. Status: open (real) or paper.
 
 ---
 
-## MARKET EVALUATION LIST (canonical — exactly these 8 markets per game)
+## PRODUCTION-MODEL MARKET LIST (the 11-row `marketLedger` universe)
+
+> **Scope.** This table is the **legacy production-model and risk-gate**
+> universe: the markets `scripts/build_market_ledger.py` prices, `risk_gate.py`
+> gates, and the automated execution chain may write to `bets.json`. It is NOT
+> the set of markets a manual handicapper may compare on a BETTING-ELIGIBLE
+> game — see § FULL MARKET COVERAGE and `HANDICAPPING_PLAYBOOK.md` §3.
 
 | # | Market | Kalshi Series | Rule Gate |
 |---|---------|--------------|-----------|
@@ -171,7 +180,7 @@ Only after full output is confirmed. Status: open (real) or paper.
 
 **RL** (KXMLBSPREAD): paper/suspended per Rule 81. Always evaluate; always paper until suspension lifts.
 
-**Every game gets all 11 rows in `marketLedger`. A missing row is a pipeline failure, not an acceptable gap. `allEdges` is not the coverage source of truth — `marketLedger` is.**
+**Every game gets all 11 rows in `marketLedger`. A missing row is a pipeline failure, not an acceptable gap. Within the production-model universe, `allEdges` is not the coverage source of truth — `marketLedger` is.**
 
 ---
 
@@ -187,7 +196,11 @@ Only after full output is confirmed. Status: open (real) or paper.
 | Market list | This file (above) |
 | Rule definitions | `RULES.md` (T1/T2/T3 tiers) |
 | Math engine | `MODEL_CORE.md` Sections 1–8 |
-| Market coverage | `g['marketLedger']` in `data/slate.json` — 11 rows per game, written by `build_market_ledger.py` |
+| Handicapping methodology | `HANDICAPPING_PLAYBOOK.md` (+ `PLAYBOOK_LESSONS.md`) |
+| Game eligibility (real money) | both official lineups confirmed + not started — `lib/betting_eligibility.py` |
+| Manual handicapping market universe | every Kalshi market for a BETTING-ELIGIBLE game — `data/handicapping_card/<date>.json` |
+| Production-model / risk-gate coverage | `g['marketLedger']` in `data/slate.json` — 11 rows per game, written by `build_market_ledger.py` |
+| Bankroll for sizing | `lib/bankroll_context.py` (router artifact if published, else the canonical EdgeLab ledger) |
 | Bet ledger | `bets.json` (flat array, parse directly) |
 
 **FD/DK are banned as bet sources or fallbacks. Never used.**
@@ -353,11 +366,81 @@ Do not log any bets until `Eval Failed = 0` and `Validation failures = NONE`.
 
 ---
 
-## FULL MARKET COVERAGE (research/audit visibility, not a betting input)
+## ELIGIBILITY — which games may be bet at all (MANDATORY)
 
-`g['marketLedger']` (11 rows/game) remains the ONLY source of truth for
-recommendation-eligible markets and real-money gating — nothing in this
-section changes that.
+**Only games with BOTH OFFICIAL LINEUPS CONFIRMED are eligible for real-money
+evaluation.** The pipeline archives every game and every Kalshi market; the
+handicapping card does not.
+
+```
+1. archive the COMPLETE MLB Kalshi universe        (capture jobs, unchanged)
+2. determine which games have NOT started
+3. determine which of those have BOTH official lineups confirmed
+4. those — and only those — are BETTING-ELIGIBLE
+5. for each eligible game, evaluate EVERY available Kalshi market
+6. a game without both official lineups confirmed must NOT produce a
+   real-money recommendation from the normal slate card
+7. probable/projected lineups are NEVER treated as confirmed
+```
+
+Build the card:
+
+```bash
+python3 scripts/build_handicapping_card.py            # -> data/handicapping_card/<date>.json
+python3 scripts/build_handicapping_card.py --print-summary
+```
+
+It writes `bettingEligibleGames` (executable) and `researchOnlyGames`
+(archived, visible, `realMoneyEligible: false` on every market row — this is
+the **Early Value / research surface**, and it must never leak into the
+executable card). `data/handicapping_card/latest.json` is the pointer.
+
+"Analyze every available market" therefore means **every available market for
+every UNSTARTED + LINEUP-CONFIRMED + OTHERWISE ELIGIBLE game** — never
+recommending bets on games whose official lineups are still unconfirmed.
+
+---
+
+## BANKROLL — size against the real one, or say you cannot
+
+The card carries a read-only `bankroll` context
+(`lib/bankroll_context.py`). Use `bankroll.bankroll` for sizing **only** when
+`bankroll.sizingAllowed` is true. When it is `STALE` or `UNAVAILABLE`, handicap
+normally but state that stake sizing is unavailable and why — never substitute
+a remembered or hand-typed number. The final output must name the bankroll it
+sized against. See `docs/BANKROLL_CONTEXT.md` for the source and its freshness
+rules.
+
+---
+
+## FULL MARKET COVERAGE (the manual handicapper's market universe)
+
+**Scope note (v1.3).** `g['marketLedger']` (11 rows/game) is the source of
+truth for the **legacy PRODUCTION-MODEL and RISK-GATE universe** — the markets
+`scripts/build_market_ledger.py` prices and `scripts/risk_gate.py` gates, and
+the only ones the automated execution chain may write to `bets.json`. That is
+still true and unchanged.
+
+It is **NOT** the set of markets a manual handicapper may compare. Once a game
+is **BETTING-ELIGIBLE** (§ELIGIBILITY below), every Kalshi market attributable
+to it is available for comparison — F3/F7, alternate totals, winning margin,
+pitcher and hitter props included — whether or not a production adapter prices
+it. See `HANDICAPPING_PLAYBOOK.md` §0 and §3.
+
+Keep the five axes separate:
+
+| Axis | Question | Decided by |
+|---|---|---|
+| **GAME ELIGIBILITY** | may this game be on the real-money card? | `lib/betting_eligibility.py` |
+| **MARKET AVAILABILITY** | does Kalshi list the contract? | the archive |
+| **PRODUCTION MODEL SUPPORT** | does our model price it? | the 11-row `marketLedger` |
+| **MANUAL HANDICAPPING ELIGIBILITY** | can the analyst evaluate it? | the analyst |
+| **AUTOMATIC SETTLEMENT SUPPORT** | can the repo grade it afterwards? | `settle_markets.py` |
+
+A market with **no production adapter is still comparable** (axis 3 ≠ axis 4).
+A market with **no automatic settlement support is still comparable**, but is
+flagged — it will need manual reconciliation, so check before recording it. No
+unsupported family is ever given a fabricated model probability.
 
 ### Where to find it (exact operational path)
 
@@ -467,11 +550,12 @@ directly from `data/kalshi_search.json` and fails
 (`trueSilentRemainderCount > 0`) if any raw market vanished anywhere
 inside discovery, not just if a returned contract lacks a terminal state.
 
-Use this artifact for manual research/inspection of a market Kalshi
-listed but that isn't one of the 11 required markets — it never makes a
-market real-money eligible on its own; that still requires the market to
-be in `REQUIRED_MARKETS` and clear every gate in `scripts/build_market_ledger.py`
-and `scripts/risk_gate.py`, unchanged.
+Use this artifact to inspect any market Kalshi listed. For the **automated
+execution chain**, a market still becomes real-money eligible only by being in
+`REQUIRED_MARKETS` and clearing every gate in `scripts/build_market_ledger.py`
+and `scripts/risk_gate.py` — unchanged. For **manual handicapping**, a market on
+a BETTING-ELIGIBLE game is comparable regardless, and the decision to wager is
+the analyst's, made under `HANDICAPPING_PLAYBOOK.md`.
 
 ---
 

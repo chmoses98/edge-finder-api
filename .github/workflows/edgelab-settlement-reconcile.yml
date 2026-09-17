@@ -58,6 +58,27 @@ name: EdgeLab Settlement Reconcile
 # (scripts/ci/git_data_commit.py) and reports regenerating only when
 # settlement genuinely changed canonical state, a no-op run produces no
 # commit at all -- and therefore no further push event.
+#
+# NO TIMESTAMP-ONLY CHURN
+# -----------------------
+# Two files used to guarantee a commit on every single run just by
+# existing, because both carry fresh wall-clock timestamps:
+#   * the per-run receipt now goes to RUNNER_TEMP and is uploaded as an
+#     Actions artifact. It is NEVER committed. Every run still produces
+#     one, so observability is unchanged.
+#   * the versioned status file is rewritten only when its MATERIAL
+#     content changes (lib.edgelab.settlement_reconciliation.
+#     material_status_fingerprint strips asOf/lastRun before hashing), so
+#     a sweep that found nothing new leaves its bytes untouched.
+# Net effect: a twice-daily sweep with nothing pending and nothing newly
+# settled produces zero commits, forever.
+#
+# GLOBAL STATUS, NOT LAST-RUN STATUS
+# ----------------------------------
+# settlement_reconciliation_status.json is a GLOBAL outstanding-work
+# snapshot derived from the WHOLE canonical ledger. A run that reconciles
+# only one date can never erase another date's pending wagers from it.
+# The per-run receipt is the thing that describes ONE run.
 
 on:
   push:
@@ -219,8 +240,13 @@ jobs:
           # shell rather than interpolated as ${{ }} into this body: every
           # element of RECON_ARGV was regex-validated in the step above,
           # and nothing user-supplied ever reaches the shell verbatim.
+          # The receipt goes to RUNNER_TEMP, never the workspace: it
+          # carries this run's own timestamps by definition, so committing
+          # it would turn every no-op sweep into a repository commit.
+          # It is uploaded as an artifact below instead.
           # shellcheck disable=SC2086
-          python3 scripts/edgelab/reconcile_settlement_catchup.py $RECON_ARGV
+          python3 scripts/edgelab/reconcile_settlement_catchup.py $RECON_ARGV \
+            --receipt-out "$RUNNER_TEMP/settlement_reconciliation_receipt.json"
 
       - name: Write job summary
         if: always()
@@ -228,7 +254,7 @@ jobs:
           RECONCILE_TRIGGER: ${{ steps.args.outputs.trigger }}
           RECON_ARGV: ${{ steps.args.outputs.argv }}
         run: |
-          RECEIPT=data/edgelab/operational_health/settlement_reconciliation_receipt.json
+          RECEIPT="$RUNNER_TEMP/settlement_reconciliation_receipt.json"
           {
             echo "## EdgeLab Settlement Reconcile"
             echo ""
@@ -242,7 +268,8 @@ jobs:
           fi
           python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
           import json
-          with open("data/edgelab/operational_health/settlement_reconciliation_receipt.json") as f:
+          import os
+          with open(os.path.join(os.environ["RUNNER_TEMP"], "settlement_reconciliation_receipt.json")) as f:
               r = json.load(f)
           c = r["counts"]
           print(f"- Dates considered: {c['datesConsidered']} {r['datesConsidered']}")
@@ -250,6 +277,9 @@ jobs:
           print(f"- Bets newly settled: {c['betsSettled']}")
           print(f"- Daily reports regenerated: {c['reportsRegenerated']}")
           print(f"- Wagers still pending after this run: {c['wagersStillPending']}")
+          print(f"- Versioned global status: "
+                f"{'rewritten' if r.get('globalStatusWritten') else 'unchanged'} "
+                f"({r.get('globalStatusReason')})")
           if r.get("refusalReason"):
               print(f"- **Refused:** {r['refusalReason']}")
           print("")
@@ -273,7 +303,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: settlement-reconciliation-receipt-${{ github.run_id }}
-          path: data/edgelab/operational_health/settlement_reconciliation_receipt.json
+          path: ${{ runner.temp }}/settlement_reconciliation_receipt.json
           retention-days: 90
           if-no-files-found: warn
 
@@ -306,7 +336,6 @@ jobs:
             "data/edgelab/settlements/"
             "data/edgelab/games/"
             "data/edgelab/research_runs/"
-            "data/edgelab/operational_health/settlement_reconciliation_receipt.json"
             "data/edgelab/operational_health/settlement_reconciliation_status.json"
           )
           for f in data/edgelab/reports/*.json data/edgelab/reports/*.md data/edgelab/reports/*_calibration.jsonl; do

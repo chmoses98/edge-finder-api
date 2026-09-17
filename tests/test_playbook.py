@@ -25,8 +25,12 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from lib.playbook import (  # noqa: E402
+    CLASS_EMPIRICAL_EDGE,
+    CLASS_MECHANICAL,
     LESSONS_PATH,
+    MIN_DISTINCT_DATES_FOR_MECHANICAL,
     MIN_DISTINCT_DATES_FOR_SUPPORTED,
+    VALID_EVIDENCE_CLASSES,
     PLAYBOOK_PATH,
     RENDERED_LESSONS_PATH,
     STATUS_HYPOTHESIS,
@@ -67,22 +71,27 @@ def test_playbook_exists_and_declares_a_version():
 def test_core_methodology_stays_short_enough_to_read_every_run():
     """
     The playbook is only useful if an AI reads it on EVERY run without it
-    drowning out the slate. The mission's bar is roughly 1,000 words of
-    core methodology.
+    drowning out the slate. The bar is roughly 1,000 words of core
+    METHODOLOGY -- measured from section 1, since section 0 is a
+    five-line terminology lookup rather than prose to read through.
     """
-    core = _read(PLAYBOOK_FULL).split("## 1. THESIS FIRST", 1)[1]
+    text = _read(PLAYBOOK_FULL)
+    core = text.split("## 1. GAME ELIGIBILITY", 1)[1]
     assert len(core.split()) <= 1000, f"core methodology is {len(core.split())} words"
+    # ...and the whole file, glossary included, still fits comfortably.
+    assert len(text.split()) <= 1400, f"whole playbook is {len(text.split())} words"
 
 
 @pytest.mark.parametrize("section", [
+    "VOCABULARY",
+    "GAME ELIGIBILITY COMES FIRST",
     "THESIS FIRST, MARKET SECOND",
     "MARKET EXPRESSION",
-    "PRICE IS PART OF THE BET",
+    "PRICE AND BANKROLL ARE PART OF THE BET",
     "DO NOT OVERSTACK ONE THESIS",
     "RECENT FORM",
     "MODEL VS HANDICAP",
-    "FULL MARKET SEARCH",
-    "LINEUPS AND FRESHNESS",
+    "LINEUPS, FRESHNESS, EXECUTION",
     "LEARNING WITHOUT OVERFITTING",
     "OUTPUT DISCIPLINE",
 ])
@@ -92,17 +101,59 @@ def test_playbook_covers_every_required_section(section):
 
 def test_playbook_never_declares_a_market_family_universally_best():
     text = " ".join(_read(PLAYBOOK_FULL).split())
-    assert "No market family is automatically superior" in text
+    assert "No family is automatically superior" in text
+    assert "payoff structure, not an edge" in text
     for forbidden in ("F5 always", "team totals always", "always bet F5"):
         assert forbidden.lower() not in text.lower()
 
 
-def test_playbook_requires_full_market_search_for_unstarted_games():
-    # Whitespace-normalized: the source is hard-wrapped, so a phrase can
-    # legitimately straddle a newline.
+def test_playbook_gates_real_money_on_both_official_lineups():
+    """The core operating requirement from the review."""
     text = " ".join(_read(PLAYBOOK_FULL).split())
-    assert "complete available market universe" in text
-    assert "Do not stop at the first attractive market" in text
+    assert "BOTH official lineups are confirmed" in text
+    assert "lineupConfirmedOfficial" in text
+    assert "Probable/projected lineups are **never** confirmed" in text
+    assert "must not produce a real-money recommendation" in text
+
+
+def test_playbook_requires_the_full_market_universe_for_eligible_games():
+    text = " ".join(_read(PLAYBOOK_FULL).split())
+    assert "inspect the **complete** market universe" in text
+    assert "Compare **every available market** for the eligible game" in text
+
+
+def test_playbook_defines_all_five_axes_in_its_terminology_block():
+    text = " ".join(_read(PLAYBOOK_FULL).split())
+    for term in ("BETTING-ELIGIBLE GAME", "FULL MARKET UNIVERSE", "PRODUCTION MODEL SUPPORT",
+                 "MANUAL HANDICAPPING ELIGIBILITY", "AUTOMATIC SETTLEMENT SUPPORT"):
+        assert term in text
+
+
+def test_playbook_requires_sizing_against_the_canonical_bankroll():
+    text = " ".join(_read(PLAYBOOK_FULL).split())
+    assert "current canonical bankroll" in text
+    assert "may **not** present current stake sizes" in text
+    assert "Never substitute a remembered or hand-typed number" in text
+
+
+def test_playbook_rejects_the_price_shape_superstition():
+    """The correction: cheap is not an edge."""
+    text = " ".join(_read(PLAYBOOK_FULL).split())
+    assert "Price shape is not edge" in text
+    assert "no reason to prefer a cheap contract" in text
+
+
+def test_playbook_marks_form_labels_as_descriptive_only():
+    text = " ".join(_read(PLAYBOOK_FULL).split())
+    assert "descriptive context only" in text
+    assert "no demonstrated" in text and "out-of-sample predictive value" in text
+    assert "no production weight uses it" in text
+
+
+def test_playbook_states_both_evidence_classes():
+    text = " ".join(_read(PLAYBOOK_FULL).split())
+    assert "MECHANICAL" in text and "EMPIRICAL_EDGE" in text
+    assert "registered, leakage-free, out-of-sample experiment" in text
 
 
 def test_playbook_controls_correlated_exposure_explicitly():
@@ -138,11 +189,11 @@ def test_run_the_slate_carries_a_short_startup_prompt():
     assert "START-OF-SLATE PROMPT" in text
     block = text.split("## START-OF-SLATE PROMPT", 1)[1].split("```")[1]
     lines = [line for line in block.strip().splitlines() if line.strip()]
-    assert 8 <= len(lines) <= 14, f"startup prompt is {len(lines)} lines; it must stay tiny"
+    assert 10 <= len(lines) <= 14, f"startup prompt is {len(lines)} lines; it must stay tiny"
     lowered = block.lower()
-    for requirement in ("handicapping_playbook", "every available market", "thesis",
+    for requirement in ("handicapping_playbook", "every available kalshi market", "thesis",
                         "correlation", "lineups", "against", "threshold",
-                        "never assume", "playbook_version"):
+                        "never assume", "playbook_version", "bankroll", "already started"):
         assert requirement in lowered, f"startup prompt does not cover {requirement!r}"
 
 
@@ -197,18 +248,20 @@ def test_the_durable_repeated_findings_are_actually_recorded():
 
 
 def test_anecdotal_impressions_are_kept_at_hypothesis():
-    """The distinction the mission asked for: a single day's result must
-    not be recorded as standing guidance."""
+    """A run of same-direction days must not become standing guidance."""
     by_id = {l["id"]: l for l in load_lessons(LESSONS_FULL)["lessons"]}
-    assert by_id["f7-as-a-default-horizon"]["status"] == STATUS_HYPOTHESIS
-    assert by_id["family-level-win-rates-are-not-yet-evidence"]["status"] == STATUS_HYPOTHESIS
+    f7 = by_id["f7-as-a-default-horizon"]
+    assert f7["status"] == STATUS_HYPOTHESIS
+    assert f7["evidenceClass"] == CLASS_EMPIRICAL_EDGE
+    assert "requires a registered" in f7["promotionBlockedBy"]
 
 
 # ── validation catches the failure modes it exists for ──────────────────
 
 def _lesson(**overrides):
     base = {
-        "id": "x", "status": STATUS_SUPPORTED, "title": "t", "guidance": "g", "tags": ["T"],
+        "id": "x", "status": STATUS_SUPPORTED, "evidenceClass": CLASS_MECHANICAL,
+        "title": "t", "guidance": "g", "tags": ["T"],
         "evidence": {"distinctDates": ["2026-01-01", "2026-01-02", "2026-01-03"], "examples": ["e"]},
     }
     base.update(overrides)
@@ -218,8 +271,99 @@ def _lesson(**overrides):
 def test_a_single_result_cannot_be_recorded_as_supported():
     payload = {"lessons": [_lesson(evidence={"distinctDates": ["2026-01-01"], "examples": ["one bet lost"]})]}
     problems = validate_lessons(payload)
-    assert any("claims SUPPORTED" in p for p in problems)
-    assert str(MIN_DISTINCT_DATES_FOR_SUPPORTED) in " ".join(problems)
+    assert any("shows no mechanism" in p for p in problems)
+    assert str(MIN_DISTINCT_DATES_FOR_MECHANICAL) in " ".join(problems)
+
+
+# ── evidence classes (correction pass, item 6) ──────────────────────────
+
+def test_an_empirical_edge_claim_can_never_be_promoted_by_dates_alone():
+    """
+    The rule that stops a three-wager streak becoming a betting rule: a
+    claim about MONEY needs an experiment, not a run of winners.
+    """
+    lesson = _lesson(
+        evidenceClass=CLASS_EMPIRICAL_EDGE,
+        evidence={"distinctDates": [f"2026-01-{d:02d}" for d in range(1, 31)],
+                  "examples": ["thirty days of winners"]})
+    assert lesson_meets_promotion_bar(lesson) is False
+    problems = validate_lessons({"lessons": [lesson]})
+    assert any("can never promote a claim about money" in p for p in problems)
+
+
+def test_an_empirical_edge_claim_is_promoted_by_a_registered_out_of_sample_experiment():
+    lesson = _lesson(
+        evidenceClass=CLASS_EMPIRICAL_EDGE,
+        evidence={"distinctDates": ["2026-01-01"], "examples": ["e"],
+                  "registeredExperiments": ["MLB-RSCH-0036"],
+                  "outOfSampleResult": "DESCRIPTIVE_ONLY across validation and holdout"})
+    assert lesson_meets_promotion_bar(lesson) is True
+    assert validate_lessons({"lessons": [lesson]}) == []
+
+
+def test_an_experiment_id_without_an_out_of_sample_result_is_not_enough():
+    lesson = _lesson(
+        evidenceClass=CLASS_EMPIRICAL_EDGE,
+        evidence={"distinctDates": ["2026-01-01"], "examples": ["e"],
+                  "registeredExperiments": ["MLB-RSCH-0036"]})
+    assert lesson_meets_promotion_bar(lesson) is False
+
+
+def test_a_mechanical_claim_is_promoted_by_showing_the_mechanism():
+    lesson = _lesson(
+        evidenceClass=CLASS_MECHANICAL,
+        evidence={"distinctDates": ["2026-01-01"], "examples": ["e"],
+                  "mechanism": "a three-way contract has a tie branch"})
+    assert lesson_meets_promotion_bar(lesson) is True
+
+
+def test_a_lesson_without_an_evidence_class_is_rejected():
+    lesson = _lesson()
+    del lesson["evidenceClass"]
+    problems = validate_lessons({"lessons": [lesson]})
+    assert any("evidenceClass" in p for p in problems)
+
+
+def test_an_unknown_evidence_class_is_rejected():
+    problems = validate_lessons({"lessons": [_lesson(evidenceClass="VIBES")]})
+    assert any("is not one of" in p and "MECHANICAL" in p for p in problems)
+
+
+def test_every_committed_lesson_carries_a_valid_evidence_class():
+    for lesson in load_lessons(LESSONS_FULL)["lessons"]:
+        assert lesson["evidenceClass"] in VALID_EVIDENCE_CLASSES, lesson["id"]
+
+
+def test_every_supported_empirical_edge_lesson_cites_an_experiment():
+    for lesson in load_lessons(LESSONS_FULL)["lessons"]:
+        if lesson["status"] == STATUS_SUPPORTED and lesson["evidenceClass"] == CLASS_EMPIRICAL_EDGE:
+            assert lesson["evidence"].get("outOfSampleResult"), lesson["id"]
+            assert lesson["evidence"].get("registeredExperiments"), lesson["id"]
+
+
+def test_the_price_lesson_no_longer_institutionalises_a_price_shape():
+    """The specific correction the review asked for."""
+    by_id = {l["id"]: l for l in load_lessons(LESSONS_FULL)["lessons"]}
+    lesson = by_id["price-discipline-and-passing"]
+    # The GUIDANCE is what an analyst acts on -- it must carry no price
+    # shape at all. (The retraction note deliberately still quotes the old
+    # "50-55 cents" wording so the correction is auditable, which is why
+    # this is scoped to `guidance` and `title`.)
+    operative = (lesson["guidance"] + " " + lesson["title"]).lower()
+    for superstition in ("50-55 cent", "near-even price", "buy near-even"):
+        assert superstition not in operative
+    assert "price shape is not edge" in operative
+    assert "70-cent" in lesson["guidance"] or "70 cent" in lesson["guidance"]
+    assert lesson["evidenceClass"] == CLASS_MECHANICAL
+    assert lesson.get("supersedes"), "the retraction must be recorded, not silently edited away"
+
+
+def test_market_family_lesson_makes_no_performance_claim():
+    by_id = {l["id"]: l for l in load_lessons(LESSONS_FULL)["lessons"]}
+    lesson = by_id["best-expression-beats-favourite-family"]
+    assert lesson["evidenceClass"] == CLASS_MECHANICAL
+    assert "payoff structure" in lesson["guidance"]
+    assert "says nothing about which family is more profitable" in lesson["guidance"]
 
 
 def test_an_unsourced_lesson_is_rejected():
@@ -293,7 +437,8 @@ def test_set_status_refuses_to_write_an_invalid_result(tmp_path, capsys):
     path = tmp_path / "lessons.json"
     payload = {
         "schemaVersion": "1", "playbookVersion": "1.0.0", "lastUpdated": "2026-09-17",
-        "lessons": [_lesson(id="a", status=STATUS_HYPOTHESIS, promotionBlockedBy="one date only",
+        "lessons": [_lesson(id="a", status=STATUS_HYPOTHESIS, evidenceClass=CLASS_EMPIRICAL_EDGE,
+                            promotionBlockedBy="no registered experiment",
                             evidence={"distinctDates": ["2026-01-01"], "examples": ["one day"]})],
     }
     with open(path, "w") as f:

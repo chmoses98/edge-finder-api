@@ -62,6 +62,7 @@ Either brake alone terminates; both are kept because they fail in
 different directions (1 survives a commit-message change, 2 survives a
 schema change to the bet record).
 """
+import hashlib
 import json
 from datetime import date as _date
 from datetime import datetime, timedelta, timezone
@@ -390,6 +391,116 @@ def settlement_changed_canonical_state(summary):
         return False
     counts = summary.get("counts") or {}
     return bool(counts.get("settlementsMeaningfullyChanged") or counts.get("betsSettled"))
+
+
+# ── Global pending status (NOT last-run scoped) ─────────────────────────
+
+def build_global_pending_status(ledger_rows, *, as_of=None, run_summary=None):
+    """
+    Pure. The answer to "what settlement does this system still owe?",
+    derived from the ENTIRE canonical ledger -- never from the dates one
+    run happened to touch.
+
+    THE BUG THIS EXISTS TO PREVENT
+    ------------------------------
+    The first version of the rolling status built `stillPendingByDate`
+    from the current run's `perDate` list. A push-triggered run that
+    reconciled only 2026-09-17 therefore rewrote the status with ONLY
+    that date -- silently erasing 2026-09-16's still-unresolved wager
+    from the one file a human (or a fresh chat) reads to answer "what is
+    still open?". A status that can lose outstanding work is worse than
+    no status at all.
+
+    So this function ignores the run entirely for the pending set. Every
+    ungraded, ACTIVE, user-confirmed wager in the ledger is counted,
+    whatever date it belongs to and whether or not this run looked at it.
+
+    `run_summary` is attached alongside purely as provenance ("this is
+    the run that last refreshed this file"), never as the source of the
+    pending set.
+
+    Never asserts an outcome: a wager appears here precisely BECAUSE the
+    system has not proven one, and a refusal class is reported verbatim
+    when the ledger carries one.
+    """
+    pending = []
+    for bet in ledger_rows or []:
+        if not is_settlement_candidate(bet):
+            continue
+        pending.append({
+            "betId": bet.get("betId"),
+            "gameDate": bet_game_date(bet),
+            "marketTicker": bet.get("marketTicker"),
+            "marketFamily": bet.get("marketFamily"),
+            "trackingType": bet.get("trackingType"),
+            "settlementRefusalReason": bet.get("settlementRefusalReason"),
+            "settlementRefusalClass": bet.get("settlementRefusalClass"),
+        })
+
+    by_date = {}
+    for row in pending:
+        by_date[row["gameDate"]] = by_date.get(row["gameDate"], 0) + 1
+    dated = sorted(d for d in by_date if d)
+
+    refusal_classes = {}
+    for row in pending:
+        cls = row["settlementRefusalClass"]
+        if cls:
+            refusal_classes[cls] = refusal_classes.get(cls, 0) + 1
+
+    return {
+        "schemaVersion": "2",
+        "statusType": "GLOBAL_OUTSTANDING_SETTLEMENT",
+        "scope": (
+            "Every ungraded, ACTIVE wager in the canonical ledger "
+            "(data/edgelab/bets/bets.jsonl), regardless of which dates the most "
+            "recent reconciliation run processed. This is a GLOBAL outstanding-work "
+            "snapshot; one run's own receipt describes ONE run."
+        ),
+        "asOf": as_of,
+        "pendingTotal": len(pending),
+        "pendingByDate": dict(sorted(by_date.items(), key=lambda kv: (kv[0] is None, kv[0]))),
+        "oldestPendingDate": dated[0] if dated else None,
+        "newestPendingDate": dated[-1] if dated else None,
+        "undatedPendingCount": sum(1 for r in pending if not r["gameDate"]),
+        "refusalClassCounts": dict(sorted(refusal_classes.items())),
+        "pendingWagers": sorted(
+            pending, key=lambda r: (r["gameDate"] or "", r["betId"] or "")
+        ),
+        "lastRun": run_summary,
+    }
+
+
+# ── Material-change detection (no timestamp-only commits) ───────────────
+
+# Fields that legitimately differ on every run without anything having
+# actually changed. They are excluded from the material fingerprint so a
+# twice-daily no-op sweep cannot manufacture a Git commit.
+_VOLATILE_STATUS_FIELDS = frozenset({"asOf", "lastRun"})
+
+
+def material_status_fingerprint(status):
+    """
+    Pure. A stable digest of everything in the rolling status that
+    MATTERS -- the pending set, its dates, its refusal classes -- with
+    every wall-clock/provenance field stripped.
+
+    Two runs that discovered the same outstanding work produce the same
+    fingerprint even though their timestamps differ, which is exactly
+    what lets the writer leave the committed bytes alone.
+    """
+    material = {k: v for k, v in (status or {}).items() if k not in _VOLATILE_STATUS_FIELDS}
+    return hashlib.sha256(
+        json.dumps(material, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
+def status_is_materially_unchanged(new_status, existing_status):
+    """Pure. True iff the versioned status file would say the same thing
+    it already says. A True here means: do not rewrite the file."""
+    if not existing_status:
+        return False
+    return material_status_fingerprint(new_status) == material_status_fingerprint(existing_status)
 
 
 def build_receipt(*, dates, per_date, trigger, dry_run, started_at, completed_at,

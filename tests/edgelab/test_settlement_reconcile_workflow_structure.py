@@ -143,6 +143,22 @@ def test_reconciler_script_is_the_only_settlement_entry_point_used():
     assert "scripts/edgelab/reconcile_settlement_catchup.py" in source
 
 
+def test_the_per_run_receipt_is_never_committed():
+    """
+    A receipt carries this run's own timestamps by definition. Committing
+    it would make every twice-daily no-op sweep a repository commit --
+    the exact churn the correction pass removed. It goes to RUNNER_TEMP
+    and is uploaded as an Actions artifact instead, so per-run
+    observability is preserved without versioned churn.
+    """
+    source = _source()
+    commit_block = source.split("FILES=(", 1)[1].split(")", 1)[0]
+    assert "settlement_reconciliation_receipt.json" not in commit_block
+    assert "settlement_reconciliation_status.json" in commit_block
+    assert "$RUNNER_TEMP/settlement_reconciliation_receipt.json" in source
+    assert "${{ runner.temp }}/settlement_reconciliation_receipt.json" in source
+
+
 def test_commit_scope_excludes_partitions_owned_by_the_capture_workflow():
     """
     data/edgelab/markets/ and data/edgelab/observations/ belong to

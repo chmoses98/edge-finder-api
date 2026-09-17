@@ -101,6 +101,44 @@ a 1,151-market universe, across 13 families.
 
 ---
 
+## Exhaustiveness: nothing attributable may vanish
+
+Every raw Kalshi contract attributable to the selected game must be represented
+in the bundle — in `markets`, or in `registryExcludedForThisGame` with its raw
+reason. The failure this prevents: Kalshi introduces a new single-game family,
+the strict registry does not recognise its series, and its contracts quietly
+disappear while the artifact still looks complete.
+
+`contractAccounting` makes it checkable:
+
+| Field | Meaning |
+|---|---|
+| `attributionMethod` | `KALSHI_EVENT_TICKER` — Kalshi's own grouping key, not a guess |
+| `rawGameAttributableContracts` | raw contracts sharing this game's event tickers |
+| `normalizedMarkets` / `excludedOrUnresolved` | where they ended up |
+| `accountedContracts` | how many are represented somewhere |
+| **`silentRemainderCount`** | attributable but represented nowhere — **must be 0** |
+| `unattributableRawContracts` | contracts with no event ticker at all: ambiguity **retained explicitly**, never guessed into or out of this game |
+
+`silentRemainderCount == 0` is required for a successful artifact. A violation
+**aborts the run** (exit 1) rather than writing a plausible-looking but
+incomplete bundle.
+
+## Lineup confirmation is exposed, never bypassed
+
+The artifact is produced regardless of lineup status, because a single-game
+fetch is also a research tool. But it states the answer explicitly in
+`lineupConfirmation`:
+
+```json
+{"bothOfficialLineupsConfirmed": true, "realMoneyEligible": true,
+ "status": "BETTING_ELIGIBLE", "sides": {"away": {...}, "home": {...}}}
+```
+
+A fresh single-game fetch is **not** a way around the confirmed-lineup betting
+gate. When `realMoneyEligible` is false the run emits a warning saying the
+artifact is research/early-value context only.
+
 ## The two invariants
 
 ### 1. The raw Kalshi archive stays the COMPLETE, UNFILTERED universe

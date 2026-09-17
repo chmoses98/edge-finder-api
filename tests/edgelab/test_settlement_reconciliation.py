@@ -43,6 +43,7 @@ _spec.loader.exec_module(reconcile)
 
 DATE = "2026-09-15"
 OTHER_DATE = "2026-09-16"
+OTHER_DATE_A = "2026-09-14"
 GAME_ID = "824901"
 TICKER = "KXMLBGAME-26SEP151840MILPIT-MIL"
 UNSUPPORTED_TICKER = "KXMLBWEIRD-26SEP151840MILPIT-XYZ"
@@ -431,18 +432,168 @@ def test_a_dry_run_never_overwrites_the_rolling_status_file(sandbox, final_game_
     """
     _seed(bets=[_bet("bet-1")])
     live = reconcile.reconcile_date(DATE, skip_ingest=True, skip_report=True)
-    reconcile.write_receipt(
-        recon.build_receipt(dates=[DATE], per_date=[live], trigger="SCHEDULED_SWEEP", dry_run=False,
-                            started_at="2026-09-16T01:00:00Z", completed_at="2026-09-16T01:00:05Z"),
-        reconcile.RECEIPT_PATH)
+    live_receipt = recon.build_receipt(
+        dates=[DATE], per_date=[live], trigger="SCHEDULED_SWEEP", dry_run=False,
+        started_at="2026-09-16T01:00:00Z", completed_at="2026-09-16T01:00:05Z")
+    assert reconcile.write_global_status(live_receipt)[0] is True
     real_status = open(reconcile.STATUS_PATH, "rb").read()
 
     dry = reconcile.reconcile_date(DATE, dry_run=True, skip_ingest=True, skip_report=True)
-    reconcile.write_receipt(
-        recon.build_receipt(dates=[DATE], per_date=[dry], trigger="MANUAL_DISPATCH", dry_run=True,
-                            started_at="2026-09-16T02:00:00Z", completed_at="2026-09-16T02:00:05Z"),
-        reconcile.RECEIPT_PATH)
+    dry_receipt = recon.build_receipt(
+        dates=[DATE], per_date=[dry], trigger="MANUAL_DISPATCH", dry_run=True,
+        started_at="2026-09-16T02:00:00Z", completed_at="2026-09-16T02:00:05Z")
+    written, reason = reconcile.write_global_status(dry_receipt)
 
+    assert (written, reason) == (False, "DRY_RUN")
     assert open(reconcile.STATUS_PATH, "rb").read() == real_status
-    with open(reconcile.RECEIPT_PATH) as f:
-        assert json.load(f)["dryRun"] is True, "the dry run's own receipt IS still written"
+
+    # ...and the dry run's OWN receipt is still produced, so a dry run is
+    # never silent.
+    reconcile.write_receipt(dry_receipt, "receipt.json")
+    with open("receipt.json") as f:
+        assert json.load(f)["dryRun"] is True
+
+
+# ── no timestamp-only repository churn (correction pass, item 1) ────────
+
+def test_a_second_identical_reconciliation_changes_no_versioned_bytes(sandbox, final_game_feed):
+    """
+    The headline guarantee: reconcile, then reconcile again immediately.
+    Every VERSIONED file -- the ledger, the settlements partition and the
+    rolling status -- must be byte-identical the second time, even though
+    the second run's own timestamps differ.
+    """
+    _seed(bets=[_bet("bet-1")])
+
+    first = reconcile.reconcile_date(DATE, skip_ingest=True, skip_report=True)
+    first_receipt = recon.build_receipt(
+        dates=[DATE], per_date=[first], trigger="PUSH_CANONICAL_LEDGER", dry_run=False,
+        started_at="2026-09-16T01:00:00Z", completed_at="2026-09-16T01:00:05Z")
+    assert reconcile.write_global_status(first_receipt) == (True, "MATERIAL_CHANGE")
+
+    versioned = {
+        "bets": storage.singleton_path("bets", "bets.jsonl"),
+        "settlements": storage.resolve_partition_path("settlements", DATE),
+        "status": reconcile.STATUS_PATH,
+    }
+    before = {name: open(path, "rb").read() for name, path in versioned.items()}
+
+    second = reconcile.reconcile_date(DATE, skip_ingest=True, skip_report=True)
+    second_receipt = recon.build_receipt(
+        dates=[DATE], per_date=[second], trigger="SCHEDULED_SWEEP", dry_run=False,
+        started_at="2026-09-16T13:00:00Z", completed_at="2026-09-16T13:00:09Z")
+    written, reason = reconcile.write_global_status(second_receipt)
+
+    assert (written, reason) == (False, "NO_MATERIAL_CHANGE")
+    for name, path in versioned.items():
+        assert open(path, "rb").read() == before[name], f"{name} churned on an identical rerun"
+
+
+def test_a_scheduled_sweep_with_nothing_pending_writes_no_versioned_bytes(sandbox, final_game_feed):
+    """A twice-daily sweep over a quiet window must be a true no-op."""
+    _seed()  # markets and a final game, zero wagers
+    empty = recon.build_receipt(
+        dates=[], per_date=[], trigger="SCHEDULED_SWEEP", dry_run=False,
+        started_at="2026-09-16T13:00:00Z", completed_at="2026-09-16T13:00:01Z")
+    assert reconcile.write_global_status(empty) == (True, "MATERIAL_CHANGE")  # first write
+    before = open(reconcile.STATUS_PATH, "rb").read()
+
+    for hour in ("03", "13"):
+        later = recon.build_receipt(
+            dates=[], per_date=[], trigger="SCHEDULED_SWEEP", dry_run=False,
+            started_at=f"2026-09-17T{hour}:00:00Z", completed_at=f"2026-09-17T{hour}:00:01Z")
+        assert reconcile.write_global_status(later) == (False, "NO_MATERIAL_CHANGE")
+    assert open(reconcile.STATUS_PATH, "rb").read() == before
+
+
+def test_the_fingerprint_ignores_timestamps_but_not_the_pending_set():
+    quiet = recon.build_global_pending_status([], as_of="2026-09-16T01:00:00Z")
+    quiet_later = recon.build_global_pending_status([], as_of="2026-09-17T13:00:00Z",
+                                                    run_summary={"trigger": "SCHEDULED_SWEEP"})
+    assert recon.status_is_materially_unchanged(quiet_later, quiet) is True
+
+    busy = recon.build_global_pending_status([_bet("x")], as_of="2026-09-16T01:00:00Z")
+    assert recon.status_is_materially_unchanged(busy, quiet) is False
+
+
+def test_the_receipt_default_path_is_outside_the_committed_tree():
+    """A per-run receipt carries fresh timestamps by definition; committing
+    it would make every run a commit."""
+    assert not reconcile.RECEIPT_PATH.startswith("data/")
+
+
+# ── global pending status is NOT last-run scoped (correction pass, item 2) ──
+
+def test_reconciling_one_date_never_erases_another_dates_pending_wagers(sandbox, final_game_feed):
+    """
+    The exact scenario from the review: 2026-09-16 still has an unresolved
+    wager, 2026-09-17 receives a late import, the push-triggered run
+    processes ONLY 2026-09-17 -- and 2026-09-16 must still be reported as
+    outstanding afterwards.
+    """
+    # Date A: a wager that cannot settle (no gamePk resolved -> never guessed).
+    _seed(OTHER_DATE_A, games=[{"gameId": "unsettleable", "mlbGamePk": None,
+                                "awayTeam": "MIL", "homeTeam": "PIT", "status": "Final"}],
+          markets=[_market("KXMLBGAME-A-MIL")],
+          bets=[_bet("bet-date-A", date=OTHER_DATE_A, ticker="KXMLBGAME-A-MIL")])
+    # Date B: a late import that WILL settle.
+    _seed(DATE, bets=[_bet("bet-date-B", date=DATE)])
+
+    ledger = list(storage.read_records(storage.singleton_path("bets", "bets.jsonl")))
+    assert recon.pending_wager_dates(ledger) == [OTHER_DATE_A, DATE]
+
+    # Reconcile ONLY date B.
+    result_b = reconcile.reconcile_date(DATE, skip_ingest=True, skip_report=True)
+    assert result_b["counts"]["betsSettled"] == 1
+
+    receipt = recon.build_receipt(
+        dates=[DATE], per_date=[result_b], trigger="PUSH_CANONICAL_LEDGER", dry_run=False,
+        started_at="2026-09-16T01:00:00Z", completed_at="2026-09-16T01:00:05Z")
+    assert reconcile.write_global_status(receipt)[0] is True
+
+    with open(reconcile.STATUS_PATH) as f:
+        status = json.load(f)
+
+    assert status["statusType"] == "GLOBAL_OUTSTANDING_SETTLEMENT"
+    assert OTHER_DATE_A in status["pendingByDate"], (
+        "a one-date reconciliation erased another date's outstanding wager -- "
+        "the status is not global"
+    )
+    assert status["pendingByDate"][OTHER_DATE_A] == 1
+    assert DATE not in status["pendingByDate"], "date B settled and should no longer be pending"
+    assert status["pendingTotal"] == 1
+    assert status["oldestPendingDate"] == OTHER_DATE_A
+    assert [w["betId"] for w in status["pendingWagers"]] == ["bet-date-A"]
+    # Provenance says which run refreshed it, without defining the pending set.
+    assert status["lastRun"]["datesConsidered"] == [DATE]
+
+
+def test_global_status_reports_refusal_classes_without_claiming_settlement():
+    rows = [
+        {"betId": "refused", "gameDate": DATE, "status": "pending", "result": None,
+         "recordStatus": "ACTIVE", "settlementRefusalClass": "NO_PROVEN_SIDE",
+         "settlementRefusalReason": "side not proven"},
+    ]
+    status = recon.build_global_pending_status(rows, as_of="now")
+    assert status["refusalClassCounts"] == {"NO_PROVEN_SIDE": 1}
+    assert status["pendingWagers"][0]["settlementRefusalReason"] == "side not proven"
+    assert status["pendingTotal"] == 1
+
+
+def test_global_status_excludes_cancelled_and_settled_rows():
+    rows = [
+        {"betId": "settled", "gameDate": DATE, "status": "settled", "result": "WIN", "recordStatus": "ACTIVE"},
+        {"betId": "cancelled", "gameDate": DATE, "status": "pending", "result": None, "recordStatus": "CANCELLED"},
+        {"betId": "open", "gameDate": DATE, "status": "pending", "result": None, "recordStatus": "ACTIVE"},
+    ]
+    status = recon.build_global_pending_status(rows, as_of="now")
+    assert status["pendingTotal"] == 1
+    assert [w["betId"] for w in status["pendingWagers"]] == ["open"]
+
+
+def test_global_status_counts_an_undated_pending_row_without_losing_it():
+    rows = [{"betId": "undated", "status": "pending", "result": None, "recordStatus": "ACTIVE"}]
+    status = recon.build_global_pending_status(rows, as_of="now")
+    assert status["pendingTotal"] == 1
+    assert status["undatedPendingCount"] == 1
+    assert status["oldestPendingDate"] is None

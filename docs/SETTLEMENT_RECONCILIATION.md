@@ -103,9 +103,10 @@ independent brakes, kept because they fail in different directions:
 2. **Workflow-level.** The job's `if:` skips any push whose head commit message
    starts with `edgelab settlement reconcile`. Survives a bet-schema change.
 
-Plus: `git_data_commit.py` commits nothing when nothing changed, and reports
-regenerate only on real change — so a no-op run produces no commit, and
-therefore no further push event.
+Plus: `git_data_commit.py` commits nothing when nothing changed, reports
+regenerate only on real change, the receipt is never committed, and the status
+file is only rewritten on a material change — so a no-op run produces no
+commit, and therefore no further push event.
 
 Idempotence itself comes from the canonical layer: `storage.upsert_records`
 keyed by `settlementId`/`betId`, and `bet_needs_settlement_update()`, which
@@ -131,8 +132,33 @@ new.
 | Path | What it is |
 |------|-----------|
 | `data/edgelab/reports/<date>.md` / `.json` | the canonical daily report — **this is what "how did we do yesterday" reads** |
-| `data/edgelab/operational_health/settlement_reconciliation_status.json` | small rolling status: last run, trigger, counts, and **what is still pending by date** |
-| `data/edgelab/operational_health/settlement_reconciliation_receipt.json` | full per-run receipt: dates considered and why, per-date counts, unresolved reasons by family, settlement warnings |
+| `data/edgelab/operational_health/settlement_reconciliation_status.json` | **GLOBAL outstanding-work snapshot** (committed) — see below |
+| the per-run receipt (Actions artifact, `$RUNNER_TEMP`) | **ONE run's** record: dates considered and why, per-date counts, unresolved reasons by family, warnings. **Never committed.** |
+
+### The two are different things, on purpose
+
+`settlement_reconciliation_status.json` is a **GLOBAL** snapshot of everything
+the canonical ledger still owes settlement for, derived from the **whole**
+ledger — not from the dates the last run happened to touch. A push-triggered
+run that reconciles only 2026-09-17 can never erase 2026-09-16's unresolved
+wager from it. It carries `pendingTotal`, `pendingByDate`, `pendingWagers`
+(betId/ticker/family/refusal class), `oldestPendingDate`, `newestPendingDate`
+and `refusalClassCounts`, plus a `lastRun` block that is provenance only.
+
+A **receipt** describes ONE run. Every run produces one for observability, and
+it is uploaded as a GitHub Actions artifact rather than committed — it carries
+that run's own timestamps by definition, so committing it would turn every
+no-op sweep into a repository commit.
+
+### No timestamp-only churn
+
+The versioned status file is rewritten **only when its material content
+changes**. `material_status_fingerprint()` strips `asOf` and `lastRun` before
+hashing, so a twice-daily sweep that found nothing new leaves its bytes
+untouched and `git_data_commit.py` has nothing to commit. Versioned state
+changes when a wager is newly imported, newly settled, materially changes its
+unresolved/refusal state, or the global pending set changes — and not
+otherwise.
 | `data/edgelab/settlements/<date>.jsonl` | canonical settlement records, including every explicit `SETTLEMENT_UNRESOLVED` + reason |
 | `data/edgelab/bets/bets.jsonl` | the canonical ledger, with newly graded wagers |
 
@@ -196,8 +222,16 @@ sandboxed data tree, all eight scenarios this system exists for:
 8. a **partially supported slate** containing an unsupported market family →
    the supported wager settles, the unsupported one stays explicitly unresolved.
 
+Plus, from the pre-merge correction pass:
+
+9. **no versioned churn** — a first meaningful reconciliation writes state; an
+   immediate identical rerun changes no versioned bytes; a scheduled sweep with
+   nothing pending changes no versioned bytes;
+10. **global pending status** — date A is pending, only date B is reconciled,
+    and date A is still reported as outstanding afterwards.
+
 `tests/edgelab/test_settlement_reconcile_workflow_structure.py` pins the
 structural properties that make the push trigger safe (path scoping, the
 recursion guard matching the real commit marker, the shared concurrency group,
-the fail-closed branch resolver, env-only input handling, and the production-file
-boundary).
+the fail-closed branch resolver, env-only input handling, the production-file
+boundary, and the receipt staying out of the commit set).

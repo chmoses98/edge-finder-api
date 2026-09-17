@@ -1,22 +1,26 @@
 # PLAYBOOK_LESSONS.md
 
-`PLAYBOOK_VERSION: 1.0.0` · `LAST_UPDATED: 2026-09-17`
+`PLAYBOOK_VERSION: 1.1.0` · `LAST_UPDATED: 2026-09-17`
 
 > Generated from `config/playbook_lessons.json` by `python3 scripts/playbook_lessons.py --render`. Edit the JSON, not this file.
 
 Read alongside `HANDICAPPING_PLAYBOOK.md`. A lesson is standing guidance only at **SUPPORTED**. A **HYPOTHESIS** is worth mentioning in a handicap and is never a rule. Nothing here is promoted, demoted or retired by a single wager's result.
 
+## Evidence classes
+
+- **MECHANICAL** — a structural fact about a contract, a market, a portfolio or arithmetic. True without a betting sample; promoted by showing the mechanism is real.
+- **EMPIRICAL_EDGE** — a claim that something wins, loses or predicts. Promoted ONLY by a registered, leakage-free, out-of-sample experiment. No number of same-direction dates can promote a claim about money.
+
 ## Promotion policy
 
-- **toSupported** — At least 3 findings on 3 DISTINCT dates pointing the same way, or one registered experiment with an out-of-sample result. A single wager winning or losing never promotes, demotes, or retires anything.
 - **toRejected** — Explicit contrary evidence of the same weight required for promotion. Never a single result.
-- **review** — scripts/playbook_lessons.py --audit recounts every lesson's postmortem evidence from data/edgelab/postmortems/ and flags any lesson whose claimed evidence no longer clears its own promotion bar.
+- **review** — scripts/playbook_lessons.py --audit recounts every lesson's postmortem evidence from data/edgelab/postmortems/ and flags any lesson that no longer clears its own class's bar.
 
-## SUPPORTED (6)
+## SUPPORTED (8)
 
 ### Kalshi F5 is a three-way contract: a tie after five loses a YES
 
-`id: f5-three-way-tie-tax` · tags: F5, TIE_TAX, PROBABILITY_ESTIMATION · evidence dates: 3 (2026-09-02 → 2026-09-07)
+`id: f5-three-way-tie-tax` · **MECHANICAL** · tags: F5, TIE_TAX, PROBABILITY_ESTIMATION · evidence dates: 3 (2026-09-02 → 2026-09-07)
 
 When the thesis is 'this team is better through five', the F5 YES still loses a 0-0 or level game after five innings. Price the tie explicitly into the fair probability rather than noting it as a caveat. In a low-scoring matchup with two good starters, the tie branch is a material share of the distribution.
 
@@ -30,7 +34,7 @@ When the thesis is 'this team is better through five', the F5 YES still loses a 
 
 ### Correlated wagers around one thesis are one position, not several edges
 
-`id: one-thesis-many-markets-is-one-exposure` · tags: CORRELATED_EXPOSURE, PORTFOLIO_CONCENTRATION · evidence dates: 4 (2026-08-17 → 2026-08-23)
+`id: one-thesis-many-markets-is-one-exposure` · **MECHANICAL** · tags: CORRELATED_EXPOSURE, PORTFOLIO_CONCENTRATION · evidence dates: 4 (2026-08-17 → 2026-08-23)
 
 Team ML + Team TT over + Team F5 on the same game is a single exposure expressed three times. Pick the best expression. A second correlated wager needs a stated reason it adds distinct edge, and sizing that reflects the correlation. Report the largest single-thesis share of the card before submitting it.
 
@@ -43,11 +47,11 @@ Team ML + Team TT over + Team F5 on the same game is a single exposure expressed
 
 </details>
 
-### No market family is uniformly superior; expression selection is the edge
+### Market families are payoff structures, not edges -- match the expression to the thesis
 
-`id: best-expression-beats-favourite-family` · tags: EXPRESSION_SELECTION, HORIZON_SELECTION · evidence dates: 6 (2026-08-24 → 2026-09-06)
+`id: best-expression-beats-favourite-family` · **MECHANICAL** · tags: EXPRESSION_SELECTION, HORIZON_SELECTION · evidence dates: 6 (2026-08-24 → 2026-09-06)
 
-The postmortem record contains the same number of cases where a team total beat an F5 side as where a full-game ML beat a team total. Choose per-thesis, not per-habit: match the market horizon to where the edge actually lives (starter-based -> shorter horizon; depth/bullpen-based -> full game; offence-only -> team total).
+A market family is a payoff structure with its own irrelevant risk, not a source of edge. F5 removes bullpen variance AND adds tie risk; a full-game ML carries bullpen and late-inning variance; a team total removes the need for the opponent to lose but adds threshold risk. Choose the expression whose irrelevant risk is smallest for THIS thesis. This says nothing about which family is more profitable -- see family-level-win-rates-are-not-yet-evidence.
 
 <details><summary>Evidence</summary>
 
@@ -58,22 +62,22 @@ The postmortem record contains the same number of cases where a team total beat 
 
 </details>
 
-### Price discipline: buy near-even prices, pass when the edge is priced away
+### Price discipline: compare fair probability to the executable price, and pass when the edge is gone
 
-`id: price-discipline-and-passing` · tags: PRICE_DISCIPLINE · evidence dates: 4 (2026-08-17 → 2026-08-22)
+`id: price-discipline-and-passing` · **MECHANICAL** · tags: PRICE_DISCIPLINE, PROBABILITY_ESTIMATION · evidence dates: 4 (2026-08-17 → 2026-08-22)
 
-Several recorded profitable positions were bought around 50-55 cents rather than laying large favourite prices, and deliberate passes on expensive prices are recorded as correct decisions. A correct baseball read at a bad price is a pass, and a pass is a complete answer.
+A price IS an implied probability. Estimate a defensible fair probability (as a range), compare it to the executable price, identify the bet-up-to price, and pass when the market has already priced the edge away. A correct baseball read at a bad price is a pass, and a pass is a complete answer. There is NO general reason to prefer a cheaper contract: a 70-cent contract with a genuine 80% fair probability is a better wager than a 52-cent contract with a 53% fair probability. Price SHAPE is not edge; the gap between fair probability and price is.
 
 <details><summary>Evidence</summary>
 
-- 2026-08-17 'price discipline remained valuable across the slate: several successful positions were bought around 50-55 cents rather than laying large favourite prices'.
-- 2026-08-17 the decision to pass expensive Dodgers F5 / Sugano-under pricing is recorded as a correct decision, not a missed bet.
+- 2026-08-17 records a deliberate PASS on expensive Dodgers F5 / Sugano-under pricing as a correct decision, not a missed bet -- that is the durable half of this lesson.
+- CORRECTION (2026-09-18 review): an earlier version of this lesson read 'buy near-even prices, 50-55 cents', generalising from a handful of winners that happened to be priced there. That is a price-shape superstition, not an edge, and it is explicitly retracted. Whether near-even contracts outperform is an EMPIRICAL_EDGE question with no registered experiment behind it.
 
 </details>
 
 ### Rolling mean runs/game is not evidence of a hot offence
 
-`id: recent-mean-runs-is-not-form` · tags: OFFENSIVE_FORM, SMALL_SAMPLE, PROBABILITY_ESTIMATION · evidence dates: 3 (2026-09-02 → 2026-09-07)
+`id: recent-mean-runs-is-not-form` · **EMPIRICAL_EDGE** · tags: OFFENSIVE_FORM, SMALL_SAMPLE, PROBABILITY_ESTIMATION · evidence dates: 3 (2026-09-02 → 2026-09-07)
 
 Read the distribution, not the mean: median, threshold-clear counts, the max and its share of the window, and team-total line-relative performance. A window flagged OUTLIER_INFLATED means one game is carrying the average. Separately, recent-form DEVIATION has no demonstrated out-of-sample predictive value, so it is context for a handicap -- never a model input.
 
@@ -87,7 +91,7 @@ Read the distribution, not the mean: median, threshold-clear counts, the max and
 
 ### A named failure mode must lower the number, not just appear in the narrative
 
-`id: known-failure-mode-must-move-the-probability` · tags: PROBABILITY_ESTIMATION, OVERCONFIDENCE · evidence dates: 3 (2026-08-30 → 2026-09-07)
+`id: known-failure-mode-must-move-the-probability` · **MECHANICAL** · tags: PROBABILITY_ESTIMATION, OVERCONFIDENCE · evidence dates: 3 (2026-08-30 → 2026-09-07)
 
 Where a postmortem records a loss whose cause was explicitly identified BEFORE the bet, the failure was pricing, not analysis. If the thesis names a severe risk (volatility, control, short leash, a hostile platoon), the fair probability must move enough to reflect it or the wager does not clear.
 
@@ -99,28 +103,11 @@ Where a postmortem records a loss whose cause was explicitly identified BEFORE t
 
 </details>
 
-## HYPOTHESIS (3)
+### A parlay leg that duplicates a straight wager makes one failure cost twice
 
-### F7 may carry most of a full game's variance without a full game's pricing
+`id: parlays-are-overlay-only` · **MECHANICAL** · tags: PARLAY, CORRELATED_EXPOSURE · evidence dates: 3 (2026-08-24 → 2026-08-29)
 
-`id: f7-as-a-default-horizon` · tags: F7, HORIZON_SELECTION · evidence dates: 2 (2026-08-25 → 2026-09-07)
-
-Treat F7 as a horizon that must be justified by the specific pitching-usage thesis (e.g. a starter expected to finish seven), never as a default middle ground between F5 and the full game. Evidence is currently one bad day plus one good selection -- watch it, do not rule on it.
-
-<details><summary>Evidence</summary>
-
-- 2026-08-25 F7 was 0-4 for -95.00 on $95 risk: 'carries most of a full game's variance without a full game's pricing'.
-- 2026-09-07 LAD F7 was recorded as excellent horizon selection when the opposing starter's workload was limited -- the opposite sign, on one day.
-
-**Promotion blocked by:** Only two dates, pointing in opposite directions. Needs repeated same-direction evidence before it becomes guidance.
-
-</details>
-
-### A parlay leg failure costs twice; size as a small overlay
-
-`id: parlays-are-overlay-only` · tags: PARLAY, CORRELATED_EXPOSURE · evidence dates: 3 (2026-08-24 → 2026-08-29)
-
-When a thesis already appears as a straight wager, adding it to a parlay makes one failure cost the straight wager AND the parlay. Keep parlays small and clearly labelled as overlay, and never let a parlay's payout justify a leg that would not clear on its own.
+A parlay pays only if every leg wins, so its probability is the product of its legs' probabilities and a leg that is -EV on its own cannot be rescued by the payout. When a thesis already appears as a straight wager, adding it to a parlay means one failure costs the straight wager AND the parlay -- that is concentration, not diversification. Size parlays as small, clearly labelled overlay. This makes no claim about whether parlays are profitable.
 
 <details><summary>Evidence</summary>
 
@@ -132,11 +119,11 @@ When a thesis already appears as a straight wager, adding it to a parlay makes o
 
 </details>
 
-### Do not draw market-family conclusions from the reconciled sample
+### Single-digit family samples cannot support any family-level edge conclusion
 
-`id: family-level-win-rates-are-not-yet-evidence` · tags: SMALL_SAMPLE, STAKE_SIZING · evidence dates: 2 (2026-08-26 → 2026-08-29)
+`id: family-level-win-rates-are-not-yet-evidence` · **MECHANICAL** · tags: SMALL_SAMPLE, STAKE_SIZING · evidence dates: 2 (2026-08-26 → 2026-08-29)
 
-Across all reconciled postmortems the largest single market family holds single-digit graded wagers. Any statement of the form 'F5 works' or 'team totals do not work' is currently unsupported noise. Judge each wager on its own thesis and price until the family samples are materially larger.
+Across every reconciled postmortem the largest single market family holds single-digit graded wagers. At that sample size no family-level win rate is distinguishable from noise, so any statement of the form 'F5 works' or 'team totals do not work' is unsupported. Judge each wager on its own thesis and price. This is the rule that makes EMPIRICAL_EDGE promotion require a registered experiment rather than a streak.
 
 <details><summary>Evidence</summary>
 
@@ -144,6 +131,21 @@ Across all reconciled postmortems the largest single market family holds single-
 - 2026-08-26 'moneylines carried the largest family risk ($95) and went 1-2' -- family SIZING, not family edge, drove the day.
 - 2026-08-29 team totals (3-6) erased most of the F5/ML advantage on one day.
 
-**Promotion blocked by:** This lesson is about the ABSENCE of evidence; it is promoted only if the samples stay small while conclusions keep being drawn, and retired once family samples are large enough to support real conclusions.
+</details>
+
+## HYPOTHESIS (1)
+
+### F7 may carry most of a full game's variance without a full game's pricing
+
+`id: f7-as-a-default-horizon` · **EMPIRICAL_EDGE** · tags: F7, HORIZON_SELECTION · evidence dates: 2 (2026-08-25 → 2026-09-07)
+
+Treat F7 as a horizon that must be justified by the specific pitching-usage thesis (e.g. a starter expected to finish seven), never as a default middle ground between F5 and the full game. Evidence is currently one bad day plus one good selection -- watch it, do not rule on it.
+
+<details><summary>Evidence</summary>
+
+- 2026-08-25 F7 was 0-4 for -95.00 on $95 risk: 'carries most of a full game's variance without a full game's pricing'.
+- 2026-09-07 LAD F7 was recorded as excellent horizon selection when the opposing starter's workload was limited -- the opposite sign, on one day.
+
+**Promotion blocked by:** An EMPIRICAL_EDGE claim requires a registered, leakage-free, out-of-sample experiment. None exists for F7. Two dates pointing in opposite directions is not, and can never become, sufficient. What IS mechanically true and already covered elsewhere: F7 carries more innings of bullpen exposure than F5, so it must be justified by the pitching-usage thesis.
 
 </details>

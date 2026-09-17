@@ -22,3 +22,8 @@ build/
 data/edgelab/research_artifacts/mlb_alpha_0002/kalshi_history/
 data/edgelab/research_artifacts/mlb_alpha_0002/pit_*_panel.jsonl.gz
 .hydrate_tmp/
+
+# Per-run settlement-reconciliation receipts from a LOCAL run. On a runner
+# these go to RUNNER_TEMP; locally they land here. They carry this run's own
+# timestamps, so committing them would make every no-op sweep a commit.
+.reconcile_receipts/

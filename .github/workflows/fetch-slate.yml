@@ -534,6 +534,25 @@ jobs:
           --message "slate data ${{ env.DATE }} $(TZ='America/New_York' date +'%H:%M ET')" \
           data/
 
+    # Real-money HANDICAPPING CARD: which games have BOTH official lineups
+    # confirmed and have not started (the only ones eligible for real-money
+    # analysis), every Kalshi market attributable to each of them, and the
+    # read-only bankroll context sizing may use.
+    #
+    # Deliberately AFTER the authoritative slate is published above, since it
+    # reads data/slate.json plus the already-archived complete Kalshi universe.
+    # Purely additive: writes only data/handicapping_card/, computes no
+    # probability/edge/recommendation, and never touches data/slate.json,
+    # bets.json, marketLedger or risk_gate output. continue-on-error for the
+    # same reason as the F5 audit / projection board steps -- an analysis-only
+    # artifact must never block slate publication.
+    #
+    # Rebuild it any time (e.g. after lineups confirm) with:
+    #   python3 scripts/build_handicapping_card.py --print-summary
+    - name: Build real-money handicapping card (lineup-confirmed games + full market universe)
+      continue-on-error: true
+      run: python3 scripts/build_handicapping_card.py --date "${{ env.DATE }}" --print-summary
+
     # ── BLOCK 7: Execution / logging chain (OPTIONAL — Workflow D) ─────────
     # Every step below may fail without invalidating the slate already
     # published above (that's what continue-on-error is for: it keeps the

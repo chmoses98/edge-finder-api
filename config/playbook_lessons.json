@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1",
-  "playbookVersion": "1.0.0",
+  "playbookVersion": "1.1.0",
   "lastUpdated": "2026-09-17",
   "statusDefinitions": {
     "HYPOTHESIS": "Observed once or a small number of times, or supported only by a single day. Worth watching and worth mentioning in a handicap; NOT yet a rule, and never a reason to change the methodology.",
@@ -9,9 +9,11 @@
     "RETIRED": "Was SUPPORTED, but the condition it described no longer exists (a market was delisted, a data source changed, a gate was removed)."
   },
   "promotionPolicy": {
-    "toSupported": "At least 3 findings on 3 DISTINCT dates pointing the same way, or one registered experiment with an out-of-sample result. A single wager winning or losing never promotes, demotes, or retires anything.",
+    "mechanical": "2+ distinct dated instances, or an explicit evidence.mechanism citation, or a registered experiment. A mechanism is demonstrated, not voted on.",
+    "empiricalEdge": "A registered, leakage-free, out-of-sample experiment and an evidence.outOfSampleResult. Dates alone can NEVER promote an empirical edge claim, however many there are. This is the rule that stops a three-wager streak becoming a betting rule.",
     "toRejected": "Explicit contrary evidence of the same weight required for promotion. Never a single result.",
-    "review": "scripts/playbook_lessons.py --audit recounts every lesson's postmortem evidence from data/edgelab/postmortems/ and flags any lesson whose claimed evidence no longer clears its own promotion bar."
+    "hypotheses": "Repeated anecdotal observations stay HYPOTHESIS under either class: worth mentioning in a handicap, worth motivating research with, never standing guidance.",
+    "review": "scripts/playbook_lessons.py --audit recounts every lesson's postmortem evidence from data/edgelab/postmortems/ and flags any lesson that no longer clears its own class's bar."
   },
   "lessons": [
     {
@@ -36,10 +38,12 @@
           "2026-09-06 ATL F5: Atlanta eventually won but did not lead after five.",
           "2026-09-07 PHI F5: Philadelphia won 1-0 on an eighth-inning run; F5 lost to a 0-0 tie."
         ],
-        "supportingCode": "lib/research/f5_tie_tax.py"
+        "supportingCode": "lib/research/f5_tie_tax.py",
+        "mechanism": "Kalshi's F5 contract is THREE-WAY (away / home / tie after five). A YES on a side therefore does not win on a tie -- this is the contract's settlement rule, not a performance observation. See lib/research/f5_tie_tax.py and lib/edgelab/settlement.settle_inning_result."
       },
       "firstObserved": "2026-09-02",
-      "lastConfirmed": "2026-09-07"
+      "lastConfirmed": "2026-09-07",
+      "evidenceClass": "MECHANICAL"
     },
     {
       "id": "one-thesis-many-markets-is-one-exposure",
@@ -63,16 +67,18 @@
           "2026-08-23 MIL ML (-$10) and MIL 4+ (-$25) failed together: one thesis, two losses.",
           "2026-08-17 STL ML won while STL over 4.5 lost -- directionally right, net -$10.09 across the pair.",
           "2026-08-21 SEA ML and SEA 4+ both won, and is recorded as ONE validated thesis, not two."
-        ]
+        ],
+        "mechanism": "Correlation is a property of the positions, not of their results: Team ML, Team TT over and Team F5 on one game share the same underlying outcome, so their payoffs move together and their combined variance is far higher than three independent wagers of the same size. The dated examples below illustrate it; they are not what makes it true."
       },
       "firstObserved": "2026-08-17",
-      "lastConfirmed": "2026-08-23"
+      "lastConfirmed": "2026-08-23",
+      "evidenceClass": "MECHANICAL"
     },
     {
       "id": "best-expression-beats-favourite-family",
       "status": "SUPPORTED",
-      "title": "No market family is uniformly superior; expression selection is the edge",
-      "guidance": "The postmortem record contains the same number of cases where a team total beat an F5 side as where a full-game ML beat a team total. Choose per-thesis, not per-habit: match the market horizon to where the edge actually lives (starter-based -> shorter horizon; depth/bullpen-based -> full game; offence-only -> team total).",
+      "title": "Market families are payoff structures, not edges -- match the expression to the thesis",
+      "guidance": "A market family is a payoff structure with its own irrelevant risk, not a source of edge. F5 removes bullpen variance AND adds tie risk; a full-game ML carries bullpen and late-inning variance; a team total removes the need for the opponent to lose but adds threshold risk. Choose the expression whose irrelevant risk is smallest for THIS thesis. This says nothing about which family is more profitable -- see family-level-win-rates-are-not-yet-evidence.",
       "tags": [
         "EXPRESSION_SELECTION",
         "HORIZON_SELECTION"
@@ -92,21 +98,25 @@
           "2026-08-28 PHI ML was superior to forcing F5 because the later-game edge mattered; BAL ML was cleaner than BAL TT.",
           "2026-08-24 TB ML (+11.37) won while TB 5+ runs lost -- the ML expressed the same thesis with less threshold risk.",
           "2026-09-06 LAA/PIT F5 <=3 avoided late-game variance and was the right horizon."
-        ]
+        ],
+        "mechanism": "Each family's payoff depends on a different function of the same game state, so switching family changes which risks you are exposed to. The postmortem cases below are illustrations of that structure cutting both ways -- they are explicitly NOT evidence of family-level edge."
       },
       "firstObserved": "2026-08-24",
-      "lastConfirmed": "2026-09-06"
+      "lastConfirmed": "2026-09-06",
+      "evidenceClass": "MECHANICAL"
     },
     {
       "id": "price-discipline-and-passing",
       "status": "SUPPORTED",
-      "title": "Price discipline: buy near-even prices, pass when the edge is priced away",
-      "guidance": "Several recorded profitable positions were bought around 50-55 cents rather than laying large favourite prices, and deliberate passes on expensive prices are recorded as correct decisions. A correct baseball read at a bad price is a pass, and a pass is a complete answer.",
+      "title": "Price discipline: compare fair probability to the executable price, and pass when the edge is gone",
+      "guidance": "A price IS an implied probability. Estimate a defensible fair probability (as a range), compare it to the executable price, identify the bet-up-to price, and pass when the market has already priced the edge away. A correct baseball read at a bad price is a pass, and a pass is a complete answer. There is NO general reason to prefer a cheaper contract: a 70-cent contract with a genuine 80% fair probability is a better wager than a 52-cent contract with a 53% fair probability. Price SHAPE is not edge; the gap between fair probability and price is.",
       "tags": [
-        "PRICE_DISCIPLINE"
+        "PRICE_DISCIPLINE",
+        "PROBABILITY_ESTIMATION"
       ],
       "evidence": {
-        "source": "data/edgelab/postmortems",
+        "source": "contract arithmetic + data/edgelab/postmortems",
+        "mechanism": "Expected value per dollar staked is a function of (fair probability - implied price), not of the price level. Any rule of the form 'prefer contracts near X cents' is independent of fair probability and therefore cannot be an edge.",
         "distinctDates": [
           "2026-08-17",
           "2026-08-20",
@@ -114,12 +124,14 @@
           "2026-08-22"
         ],
         "examples": [
-          "2026-08-17 'price discipline remained valuable across the slate: several successful positions were bought around 50-55 cents rather than laying large favourite prices'.",
-          "2026-08-17 the decision to pass expensive Dodgers F5 / Sugano-under pricing is recorded as a correct decision, not a missed bet."
+          "2026-08-17 records a deliberate PASS on expensive Dodgers F5 / Sugano-under pricing as a correct decision, not a missed bet -- that is the durable half of this lesson.",
+          "CORRECTION (2026-09-18 review): an earlier version of this lesson read 'buy near-even prices, 50-55 cents', generalising from a handful of winners that happened to be priced there. That is a price-shape superstition, not an edge, and it is explicitly retracted. Whether near-even contracts outperform is an EMPIRICAL_EDGE question with no registered experiment behind it."
         ]
       },
       "firstObserved": "2026-08-17",
-      "lastConfirmed": "2026-08-22"
+      "lastConfirmed": "2026-08-22",
+      "evidenceClass": "MECHANICAL",
+      "supersedes": "The 'buy near-even prices' formulation, retracted 2026-09-18: it was an EMPIRICAL_EDGE claim wearing a MECHANICAL label, promoted on four dates of winners."
     },
     {
       "id": "recent-mean-runs-is-not-form",
@@ -143,10 +155,16 @@
           "MLB-RSCH-0036: offensive-form CONSISTENCY and market-relative form, same leakage-free walk-forward split -- see docs/RESEARCH_OFFENSIVE_FORM.md.",
           "2026-09-07 MIA F5: 'recent form should not overwhelm the downside distribution' after Eury Perez allowed a career-high 7 runs in four innings."
         ],
-        "note": "The dated evidence below is the PROBABILITY_ESTIMATION finding set in the postmortem corpus; the decisive evidence for this lesson is the two registered out-of-sample experiments named in `examples`, which are not postmortem-tagged and therefore do not appear in --audit's tag recount."
+        "note": "The dated evidence below is the PROBABILITY_ESTIMATION finding set in the postmortem corpus; the decisive evidence for this lesson is the two registered out-of-sample experiments named in `examples`, which are not postmortem-tagged and therefore do not appear in --audit's tag recount.",
+        "outOfSampleResult": "MLB-RSCH-0005: NO_USEFUL_SIGNAL over 12,800 development team-games (2022-2026); the frozen candidate regression beat the control by 0.0008 MAE. MLB-RSCH-0036: DESCRIPTIVE_ONLY over 20,478 team-games -- 19 of 21 development CIs exclude zero but 19 of 21 holdout CIs span zero, and every frozen out-of-sample margin is 0.001-0.003 runs MAE. Both are leakage-free walk-forward designs with development-fit coefficients frozen before validation/holdout.",
+        "registeredExperiments": [
+          "MLB-RSCH-0005",
+          "MLB-RSCH-0036"
+        ]
       },
       "firstObserved": "2026-08-27",
-      "lastConfirmed": "2026-09-17"
+      "lastConfirmed": "2026-09-17",
+      "evidenceClass": "EMPIRICAL_EDGE"
     },
     {
       "id": "known-failure-mode-must-move-the-probability",
@@ -168,10 +186,12 @@
           "2026-09-07 CLE/BAL F5 <=3: 'Cantillo's volatility/control was explicitly the known danger' and he gave up 4 runs in just over two innings -- 'when the known failure mode is this severe it must reduce the fair probability enough, rather than merely being mentioned as a narrative caveat'.",
           "2026-09-06 recorded as a PROBABILITY_ESTIMATION miss on a thesis whose risk was already named pregame.",
           "2026-08-30 recorded under OVERCONFIDENCE / SMALL_SAMPLE: conviction outran the evidence behind it."
-        ]
+        ],
+        "mechanism": "A fair probability is an expectation over the outcome distribution. A named, material downside branch is part of that distribution, so acknowledging it in prose while leaving the number unchanged is an arithmetic error, not a stylistic one."
       },
       "firstObserved": "2026-08-25",
-      "lastConfirmed": "2026-09-07"
+      "lastConfirmed": "2026-09-07",
+      "evidenceClass": "MECHANICAL"
     },
     {
       "id": "f7-as-a-default-horizon",
@@ -195,13 +215,14 @@
       },
       "firstObserved": "2026-08-25",
       "lastConfirmed": "2026-09-07",
-      "promotionBlockedBy": "Only two dates, pointing in opposite directions. Needs repeated same-direction evidence before it becomes guidance."
+      "promotionBlockedBy": "An EMPIRICAL_EDGE claim requires a registered, leakage-free, out-of-sample experiment. None exists for F7. Two dates pointing in opposite directions is not, and can never become, sufficient. What IS mechanically true and already covered elsewhere: F7 carries more innings of bullpen exposure than F5, so it must be justified by the pitching-usage thesis.",
+      "evidenceClass": "EMPIRICAL_EDGE"
     },
     {
       "id": "parlays-are-overlay-only",
-      "status": "HYPOTHESIS",
-      "title": "A parlay leg failure costs twice; size as a small overlay",
-      "guidance": "When a thesis already appears as a straight wager, adding it to a parlay makes one failure cost the straight wager AND the parlay. Keep parlays small and clearly labelled as overlay, and never let a parlay's payout justify a leg that would not clear on its own.",
+      "status": "SUPPORTED",
+      "title": "A parlay leg that duplicates a straight wager makes one failure cost twice",
+      "guidance": "A parlay pays only if every leg wins, so its probability is the product of its legs' probabilities and a leg that is -EV on its own cannot be rescued by the payout. When a thesis already appears as a straight wager, adding it to a parlay means one failure costs the straight wager AND the parlay -- that is concentration, not diversification. Size parlays as small, clearly labelled overlay. This makes no claim about whether parlays are profitable.",
       "tags": [
         "PARLAY",
         "CORRELATED_EXPOSURE"
@@ -217,17 +238,27 @@
           "2026-08-24 'CIN F5 was a loss and also killed the four-leg parlay -- one thesis failing cost twice'.",
           "2026-08-25 both four-leg parlays lost; each had winning legs but neither cleared.",
           "2026-08-29 explicitly recorded: '+93.30 parlay profit is not evidence that parlays are due'."
-        ]
+        ],
+        "mechanism": "P(parlay) = product of leg probabilities for independent legs, and strictly less for negatively correlated ones; a shared leg makes the parlay and the straight wager the same bet twice."
       },
       "firstObserved": "2026-08-24",
       "lastConfirmed": "2026-08-29",
-      "promotionBlockedBy": "Three dates, but the sample of parlays placed is very small and one day was strongly profitable. Directionally consistent, not yet decided."
+      "promotionBlockedBy": "Three dates, but the sample of parlays placed is very small and one day was strongly profitable. Directionally consistent, not yet decided.",
+      "evidenceClass": "MECHANICAL",
+      "statusHistory": [
+        {
+          "from": "HYPOTHESIS",
+          "to": "SUPPORTED",
+          "reason": "Reclassified MECHANICAL in the 2026-09-18 governance pass: the empirical half (are parlays profitable?) was removed, leaving only the structural facts -- a parlay's probability is the product of its legs', and a leg duplicating a straight wager makes one failure cost twice. Both are true by construction and carry an evidence.mechanism citation.",
+          "changedAt": "2026-09-17T22:58:41Z"
+        }
+      ]
     },
     {
       "id": "family-level-win-rates-are-not-yet-evidence",
-      "status": "HYPOTHESIS",
-      "title": "Do not draw market-family conclusions from the reconciled sample",
-      "guidance": "Across all reconciled postmortems the largest single market family holds single-digit graded wagers. Any statement of the form 'F5 works' or 'team totals do not work' is currently unsupported noise. Judge each wager on its own thesis and price until the family samples are materially larger.",
+      "status": "SUPPORTED",
+      "title": "Single-digit family samples cannot support any family-level edge conclusion",
+      "guidance": "Across every reconciled postmortem the largest single market family holds single-digit graded wagers. At that sample size no family-level win rate is distinguishable from noise, so any statement of the form 'F5 works' or 'team totals do not work' is unsupported. Judge each wager on its own thesis and price. This is the rule that makes EMPIRICAL_EDGE promotion require a registered experiment rather than a streak.",
       "tags": [
         "SMALL_SAMPLE",
         "STAKE_SIZING"
@@ -242,11 +273,16 @@
           "Aggregated across every reconciled postmortem, the largest family sample is roughly 7 graded wagers.",
           "2026-08-26 'moneylines carried the largest family risk ($95) and went 1-2' -- family SIZING, not family edge, drove the day.",
           "2026-08-29 team totals (3-6) erased most of the F5/ML advantage on one day."
-        ]
+        ],
+        "mechanism": "With n < 10 binary outcomes, the confidence interval on a win rate spans essentially the whole plausible range; the observed rate carries almost no information about the true one. This is a property of the sample size, not of the results."
       },
       "firstObserved": "2026-08-26",
       "lastConfirmed": "2026-08-29",
-      "promotionBlockedBy": "This lesson is about the ABSENCE of evidence; it is promoted only if the samples stay small while conclusions keep being drawn, and retired once family samples are large enough to support real conclusions."
+      "evidenceClass": "MECHANICAL"
     }
-  ]
+  ],
+  "evidenceClasses": {
+    "MECHANICAL": "A structural fact about a contract, a market, a portfolio or arithmetic -- e.g. a three-way F5 YES loses a tie; five expressions of one thesis are one exposure; a price defines the implied probability. These do not need a betting sample to be true. Promoted by showing the mechanism is real: repeated dated instances, or an explicit mechanism citation (a contract rule, a module, an arithmetic identity).",
+    "EMPIRICAL_EDGE": "A claim that something WINS, LOSES or PREDICTS: a market family, a horizon, a price shape, a model feature. Promotion to SUPPORTED REQUIRES a registered, leakage-free, sufficiently powered out-of-sample experiment (a cited MLB-RSCH-####/MLB-ALPHA-#### id plus an outOfSampleResult). No number of same-direction wagers or dates can promote a claim about money -- three wagers pointing one way is a coin landing heads three times."
+  }
 }

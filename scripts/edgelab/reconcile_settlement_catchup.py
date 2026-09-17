@@ -84,9 +84,19 @@ from scripts.edgelab.settle_markets import settle_date
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-RECEIPT_DIR = os.path.join("data", "edgelab", "operational_health")
-RECEIPT_PATH = os.path.join(RECEIPT_DIR, "settlement_reconciliation_receipt.json")
-STATUS_PATH = os.path.join(RECEIPT_DIR, "settlement_reconciliation_status.json")
+# The VERSIONED status file: a GLOBAL outstanding-settlement snapshot,
+# committed, and rewritten only when its material content changes.
+STATUS_PATH = os.path.join("data", "edgelab", "operational_health",
+                           "settlement_reconciliation_status.json")
+
+# The PER-RUN receipt: written every run for observability, uploaded as a
+# GitHub Actions artifact, and deliberately NOT committed. It carries a
+# fresh startedAt/completedAt by definition, so committing it would turn
+# every no-op sweep into a repository commit -- the exact churn this
+# design avoids. RUNNER_TEMP is used on a runner; a local run drops it
+# beside the repo in an ignored scratch path.
+_RECEIPT_DIR_DEFAULT = os.environ.get("RUNNER_TEMP") or os.path.join(".reconcile_receipts")
+RECEIPT_PATH = os.path.join(_RECEIPT_DIR_DEFAULT, "settlement_reconciliation_receipt.json")
 
 
 def _run(script_rel_path, args, label):
@@ -246,38 +256,73 @@ def resolve_dates(args):
 
 
 def write_receipt(receipt, receipt_out):
+    """
+    Write this run's receipt. The receipt is PER-RUN OBSERVABILITY: it
+    records what this invocation considered, changed and left pending,
+    and every run produces one. It is uploaded as a GitHub Actions
+    artifact and is deliberately NOT part of the workflow's committed
+    file set -- see write_global_status() for why.
+    """
     os.makedirs(os.path.dirname(receipt_out) or ".", exist_ok=True)
     with open(receipt_out, "w", encoding="utf-8") as f:
         json.dump(receipt, f, indent=2, sort_keys=True)
 
-    # Rolling status file: the small, stable thing a human (or a fresh
-    # ChatGPT session asking "is yesterday finished?") can read without
-    # parsing a full receipt.
-    #
-    # A dry run deliberately does NOT touch it. A dry run computes what
-    # WOULD happen; letting it overwrite the record of what actually did
-    # happen would make the one file people trust for "is yesterday
-    # finished?" describe a run that wrote nothing. The receipt above is
-    # still written, which is the whole point of a dry run.
-    if receipt.get("dryRun"):
-        return
 
-    status = {
-        "schemaVersion": "1",
-        "lastRunAt": receipt["completedAt"],
-        "lastRunTrigger": receipt["trigger"],
-        "lastRunDryRun": receipt["dryRun"],
-        "lastRunCounts": receipt["counts"],
-        "lastRunDates": receipt["datesConsidered"],
-        "lastRunRefusalReason": receipt["refusalReason"],
-        "stillPendingByDate": {
-            d["date"]: d.get("pendingWagersAfter", 0) for d in receipt["perDate"]
-            if d.get("pendingWagersAfter")
+def write_global_status(receipt, *, status_path=STATUS_PATH):
+    """
+    Refresh the VERSIONED rolling status -- but only when it would
+    actually say something different.
+
+    TWO SEPARATE FIXES LIVE HERE.
+
+    1. GLOBAL, NOT LAST-RUN-SCOPED. The pending set is derived from the
+       whole canonical ledger via build_global_pending_status(), never
+       from this run's date list. A push-triggered run that reconciled
+       only 2026-09-17 must not erase 2026-09-16's still-unresolved
+       wager from the one file that answers "what is still open?".
+
+    2. NO TIMESTAMP-ONLY COMMITS. lib.edgelab.settlement_reconciliation.
+       material_status_fingerprint() strips asOf/lastRun before hashing,
+       so a twice-daily sweep that found nothing new leaves the file's
+       BYTES untouched -- and scripts/ci/git_data_commit.py then has
+       nothing to commit. Observability is not lost: the per-run receipt
+       above still records that the run happened and what it saw.
+
+    Returns (written: bool, reason: str).
+    """
+    if receipt.get("dryRun"):
+        # A dry run computes what WOULD happen; it must never rewrite
+        # the record of what actually did. Its own receipt is still written.
+        return False, "DRY_RUN"
+
+    status = recon.build_global_pending_status(
+        read_ledger_rows(),
+        as_of=receipt["completedAt"],
+        run_summary={
+            "trigger": receipt["trigger"],
+            "completedAt": receipt["completedAt"],
+            "githubRunId": receipt.get("githubRunId"),
+            "datesConsidered": receipt["datesConsidered"],
+            "counts": receipt["counts"],
+            "refusalReason": receipt.get("refusalReason"),
         },
-    }
-    os.makedirs(os.path.dirname(STATUS_PATH) or ".", exist_ok=True)
-    with open(STATUS_PATH, "w", encoding="utf-8") as f:
+    )
+
+    existing = None
+    if os.path.exists(status_path):
+        try:
+            with open(status_path, encoding="utf-8") as f:
+                existing = json.load(f)
+        except (OSError, ValueError):
+            existing = None
+
+    if recon.status_is_materially_unchanged(status, existing):
+        return False, "NO_MATERIAL_CHANGE"
+
+    os.makedirs(os.path.dirname(status_path) or ".", exist_ok=True)
+    with open(status_path, "w", encoding="utf-8") as f:
         json.dump(status, f, indent=2, sort_keys=True)
+    return True, "MATERIAL_CHANGE"
 
 
 def main():
@@ -298,7 +343,11 @@ def main():
     parser.add_argument("--skip-report", action="store_true", help="Never regenerate daily reports")
     parser.add_argument("--verify-idempotent", action="store_true",
                         help="Run the same date set a second time and fail if anything changed on the second pass")
-    parser.add_argument("--receipt-out", default=RECEIPT_PATH)
+    parser.add_argument("--receipt-out", default=RECEIPT_PATH,
+                        help="Where to write this run's receipt. Defaults to a path OUTSIDE the "
+                             "committed tree; the workflow uploads it as an Actions artifact "
+                             "rather than committing it, so per-run observability never causes "
+                             "repository churn.")
     parser.add_argument("--trigger", default=os.environ.get("RECONCILE_TRIGGER", "manual"))
     args = parser.parse_args()
 
@@ -319,7 +368,13 @@ def main():
         github_run_id=os.environ.get("GITHUB_RUN_ID"),
     )
     write_receipt(receipt, args.receipt_out)
+    status_written, status_reason = write_global_status(receipt)
+    receipt["globalStatusWritten"] = status_written
+    receipt["globalStatusReason"] = status_reason
+    write_receipt(receipt, args.receipt_out)
 
+    print(f"[reconcile_settlement_catchup] global status: "
+          f"{'rewritten' if status_written else 'unchanged'} ({status_reason})")
     print(f"[reconcile_settlement_catchup] trigger={args.trigger} dates={dates or '[]'} "
           f"changed={receipt['counts']['datesChanged']} betsSettled={receipt['counts']['betsSettled']} "
           f"reportsRegenerated={receipt['counts']['reportsRegenerated']} "

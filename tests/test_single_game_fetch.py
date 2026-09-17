@@ -407,3 +407,127 @@ def test_single_game_workflow_passes_free_text_inputs_through_env_only():
             continue
         offenders.append(f"line {lineno}: {stripped}")
     assert offenders == [], f"workflow_dispatch inputs interpolated into a run body: {offenders}"
+
+
+# ── exhaustiveness accounting (correction pass, item 5) ─────────────────
+
+def _raw(ticker, event_ticker, **extra):
+    return {"ticker": ticker, "event_ticker": event_ticker, "yes_bid": 0.4, "yes_ask": 0.42,
+            "title": ticker, "status": "active", **extra}
+
+
+def _norm(ticker, event_ticker, matchup="MIL@PIT"):
+    return {"ticker": ticker, "eventTicker": event_ticker, "matchup": matchup}
+
+
+def test_accounting_confirms_every_attributable_contract_is_represented():
+    raw = [_raw("T1", "EV-A"), _raw("T2", "EV-A"), _raw("OTHER", "EV-B")]
+    kept = [_norm("T1", "EV-A")]
+    excluded = [_norm("T2", "EV-A")]
+    acc = fetch_single_game.account_for_game_contracts(raw, kept, excluded, kept + excluded)
+    assert acc["rawGameAttributableContracts"] == 2
+    assert acc["accountedContracts"] == 2
+    assert acc["silentRemainderCount"] == 0
+    assert acc["invariantHolds"] is True
+
+
+def test_a_contract_the_registry_does_not_understand_is_a_silent_remainder():
+    """
+    The failure mode: Kalshi adds a family, the strict registry does not
+    recognise its series, and its contracts quietly disappear while the
+    artifact still looks complete.
+    """
+    raw = [_raw("T1", "EV-A"), _raw("BRAND-NEW-FAMILY", "EV-A")]
+    kept = [_norm("T1", "EV-A")]
+    acc = fetch_single_game.account_for_game_contracts(raw, kept, [], kept)
+    assert acc["silentRemainderCount"] == 1
+    assert acc["silentRemainderTickers"] == ["BRAND-NEW-FAMILY"]
+    assert acc["invariantHolds"] is False
+
+
+def test_an_unattributable_contract_is_retained_as_ambiguity_not_guessed():
+    raw = [_raw("T1", "EV-A"), {"ticker": "NO-EVENT", "yes_ask": 0.5}]
+    kept = [_norm("T1", "EV-A")]
+    acc = fetch_single_game.account_for_game_contracts(raw, kept, [], kept)
+    assert acc["unattributableRawContracts"] == 1
+    assert acc["unattributableSampleTickers"] == ["NO-EVENT"]
+    # It is NOT counted into this game either way.
+    assert acc["rawGameAttributableContracts"] == 1
+    assert acc["silentRemainderCount"] == 0
+
+
+def test_the_run_refuses_to_write_an_artifact_that_drops_contracts(tmp_path, monkeypatch, capsys):
+    """A violated invariant must abort, not produce a plausible-looking
+    but incomplete bundle."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(fetch_single_game.mlb_schedule, "fetch_schedule", lambda date, **kw: {"x": 1})
+    monkeypatch.setattr(fetch_single_game.mlb_schedule, "parse_schedule_games", lambda p: SINGLE_DAY)
+    monkeypatch.setattr(fetch_single_game, "account_for_game_contracts",
+                        lambda *a, **kw: {"invariantHolds": False, "silentRemainderCount": 2,
+                                          "silentRemainderTickers": ["X", "Y"],
+                                          "unattributableRawContracts": 0})
+    import scripts.check_kalshi_prices as price_check
+    monkeypatch.setattr(price_check, "fetch_live", lambda base, timeout=15: (_payload(10), 200, "u", 1))
+    monkeypatch.setattr(sys, "argv", ["fetch_single_game.py", "--date", DATE, "--game", "MIL"])
+
+    assert fetch_single_game.main() == fetch_single_game.EXIT_ERROR
+    assert not os.path.exists(os.path.join(fetch_single_game.SINGLE_GAME_DIR, DATE))
+    assert "exhaustiveness invariant violated" in capsys.readouterr().err
+
+
+def test_real_universe_artifact_carries_a_holding_accounting_invariant(tmp_path, monkeypatch, capsys):
+    universe = _real_universe()
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(fetch_single_game.mlb_schedule, "fetch_schedule", lambda date, **kw: {"x": 1})
+    monkeypatch.setattr(fetch_single_game.mlb_schedule, "parse_schedule_games",
+                        lambda p: [_sched(823334, MIL, PIT, start="2026-09-17T16:35:00Z", venue="PNC Park")])
+    import scripts.check_kalshi_prices as price_check
+    monkeypatch.setattr(price_check, "fetch_live", lambda base, timeout=15: (universe, 200, "u", 1))
+    monkeypatch.setattr(sys, "argv", ["fetch_single_game.py", "--date", "2026-09-17", "--game", "MIL"])
+
+    assert fetch_single_game.main() == fetch_single_game.EXIT_OK
+    capsys.readouterr()
+    with open(os.path.join("data", "single_game", "2026-09-17", "823334.json")) as f:
+        artifact = json.load(f)
+
+    acc = artifact["contractAccounting"]
+    assert acc["invariantHolds"] is True
+    assert acc["silentRemainderCount"] == 0
+    assert acc["accountedContracts"] == acc["rawGameAttributableContracts"]
+    assert acc["normalizedMarkets"] == artifact["marketSummary"]["total"]
+    assert acc["attributionMethod"] == "KALSHI_EVENT_TICKER"
+
+
+# ── lineup confirmation must be exposed, never bypassed ─────────────────
+
+def test_an_artifact_without_slate_context_is_not_real_money_eligible():
+    status = fetch_single_game.lineup_confirmation_for_single_game({"status": "NOT_AVAILABLE", "game": None})
+    assert status["bothOfficialLineupsConfirmed"] is False
+    assert status["realMoneyEligible"] is False
+    assert status["status"] == "UNKNOWN_NO_SLATE_CONTEXT"
+
+
+def test_lineup_confirmation_is_read_from_the_canonical_slate_block():
+    game = {
+        "gameId": 824305, "status": "Pre-Game", "startTime": "2099-01-01T00:00:00Z",
+        "away": {"abbr": "SD"}, "home": {"abbr": "COL"},
+        "awayTeamStats": {"lineupConfirmedOfficial": True},
+        "homeTeamStats": {"lineupConfirmedOfficial": True},
+    }
+    status = fetch_single_game.lineup_confirmation_for_single_game({"status": "LOADED", "game": game})
+    assert status["bothOfficialLineupsConfirmed"] is True
+    assert status["realMoneyEligible"] is True
+    assert status["sides"]["away"]["lineupConfirmedOfficial"] is True
+
+
+def test_an_unconfirmed_game_is_marked_not_real_money_eligible():
+    game = {
+        "gameId": 824141, "status": "Pre-Game", "startTime": "2099-01-01T00:00:00Z",
+        "away": {"abbr": "KC"}, "home": {"abbr": "HOU"},
+        "awayTeamStats": {"lineupConfirmedOfficial": False},
+        "homeTeamStats": {"lineupConfirmedOfficial": True},
+    }
+    status = fetch_single_game.lineup_confirmation_for_single_game({"status": "LOADED", "game": game})
+    assert status["realMoneyEligible"] is False
+    assert status["status"] == "BLOCKED_LINEUPS_UNCONFIRMED"
+    assert "never bypass" in status["note"] or "does NOT bypass" in status["note"]

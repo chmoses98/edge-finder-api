@@ -1,12 +1,19 @@
 # BET_LOG.md — Authoritative Bet Record
-*Generated from bets.json — last updated: 2026-09-17*
+*Generated from bets.json — last updated: 2026-09-18*
 
-## Real-Money Record: 183W 198L 7P | Real P/L: $+9.32 | Pending: 45
+## Real-Money Record: 183W 198L 7P | Real P/L: $+9.32 | Pending: 48
 
 > **Note:** Paper bets are excluded from Real-Money Record and P/L above.
 > Paper P/L is tracked separately in the Paper Performance section below.
 
 ---
+
+### 2026-09-17 — 0W 0L | Real P/L: $+0.00
+| ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-09-17-181 | F5_ML_Home |  | 106 | 2.412% |  | 4.5 | pending | — | — |
+| 2026-09-17-182 | TT_Away_Over |  | 127 | 4.761% |  | 4.0 | pending | — | — |
+| 2026-09-17-183 | F5_ML_Home |  | 160 | 2.068% |  | 4.5 | pending | — | — |
 
 ### 2026-09-10 — 0W 0L | Real P/L: $+0.00
 | ID | Mkt | Bet | Price | Edge% | Conf | Size | Result | P/L | CLV% |

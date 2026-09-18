@@ -1,10 +1,58 @@
 # RUN_THE_SLATE.md
 # The one file to rule them all.
-# Last updated: June 17, 2026 — v1.2 (bet persistence chain + session ingestion path)
+# Last updated: September 18, 2026 — v1.4 (confirmed-lineup eligibility, bankroll context,
+#                                          full-market manual handicapping)
 #
 # USAGE: When the user says "run the slate", execute this document top-to-bottom.
 # Every other doc is either archived or subordinate to this one.
 # ─────────────────────────────────────────────────────────────────────────────
+
+---
+
+## STEP 0 (MANDATORY) — READ THE CANONICAL HANDICAPPING PLAYBOOK
+
+**Before any analysis, before any price, read
+[`HANDICAPPING_PLAYBOOK.md`](HANDICAPPING_PLAYBOOK.md) and
+[`PLAYBOOK_LESSONS.md`](PLAYBOOK_LESSONS.md), in full.**
+
+They are short on purpose (playbook ≈ 950 words of methodology). Together they
+are the repository's durable handicapping memory: game eligibility, thesis
+before market, market expression, price and bankroll discipline, correlation
+control, how to read recent form, and the evidence-graded lessons earned from
+past postmortems. Without them, every new chat re-derives the same lessons from
+scratch and re-makes the same mistakes.
+
+**Record the playbook version in the slate output**, so a later postmortem knows
+which methodology produced the card:
+
+```bash
+grep -m1 PLAYBOOK_VERSION HANDICAPPING_PLAYBOOK.md
+python3 scripts/playbook_lessons.py --list        # what is SUPPORTED vs HYPOTHESIS
+```
+
+Nothing below this line overrides the playbook's methodology; `RULES.md` and
+`config/rules.json` still own the numeric thresholds and hard gates.
+
+---
+
+## START-OF-SLATE PROMPT (copy/paste into a fresh chat)
+
+```
+Read HANDICAPPING_PLAYBOOK.md and PLAYBOOK_LESSONS.md in
+chmoses98/edge-finder-api (main) first, and follow them.
+Load the newest valid handicapping card / slate evidence in that repo.
+Use ONLY unstarted games with BOTH official lineups confirmed.
+For each eligible game, inspect EVERY available Kalshi market.
+Build the baseball thesis BEFORE choosing its best market expression.
+Respect price, uncertainty and correlated exposure.
+Use the canonical bankroll ONLY if its actual NUMERIC value is available to
+  you AND it is fresh/sizing-authoritative; otherwise give no dollar stake
+  sizes -- edge, confidence and bet-up-to fractions still apply.
+State the strongest evidence AGAINST every proposed wager.
+Return only bets clearing the threshold; passing is fine.
+Never assume a recommendation was placed -- I confirm every wager myself.
+Report the PLAYBOOK_VERSION and the bankroll source/status used.
+```
 
 ---
 
@@ -111,7 +159,13 @@ Only after full output is confirmed. Status: open (real) or paper.
 
 ---
 
-## MARKET EVALUATION LIST (canonical — exactly these 8 markets per game)
+## PRODUCTION-MODEL MARKET LIST (the 11-row `marketLedger` universe)
+
+> **Scope.** This table is the **legacy production-model and risk-gate**
+> universe: the markets `scripts/build_market_ledger.py` prices, `risk_gate.py`
+> gates, and the automated execution chain may write to `bets.json`. It is NOT
+> the set of markets a manual handicapper may compare on a BETTING-ELIGIBLE
+> game — see § FULL MARKET COVERAGE and `HANDICAPPING_PLAYBOOK.md` §3.
 
 | # | Market | Kalshi Series | Rule Gate |
 |---|---------|--------------|-----------|
@@ -126,7 +180,7 @@ Only after full output is confirmed. Status: open (real) or paper.
 
 **RL** (KXMLBSPREAD): paper/suspended per Rule 81. Always evaluate; always paper until suspension lifts.
 
-**Every game gets all 11 rows in `marketLedger`. A missing row is a pipeline failure, not an acceptable gap. `allEdges` is not the coverage source of truth — `marketLedger` is.**
+**Every game gets all 11 rows in `marketLedger`. A missing row is a pipeline failure, not an acceptable gap. Within the production-model universe, `allEdges` is not the coverage source of truth — `marketLedger` is.**
 
 ---
 
@@ -142,7 +196,11 @@ Only after full output is confirmed. Status: open (real) or paper.
 | Market list | This file (above) |
 | Rule definitions | `RULES.md` (T1/T2/T3 tiers) |
 | Math engine | `MODEL_CORE.md` Sections 1–8 |
-| Market coverage | `g['marketLedger']` in `data/slate.json` — 11 rows per game, written by `build_market_ledger.py` |
+| Handicapping methodology | `HANDICAPPING_PLAYBOOK.md` (+ `PLAYBOOK_LESSONS.md`) |
+| Game eligibility (real money) | both official lineups confirmed + not started — `lib/betting_eligibility.py` |
+| Manual handicapping market universe | every Kalshi market for a BETTING-ELIGIBLE game — `data/handicapping_card/<date>.json` |
+| Production-model / risk-gate coverage | `g['marketLedger']` in `data/slate.json` — 11 rows per game, written by `build_market_ledger.py` |
+| Bankroll for sizing | `lib/bankroll_context.py` (the authenticated Kalshi balance sealed in by `kalshi-bet-router`; nothing else can size) |
 | Bet ledger | `bets.json` (flat array, parse directly) |
 
 **FD/DK are banned as bet sources or fallbacks. Never used.**
@@ -171,8 +229,19 @@ Current market multipliers (from `config/rules.json` → `multipliers`):
 For every game on the slate, produce in this exact structure:
 
 ```
-PRE-SCAN: [Team] | L7: X.X | L15: X.X | Szn: X.X | Flag: BOUNCEBACK/REGRESSION/NEUTRAL
+PRE-SCAN: [Team] | L7: <avg> avg | <med> med | <game-by-game scores> |
+          <n>/<w> >=4 | <n>/<w> >=5 | max <r> (<pct>% of L7 runs) |
+          [OUTLIER-DEPENDENT] | [TT overs <n>/<w>] | Form: HOT/NEUTRAL/COLD/OUTLIER_INFLATED |
+          L15: X.X | Szn: X.X
 (one line per team — required before any game analysis)
+
+Take this line VERBATIM from the slate: it is `awayTeamStats.offenseFormLine` /
+`homeTeamStats.offenseFormLine` (and `offenseFormLabel`), written by
+scripts/fetch_team_offense_form.py -> scripts/enrich_data.py. Do NOT recompute
+it and do NOT summarise an offense with the mean alone: a single 20-run game
+can lift a 7-game mean above league average while the median sits at 3. A team
+labelled OUTLIER_INFLATED is NOT hot. See HANDICAPPING_PLAYBOOK.md §5 and
+docs/RESEARCH_OFFENSIVE_FORM.md.
 
 GAME: [AWAY @ HOME] — Date/Time
 LINEUP CHECK:
@@ -297,11 +366,122 @@ Do not log any bets until `Eval Failed = 0` and `Validation failures = NONE`.
 
 ---
 
-## FULL MARKET COVERAGE (research/audit visibility, not a betting input)
+## ELIGIBILITY — which games may be bet at all (MANDATORY)
 
-`g['marketLedger']` (11 rows/game) remains the ONLY source of truth for
-recommendation-eligible markets and real-money gating — nothing in this
-section changes that.
+**Only games with BOTH OFFICIAL LINEUPS CONFIRMED are eligible for real-money
+evaluation.** The pipeline archives every game and every Kalshi market; the
+handicapping card does not.
+
+```
+1. archive the COMPLETE MLB Kalshi universe        (capture jobs, unchanged)
+2. determine which games have NOT started
+3. determine which of those have BOTH official lineups confirmed
+4. those — and only those — are BETTING-ELIGIBLE
+5. for each eligible game, evaluate EVERY available Kalshi market
+6. a game without both official lineups confirmed must NOT produce a
+   real-money recommendation from the normal slate card
+7. probable/projected lineups are NEVER treated as confirmed
+```
+
+Build the card:
+
+```bash
+python3 scripts/build_handicapping_card.py            # -> data/handicapping_card/<date>.json
+python3 scripts/build_handicapping_card.py --print-summary
+```
+
+It writes `bettingEligibleGames` (executable) and `researchOnlyGames`
+(archived, visible, `realMoneyEligible: false` on every market row — this is
+the **Early Value / research surface**, and it must never leak into the
+executable card). `data/handicapping_card/latest.json` is the pointer.
+
+"Analyze every available market" therefore means **every available market for
+every UNSTARTED + LINEUP-CONFIRMED + OTHERWISE ELIGIBLE game** — never
+recommending bets on games whose official lineups are still unconfirmed.
+
+---
+
+## BANKROLL — size against the real one, or say you cannot
+
+The card carries a read-only `bankroll` context (`lib/bankroll_context.py`).
+
+**Dollar stake sizing requires BOTH of these, and neither implies the other:**
+
+1. `bankroll.sizingAllowed` — a FRESH, sizing-authoritative bankroll exists;
+2. `bankroll.numericBankrollAvailable` — **the actual number is in YOUR hands.**
+
+`bankroll.consumerSizingVerdict.verdict` states the answer directly:
+
+| Verdict | What you may present |
+|---|---|
+| `DOLLAR_SIZING_PERMITTED` | dollar stakes |
+| `NO_DOLLAR_SIZING_FOR_THIS_CONSUMER` | **no dollar stakes** — the bankroll exists and is fresh, but its value is redacted from the copy you are reading |
+| `NO_DOLLAR_SIZING` | **no dollar stakes** — stale, unavailable, or not sizing-authoritative |
+
+**`sizingAllowed: true` means the PRIVATE WORKFLOW that built this card was
+permitted to use the balance. It does NOT mean you know the amount.** The
+committed card on this public repository carries `bankroll: null`,
+`bankrollRedacted: true`, `numericBankrollAvailable: false` — and yet
+`status: FRESH`, `sizingAllowed: true`, because both statements are true of
+different readers. Reading only the second is how a chat session invents
+dollar figures it has no basis for.
+
+When you may not size: **handicap normally.** Give edge, confidence, and
+bet-up-to *fractions* of bankroll — all of that works without the number.
+Just say explicitly that the authenticated bankroll exists but is redacted
+from this consumer (or is stale/unavailable, as applicable), and present no
+dollar amounts. Never substitute a remembered, hand-typed or derived number.
+
+Three things about it are load-bearing:
+
+* **One authority.** Only the authenticated Kalshi account balance
+  (`source: kalshi_authenticated_balance`,
+  `valueType: KALSHI_AVAILABLE_CASH_BALANCE`) can set a stake size. This
+  repository's own derived ledger is diagnostic context and can never size,
+  however fresh it looks — its cash history is not proven complete, and a
+  recently-updated wager is not evidence that last week's deposit was ever
+  recorded.
+* **30 minutes.** A balance is a live quantity. A day-old reading is not the
+  current bankroll.
+* **The committed card does not carry the amount.** This repository is
+  public. The build itself received the real number from an encrypted secret;
+  the committed file does not. The final output must name the bankroll's
+  `source`, `status`, `observedAt` and `consumerSizingVerdict` — report the
+  amount **only** if you actually hold it.
+
+See `docs/BANKROLL_CONTEXT.md` for the source, the field semantics and the
+freshness rules.
+
+---
+
+## FULL MARKET COVERAGE (the manual handicapper's market universe)
+
+**Scope note (v1.3).** `g['marketLedger']` (11 rows/game) is the source of
+truth for the **legacy PRODUCTION-MODEL and RISK-GATE universe** — the markets
+`scripts/build_market_ledger.py` prices and `scripts/risk_gate.py` gates, and
+the only ones the automated execution chain may write to `bets.json`. That is
+still true and unchanged.
+
+It is **NOT** the set of markets a manual handicapper may compare. Once a game
+is **BETTING-ELIGIBLE** (§ELIGIBILITY below), every Kalshi market attributable
+to it is available for comparison — F3/F7, alternate totals, winning margin,
+pitcher and hitter props included — whether or not a production adapter prices
+it. See `HANDICAPPING_PLAYBOOK.md` §0 and §3.
+
+Keep the five axes separate:
+
+| Axis | Question | Decided by |
+|---|---|---|
+| **GAME ELIGIBILITY** | may this game be on the real-money card? | `lib/betting_eligibility.py` |
+| **MARKET AVAILABILITY** | does Kalshi list the contract? | the archive |
+| **PRODUCTION MODEL SUPPORT** | does our model price it? | the 11-row `marketLedger` |
+| **MANUAL HANDICAPPING ELIGIBILITY** | can the analyst evaluate it? | the analyst |
+| **AUTOMATIC SETTLEMENT SUPPORT** | can the repo grade it afterwards? | `settle_markets.py` |
+
+A market with **no production adapter is still comparable** (axis 3 ≠ axis 4).
+A market with **no automatic settlement support is still comparable**, but is
+flagged — it will need manual reconciliation, so check before recording it. No
+unsupported family is ever given a fabricated model probability.
 
 ### Where to find it (exact operational path)
 
@@ -411,11 +591,53 @@ directly from `data/kalshi_search.json` and fails
 (`trueSilentRemainderCount > 0`) if any raw market vanished anywhere
 inside discovery, not just if a returned contract lacks a terminal state.
 
-Use this artifact for manual research/inspection of a market Kalshi
-listed but that isn't one of the 11 required markets — it never makes a
-market real-money eligible on its own; that still requires the market to
-be in `REQUIRED_MARKETS` and clear every gate in `scripts/build_market_ledger.py`
-and `scripts/risk_gate.py`, unchanged.
+Use this artifact to inspect any market Kalshi listed. For the **automated
+execution chain**, a market still becomes real-money eligible only by being in
+`REQUIRED_MARKETS` and clearing every gate in `scripts/build_market_ledger.py`
+and `scripts/risk_gate.py` — unchanged. For **manual handicapping**, a market on
+a BETTING-ELIGIBLE game is comparable regardless, and the decision to wager is
+the analyst's, made under `HANDICAPPING_PLAYBOOK.md`.
+
+---
+
+## SINGLE-GAME FETCH (one matchup, not the whole slate)
+
+When you want fresh data for exactly ONE game — not a slate run — use the
+**Fetch Single Game** workflow. It never touches `data/slate.json`, and it
+archives the COMPLETE unfiltered Kalshi universe before filtering to your game.
+
+```
+POST /repos/chmoses98/edge-finder-api/actions/workflows/fetch-single-game.yml/dispatches
+Body: {"ref":"main","inputs":{"date":"YYYY-MM-DD","game":"Yankees vs Red Sox"}}
+```
+
+Result: `data/single_game/<date>/<gamePk>.json`, discoverable via
+`data/single_game/latest.json`. A doubleheader FAILS CLOSED and prints both
+gamePks — re-dispatch with `{"game_pk":"<gamePk>"}`. Full documentation and the
+three worked examples: **[`docs/SINGLE_GAME_FETCH.md`](docs/SINGLE_GAME_FETCH.md)**.
+
+---
+
+## "HOW DID WE DO YESTERDAY?" — SETTLEMENT IS SELF-HEALING
+
+A wager imported after the nightly postgame pass (e.g. by the Kalshi bet router)
+no longer sits ungraded. **EdgeLab Settlement Reconcile** runs on every change to
+the canonical ledger, on a twice-daily sweep, and on manual dispatch; it re-runs
+the canonical settlement path for the affected dates and regenerates the daily
+report whenever settlement actually changes canonical state.
+
+To answer "how did we do yesterday", read the finished canonical report directly:
+
+```
+data/edgelab/reports/<YYYY-MM-DD>.md     (and .json)
+data/edgelab/operational_health/settlement_reconciliation_status.json
+```
+
+`settlement_reconciliation_status.json` says when reconciliation last ran and
+what, if anything, is **still pending**. A wager left pending is an honest
+"not settleable yet", never a guessed result — unsupported market families stay
+explicitly unresolved. Full lifecycle:
+**[`docs/SETTLEMENT_RECONCILIATION.md`](docs/SETTLEMENT_RECONCILIATION.md)**.
 
 ---
 

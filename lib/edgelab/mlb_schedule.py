@@ -115,6 +115,36 @@ def fetch_schedule(date, timeout=15):
         return None
 
 
+def fetch_schedule_range(start_date, end_date, timeout=30):
+    """
+    Network adapter: the MLB Stats API schedule for an inclusive DATE
+    RANGE, in ONE call. Same endpoint, same gameType=R convention and
+    same never-raise contract as fetch_schedule() above -- returns the
+    parsed JSON dict, or None on any failure.
+
+    Added for the team offensive-form capture (lib/team_offense_form.py),
+    which needs every team's recent game-by-game runs. Doing that as one
+    ranged call rather than 30 per-team calls is the reason this lives
+    here rather than as a second, private adapter in that script: this
+    module stays the ONE place this repository talks to the MLB schedule
+    endpoint. The response carries each side's final `score`, which is
+    what lib.edgelab.backtest.bullpen_backtest_reconstruction.
+    extract_team_games_from_schedule already reads -- no linescore
+    hydration is needed for runs scored.
+    """
+    url = (f"{MLB_STATS_API}/schedule?sportId=1&gameType=R"
+           f"&startDate={start_date}&endDate={end_date}")
+    try:
+        req = urllib.request.Request(url, headers={
+            "User-Agent": "edge-finder-edgelab/1.0",
+            "Accept": "application/json",
+        })
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode())
+    except Exception:
+        return None
+
+
 def parse_schedule_games(schedule_json):
     """
     Pure. One dict per game from a raw MLB schedule-by-date response:

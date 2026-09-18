@@ -39,11 +39,15 @@ MLB sports betting model — Poisson probability engine, Savant metrics, Kalshi 
    production adapter is still comparable; a market with no automatic
    settlement support is comparable but flagged for manual reconciliation.
 
-**Bankroll.** Stake sizing uses the read-only bankroll context
-(`lib/bankroll_context.py`): a `kalshi-bet-router`-published artifact when one
-exists, otherwise this repo's existing canonical ledger, always with an
-explicit freshness status. A `STALE`/`UNAVAILABLE` bankroll disables stake
-sizing rather than falling back to a remembered number — see
+**Bankroll.** Stake sizing uses the **authenticated Kalshi account balance**
+and nothing else (`lib/bankroll_context.py`). `kalshi-bet-router` reads it
+read-only and seals it into this repository as an encrypted Actions secret —
+this repository is public, so the number is used for sizing but the committed
+card carries only its status, age, source and semantics. It must be no more
+than **30 minutes** old. This repo's own derived ledger is diagnostic context
+and can **never** authorise sizing, at any age, because its cash history is
+not proven complete. A `STALE`/`UNAVAILABLE` bankroll disables stake sizing
+rather than falling back to a remembered or derived number — see
 `docs/BANKROLL_CONTEXT.md`.
 
 ---
@@ -122,7 +126,7 @@ sizing rather than falling back to a remembered number — see
 | Game eligibility (real money) | both official lineups confirmed + not started — `lib/betting_eligibility.py` |
 | Manual handicapping market universe | `data/handicapping_card/<date>.json` |
 | Production-model / risk-gate coverage | `g['marketLedger']` (11 rows/game) |
-| Bankroll for sizing | `lib/bankroll_context.py` |
+| Bankroll for sizing | `lib/bankroll_context.py` (authenticated Kalshi balance, ≤30 min old) |
 | Numeric thresholds | `config/rules.json` |
 | Rule definitions | `RULES.md` |
 | Math engine | `MODEL_CORE.md` |

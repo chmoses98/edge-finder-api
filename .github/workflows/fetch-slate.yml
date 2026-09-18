@@ -551,7 +551,36 @@ jobs:
     #   python3 scripts/build_handicapping_card.py --print-summary
     - name: Build real-money handicapping card (lineup-confirmed games + full market universe)
       continue-on-error: true
-      run: python3 scripts/build_handicapping_card.py --date "${{ env.DATE }}" --print-summary
+      env:
+        # THE BANKROLL ARRIVES AS AN ENCRYPTED SECRET, NOT AS A FILE.
+        #
+        # This repository is PUBLIC, so a committed balance is public
+        # forever and an Actions artifact is a public download link.
+        # kalshi-bet-router's publish-bankroll.yml reads the authenticated
+        # Kalshi balance every 15 minutes and seals it into this secret;
+        # it is decrypted only inside this job. The card COMMITTED below
+        # carries the bankroll's status, age, source, semantics and
+        # sizingAllowed -- never the amount (--reveal-bankroll is off).
+        #
+        # Absent or older than 30 minutes, the card still gets built and
+        # simply reports that stake sizing is unavailable. It never
+        # substitutes a remembered or derived number.
+        KALSHI_BANKROLL_CONTEXT: ${{ secrets.KALSHI_BANKROLL_CONTEXT }}
+      run: |
+        set +e
+        python3 scripts/build_handicapping_card.py --date "${{ env.DATE }}" --print-summary
+        status=$?
+        set -e
+        if [ "${status}" -ne 0 ]; then
+          # continue-on-error keeps an analysis-only artifact from blocking
+          # slate publication, and it also hides the exit code. The one
+          # failure that must never be quiet is the exhaustiveness refusal:
+          # the card was NOT written precisely because it would have
+          # claimed a completeness it did not have.
+          echo "::error::The handicapping card was NOT written (exit ${status}). If the reason above is the exhaustiveness invariant, a Kalshi contract attributable to an eligible game is visible in none of the card's three states -- most likely a NEW market family. Do not hand-wave it: the card refuses to publish a falsely complete file."
+          echo "handicapping card: NOT WRITTEN (exit ${status})" >> "${GITHUB_STEP_SUMMARY}"
+          exit "${status}"
+        fi
 
     # ── BLOCK 7: Execution / logging chain (OPTIONAL — Workflow D) ─────────
     # Every step below may fail without invalidating the slate already

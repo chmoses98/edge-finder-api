@@ -83,12 +83,14 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+from lib import contract_accounting
 from lib.edgelab import mlb_schedule
 from lib.kalshi_price_check import (
     apply_filters,
     apply_strict_game_registry,
     group_by_game,
     normalize_batch,
+    normalize_market,
 )
 from lib.single_game_selector import describe_candidate, resolve_single_game
 
@@ -201,86 +203,16 @@ def select_game_markets(raw_markets, game, date, *, retrieved_at=None, source_us
 
 
 
-# ── Exhaustiveness accounting: nothing attributable may vanish ──────────
+# ── Exhaustiveness accounting: nothing attributable may vanish ──────
 
-def _raw_ticker(raw):
-    return (raw or {}).get("ticker") or (raw or {}).get("market_ticker")
-
-
-def _raw_event_ticker(raw):
-    return (raw or {}).get("event_ticker") or (raw or {}).get("eventTicker")
-
-
-def account_for_game_contracts(raw_markets, kept, excluded, all_records):
-    """
-    Pure. Prove that EVERY raw Kalshi contract attributable to this game
-    is represented somewhere in the bundle.
-
-    The failure this prevents: Kalshi introduces a new single-game family,
-    the strict registry does not recognise its series, and its contracts
-    quietly disappear -- the artifact still looks complete because the
-    families it does understand are all present. "Every market for this
-    game" then silently means "every market we happen to parse".
-
-    Attribution is by EVENT TICKER, which is Kalshi's own grouping key,
-    not by a guess: the event tickers are learned from the normalized
-    records that DID resolve to this matchup, and every raw contract
-    sharing one of those event tickers is then required to appear either
-    in the normalized markets or in the excluded/unresolved collection
-    (with its raw payload and reason).
-
-    A raw contract carrying no event ticker at all cannot be safely
-    attributed to any game. It is reported in `unattributableRawContracts`
-    rather than being guessed into or out of this game -- ambiguity is
-    retained explicitly, never resolved by assumption.
-
-    Returns an accounting dict. `silentRemainderCount == 0` is the
-    invariant a successful artifact must satisfy.
-    """
-    kept_tickers = {r.get("ticker") for r in kept if r.get("ticker")}
-    excluded_tickers = {r.get("ticker") for r in excluded if r.get("ticker")}
-
-    # Event tickers this game is known to own, learned from every
-    # normalized record (kept OR excluded) that resolved to this matchup.
-    event_keys = {
-        r.get("eventTicker") for r in list(kept) + list(excluded)
-        if r.get("eventTicker")
-    }
-
-    attributable, unattributable = [], []
-    for raw in raw_markets:
-        event_ticker = _raw_event_ticker(raw)
-        ticker = _raw_ticker(raw)
-        if not event_ticker:
-            # Only report the ones that are not already accounted for --
-            # a contract we normalized fine needs no ambiguity note.
-            if ticker and ticker not in kept_tickers and ticker not in excluded_tickers:
-                unattributable.append(ticker)
-            continue
-        if event_ticker in event_keys:
-            attributable.append(ticker)
-
-    attributable_set = {t for t in attributable if t}
-    accounted = attributable_set & (kept_tickers | excluded_tickers)
-    silent_remainder = sorted(attributable_set - accounted)
-
-    return {
-        "attributionMethod": "KALSHI_EVENT_TICKER",
-        "rawGameAttributableContracts": len(attributable_set),
-        "normalizedMarkets": len(kept_tickers),
-        "excludedOrUnresolved": len(excluded_tickers),
-        "accountedContracts": len(accounted),
-        "silentRemainderCount": len(silent_remainder),
-        "silentRemainderTickers": silent_remainder[:50],
-        "gameEventTickers": sorted(k for k in event_keys if k),
-        # Explicitly retained ambiguity -- never attributed by guessing.
-        "unattributableRawContracts": len(unattributable),
-        "unattributableSampleTickers": sorted(t for t in unattributable if t)[:20],
-        "rawUniverseContracts": len(raw_markets),
-        "normalizedUniverseRecords": len(all_records),
-        "invariant": "silentRemainderCount == 0",
-        "invariantHolds": len(silent_remainder) == 0,
-    }
+# ONE definition of attribution, shared with the real-money handicapping
+# card (scripts/build_handicapping_card.py). Both artifacts promise
+# "every Kalshi market for this game is here"; two implementations of
+# that promise would drift, and the one that drifts is the one that
+# silently stops checking. See lib/contract_accounting.py.
+_raw_ticker = contract_accounting.raw_ticker
+_raw_event_ticker = contract_accounting.raw_event_ticker
+account_for_game_contracts = contract_accounting.account_for_game_contracts
 
 
 def lineup_confirmation_for_single_game(slate_context):
@@ -439,7 +371,7 @@ def summarize_markets(records):
 
 def build_artifact(*, date, game, markets, excluded, stage_report, status_counts,
                    slate_context, coverage, archive_info, generated_at, warnings,
-                   accounting=None, lineup_status=None):
+                   accounting=None, lineup_status=None, unclassified=()):
     return {
         "schemaVersion": ARTIFACT_SCHEMA_VERSION,
         "artifactType": "SINGLE_GAME_HANDICAPPING_BUNDLE",
@@ -459,6 +391,10 @@ def build_artifact(*, date, game, markets, excluded, stage_report, status_counts
         "markets": markets,
         "marketSummary": summarize_markets(markets),
         "registryExcludedForThisGame": excluded,
+        # State 3 of four: the normalizer could not parse these at all.
+        # They keep their raw identity and the normalizer's own reason,
+        # so an unparseable future family is VISIBLE rather than gone.
+        "unclassifiedForThisGame": list(unclassified),
         "contractAccounting": accounting,
         "lineupConfirmation": lineup_status,
         "marketFilterStageReport": stage_report,
@@ -472,8 +408,9 @@ def build_artifact(*, date, game, markets, excluded, stage_report, status_counts
             "No probability, edge, price adjustment or recommendation is computed in this artifact.",
             "Model/handicapping context is this game's canonical slate block verbatim, or an "
             "explicit absence reason -- never fabricated.",
-            "EXHAUSTIVE: every raw Kalshi contract attributable to this game appears either in "
-            "`markets` or in `registryExcludedForThisGame` with its reason. "
+            "EXHAUSTIVE: every raw Kalshi contract attributable to this game appears in "
+            "`markets`, in `registryExcludedForThisGame` with its reason, or in "
+            "`unclassifiedForThisGame` with the normalizer's reason. "
             "`contractAccounting.silentRemainderCount` is 0 on every successful artifact.",
             "`lineupConfirmation` states whether BOTH official lineups are confirmed. A single-game "
             "fetch never bypasses the confirmed-lineup real-money gate.",
@@ -614,7 +551,16 @@ def main():
         raw_markets, game, date, retrieved_at=generated_at,
         source_used="live" if args.source == "live" else "snapshot",
     )
-    accounting = account_for_game_contracts(raw_markets, markets, excluded, all_records)
+    # A contract the normalizer could not parse still carries its raw
+    # ticker and event ticker, so it can still be SHOWN. Recovering it
+    # here is what keeps an unparseable future family visible as
+    # UNCLASSIFIED instead of turning into a silent remainder.
+    unclassified = contract_accounting.unclassified_raw_contracts(
+        raw_markets, all_records, normalize_market=normalize_market,
+        source_mode="snapshot", source_used="snapshot",
+    )
+    accounting = account_for_game_contracts(
+        raw_markets, markets, excluded, all_records, unclassified_raw=unclassified)
     if not accounting["invariantHolds"]:
         print(
             "ERROR: exhaustiveness invariant violated -- "
@@ -659,6 +605,14 @@ def main():
         status_counts=status_counts, slate_context=slate_context, coverage=coverage,
         archive_info=archive_info, generated_at=generated_at, warnings=warnings,
         accounting=accounting, lineup_status=lineup_status,
+        unclassified=[
+            row for row in unclassified
+            if contract_accounting.attributes_to_game(
+                {"event_ticker": row.get("eventTicker")},
+                set(accounting["gameEventTickers"]),
+                set(accounting["gameEventKeys"]),
+            )
+        ],
     )
     path, index_path, latest_path = write_artifact(artifact, root=args.out_root)
 

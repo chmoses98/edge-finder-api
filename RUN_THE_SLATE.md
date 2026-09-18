@@ -200,7 +200,7 @@ Only after full output is confirmed. Status: open (real) or paper.
 | Game eligibility (real money) | both official lineups confirmed + not started — `lib/betting_eligibility.py` |
 | Manual handicapping market universe | every Kalshi market for a BETTING-ELIGIBLE game — `data/handicapping_card/<date>.json` |
 | Production-model / risk-gate coverage | `g['marketLedger']` in `data/slate.json` — 11 rows per game, written by `build_market_ledger.py` |
-| Bankroll for sizing | `lib/bankroll_context.py` (router artifact if published, else the canonical EdgeLab ledger) |
+| Bankroll for sizing | `lib/bankroll_context.py` (the authenticated Kalshi balance sealed in by `kalshi-bet-router`; nothing else can size) |
 | Bet ledger | `bets.json` (flat array, parse directly) |
 
 **FD/DK are banned as bet sources or fallbacks. Never used.**
@@ -403,13 +403,31 @@ recommending bets on games whose official lineups are still unconfirmed.
 
 ## BANKROLL — size against the real one, or say you cannot
 
-The card carries a read-only `bankroll` context
-(`lib/bankroll_context.py`). Use `bankroll.bankroll` for sizing **only** when
-`bankroll.sizingAllowed` is true. When it is `STALE` or `UNAVAILABLE`, handicap
-normally but state that stake sizing is unavailable and why — never substitute
-a remembered or hand-typed number. The final output must name the bankroll it
-sized against. See `docs/BANKROLL_CONTEXT.md` for the source and its freshness
-rules.
+The card carries a read-only `bankroll` context (`lib/bankroll_context.py`).
+Size **only** when `bankroll.sizingAllowed` is true. When it is `STALE` or
+`UNAVAILABLE`, handicap normally but state that stake sizing is unavailable
+and why — never substitute a remembered, hand-typed or derived number.
+
+Three things about it are load-bearing:
+
+* **One authority.** Only the authenticated Kalshi account balance
+  (`source: kalshi_authenticated_balance`,
+  `valueType: KALSHI_AVAILABLE_CASH_BALANCE`) can set a stake size. This
+  repository's own derived ledger is diagnostic context and can never size,
+  however fresh it looks — its cash history is not proven complete, and a
+  recently-updated wager is not evidence that last week's deposit was ever
+  recorded.
+* **30 minutes.** A balance is a live quantity. A day-old reading is not the
+  current bankroll.
+* **The committed card does not carry the amount.** This repository is
+  public. `bankroll.bankroll` is `null` and `bankrollRedacted` is `true` in
+  the committed file; the build itself received the real number from an
+  encrypted secret and sized against it. The final output must name the
+  bankroll's `observedAt`, `source` and `sizingAllowed` — and, if you have the
+  amount in hand, the amount.
+
+See `docs/BANKROLL_CONTEXT.md` for the source, the field semantics and the
+freshness rules.
 
 ---
 

@@ -1,93 +1,116 @@
 """
 lib/bankroll_context.py
-===========================
-Read-only BANKROLL CONTEXT for MLB handicapping: what the handicapper is
-allowed to size against, where that number came from, how old it is, and
-whether it is fresh enough to stake on.
+=======================
+The bankroll a real-money handicap may size against: where it came from,
+how old it is, and — far more often than is comfortable — why it may not
+be used at all.
 
-WHAT THE ROUTER ACTUALLY PROVIDES (audited, not assumed)
---------------------------------------------------------
-`chmoses98/kalshi-bet-router` @ a215e7e2 was read directly. It does NOT
-maintain a bankroll or account-balance artifact, and that is a deliberate
-design decision rather than a gap:
+THE ONE SIZING AUTHORITY
+------------------------
+Exactly one thing may set stake sizes: the **authenticated Kalshi
+account balance**, read by `chmoses98/kalshi-bet-router` and delivered
+here. Everything else in this module is diagnostic context.
 
-  * `src/kalshi_router/client.py`'s `READ_ONLY_PATH_PREFIXES` does not
-    include `/portfolio/balance`. The client refuses to SIGN a request to
-    it before the request is ever built.
-  * `tests/test_client.py` pins that refusal three separate times, and
-    lists `/portfolio/balance` under `TRADING_ROUTES` with the comment
-    "No Kalshi trading endpoint may be implemented -- pinned, not
-    assumed."
-  * `docs/OPERATIONS.md` ("Privacy") states that "no raw fill payload,
-    fill id, subaccount identifier, balance or account metadata is
-    persisted anywhere", and `tests/test_privacy.py` asserts that no
-    monetary value at all appears in rendered output.
-  * What the router DOES emit downstream is an importer payload of
-    normalized wager rows, written to `RUNNER_TEMP` and pushed into
-    `data/edgelab/bets/bets.jsonl` here -- never account state.
+That is a change of posture, and it was forced by a real defect. The
+previous version let this repository's own derived ledger become the
+sizing authority whenever its evidence looked recent. Its cash
+transaction history is **known incomplete** — one `STARTING_BALANCE` and
+no deposits since — so `availableBankroll` was negative, and yet a single
+freshly-updated wager was enough to stamp that negative number `FRESH`
+and allow sizing against it. A recent timestamp on an incomplete ledger
+is not freshness; it is a recent row.
 
-So there is currently no router bankroll to reuse. This module is built
-so that the moment one exists it becomes the source with no code change
-here: a router-published artifact is looked for FIRST, at a documented,
-env-overridable path, and it wins outright when present.
+So:
 
-WHAT IS USED IN THE MEANTIME
-----------------------------
-The bankroll ledger this repository ALREADY has --
-`lib/edgelab/bankroll.compute_bankroll_summary()` over
-`data/edgelab/bankroll/transactions.jsonl` plus the canonical wager
-ledger. No second bankroll authority is created here; this module is an
-adapter, not a ledger. It computes nothing about money itself: every
-dollar figure comes from that existing canonical function.
+* the router-published authenticated balance is the **only** source that
+  can produce ``sizingAllowed: true``;
+* the derived ledger is retained under ``diagnostic`` and can **never**
+  size, regardless of how fresh it looks;
+* a bankroll that is absent, zero, negative, non-finite, unparseable or
+  older than the freshness window produces no stake sizes at all.
 
-That value is honestly labelled for what it is --
-`DERIVED_LEDGER_AVAILABLE_BANKROLL`, not an observed Kalshi account
-balance -- so a handicapper is never misled about which one they are
-sizing against.
+**A handicap may always proceed.** Only *staking* stops.
 
-HARD RULES
-----------
-  * No bankroll number is ever hard-coded. There is no literal dollar
-    amount anywhere in this module.
-  * `userReportedBalance` (a human typing what they think their balance
-    is) is surfaced as INFORMATION ONLY and can never be the sizing
-    basis. A manually entered number must not pretend to be canonical.
-  * A value older than the freshness window is `STALE`, and `STALE`
-    means `sizingAllowed=False`. The handicap still proceeds; only the
-    STAKING does not.
-  * Nothing here writes, fetches, or mutates anything in the router
-    repository. It is a pure read of local, already-committed evidence.
+HOW THE NUMBER GETS HERE
+------------------------
+Both `chmoses98/edge-finder-api` and `chmoses98/kalshi-bet-router` are
+**public repositories**. On a public repo, workflow logs, job summaries
+and uploaded artifacts are readable by anyone. So the balance cannot be
+committed here, cannot be printed into a log here, and cannot arrive as
+an artifact.
+
+It arrives as an **encrypted GitHub Actions secret**
+(``KALSHI_BANKROLL_CONTEXT``), sealed by the router against this
+repository's Actions public key and decrypted only inside a workflow run
+of this repository. The card build reads it from the environment, sizes
+against it, and **commits a redacted card**: status, observation time,
+age, source, semantic type and ``sizingAllowed`` — never the amount.
+
+See `docs/BANKROLL_CONTEXT.md`, and
+`kalshi-bet-router/docs/BANKROLL_DELIVERY.md` for the producing half.
+
+WHAT THE NUMBER MEANS
+---------------------
+``KALSHI_AVAILABLE_CASH_BALANCE`` — Kalshi's ``balance`` field, the
+account's **available cash**. Deliberately *not* ``portfolio_value``,
+which is the mark-to-market value of open positions and would
+double-count exposure already at risk. The producing side refuses to
+substitute it; this side refuses to accept any other ``valueType`` as a
+sizing basis.
+
+FRESHNESS
+---------
+**30 minutes.** A balance is a live quantity: a fill, a settlement or a
+deposit moves it, and any of those can happen between two slates. A
+24-hour-old reading is not the current bankroll, and calling it current
+for real-money staking is the failure this window exists to prevent.
 """
 import json
+import math
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
-# Where a router-published bankroll artifact WOULD be read from, in
-# priority order. The env var exists so the router can publish anywhere
-# without a change here; the repo-relative path is the conventional
-# landing spot for router-delivered state.
-ROUTER_BANKROLL_ENV = "KALSHI_ROUTER_BANKROLL_PATH"
-ROUTER_BANKROLL_DEFAULT_PATH = os.path.join("data", "router", "bankroll.json")
+#: The sealed secret, as an environment variable holding the JSON context.
+BANKROLL_CONTEXT_ENV = "KALSHI_BANKROLL_CONTEXT"
+#: Or a path to it. The path must resolve OUTSIDE this repository (see
+#: `_path_is_inside_repo`) so the number cannot be committed by accident.
+BANKROLL_CONTEXT_PATH_ENV = "KALSHI_BANKROLL_CONTEXT_PATH"
 
 STATUS_FRESH = "FRESH"
 STATUS_STALE = "STALE"
 STATUS_UNAVAILABLE = "UNAVAILABLE"
 
-SOURCE_ROUTER = "kalshi-bet-router:published-bankroll-artifact"
+#: The only source that may set a stake size.
+SOURCE_KALSHI_AUTHENTICATED = "kalshi_authenticated_balance"
+#: Retained as diagnostic context. Never sizing-authoritative.
 SOURCE_EDGELAB_LEDGER = "edge-finder-api:lib/edgelab/bankroll.compute_bankroll_summary"
 
-VALUE_OBSERVED_BALANCE = "OBSERVED_ACCOUNT_BALANCE"
+#: The only value type that may set a stake size.
+VALUE_AVAILABLE_CASH = "KALSHI_AVAILABLE_CASH_BALANCE"
 VALUE_DERIVED_LEDGER = "DERIVED_LEDGER_AVAILABLE_BANKROLL"
 
-# How old a bankroll observation may be and still be staked against.
-# 24h covers "yesterday's settlement ran, today's slate is being built"
-# without ever letting a week-old number size a real wager.
-DEFAULT_MAX_AGE_HOURS = 24
+SIZING_ELIGIBLE_SOURCES = frozenset({SOURCE_KALSHI_AUTHENTICATED})
+SIZING_ELIGIBLE_VALUE_TYPES = frozenset({VALUE_AVAILABLE_CASH})
 
-REASON_NO_ROUTER_ARTIFACT = (
-    "kalshi-bet-router publishes no bankroll/account-balance artifact: its read-only client "
-    "refuses /portfolio/balance (pinned by tests/test_client.py) and docs/OPERATIONS.md's "
-    "privacy rule forbids persisting balance or account metadata anywhere"
+#: A balance is a live quantity. See the module docstring.
+DEFAULT_MAX_AGE_MINUTES = 30
+
+#: Tolerance for clock skew between the router's runner and this one. A
+#: reading from slightly "the future" is a clock difference; a reading from
+#: materially the future is a broken producer and is refused.
+FUTURE_SKEW_TOLERANCE_MINUTES = 5
+
+REASON_DERIVED_LEDGER = (
+    "DERIVED_LEDGER_NOT_SIZING_AUTHORITATIVE: this is a figure derived from this "
+    "repository's own ledger, whose cash transaction history is not proven complete. "
+    "A recent wager timestamp does not make an incomplete ledger current. Retained as "
+    "diagnostic context only; real-money stake sizing requires the authenticated "
+    "Kalshi account balance published by kalshi-bet-router."
+)
+REASON_NO_SECRET = (
+    f"no authenticated Kalshi balance was supplied. The router publishes it as the "
+    f"encrypted Actions secret {BANKROLL_CONTEXT_ENV}; this process did not receive it. "
+    f"Handicap normally and present NO dollar stake sizes."
 )
 
 
@@ -95,122 +118,230 @@ def _parse_iso(value):
     if not value:
         return None
     try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     except (ValueError, TypeError):
         return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
-def _age_hours(observed_at, now):
+def _age_minutes(observed_at, now):
     observed = _parse_iso(observed_at)
     if observed is None:
         return None
-    if observed.tzinfo is None:
-        observed = observed.replace(tzinfo=timezone.utc)
-    return round((now - observed).total_seconds() / 3600.0, 3)
+    return round((now - observed).total_seconds() / 60.0, 3)
+
+
+def _usable_amount(value):
+    """
+    Pure. ``(amount, reason)``. A bankroll that cannot be staked against
+    is not a small bankroll, it is no bankroll.
+
+    Rejected, each because sizing against it would be a real-money error
+    rather than a small one:
+
+    * ``None`` / non-numeric / ``bool``  -- there is no number here
+    * ``NaN`` / ``inf``                  -- arithmetic on it silently poisons
+                                            every stake it touches
+    * ``<= 0``                           -- nothing can be deployed; a
+                                            NEGATIVE value is worse than
+                                            useless, because a percentage of
+                                            it is a negative stake
+    """
+    if value is None:
+        return None, "no bankroll value was supplied"
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None, f"bankroll value was {type(value).__name__}, expected a number"
+    number = float(value)
+    if not math.isfinite(number):
+        return None, "bankroll value is not a finite number"
+    if number <= 0:
+        return None, (
+            f"bankroll is {number:.2f}, which is not a deployable amount -- refusing to "
+            f"produce stake sizes against a zero or negative bankroll"
+        )
+    return number, None
 
 
 def build_context(*, bankroll, source, value_type, observed_at, now,
-                  max_age_hours=DEFAULT_MAX_AGE_HOURS, unavailable_reason=None,
-                  detail=None, user_reported=None):
+                  max_age_minutes=DEFAULT_MAX_AGE_MINUTES, unavailable_reason=None,
+                  diagnostic=None, user_reported=None):
     """
-    Pure. The one bankroll-context shape every consumer reads. Status is
-    derived, never passed in, so an UNAVAILABLE value can never be
-    labelled FRESH by a careless caller.
-    """
-    age = _age_hours(observed_at, now)
+    Pure. The one bankroll-context shape every consumer reads.
 
-    if bankroll is None:
-        status = STATUS_UNAVAILABLE
-        reason = unavailable_reason or "no bankroll value could be resolved"
+    ``status`` and ``sizingAllowed`` are **derived here**, never passed
+    in, so no caller can label a value it did not earn. Sizing requires
+    all of:
+
+      1. an authenticated-balance source AND an available-cash value type
+      2. a usable amount (finite, strictly positive)
+      3. a parseable observation timestamp
+      4. an age inside the freshness window, and not in the future
+    """
+    amount, amount_reason = _usable_amount(bankroll)
+    age = _age_minutes(observed_at, now)
+    authoritative = (
+        source in SIZING_ELIGIBLE_SOURCES and value_type in SIZING_ELIGIBLE_VALUE_TYPES
+    )
+
+    if amount is None:
+        status, reason = STATUS_UNAVAILABLE, (unavailable_reason or amount_reason)
+    elif not authoritative:
+        # The value is real and may be worth reading. It is simply not
+        # allowed to set a stake size.
+        status, reason = STATUS_UNAVAILABLE, (unavailable_reason or REASON_DERIVED_LEDGER)
     elif observed_at is None or age is None:
         status = STATUS_UNAVAILABLE
         reason = "bankroll value carries no usable observation timestamp, so its age cannot be judged"
-        bankroll = None
-    elif age > max_age_hours:
-        status = STATUS_STALE
-        reason = f"bankroll observed {age:.1f}h ago, older than the {max_age_hours}h sizing window"
-    elif age < -1:
+        amount = None
+    elif age < -FUTURE_SKEW_TOLERANCE_MINUTES:
         status = STATUS_UNAVAILABLE
-        reason = f"bankroll observation timestamp is {abs(age):.1f}h in the future -- refusing to trust it"
-        bankroll = None
+        reason = (
+            f"bankroll observation timestamp is {abs(age):.1f} minutes in the future -- "
+            f"refusing to trust it"
+        )
+        amount = None
+    elif age > max_age_minutes:
+        status = STATUS_STALE
+        reason = (
+            f"bankroll observed {age:.1f} minutes ago, older than the "
+            f"{max_age_minutes}-minute sizing window -- this is NOT the current bankroll"
+        )
     else:
-        status = STATUS_FRESH
-        reason = None
+        status, reason = STATUS_FRESH, None
 
+    sizing_allowed = status == STATUS_FRESH and authoritative and amount is not None
     return {
-        "schemaVersion": "1",
-        "bankroll": bankroll,
+        "schemaVersion": "2",
+        "bankroll": amount,
         "currency": "USD",
         "source": source,
         "valueType": value_type,
         "observedAt": observed_at,
-        "ageHours": age,
-        "maxAgeHours": max_age_hours,
+        "ageMinutes": age,
+        "maxAgeMinutes": max_age_minutes,
         "status": status,
-        "sizingAllowed": status == STATUS_FRESH,
+        "sizingAuthoritativeSource": authoritative,
+        "sizingAllowed": sizing_allowed,
         "unavailableReason": reason,
-        "detail": detail or {},
-        # Informational only. A human-typed balance is never the sizing
-        # basis -- see this module's docstring.
+        "diagnostic": diagnostic or {},
+        # Informational only. A human-typed balance is never a sizing basis.
         "userReportedBalance": user_reported,
         "userReportedBalanceIsInformationalOnly": True,
         "resolvedAt": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
 
 
-# ── Source 1 (preferred): a router-published artifact ───────────────────
+# ── Source 1 (the only sizing authority): the sealed router context ─────
 
-def load_router_artifact(path=None):
+def _path_is_inside_repo(path, repo_root=None):
     """
-    Read a router-published bankroll artifact, if one exists. Returns
-    (payload, reason). `payload` is None whenever nothing usable is
-    there -- a missing file, unreadable JSON, or a payload without a
-    numeric balance -- always with a reason, never a guess.
+    True when `path` lives inside this repository's working tree.
 
-    Expected shape (kept minimal on purpose, so the router is free to
-    publish a superset):
-        {"bankroll"|"availableBalance"|"balance": <number>,
-         "observedAt": "<ISO-8601 UTC>",
-         "valueType": "OBSERVED_ACCOUNT_BALANCE"}
+    Used to REFUSE such a path outright. This repository is public; a
+    bankroll file inside the tree is one ``git add -A`` away from being a
+    permanent public record of the owner's balance. Making that
+    impossible is better than remembering not to do it.
     """
-    resolved = path or os.environ.get(ROUTER_BANKROLL_ENV) or ROUTER_BANKROLL_DEFAULT_PATH
-    if not os.path.exists(resolved):
-        return None, f"no router bankroll artifact at {resolved!r}: {REASON_NO_ROUTER_ARTIFACT}"
+    root = os.path.abspath(repo_root or os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     try:
-        with open(resolved, encoding="utf-8") as f:
-            payload = json.load(f)
-    except (OSError, ValueError) as exc:
-        return None, f"router bankroll artifact at {resolved!r} is unreadable: {exc}"
+        return os.path.commonpath([os.path.abspath(path), root]) == root
+    except ValueError:  # different drives on Windows
+        return False
+
+
+def load_secret_context(*, env=None, repo_root=None):
+    """
+    Read the router-published bankroll context. Returns
+    ``(payload, reason)`` — ``payload`` is None whenever nothing usable
+    arrived, always with a reason and never a guess.
+
+    Two shapes, both of which the router's workflow can produce:
+
+    * ``KALSHI_BANKROLL_CONTEXT``      the JSON itself (the sealed secret,
+                                       decrypted into the environment)
+    * ``KALSHI_BANKROLL_CONTEXT_PATH`` a path to it, which **must** resolve
+                                       outside this repository
+    """
+    source_env = os.environ if env is None else env
+
+    raw = (source_env.get(BANKROLL_CONTEXT_ENV) or "").strip()
+    origin = BANKROLL_CONTEXT_ENV
+    if not raw:
+        path = (source_env.get(BANKROLL_CONTEXT_PATH_ENV) or "").strip()
+        if not path:
+            return None, REASON_NO_SECRET
+        if _path_is_inside_repo(path, repo_root):
+            return None, (
+                f"{BANKROLL_CONTEXT_PATH_ENV} points inside this repository ({path!r}). "
+                f"This repository is PUBLIC; a bankroll file in the working tree is one "
+                f"'git add' away from publishing the owner's balance permanently. Refusing "
+                f"to read it -- use a path under RUNNER_TEMP."
+            )
+        if not os.path.exists(path):
+            return None, f"{BANKROLL_CONTEXT_PATH_ENV} points at {path!r}, which does not exist"
+        try:
+            with open(path, encoding="utf-8") as f:
+                raw = f.read()
+        except OSError as exc:
+            return None, f"bankroll context at {path!r} is unreadable: {type(exc).__name__}"
+        origin = f"{BANKROLL_CONTEXT_PATH_ENV}={path}"
+
+    try:
+        payload = json.loads(raw)
+    except ValueError:
+        # The reason must never echo the payload: on a public runner the
+        # log is public, and a malformed secret is still a balance.
+        return None, f"bankroll context from {origin} is not valid JSON"
     if not isinstance(payload, dict):
-        return None, f"router bankroll artifact at {resolved!r} is not a JSON object"
+        return None, f"bankroll context from {origin} is not a JSON object"
+    return {"payload": payload, "origin": origin}, None
 
-    value = None
-    for key in ("bankroll", "availableBalance", "balance", "availableCash"):
-        if isinstance(payload.get(key), (int, float)) and not isinstance(payload.get(key), bool):
-            value = float(payload[key])
-            break
-    if value is None:
-        return None, (
-            f"router bankroll artifact at {resolved!r} carries no numeric bankroll/"
-            f"availableBalance/balance/availableCash field"
+
+def context_from_secret(payload, *, now, max_age_minutes=DEFAULT_MAX_AGE_MINUTES, origin=None):
+    """
+    Pure. Turn the router's published context into this module's shape.
+
+    Strict about `valueType`. The router publishes available cash and
+    says so; anything else — above all a portfolio mark-to-market value —
+    is accepted as *context* and refused as a *sizing basis*, because it
+    would overstate deployable cash.
+    """
+    value_type = payload.get("valueType")
+    unavailable = None
+    if value_type not in SIZING_ELIGIBLE_VALUE_TYPES:
+        unavailable = (
+            f"bankroll context declares valueType {value_type!r}, which is not an "
+            f"available-cash figure. Refusing to size against it: a portfolio "
+            f"mark-to-market value overstates deployable cash."
         )
-    return {
-        "bankroll": value,
-        "observedAt": payload.get("observedAt") or payload.get("capturedAt"),
-        "valueType": payload.get("valueType") or VALUE_OBSERVED_BALANCE,
-        "path": resolved,
-        "raw": payload,
-    }, None
+    source = payload.get("source")
+    if source not in SIZING_ELIGIBLE_SOURCES and unavailable is None:
+        unavailable = (
+            f"bankroll context declares source {source!r}, which is not the authenticated "
+            f"Kalshi balance. Refusing to size against it."
+        )
+    return build_context(
+        bankroll=payload.get("bankroll"),
+        source=source if source in SIZING_ELIGIBLE_SOURCES else (source or "UNKNOWN"),
+        value_type=value_type if value_type in SIZING_ELIGIBLE_VALUE_TYPES else (value_type or "UNKNOWN"),
+        observed_at=payload.get("observedAt"),
+        now=now,
+        max_age_minutes=max_age_minutes,
+        unavailable_reason=unavailable,
+        diagnostic={"origin": origin, "producerSchemaVersion": payload.get("schemaVersion")},
+    )
 
 
-# ── Source 2 (fallback): this repo's EXISTING canonical ledger ──────────
+# ── Source 2 (diagnostic ONLY): this repo's derived ledger ──────────────
 
 def ledger_observed_at(transactions, bets):
     """
-    Pure. The most recent piece of real evidence behind the derived
-    bankroll: the latest cash transaction, or the latest update to a
-    REAL wager. None when the ledger holds no dated evidence at all --
-    which build_context() then treats as UNAVAILABLE rather than fresh.
+    Pure. The most recent piece of evidence behind the derived figure.
+
+    Reported, but note what it is NOT: evidence that the ledger is
+    complete. A wager updated a minute ago says nothing about whether
+    last week's deposit was ever recorded, which is exactly why this
+    source can no longer authorise sizing.
     """
     stamps = []
     for txn in transactions or []:
@@ -226,70 +357,80 @@ def ledger_observed_at(transactions, bets):
     return max(usable) if usable else None
 
 
-def context_from_ledger_summary(summary, *, observed_at, now, max_age_hours=DEFAULT_MAX_AGE_HOURS,
-                                router_reason=None):
+def context_from_ledger_summary(summary, *, observed_at, now,
+                                max_age_minutes=DEFAULT_MAX_AGE_MINUTES,
+                                secret_reason=None):
     """
-    Pure. Wrap the EXISTING canonical bankroll summary (never recomputed
-    here) as a bankroll context.
+    Pure. Wrap the existing canonical bankroll summary as **diagnostic**
+    context. It can never size: ``SOURCE_EDGELAB_LEDGER`` is not in
+    ``SIZING_ELIGIBLE_SOURCES``, so ``build_context`` refuses it
+    structurally rather than by a flag someone could flip.
+    """
+    summary = summary or {}
+    settled = summary.get("settledBankroll")
+    exposure = summary.get("totalExposure")
+    available = summary.get("availableBankroll")
 
-    `availableBankroll` is the sizing field: settled cash and realized
-    P&L minus stake already at risk in pending REAL wagers -- i.e. what
-    could actually be staked right now without going negative on paper.
-    """
+    # An accounting-integrity note, reported rather than acted on: this
+    # source cannot size either way, so the value of the check is that a
+    # reader can see WHY the derived figure should not be trusted.
+    integrity = []
+    if isinstance(available, (int, float)) and available <= 0:
+        integrity.append("availableBankroll is not positive")
+    if all(isinstance(v, (int, float)) for v in (settled, exposure, available)):
+        if abs((settled - exposure) - available) > 0.01:
+            integrity.append("settledBankroll - totalExposure != availableBankroll")
+    if not summary.get("cashTransactionCount"):
+        integrity.append("no cash transactions recorded")
+
     return build_context(
-        bankroll=(summary or {}).get("availableBankroll"),
+        bankroll=available,
         source=SOURCE_EDGELAB_LEDGER,
         value_type=VALUE_DERIVED_LEDGER,
         observed_at=observed_at,
         now=now,
-        max_age_hours=max_age_hours,
-        unavailable_reason="the canonical bankroll ledger produced no availableBankroll",
-        detail={
-            "settledBankroll": (summary or {}).get("settledBankroll"),
-            "totalExposure": (summary or {}).get("totalExposure"),
-            "availableBankroll": (summary or {}).get("availableBankroll"),
-            "pendingRealBetCount": (summary or {}).get("pendingRealBetCount"),
-            "settledRealBetCount": (summary or {}).get("settledRealBetCount"),
-            "cashTransactionCount": (summary or {}).get("cashTransactionCount"),
-            "sizingField": "availableBankroll",
-            "routerArtifactReason": router_reason,
+        max_age_minutes=max_age_minutes,
+        unavailable_reason=REASON_DERIVED_LEDGER,
+        diagnostic={
+            "settledBankroll": settled,
+            "totalExposure": exposure,
+            "availableBankroll": available,
+            "pendingRealBetCount": summary.get("pendingRealBetCount"),
+            "settledRealBetCount": summary.get("settledRealBetCount"),
+            "cashTransactionCount": summary.get("cashTransactionCount"),
+            "mostRecentLedgerEvidenceAt": observed_at,
+            "accountingIntegrityConcerns": integrity,
+            "cashHistoryProvenComplete": False,
+            "authenticatedBalanceReason": secret_reason,
             "note": (
-                "DERIVED from this repository's canonical bankroll ledger, not an observed "
-                "Kalshi account balance. kalshi-bet-router does not publish one -- see "
-                "lib/bankroll_context.py's module docstring for the audit."
+                "DIAGNOSTIC ONLY. Derived from recorded transactions and graded wagers, "
+                "not read from the Kalshi account. It cannot authorise stake sizing at "
+                "any age."
             ),
         },
-        user_reported=(summary or {}).get("userReportedBalance"),
+        user_reported=summary.get("userReportedBalance"),
     )
 
 
 # ── The one entry point ─────────────────────────────────────────────────
 
-def load_bankroll_context(*, now=None, max_age_hours=DEFAULT_MAX_AGE_HOURS,
-                          router_path=None, transactions=None, bets=None):
+def load_bankroll_context(*, now=None, max_age_minutes=DEFAULT_MAX_AGE_MINUTES,
+                          env=None, transactions=None, bets=None, repo_root=None):
     """
     Resolve the bankroll a handicap may size against.
 
-    Order: a router-published artifact if one exists, otherwise this
-    repository's existing canonical bankroll ledger. Never a literal, and
-    never a human-typed balance.
-
-    `transactions`/`bets` may be injected (tests, or a caller that has
-    already loaded them); when omitted they are read from the canonical
-    paths.
+    The authenticated Kalshi balance if it arrived; otherwise the derived
+    ledger as **diagnostic context with sizing refused**. Never a
+    literal, never a human-typed balance, and never a derived figure
+    promoted because it happened to look recent.
     """
     now = now or datetime.now(tz=timezone.utc)
 
-    artifact, router_reason = load_router_artifact(router_path)
-    if artifact is not None:
-        return build_context(
-            bankroll=artifact["bankroll"],
-            source=SOURCE_ROUTER,
-            value_type=artifact["valueType"],
-            observed_at=artifact["observedAt"],
-            now=now,
-            max_age_hours=max_age_hours,
-            detail={"artifactPath": artifact["path"], "sizingField": "bankroll"},
+    secret, secret_reason = load_secret_context(env=env, repo_root=repo_root)
+    if secret is not None:
+        return context_from_secret(
+            secret["payload"], now=now, max_age_minutes=max_age_minutes,
+            origin=secret["origin"],
         )
 
     try:
@@ -305,34 +446,85 @@ def load_bankroll_context(*, now=None, max_age_hours=DEFAULT_MAX_AGE_HOURS,
     except Exception as exc:  # noqa: BLE001 -- an unreadable ledger is data, not a crash
         return build_context(
             bankroll=None, source=SOURCE_EDGELAB_LEDGER, value_type=VALUE_DERIVED_LEDGER,
-            observed_at=None, now=now, max_age_hours=max_age_hours,
-            unavailable_reason=f"canonical bankroll ledger could not be read: {type(exc).__name__}: {exc}",
-            detail={"routerArtifactReason": router_reason},
+            observed_at=None, now=now, max_age_minutes=max_age_minutes,
+            unavailable_reason=(
+                f"no authenticated Kalshi balance, and the diagnostic ledger could not be "
+                f"read either: {type(exc).__name__}"
+            ),
+            diagnostic={"authenticatedBalanceReason": secret_reason},
         )
 
     return context_from_ledger_summary(
         summary, observed_at=ledger_observed_at(transactions, bets), now=now,
-        max_age_hours=max_age_hours, router_reason=router_reason,
+        max_age_minutes=max_age_minutes, secret_reason=secret_reason,
     )
 
 
-def describe_for_output(context):
+# ── Publishing: what may be committed, and what may only be used ────────
+
+#: Fields safe to commit to a PUBLIC repository. The amount is not one.
+REDACTED_FIELDS = (
+    "schemaVersion", "currency", "source", "valueType", "observedAt", "ageMinutes",
+    "maxAgeMinutes", "status", "sizingAuthoritativeSource", "sizingAllowed",
+    "unavailableReason", "resolvedAt",
+)
+
+
+def redacted(context):
     """
-    Pure. The one line a handicap must print so the bankroll actually
-    used for sizing is never ambiguous.
+    Pure. The committable projection of a bankroll context.
+
+    An allowlist, not a deletion pass: a field added to the context later
+    cannot leak by being forgotten here. Everything a reader needs to
+    trust or distrust the sizing survives — status, age, window, source,
+    semantics, ``sizingAllowed`` — and the amount does not.
+
+    ``diagnostic`` is dropped wholesale: on the derived-ledger path it
+    carries dollar figures, and although those are already committed
+    elsewhere in this repository, re-publishing them beside a bankroll
+    field is exactly how a redaction stops meaning anything.
+    """
+    if not context:
+        return {"status": STATUS_UNAVAILABLE, "sizingAllowed": False, "bankrollRedacted": True}
+    out = {key: context.get(key) for key in REDACTED_FIELDS if key in context}
+    out["bankroll"] = None
+    out["bankrollRedacted"] = True
+    out["bankrollRedactionReason"] = (
+        "This repository is PUBLIC. The numeric balance is delivered to the card build as "
+        "an encrypted Actions secret and is used for sizing, but is never committed. "
+        "Everything needed to judge whether that sizing is trustworthy is above."
+    )
+    return out
+
+
+def describe_for_output(context, *, reveal=False):
+    """
+    Pure. The one line an output must carry so the bankroll actually used
+    for sizing is never ambiguous.
+
+    **Redacted by default.** This runs inside a public repository's
+    Actions logs; ``reveal=True`` is for a local operator run only.
     """
     if not context or context.get("status") == STATUS_UNAVAILABLE:
         return (
-            "BANKROLL: UNAVAILABLE — stake sizing is NOT current. "
+            "BANKROLL: UNAVAILABLE — handicap normally, but present NO dollar stake sizes. "
             f"Reason: {(context or {}).get('unavailableReason', 'no bankroll context')}"
         )
+
+    amount = (
+        f"${context['bankroll']:,.2f}" if reveal and context.get("bankroll") is not None
+        else "$***"
+    )
+    age = context.get("ageMinutes")
+    age_text = f"{age:.1f} min old" if isinstance(age, (int, float)) else "age unknown"
+
     if context["status"] == STATUS_STALE:
         return (
-            f"BANKROLL: ${context['bankroll']:,.2f} but STALE "
-            f"({context['ageHours']:.1f}h old, window {context['maxAgeHours']}h) — "
-            f"do NOT size real-money stakes against it. Source: {context['source']}"
+            f"BANKROLL: {amount} but STALE ({age_text}, window "
+            f"{context['maxAgeMinutes']} min) — do NOT size real-money stakes against it. "
+            f"Source: {context['source']}"
         )
     return (
-        f"BANKROLL: ${context['bankroll']:,.2f} ({context['valueType']}, "
-        f"{context['ageHours']:.1f}h old) — sizing allowed. Source: {context['source']}"
+        f"BANKROLL: {amount} ({context['valueType']}, {age_text}, observed "
+        f"{context.get('observedAt')}) — sizing allowed. Source: {context['source']}"
     )

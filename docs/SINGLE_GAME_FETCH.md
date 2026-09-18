@@ -90,7 +90,8 @@ single-game artifact without knowing any gamePk.
 | `rawArchive` | where the COMPLETE unfiltered capture was written, its market count, and the two invariant flags |
 | `markets` | **every** Kalshi market for this game — moneyline, F3/F5/F7, run line / winning margin, game totals, team totals, NRFI/YRFI, pitcher and hitter props |
 | `marketSummary` | census by family and by scope, so "did we get everything?" is answerable at a glance |
-| `registryExcludedForThisGame` | contracts naming this matchup that the strict single-game registry gate rejected, with reasons — reported, never silently dropped |
+| `registryExcludedForThisGame` | contracts attributable to this game that the strict single-game registry gate rejected, with reasons — reported, never silently dropped |
+| `unclassifiedForThisGame` | contracts the normalizer could not parse at all, kept with their raw identity and the normalizer's reason |
 | `marketFilterStageReport` | per-stage counts, so a zero result always has a named cause |
 | `slateContext` | this game's canonical slate block **verbatim**, `marketLedger` included — or an explicit absence status |
 | `fullMarketCoverage` | this game's rows from the already-built full-market-coverage artifact, when it exists |
@@ -103,11 +104,32 @@ a 1,151-market universe, across 13 families.
 
 ## Exhaustiveness: nothing attributable may vanish
 
-Every raw Kalshi contract attributable to the selected game must be represented
-in the bundle — in `markets`, or in `registryExcludedForThisGame` with its raw
-reason. The failure this prevents: Kalshi introduces a new single-game family,
-the strict registry does not recognise its series, and its contracts quietly
+Every raw Kalshi contract attributable to the selected game must end in exactly
+one **visible** state. There is no fifth "quietly gone":
+
+1. a normalized market in `markets`;
+2. `registryExcludedForThisGame`, with its `exclusionReason`;
+3. `unclassifiedForThisGame`, with the normalizer's own reason;
+4. `unattributableRawContracts` — no event ticker at all, so ambiguity is
+   retained explicitly rather than guessed into or out of this game.
+
+The failure this prevents: Kalshi introduces a new single-game family, the
+strict registry does not recognise its series, and its contracts quietly
 disappear while the artifact still looks complete.
+
+**Attribution has two routes, and the second is the one that matters.** An
+event ticker is `<SERIES>-<GAMEKEY>`: `KXMLBGAME-26SEP171510SDCOL`,
+`KXMLBF5-26SEP171510SDCOL`, `KXMLBTEAMTOTAL-26SEP171510SDCOL`. The series part
+changes with the *family*; the game key does not. So a contract is attributed
+by its exact event ticker **or** by that family-independent game key — which is
+how `KXMLBQUANTUMFLUX-26SEP171510SDCOL` is recognised as a contract on this
+game despite nothing here having ever heard of the series. Without that second
+route an unrecognised family is not merely unclassified, it never enters the
+denominator at all, and the completeness check passes by not looking.
+
+The logic lives once, in `lib/contract_accounting.py`, and is shared with
+`scripts/build_handicapping_card.py`. Two implementations of the same promise
+would drift, and the one that drifts is the one that stops checking.
 
 `contractAccounting` makes it checkable:
 

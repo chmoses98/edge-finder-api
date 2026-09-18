@@ -388,7 +388,100 @@ def test_a_bankroll_path_outside_the_repository_is_allowed(tmp_path):
     assert payload["payload"]["bankroll"] == pytest.approx(1234.56)
 
 
-# ═══ 9. the card records the bankroll and timestamp it used ════════════
+# ═══ 9. NUMERIC VISIBILITY: knowing a bankroll EXISTS is not knowing it ══
+#
+# The exact failure mode: the committed card on a PUBLIC repository says
+#   status = FRESH, sizingAllowed = true, bankroll = null
+# because both halves are true of DIFFERENT readers -- the private workflow
+# held the amount, the chat session reading the file does not. A consumer
+# that checks only `sizingAllowed` will invent dollar stakes it has no
+# basis for.
+
+def test_a_fresh_but_redacted_bankroll_forbids_dollar_sizing_for_this_consumer():
+    """THE regression. FRESH + sizingAllowed + bankroll None must classify
+    as NO_DOLLAR_SIZING_FOR_THIS_CONSUMER."""
+    public = bc.redacted(_load(_published(bankroll=1234.56, minutes_ago=3)))
+
+    # All three of the conditions from the brief, together:
+    assert public["status"] == bc.STATUS_FRESH
+    assert public["sizingAllowed"] is True
+    assert public["bankroll"] is None
+    assert public["bankrollRedacted"] is True
+
+    verdict = public["consumerSizingVerdict"]
+    assert verdict["verdict"] == bc.SIZING_NO_NUMBER == "NO_DOLLAR_SIZING_FOR_THIS_CONSUMER"
+    assert verdict["mayPresentDollarStakes"] is False
+    assert public["numericBankrollAvailable"] is False
+
+
+def test_fresh_and_visible_positive_bankroll_may_size():
+    ctx = _load(_published(bankroll=1234.56, minutes_ago=3))
+    assert ctx["numericBankrollAvailable"] is True
+    verdict = ctx["consumerSizingVerdict"]
+    assert verdict["verdict"] == bc.SIZING_PERMITTED
+    assert verdict["mayPresentDollarStakes"] is True
+
+
+def test_stale_visible_bankroll_may_not_size():
+    ctx = _load(_published(bankroll=1234.56, minutes_ago=90))
+    assert ctx["status"] == bc.STATUS_STALE
+    assert ctx["consumerSizingVerdict"]["verdict"] == bc.SIZING_NOT_AUTHORISED
+    assert ctx["consumerSizingVerdict"]["mayPresentDollarStakes"] is False
+
+
+def test_unavailable_bankroll_may_not_size():
+    ctx = bc.load_bankroll_context(now=NOW, env={}, transactions=[], bets=[])
+    assert ctx["status"] == bc.STATUS_UNAVAILABLE
+    assert ctx["consumerSizingVerdict"]["verdict"] == bc.SIZING_NOT_AUTHORISED
+    assert ctx["consumerSizingVerdict"]["mayPresentDollarStakes"] is False
+
+
+@pytest.mark.parametrize("context", [
+    None, {}, {"sizingAllowed": True}, {"numericBankrollAvailable": True},
+    {"sizingAllowed": "yes", "numericBankrollAvailable": "yes"},
+])
+def test_the_verdict_fails_closed_on_anything_unrecognised(context):
+    verdict = bc.dollar_sizing_verdict(context)
+    assert verdict["mayPresentDollarStakes"] is False
+
+
+def test_only_both_gates_together_permit_dollar_sizing():
+    """Neither condition implies the other, so both are required."""
+    assert bc.dollar_sizing_verdict(
+        {"sizingAllowed": True, "numericBankrollAvailable": True}
+    )["mayPresentDollarStakes"] is True
+    for partial in ({"sizingAllowed": True, "numericBankrollAvailable": False},
+                    {"sizingAllowed": False, "numericBankrollAvailable": True},
+                    {"sizingAllowed": False, "numericBankrollAvailable": False}):
+        assert bc.dollar_sizing_verdict(partial)["mayPresentDollarStakes"] is False
+
+
+def test_the_redacted_reason_tells_the_consumer_exactly_what_to_do():
+    public = bc.redacted(_load(_published()))
+    reason = public["consumerSizingVerdict"]["reason"]
+    assert "redacted" in reason
+    assert "cannot compute a dollar stake" in reason
+    assert "Handicap normally" in reason
+
+
+def test_the_printed_line_for_a_redacted_fresh_bankroll_forbids_dollars():
+    public = bc.redacted(_load(_published(bankroll=1234.56)))
+    line = bc.describe_for_output(public)
+    assert "VALUE IS REDACTED" in line
+    assert "NO dollar stake" in line
+    assert "1,234.56" not in line and "1234" not in line
+
+
+def test_a_redacted_context_cannot_be_revealed_after_the_fact():
+    """`reveal=True` is for a consumer that HOLDS the number. Handing it a
+    redacted object must not manufacture one."""
+    public = bc.redacted(_load(_published(bankroll=1234.56)))
+    line = bc.describe_for_output(public, reveal=True)
+    assert "1,234.56" not in line
+    assert "1234" not in line
+
+
+# ═══ 10. the card records the bankroll and timestamp it used ═══════════
 #  (see tests/test_handicapping_card.py -- it builds a real card)
 
 

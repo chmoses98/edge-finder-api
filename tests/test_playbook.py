@@ -131,9 +131,13 @@ def test_playbook_defines_all_five_axes_in_its_terminology_block():
 
 def test_playbook_requires_sizing_against_the_canonical_bankroll():
     text = " ".join(_read(PLAYBOOK_FULL).split())
-    assert "current canonical bankroll" in text
-    assert "may **not** present current stake sizes" in text
-    assert "Never substitute a remembered or hand-typed number" in text
+    # BOTH gates, and the fact that neither implies the other. A card can
+    # honestly say sizingAllowed:true while its reader holds no number.
+    assert "bankroll.sizingAllowed" in text
+    assert "bankroll.numericBankrollAvailable" in text
+    assert "one does not imply the other" in text
+    assert "present **no dollar stakes**" in text
+    assert "Never substitute a remembered or derived number" in text
 
 
 def test_playbook_rejects_the_price_shape_superstition():
@@ -190,10 +194,13 @@ def test_run_the_slate_carries_a_short_startup_prompt():
     block = text.split("## START-OF-SLATE PROMPT", 1)[1].split("```")[1]
     lines = [line for line in block.strip().splitlines() if line.strip()]
     assert 10 <= len(lines) <= 14, f"startup prompt is {len(lines)} lines; it must stay tiny"
-    lowered = block.lower()
+    lowered = " ".join(block.lower().split())   # the prompt is hard-wrapped
     for requirement in ("handicapping_playbook", "every available kalshi market", "thesis",
-                        "correlation", "lineups", "against", "threshold",
-                        "never assume", "playbook_version", "bankroll", "already started"):
+                        "correlated exposure", "lineups", "against", "threshold",
+                        "never assume", "playbook_version", "bankroll", "unstarted",
+                        # the consumer-visibility gate: a redacted card must
+                        # never be read as permission to invent dollar stakes
+                        "numeric", "no dollar stake sizes"):
         assert requirement in lowered, f"startup prompt does not cover {requirement!r}"
 
 

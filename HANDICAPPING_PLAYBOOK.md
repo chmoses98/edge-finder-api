@@ -1,6 +1,6 @@
 # HANDICAPPING_PLAYBOOK.md
 
-`PLAYBOOK_VERSION: 1.1.0` · `LAST_UPDATED: 2026-09-18`
+`PLAYBOOK_VERSION: 1.2.0` · `LAST_UPDATED: 2026-09-18`
 
 > Read this file at the start of **every** slate analysis, before looking at any
 > price. Record the `PLAYBOOK_VERSION` above in the slate output so a later
@@ -96,10 +96,15 @@ price**? If the market has priced the edge away — **pass**.
 70¢ contract at a genuine 80% fair probability beats a 52¢ contract at 53%. The
 gap between fair probability and price is the only thing that matters.
 
-Size against the **current canonical bankroll** on the card
-(`bankroll.sizingAllowed`). If it is `STALE`/`UNAVAILABLE` you may still
-handicap, but may **not** present current stake sizes — say so instead. Never
-substitute a remembered or hand-typed number.
+**Dollar sizing needs two things, and one does not imply the other:** a fresh
+sizing-authoritative bankroll (`bankroll.sizingAllowed`) AND the numeric value
+in your hands (`bankroll.numericBankrollAvailable`).
+`bankroll.consumerSizingVerdict.verdict` says which you have: the committed
+card is public, so its amount is redacted even when `sizingAllowed` is true.
+
+Missing either: handicap normally, give edge, confidence and **bet-up-to
+fractions** (no amount needed), present **no dollar stakes**, and say which is
+missing. Never substitute a remembered or derived number.
 
 ## 5. DO NOT OVERSTACK ONE THESIS
 
@@ -160,7 +165,8 @@ AGAINST   strongest contradictory evidence / failure mode
 MARKETS   which expressions were compared
 BEST      chosen market + side
 PRICE     current price -> implied prob | my prob (range) | bet-up-to
-SIZE      stake vs. the bankroll actually used (or "sizing unavailable: <reason>")
+SIZE      fraction of bankroll; dollars ONLY if you hold the number
+          (else "no dollar sizing: <consumerSizingVerdict>")
 EXPOSURE  correlation/concentration warning, or NONE
 ```
 

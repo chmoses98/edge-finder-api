@@ -439,6 +439,10 @@ def build_card(*, date, slate, slate_source, records, bankroll, now_utc=None,
             "given a fabricated model probability.",
             "Markets without automatic settlement support are surfaced, not hidden -- they need manual "
             "reconciliation after the game.",
+            "bankroll.sizingAllowed says the PRIVATE WORKFLOW that built this card held a fresh "
+            "authenticated balance. It does NOT mean the reader of this file knows the amount. "
+            "Dollar stake sizing requires bankroll.numericBankrollAvailable to ALSO be true -- see "
+            "bankroll.consumerSizingVerdict.",
         ],
     }
 
@@ -455,6 +459,11 @@ def write_card(card, *, root=CARD_DIR):
             "generatedAt": card["generatedAt"], "playbookVersion": card["playbookVersion"],
             "bettingEligibleGames": card["counts"]["bettingEligibleGames"],
             "bankrollStatus": (card.get("bankroll") or {}).get("status"),
+            # A fresh chat reads this pointer first. `bankrollStatus: FRESH`
+            # alone would invite it to compute dollar stakes it has no
+            # number for, so the consumer verdict travels with it.
+            "numericBankrollAvailable": (card.get("bankroll") or {}).get("numericBankrollAvailable"),
+            "dollarSizingVerdict": ((card.get("bankroll") or {}).get("consumerSizingVerdict") or {}).get("verdict"),
         }, f, indent=2, sort_keys=True)
     return path, latest
 

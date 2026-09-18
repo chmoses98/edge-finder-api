@@ -33,9 +33,9 @@ row.
 checked inside `build_context()`. `sizingAllowed` is **derived there**, never
 passed in, so no caller can grant it to a value that did not earn it.
 
-**A handicap may always proceed.** Only *staking* stops. When `sizingAllowed`
-is false the analysis is produced normally, stake sizes are not presented, and
-the reason is stated — never a remembered or hand-typed substitute.
+**A handicap may always proceed.** Only *staking* stops. And `sizingAllowed`
+is only half the question — the other half is whether the reader actually
+holds the number. See **Two questions, not one** below.
 
 ## 2. Which field, and what it actually means
 
@@ -50,11 +50,15 @@ risk. The producing side refuses to substitute it
 to accept any other `valueType` as a sizing basis, and says so in
 `unavailableReason`.
 
-> The field semantics come from Kalshi's published API reference. No live
-> authenticated call was possible from the implementing environment, so both
-> sides are strict rather than tolerant: every shape they have not been shown
-> is refused. A contract change surfaces as "sizing unavailable", not as a
-> plausible wrong number.
+> **Verified against the live account on 2026-09-18.** The first authenticated
+> run of `kalshi-bet-router`'s `publish-bankroll.yml`
+> ([run 35298910389](https://github.com/chmoses98/kalshi-bet-router/actions/runs/35298910389))
+> called `GET /portfolio/balance` and `parse_balance_response` accepted the
+> real response unchanged — so the live payload does carry `balance` as a
+> non-negative integer number of cents, exactly as the API reference
+> documents. Both sides remain strict rather than tolerant: every shape they
+> have not been shown is refused, so a future contract change surfaces as
+> "sizing unavailable" rather than as a plausible wrong number.
 
 ## 3. Freshness: 30 minutes
 
@@ -117,12 +121,52 @@ publish-bankroll.yml (*/15 * * * *)
                                                  COMMITS A REDACTED CARD
 ```
 
+### Two questions, not one
+
+**Sizing authority and numeric visibility are different facts, and neither
+implies the other.** Dollar stake sizing requires BOTH:
+
+| Field | Question it answers |
+|---|---|
+| `sizingAllowed` | did a FRESH, sizing-authoritative bankroll exist for whoever produced this? |
+| `numericBankrollAvailable` | is the actual amount in **this reader's** hands? |
+
+`consumerSizingVerdict.verdict` states the conclusion:
+
+| Verdict | May present dollar stakes |
+|---|---|
+| `DOLLAR_SIZING_PERMITTED` | yes |
+| `NO_DOLLAR_SIZING_FOR_THIS_CONSUMER` | **no** — the bankroll is real and fresh, its value is redacted from this copy |
+| `NO_DOLLAR_SIZING` | **no** — stale, unavailable, or not sizing-authoritative |
+
+The committed card is exactly the case where the first holds and the second
+does not: `status: FRESH`, `sizingAllowed: true`, `bankroll: null`. Both
+statements are true — of *different readers*. A consumer that checks only
+`sizingAllowed` will invent dollar figures it has no basis for, which is
+precisely what this field pair prevents.
+
+`redacted()` sets `numericBankrollAvailable: false` and **recomputes** the
+verdict from the redacted object rather than inheriting it, so removing the
+number necessarily revokes permission to spend it. Both gates are checked with
+`is True`, not truthiness: a `"yes"` from some future producer must not buy a
+real-money stake.
+
+When sizing is refused for either reason, **the handicap is unaffected**: edge,
+confidence and bet-up-to *fractions* of bankroll all work without the amount.
+Only dollar figures stop.
+
 ### What the committed card carries
 
 ```json
 "bankroll": {
   "bankroll": null,
   "bankrollRedacted": true,
+  "numericBankrollAvailable": false,
+  "consumerSizingVerdict": {
+    "verdict": "NO_DOLLAR_SIZING_FOR_THIS_CONSUMER",
+    "mayPresentDollarStakes": false,
+    "reason": "... the bankroll exists and is fresh, its value is redacted from this copy ..."
+  },
   "status": "FRESH",
   "sizingAllowed": true,
   "observedAt": "2026-09-18T17:57:00Z",
@@ -132,6 +176,10 @@ publish-bankroll.yml (*/15 * * * *)
   "valueType": "KALSHI_AVAILABLE_CASH_BALANCE"
 }
 ```
+
+`data/handicapping_card/latest.json` — the pointer a fresh chat reads first —
+carries `numericBankrollAvailable` and `dollarSizingVerdict` alongside
+`bankrollStatus`, so the distinction is visible before the full card is opened.
 
 Everything needed to **trust or distrust the sizing** survives; the amount
 does not. `redacted()` is an **allowlist**, not a deletion pass, so a field
@@ -145,7 +193,7 @@ field is how a redaction stops meaning anything.
 |---|---|
 | The card build (where sizing actually happens) | automatically, from the secret, every slate run |
 | A local operator | `KALSHI_BANKROLL_CONTEXT='<json>' python3 scripts/build_handicapping_card.py --reveal-bankroll --out-root /tmp/card` |
-| A fresh ChatGPT/Claude session | **it does not, from this repository.** A public repo has no channel that delivers a private number to an external reader. Paste the balance into the chat yourself if you want dollar stakes there; the card's percentages and its `sizingAllowed` verdict work without it. |
+| A fresh ChatGPT/Claude session | **it does not, from this repository.** A public repo has no channel that delivers a private number to an external reader. The card says so explicitly (`NO_DOLLAR_SIZING_FOR_THIS_CONSUMER`) rather than letting the session guess. Paste the balance into the chat yourself if you want dollar stakes there; edge, confidence and bet-up-to fractions work without it. |
 
 That last row is a genuine architectural limit, not an oversight. If the
 numeric bankroll should be readable from the repository itself, the honest fix
@@ -175,10 +223,11 @@ refused structurally rather than remembered.
 from lib import bankroll_context
 
 ctx = bankroll_context.load_bankroll_context()
-if ctx["sizingAllowed"]:
+verdict = ctx["consumerSizingVerdict"]
+if verdict["mayPresentDollarStakes"]:          # NOT just ctx["sizingAllowed"]
     stake = size_against(ctx["bankroll"])
 else:
-    report(f"sizing unavailable: {ctx['unavailableReason']}")
+    report(f"no dollar sizing ({verdict['verdict']}): {verdict['reason']}")
 
 print(bankroll_context.describe_for_output(ctx))                # redacted
 print(bankroll_context.describe_for_output(ctx, reveal=True))   # local only

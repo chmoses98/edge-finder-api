@@ -40,18 +40,18 @@ Nothing below this line overrides the playbook's methodology; `RULES.md` and
 ```
 Read HANDICAPPING_PLAYBOOK.md and PLAYBOOK_LESSONS.md in
 chmoses98/edge-finder-api (main) first, and follow them.
-Load the newest valid MLB slate/market evidence in that repo.
-Load the current canonical bankroll context; if it is stale or unavailable,
-  handicap anyway but do NOT present stake sizes -- say why.
-Exclude games that have already started.
-Exclude games without BOTH official lineups confirmed from real-money analysis.
-For each remaining eligible game, inspect EVERY available Kalshi market.
-Build the baseball thesis BEFORE choosing a market, then compare expressions.
-Respect price, uncertainty, correlation and bankroll.
-State the strongest evidence AGAINST each proposed bet.
-Return only wagers clearing the betting threshold; passing is fine.
+Load the newest valid handicapping card / slate evidence in that repo.
+Use ONLY unstarted games with BOTH official lineups confirmed.
+For each eligible game, inspect EVERY available Kalshi market.
+Build the baseball thesis BEFORE choosing its best market expression.
+Respect price, uncertainty and correlated exposure.
+Use the canonical bankroll ONLY if its actual NUMERIC value is available to
+  you AND it is fresh/sizing-authoritative; otherwise give no dollar stake
+  sizes -- edge, confidence and bet-up-to fractions still apply.
+State the strongest evidence AGAINST every proposed wager.
+Return only bets clearing the threshold; passing is fine.
 Never assume a recommendation was placed -- I confirm every wager myself.
-Report the PLAYBOOK_VERSION and the bankroll you sized against.
+Report the PLAYBOOK_VERSION and the bankroll source/status used.
 ```
 
 ---
@@ -404,9 +404,33 @@ recommending bets on games whose official lineups are still unconfirmed.
 ## BANKROLL — size against the real one, or say you cannot
 
 The card carries a read-only `bankroll` context (`lib/bankroll_context.py`).
-Size **only** when `bankroll.sizingAllowed` is true. When it is `STALE` or
-`UNAVAILABLE`, handicap normally but state that stake sizing is unavailable
-and why — never substitute a remembered, hand-typed or derived number.
+
+**Dollar stake sizing requires BOTH of these, and neither implies the other:**
+
+1. `bankroll.sizingAllowed` — a FRESH, sizing-authoritative bankroll exists;
+2. `bankroll.numericBankrollAvailable` — **the actual number is in YOUR hands.**
+
+`bankroll.consumerSizingVerdict.verdict` states the answer directly:
+
+| Verdict | What you may present |
+|---|---|
+| `DOLLAR_SIZING_PERMITTED` | dollar stakes |
+| `NO_DOLLAR_SIZING_FOR_THIS_CONSUMER` | **no dollar stakes** — the bankroll exists and is fresh, but its value is redacted from the copy you are reading |
+| `NO_DOLLAR_SIZING` | **no dollar stakes** — stale, unavailable, or not sizing-authoritative |
+
+**`sizingAllowed: true` means the PRIVATE WORKFLOW that built this card was
+permitted to use the balance. It does NOT mean you know the amount.** The
+committed card on this public repository carries `bankroll: null`,
+`bankrollRedacted: true`, `numericBankrollAvailable: false` — and yet
+`status: FRESH`, `sizingAllowed: true`, because both statements are true of
+different readers. Reading only the second is how a chat session invents
+dollar figures it has no basis for.
+
+When you may not size: **handicap normally.** Give edge, confidence, and
+bet-up-to *fractions* of bankroll — all of that works without the number.
+Just say explicitly that the authenticated bankroll exists but is redacted
+from this consumer (or is stale/unavailable, as applicable), and present no
+dollar amounts. Never substitute a remembered, hand-typed or derived number.
 
 Three things about it are load-bearing:
 
@@ -420,11 +444,10 @@ Three things about it are load-bearing:
 * **30 minutes.** A balance is a live quantity. A day-old reading is not the
   current bankroll.
 * **The committed card does not carry the amount.** This repository is
-  public. `bankroll.bankroll` is `null` and `bankrollRedacted` is `true` in
-  the committed file; the build itself received the real number from an
-  encrypted secret and sized against it. The final output must name the
-  bankroll's `observedAt`, `source` and `sizingAllowed` — and, if you have the
-  amount in hand, the amount.
+  public. The build itself received the real number from an encrypted secret;
+  the committed file does not. The final output must name the bankroll's
+  `source`, `status`, `observedAt` and `consumerSizingVerdict` — report the
+  amount **only** if you actually hold it.
 
 See `docs/BANKROLL_CONTEXT.md` for the source, the field semantics and the
 freshness rules.

@@ -1,6 +1,6 @@
 # PLAYBOOK_LESSONS.md
 
-`PLAYBOOK_VERSION: 1.1.0` · `LAST_UPDATED: 2026-09-17`
+`PLAYBOOK_VERSION: 1.2.0` · `LAST_UPDATED: 2026-09-18`
 
 > Generated from `config/playbook_lessons.json` by `python3 scripts/playbook_lessons.py --render`. Edit the JSON, not this file.
 

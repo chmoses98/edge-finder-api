@@ -150,18 +150,23 @@ def test_startup_prompt_is_compact():
     "playbook_lessons",
     "newest valid",                # 2. newest valid evidence
     "bankroll",                    # 3. canonical bankroll
-    "already started",             # 4. exclude started games
+    "unstarted",                   # 4. exclude started games
     "both official lineups",       # 5. exclude unconfirmed lineups
     "every available kalshi market",  # 6. full market universe
-    "before choosing a market",    # 7. thesis first
-    "compare expressions",         # 8. compare alternatives
-    "correlation",                 # 9. price/uncertainty/correlation/bankroll
-    "against each proposed bet",   # 10. evidence against
-    "clearing the betting threshold",  # 11. only qualifying wagers
+    "before choosing",             # 7. thesis first
+    "market expression",           # 8. best expression of the thesis
+    "correlated exposure",         # 9. price/uncertainty/correlated exposure
+    "against every proposed wager",  # 10. evidence against
+    "clearing the threshold",      # 11. only qualifying wagers
+    "numeric",                     # 13. the NUMBER must be in the reader's hands
+    "no dollar stake sizes",       # 14. fail closed when it is not
     "never assume a recommendation was placed",  # 12. never assume placed
 ])
 def test_startup_prompt_encodes_the_required_workflow(requirement):
-    assert requirement in _startup_prompt().lower(), f"startup prompt omits {requirement!r}"
+    # Whitespace-normalized: the prompt is hard-wrapped, so a requirement can
+    # legitimately straddle a line break.
+    prompt = " ".join(_startup_prompt().lower().split())
+    assert requirement in prompt, f"startup prompt omits {requirement!r}"
 
 
 def test_startup_prompt_points_at_the_repository_rather_than_restating_it():

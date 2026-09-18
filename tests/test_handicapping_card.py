@@ -311,6 +311,60 @@ def test_the_committed_card_carries_the_provenance_but_not_the_amount():
     assert "1234" not in json.dumps(card["bankroll"])
 
 
+def test_the_committed_card_can_never_yield_a_dollar_stake():
+    """END TO END, on the artifact a fresh chat actually reads.
+
+    The card honestly reports FRESH / sizingAllowed:true -- the workflow
+    that built it did hold a fresh authenticated balance. A reader of the
+    committed file does not, and the verdict is what says so.
+    """
+    ctx = bc.load_bankroll_context(env=_fresh_secret_env(1234.56))
+    card = _build([_raw("KXMLBGAME-26SEP171510SDCOL-COL", "KXMLBGAME-26SEP171510SDCOL")],
+                  bankroll=bc.redacted(ctx))
+
+    published = card["bankroll"]
+    assert published["status"] == bc.STATUS_FRESH
+    assert published["sizingAllowed"] is True
+    assert published["bankroll"] is None
+    assert published["bankrollRedacted"] is True
+    assert published["numericBankrollAvailable"] is False
+    assert published["consumerSizingVerdict"]["verdict"] == bc.SIZING_NO_NUMBER
+    assert published["consumerSizingVerdict"]["mayPresentDollarStakes"] is False
+
+    # There is no number anywhere in the artifact to size against.
+    assert "1234.56" not in json.dumps(card)
+
+    # And the guarantee text tells the reader the two are different questions.
+    assert any("numericBankrollAvailable" in g for g in card["guarantees"])
+
+
+def test_the_pointer_a_fresh_chat_reads_first_carries_the_verdict(tmp_path):
+    """`bankrollStatus: FRESH` alone in latest.json would invite exactly the
+    mistake this whole contract exists to prevent."""
+    ctx = bc.load_bankroll_context(env=_fresh_secret_env(1234.56))
+    card = _build([_raw("KXMLBGAME-26SEP171510SDCOL-COL", "KXMLBGAME-26SEP171510SDCOL")],
+                  bankroll=bc.redacted(ctx))
+    _path, latest = builder.write_card(card, root=str(tmp_path))
+    pointer = json.loads(open(latest, encoding="utf-8").read())
+
+    assert pointer["bankrollStatus"] == bc.STATUS_FRESH
+    assert pointer["numericBankrollAvailable"] is False
+    assert pointer["dollarSizingVerdict"] == bc.SIZING_NO_NUMBER
+    assert "1234" not in json.dumps(pointer)
+
+
+def test_a_revealed_local_card_may_size():
+    """The other side of the contract: a consumer that HOLDS the number is
+    permitted to present dollar stakes."""
+    ctx = bc.load_bankroll_context(env=_fresh_secret_env(1234.56))
+    card = _build([_raw("KXMLBGAME-26SEP171510SDCOL-COL", "KXMLBGAME-26SEP171510SDCOL")],
+                  bankroll=ctx)
+    published = card["bankroll"]
+    assert published["numericBankrollAvailable"] is True
+    assert published["consumerSizingVerdict"]["verdict"] == bc.SIZING_PERMITTED
+    assert published["bankroll"] == pytest.approx(1234.56)
+
+
 def test_a_card_built_without_a_balance_says_sizing_is_unavailable():
     ctx = bc.load_bankroll_context(env={}, transactions=[], bets=[])
     card = _build([_raw("KXMLBGAME-26SEP171510SDCOL-COL", "KXMLBGAME-26SEP171510SDCOL")],

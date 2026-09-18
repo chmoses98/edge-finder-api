@@ -100,6 +100,21 @@ DEFAULT_MAX_AGE_MINUTES = 30
 #: materially the future is a broken producer and is refused.
 FUTURE_SKEW_TOLERANCE_MINUTES = 5
 
+#: What a CONSUMER may actually do, which is not the same question as
+#: whether a bankroll exists. See `dollar_sizing_verdict`.
+SIZING_PERMITTED = "DOLLAR_SIZING_PERMITTED"
+SIZING_NO_NUMBER = "NO_DOLLAR_SIZING_FOR_THIS_CONSUMER"
+SIZING_NOT_AUTHORISED = "NO_DOLLAR_SIZING"
+
+REASON_REDACTED_FOR_CONSUMER = (
+    "NO_DOLLAR_SIZING_FOR_THIS_CONSUMER: an authenticated, fresh bankroll EXISTS and the "
+    "private workflow that produced this artifact was permitted to size against it -- but its "
+    "numeric value is redacted from this copy, because this repository is public. You do not "
+    "know the amount, so you cannot compute a dollar stake. Handicap normally, give edge, "
+    "confidence and a bet-up-to fraction, and say that the bankroll exists but is redacted "
+    "from this consumer."
+)
+
 REASON_DERIVED_LEDGER = (
     "DERIVED_LEDGER_NOT_SIZING_AUTHORITATIVE: this is a figure derived from this "
     "repository's own ledger, whose cash transaction history is not proven complete. "
@@ -210,8 +225,8 @@ def build_context(*, bankroll, source, value_type, observed_at, now,
         status, reason = STATUS_FRESH, None
 
     sizing_allowed = status == STATUS_FRESH and authoritative and amount is not None
-    return {
-        "schemaVersion": "2",
+    context = {
+        "schemaVersion": "3",
         "bankroll": amount,
         "currency": "USD",
         "source": source,
@@ -221,13 +236,64 @@ def build_context(*, bankroll, source, value_type, observed_at, now,
         "maxAgeMinutes": max_age_minutes,
         "status": status,
         "sizingAuthoritativeSource": authoritative,
+        # THE AUTHORITY QUESTION: was a fresh, authenticated bankroll
+        # available to whoever produced this?
         "sizingAllowed": sizing_allowed,
+        # THE VISIBILITY QUESTION, WHICH IS NOT THE SAME ONE: is the
+        # numeric amount in the hands of whoever is reading this? A
+        # workflow runner holds it; a chat session reading the committed
+        # public artifact does not. Conflating the two lets a redacted
+        # card imply that dollar stakes can be computed from it.
+        "numericBankrollAvailable": amount is not None,
         "unavailableReason": reason,
         "diagnostic": diagnostic or {},
         # Informational only. A human-typed balance is never a sizing basis.
         "userReportedBalance": user_reported,
         "userReportedBalanceIsInformationalOnly": True,
         "resolvedAt": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    context["consumerSizingVerdict"] = dollar_sizing_verdict(context)
+    return context
+
+
+def dollar_sizing_verdict(context):
+    """
+    Pure. What may the CONSUMER HOLDING THIS OBJECT actually present?
+
+    Dollar stake sizing requires BOTH, and neither implies the other:
+
+      1. a fresh, sizing-authoritative bankroll  (`sizingAllowed`)
+      2. the numeric amount in this reader's hands
+         (`numericBankrollAvailable`)
+
+    ``sizingAllowed: true`` means the PRIVATE WORKFLOW was permitted to
+    use the balance. It does NOT mean every downstream reader knows the
+    amount. A committed card on a public repository is exactly the case
+    where (1) holds and (2) does not, and a consumer that reads only (1)
+    will invent dollar figures it has no basis for.
+
+    Fails closed: anything unrecognised is ``NO_DOLLAR_SIZING``.
+    """
+    context = context or {}
+    # `is True`, not truthiness: a string "yes", a non-empty dict or a 1 from
+    # some future producer must not buy sizing permission. This gate is
+    # exactly where a sloppy value becomes a real-money stake.
+    if context.get("sizingAllowed") is not True:
+        return {
+            "verdict": SIZING_NOT_AUTHORISED,
+            "mayPresentDollarStakes": False,
+            "reason": context.get("unavailableReason") or "no sizing-authoritative bankroll",
+        }
+    if context.get("numericBankrollAvailable") is not True:
+        return {
+            "verdict": SIZING_NO_NUMBER,
+            "mayPresentDollarStakes": False,
+            "reason": REASON_REDACTED_FOR_CONSUMER,
+        }
+    return {
+        "verdict": SIZING_PERMITTED,
+        "mayPresentDollarStakes": True,
+        "reason": None,
     }
 
 
@@ -489,10 +555,22 @@ def redacted(context):
     out = {key: context.get(key) for key in REDACTED_FIELDS if key in context}
     out["bankroll"] = None
     out["bankrollRedacted"] = True
+    # REDACTING THE NUMBER REVOKES THE READER'S ABILITY TO SIZE WITH IT.
+    #
+    # `sizingAllowed` survives, and it should: it is the true statement
+    # that a fresh authenticated bankroll existed and the producing
+    # workflow was permitted to use it. But a reader of THIS object does
+    # not hold the amount, and a reader that checks only `sizingAllowed`
+    # will invent dollar figures. So visibility is set false here and the
+    # verdict is recomputed from the redacted object, not inherited.
+    out["numericBankrollAvailable"] = False
+    out["consumerSizingVerdict"] = dollar_sizing_verdict(out)
     out["bankrollRedactionReason"] = (
         "This repository is PUBLIC. The numeric balance is delivered to the card build as "
         "an encrypted Actions secret and is used for sizing, but is never committed. "
-        "Everything needed to judge whether that sizing is trustworthy is above."
+        "Everything needed to judge whether that sizing is trustworthy is above -- but NOT "
+        "the amount, so a reader of this file cannot compute dollar stakes. See "
+        "consumerSizingVerdict."
     )
     return out
 
@@ -509,6 +587,18 @@ def describe_for_output(context, *, reveal=False):
         return (
             "BANKROLL: UNAVAILABLE — handicap normally, but present NO dollar stake sizes. "
             f"Reason: {(context or {}).get('unavailableReason', 'no bankroll context')}"
+        )
+
+    verdict = (context.get("consumerSizingVerdict")
+               or dollar_sizing_verdict(context))
+    if verdict["verdict"] == SIZING_NO_NUMBER:
+        age = context.get("ageMinutes")
+        age_text = f"{age:.1f} min old" if isinstance(age, (int, float)) else "age unknown"
+        return (
+            f"BANKROLL: EXISTS and is {context['status']} ({age_text}, observed "
+            f"{context.get('observedAt')}) but its VALUE IS REDACTED from this consumer — "
+            f"give edge, confidence and bet-up-to fractions, and present NO dollar stake "
+            f"sizes. Source: {context['source']}"
         )
 
     amount = (

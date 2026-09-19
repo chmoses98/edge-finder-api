@@ -1,11 +1,125 @@
 # RUN_THE_SLATE.md
 # The one file to rule them all.
-# Last updated: September 18, 2026 — v1.4 (confirmed-lineup eligibility, bankroll context,
-#                                          full-market manual handicapping)
+# Last updated: September 19, 2026 — v1.5 (compact handicap runtime: manifest-first
+#                                          serving layer; v1.4 confirmed-lineup
+#                                          eligibility, bankroll context, full-market
+#                                          manual handicapping)
 #
-# USAGE: When the user says "run the slate", execute this document top-to-bottom.
-# Every other doc is either archived or subordinate to this one.
+# USAGE: When the user says "run the slate" / "RUN MLB", execute the
+# RUNTIME FAST PATH immediately below. Everything after it is the build
+# and operations reference behind that path, plus the operator sequences
+# that produce the artifacts it reads.
 # ─────────────────────────────────────────────────────────────────────────────
+
+---
+
+## ▶ RUN MLB — THE FAST PATH (this is the whole consumer contract)
+
+**A chat handicapper reads FOUR things, in this order, and never the
+full-day handicapping card.**
+
+```
+1. HANDICAPPING_PLAYBOOK.md      (~8 KB)   methodology
+2. PLAYBOOK_LESSONS.md           (~11 KB)  durable lessons
+3. data/handicap_runtime/<DATE>/manifest.json        (~32 KB)
+4. data/handicap_runtime/<DATE>/games/<gameId>.json  — ONLY for the
+   games the manifest marks bettingEligible
+```
+
+**"RUN MLB" arrives with no date in it**, so start at the pointer rather than
+guessing one — a guess that lands on yesterday is a slate that has already been
+played:
+
+```
+data/handicap_runtime/latest.json     (~600 B)
+  -> { "date", "manifest", "bettingEligibleGames", "eligibleMarketsTotal",
+       "bankrollStatus", "dollarSizingVerdict", "readThisFirst" }
+```
+
+That is the entire required read set. On 2026-09-18 it is about **625 KB**
+for the whole eligible slate, against **8.6 MB** for
+`data/handicapping_card/<DATE>.json` alone — and the eligible-market count is
+*identical*, because the runtime layer changes representation and never the
+universe.
+
+**You do NOT need to load `MODEL_CORE.md`, `RULES.md`, `SLATE_WORKFLOW.md` or
+`DATA_SOURCES.md` to handicap a slate.** They remain authoritative reference
+for the math, the rule tiers, the pipeline and the sources — open one when a
+specific question needs it, not as a startup step. The small,
+execution-critical subset (calibration factors, edge thresholds, base sizes,
+market multipliers) is projected verbatim from `config/rules.json` into
+`manifest.executionConstants`, so it cannot drift from the canonical config.
+
+### The published consumer flow
+
+These steps are `lib.handicap_runtime.CONSUMER_FLOW`, and
+`manifest.consumerFlow` carries them in every manifest.
+`tests/test_handicap_runtime.py` fails if this document and that constant
+ever disagree, so the contract here cannot go stale:
+
+1. Read HANDICAPPING_PLAYBOOK.md and PLAYBOOK_LESSONS.md (methodology; ~19 KB total).
+2. Read this manifest.
+3. Select games where bettingEligible is true (not started AND both official lineups confirmed).
+4. Load ONLY those games' bundles, by the `bundle` path on each manifest row. The full-day handicapping card is NOT required and must not be loaded to handicap a slate.
+5. For EACH eligible game, independently: build the baseball thesis first, then inspect EVERY market row in that bundle, compare all viable expressions, and keep only wagers clearing the threshold in manifest.executionConstants.
+6. Run one final portfolio/correlation pass across all games (playbook section 5).
+7. Return the betting card.
+
+Step 5 is **per game and independent** — the bundles have no cross-references,
+so several eligible games can be handicapped in parallel. Step 6 is the only
+step that needs all of them at once.
+
+### What the manifest answers without loading anything else
+
+| Question | Field |
+|---|---|
+| How many eligible games are there? | `counts.bettingEligibleGames` |
+| Which ones? | `games[].bettingEligible` / `matchup` / `gameId` |
+| Has it started? | `games[].started`, `games[].gameStatus` |
+| Are BOTH official lineups confirmed? | `games[].lineups.bothConfirmed` (+ per side) |
+| How many markets must I inspect? | `games[].marketsToInspect` |
+| Did anything go missing? | `games[].silentRemainderCount` (always 0) and `completeness` |
+| Where is the game's data? | `games[].bundle` (and `.bundleGzip`) |
+| May I quote dollar stakes? | `bankroll.consumerSizingVerdict.verdict` |
+| What thresholds apply? | `executionConstants` |
+
+### What a game bundle contains
+
+* `eligibility` — the game's own verdict, lineups, start, started/not-started.
+* `context` — teams, park, starting pitchers (+ Savant), bullpen state and
+  recent usage, team offensive form (including the **verbatim**
+  `offenseFormLine` the playbook §6 requires), opponent quality, and the
+  **official confirmed lineups** with platoon splits.
+  `context.productionProjections` is the legacy 11-row model's output and is
+  labelled `REFERENCE_ONLY` — it is evidence, not the handicap (playbook §7),
+  and it says nothing about the other ~330 markets in the bundle.
+* `markets` — **EVERY** Kalshi market attributable to the game, as a compact
+  `columns`/`rows` table with integer `legends` for repeated strings.
+  Decode a row by zipping `columns` with it and replacing any column listed in
+  `internedColumns` with `legends[column][value]`. `gameLevelConstants` and
+  `derivedFields` say exactly how to reconstruct the archival card row.
+* `registryExcluded` / `unclassified` — contracts that did **not** normalise,
+  retained with their reasons. A Kalshi family this repository has never seen
+  appears here rather than vanishing.
+* `contractAccounting` — the completeness proof for this game.
+
+**Nothing in the bundle is ranked, shortlisted, preselected or filtered by
+model edge.** Pitcher and hitter props are present in full. The bundle's
+market count equals the card's market count for that game, and a build that
+cannot prove it refuses to write.
+
+### Build it
+
+```bash
+python3 scripts/build_handicapping_card.py                 # the archive (unchanged)
+python3 scripts/build_handicap_runtime.py --date YYYY-MM-DD --print-sizes
+```
+
+`build_handicap_runtime.py` is a **projection** of the card — it runs no market
+discovery, no normalisation, no registry and no eligibility logic of its own,
+so it cannot develop semantics that differ from the canonical ones. It verifies
+ticker-set equality and field-level price equality against the card before it
+writes, and exits non-zero having written nothing if either fails.
 
 ---
 
@@ -40,14 +154,14 @@ Nothing below this line overrides the playbook's methodology; `RULES.md` and
 ```
 Read HANDICAPPING_PLAYBOOK.md and PLAYBOOK_LESSONS.md in
 chmoses98/edge-finder-api (main) first, and follow them.
-Load the newest valid handicapping card / slate evidence in that repo.
+Load the newest valid data/handicap_runtime/<DATE>/manifest.json, then ONLY
+  the game bundles it marks bettingEligible -- never the full-day card.
 Use ONLY unstarted games with BOTH official lineups confirmed.
 For each eligible game, inspect EVERY available Kalshi market.
 Build the baseball thesis BEFORE choosing its best market expression.
 Respect price, uncertainty and correlated exposure.
-Use the canonical bankroll ONLY if its actual NUMERIC value is available to
-  you AND it is fresh/sizing-authoritative; otherwise give no dollar stake
-  sizes -- edge, confidence and bet-up-to fractions still apply.
+Use the canonical bankroll ONLY if its actual NUMERIC value is in your hands
+  and fresh; otherwise give no dollar stake sizes -- bet-up-to still applies.
 State the strongest evidence AGAINST every proposed wager.
 Return only bets clearing the threshold; passing is fine.
 Never assume a recommendation was placed -- I confirm every wager myself.
@@ -110,11 +224,28 @@ Those files are now **reference-only** — they define the math and rules but ne
 
 ## STARTUP SEQUENCE (exactly once, in this order)
 
-### S1 — Pull model files
-```python
-files = ["RULES.md", "MODEL_CORE.md", "SLATE_WORKFLOW.md", "DATA_SOURCES.md"]
-# fetch each from: https://raw.githubusercontent.com/chmoses98/edge-finder-api/main/{file}
-# Authorization: token ${WORKFLOW_TOKEN}
+> **This section is the OPERATOR / PIPELINE sequence** — what produces the
+> artifacts, and what a human or automation runs. A chat handicapper does not
+> execute it; it follows the **RUN MLB fast path** at the top of this file.
+
+### S1 — Model files are reference, not a startup load
+
+`RULES.md`, `MODEL_CORE.md`, `SLATE_WORKFLOW.md` and `DATA_SOURCES.md` are
+**reference documents**. They are **no longer a startup read** for
+handicapping: fetching ~163 KB of governance prose before looking at a price
+was the single largest cost of starting a slate, and none of it was needed to
+decide which games are eligible or what a contract is worth.
+
+Open one when a specific question requires it (a rule's exact tier, a
+projection formula, a pipeline dependency, a source's provenance). The
+execution-critical constants a handicapper actually needs — calibration
+factors, edge thresholds, base sizes, market multipliers — are projected
+verbatim from `config/rules.json` into
+`data/handicap_runtime/<DATE>/manifest.json` → `executionConstants`.
+
+```bash
+# only when a specific question needs it:
+#   https://raw.githubusercontent.com/chmoses98/edge-finder-api/main/RULES.md
 ```
 
 ### S2 — Trigger fetch-slate Action
@@ -198,7 +329,7 @@ Only after full output is confirmed. Status: open (real) or paper.
 | Math engine | `MODEL_CORE.md` Sections 1–8 |
 | Handicapping methodology | `HANDICAPPING_PLAYBOOK.md` (+ `PLAYBOOK_LESSONS.md`) |
 | Game eligibility (real money) | both official lineups confirmed + not started — `lib/betting_eligibility.py` |
-| Manual handicapping market universe | every Kalshi market for a BETTING-ELIGIBLE game — `data/handicapping_card/<date>.json` |
+| Manual handicapping market universe | every Kalshi market for a BETTING-ELIGIBLE game — archived in `data/handicapping_card/<date>.json`, **served** from `data/handicap_runtime/<date>/` (identical universe, compact representation) |
 | Production-model / risk-gate coverage | `g['marketLedger']` in `data/slate.json` — 11 rows per game, written by `build_market_ledger.py` |
 | Bankroll for sizing | `lib/bankroll_context.py` (the authenticated Kalshi balance sealed in by `kalshi-bet-router`; nothing else can size) |
 | Bet ledger | `bets.json` (flat array, parse directly) |
@@ -383,11 +514,12 @@ handicapping card does not.
 7. probable/projected lineups are NEVER treated as confirmed
 ```
 
-Build the card:
+Build the card, then the runtime the consumer actually reads:
 
 ```bash
 python3 scripts/build_handicapping_card.py            # -> data/handicapping_card/<date>.json
 python3 scripts/build_handicapping_card.py --print-summary
+python3 scripts/build_handicap_runtime.py --print-sizes   # -> data/handicap_runtime/<date>/
 ```
 
 It writes `bettingEligibleGames` (executable) and `researchOnlyGames`

@@ -550,6 +550,7 @@ jobs:
     # Rebuild it any time (e.g. after lineups confirm) with:
     #   python3 scripts/build_handicapping_card.py --print-summary
     - name: Build real-money handicapping card (lineup-confirmed games + full market universe)
+      id: handicapping_card
       continue-on-error: true
       env:
         # THE BANKROLL ARRIVES AS AN ENCRYPTED SECRET, NOT AS A FILE.
@@ -579,6 +580,64 @@ jobs:
           # claimed a completeness it did not have.
           echo "::error::The handicapping card was NOT written (exit ${status}). If the reason above is the exhaustiveness invariant, a Kalshi contract attributable to an eligible game is visible in none of the card's three states -- most likely a NEW market family. Do not hand-wave it: the card refuses to publish a falsely complete file."
           echo "handicapping card: NOT WRITTEN (exit ${status})" >> "${GITHUB_STEP_SUMMARY}"
+          exit "${status}"
+        fi
+
+    # COMPACT HANDICAP RUNTIME: the serving layer a chat handicapper
+    # actually reads. A lossless projection of the card written directly
+    # above -- same games, same eligibility, same market universe, in a
+    # form small enough to load. It runs no market discovery of its own,
+    # so it cannot drift from the card's semantics.
+    #
+    # It refuses to write anything it cannot prove complete: ticker-set
+    # equality and field-level price equality against the card, per game.
+    # So an error here means the projection was NOT published and the
+    # previous runtime (if any) is still what consumers read -- which is
+    # the right failure, but never a silent one.
+    #
+    # GATED ON THE CARD'S ACTUAL OUTCOME, not merely placed after it. This
+    # file's own BLOCK 7 comment spells out why: once a step's failure is
+    # masked by continue-on-error the job is never in a failing state, so
+    # every later step still runs by default -- including ones whose input
+    # is the failed step's output. If the card refused to write (the
+    # exhaustiveness invariant), the newest card on disk is a PREVIOUS run's,
+    # and projecting it would publish a runtime that silently describes an
+    # older universe under today's date.
+    - name: Build compact handicap runtime (manifest + per-game bundles)
+      id: handicap_runtime
+      if: steps.handicapping_card.outcome == 'success'
+      continue-on-error: true
+      run: |
+        set +e
+        python3 scripts/build_handicap_runtime.py --date "${{ env.DATE }}" --print-sizes
+        status=$?
+        set -e
+        if [ "${status}" -ne 0 ]; then
+          echo "::error::The compact handicap runtime was NOT written (exit ${status}). Consumers will fall back to the previous runtime for this date, or to the archival card. The projection refuses to publish a runtime it cannot prove is a complete, unaltered view of the card."
+          echo "handicap runtime: NOT WRITTEN (exit ${status})" >> "${GITHUB_STEP_SUMMARY}"
+          exit "${status}"
+        fi
+        echo "handicap runtime: data/handicap_runtime/${{ env.DATE }}/" >> "${GITHUB_STEP_SUMMARY}"
+
+    # WALK THE CONSUMER PATH, NOT JUST THE BUILD.
+    #
+    # The build step above proves the artifact is CORRECT. This proves it is
+    # USABLE, which is the claim the whole serving layer exists for: it
+    # opens the pointer, the manifest and only the eligible bundles -- never
+    # the archival card -- and fails if a betting-eligible game's complete
+    # market universe is not reachable that way.
+    - name: Verify the RUN MLB consumer path
+      if: steps.handicap_runtime.outcome == 'success'
+      continue-on-error: true
+      run: |
+        set +e
+        python3 scripts/verify_handicap_runtime.py --date "${{ env.DATE }}" \
+          --audit-against-card
+        status=$?
+        set -e
+        if [ "${status}" -ne 0 ]; then
+          echo "::error::The RUN MLB consumer path is BROKEN for ${{ env.DATE }} (exit ${status}). A chat handicapper following RUN_THE_SLATE.md would not see every market for every eligible game. The failing check is named above."
+          echo "RUN MLB consumer path: BROKEN (exit ${status})" >> "${GITHUB_STEP_SUMMARY}"
           exit "${status}"
         fi
 

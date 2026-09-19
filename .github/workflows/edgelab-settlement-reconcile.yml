@@ -237,9 +237,16 @@ jobs:
         run: |
           set -euo pipefail
           # Deliberately read from the environment and word-split by the
-          # shell rather than interpolated as ${{ }} into this body: every
-          # element of RECON_ARGV was regex-validated in the step above,
-          # and nothing user-supplied ever reaches the shell verbatim.
+          # shell rather than interpolated as an Actions expression into
+          # this body: every element of RECON_ARGV was regex-validated in
+          # the step above, and nothing user-supplied ever reaches the
+          # shell verbatim.
+          #
+          # (This comment used to spell that expression out literally. A
+          # `run:` body is interpolated by Actions BEFORE bash ever sees
+          # it, so a `#` here hides nothing -- the empty expression failed
+          # to compile and the whole workflow died at startup with zero
+          # jobs. See tests/test_workflow_git_safety.py.)
           # The receipt goes to RUNNER_TEMP, never the workspace: it
           # carries this run's own timestamps by definition, so committing
           # it would turn every no-op sweep into a repository commit.

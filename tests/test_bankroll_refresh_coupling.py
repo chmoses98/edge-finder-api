@@ -428,3 +428,157 @@ def test_the_publisher_cron_is_no_longer_the_only_correctness_mechanism():
     spec = workflow()
     assert "refresh_bankroll" in spec["jobs"]
     assert spec["jobs"]["fetch"]["needs"] == "refresh_bankroll"
+
+
+# ── THE 2026-09-20 SNAPSHOT DEFECT, AND WHAT NOW PREVENTS IT ──────────
+#
+# The first version of this coupling put `refresh_bankroll` in its own JOB
+# and let the existing `fetch` job build the card, on the belief that
+# `secrets.*` resolves when a job starts. It does not. Measured against
+# production, twice:
+#
+#   run 35520484888, created 15:43:41Z, sealed a reading at 15:45:23Z and
+#   started `fetch` nine seconds later at 15:45:36Z. The card it built at
+#   15:48:48Z read observedAt 13:58:57Z -- the PREVIOUS reading --
+#   ageMinutes 109.9, STALE, NO_DOLLAR_SIZING.
+#
+#   run 35520916833, created 15:52:08Z, built its card at 15:56:43Z
+#   reading observedAt 15:45:23Z: the value the EARLIER run had sealed,
+#   not the one its own refresh sealed at 15:53:33Z.
+#
+# `secrets.*` is snapshotted when the RUN IS CREATED. A run created before
+# the seal can never see it, however its jobs are arranged -- so the card
+# must be built by a run created AFTER it.
+
+CARD_WORKFLOW_PATH = os.path.join(
+    ROOT, ".github", "workflows", "build-handicapping-card.yml")
+
+CARD_STEP = "Build real-money handicapping card"
+RUNTIME_STEP = "Build compact handicap runtime"
+CONSUMER_STEP = "Verify the RUN MLB consumer path"
+
+
+def card_workflow():
+    with open(CARD_WORKFLOW_PATH) as handle:
+        return yaml.safe_load(handle)
+
+
+def _step_names(job):
+    return [s.get("name") or "" for s in job["steps"]]
+
+
+def test_the_card_is_not_built_by_the_run_that_refreshes_the_bankroll():
+    """THE DEFECT ITSELF. A run created before the seal cannot see it, so
+    the card build must not live in the workflow that does the refresh."""
+    fetch = workflow()["jobs"]["fetch"]
+    names = _step_names(fetch)
+    for forbidden in (CARD_STEP, RUNTIME_STEP, CONSUMER_STEP):
+        assert not any(n.startswith(forbidden) for n in names), (
+            f"{forbidden!r} is back in fetch-slate.yml, whose run is created "
+            "BEFORE its own refresh seals a reading -- it would build against "
+            "the previous bankroll again")
+
+
+def test_the_card_workflow_builds_all_three_artifacts():
+    build = card_workflow()["jobs"]["build"]
+    names = _step_names(build)
+    for required in (CARD_STEP, RUNTIME_STEP, CONSUMER_STEP):
+        assert any(n.startswith(required) for n in names), (required, names)
+
+
+def test_the_card_workflow_is_the_one_that_reads_the_bankroll_secret():
+    """The secret belongs where the card is built, and nowhere else."""
+    build = card_workflow()["jobs"]["build"]
+    readers = [s.get("name") for s in build["steps"]
+               if "KALSHI_BANKROLL_CONTEXT" in json.dumps(s.get("env") or {})]
+    assert len(readers) == 1 and readers[0].startswith(CARD_STEP), readers
+
+    # The parsed workflow, not its prose: fetch-slate.yml still EXPLAINS
+    # the secret in a comment, and should. What must be gone is any step
+    # that actually receives it, because that run snapshots the value from
+    # before its own refresh.
+    slate = workflow()
+    for job_name, job in slate["jobs"].items():
+        for step in job["steps"]:
+            env = json.dumps(step.get("env") or {})
+            assert "KALSHI_BANKROLL_CONTEXT" not in env, (
+                f"{job_name}/{step.get('name')!r} still receives the bankroll "
+                "secret in a run created before its own refresh")
+
+
+def test_the_slate_run_asks_for_the_card_only_once_it_published():
+    fetch = workflow()["jobs"]["fetch"]
+    ask = [s for s in fetch["steps"]
+           if (s.get("name") or "").startswith("Ask for the handicapping card")]
+    assert len(ask) == 1, _step_names(fetch)
+    step = ask[0]
+    assert step["if"] == "steps.publish_slate.outcome == 'success'"
+    assert step["continue-on-error"] is True, (
+        "a slate that published must not be failed by a dispatch that did not")
+    assert "build-handicapping-card.yml/dispatches" in step["run"]
+
+
+def test_the_second_hop_needs_no_new_credential():
+    """Same-repo dispatch runs on the job's own GITHUB_TOKEN. The only PAT
+    in this coupling stays the router-scoped one."""
+    fetch = workflow()["jobs"]["fetch"]
+    assert fetch["permissions"] == {"contents": "write", "actions": "write"}
+    ask = next(s for s in fetch["steps"]
+               if (s.get("name") or "").startswith("Ask for the handicapping card"))
+    assert ask["env"]["GH_TOKEN"] == "${{ secrets.GITHUB_TOKEN }}"
+    assert refresh_mod.TOKEN_ENV not in json.dumps(ask["env"])
+
+
+def test_the_second_hop_is_terminal_so_neither_edge_can_cycle():
+    """edge-finder-api -> the router's publisher (cross-repo, one edge) and
+    fetch-slate -> the card workflow (same-repo, one edge). The card
+    workflow dispatches NOTHING, so the graph has no cycle."""
+    source = open(CARD_WORKFLOW_PATH).read()
+    for shape in ("/dispatches", "repository_dispatch", "workflow_run",
+                  "peter-evans/repository-dispatch", "gh workflow run"):
+        assert shape not in source, (
+            f"the card workflow can now trigger something ({shape!r}); "
+            "the second hop must stay terminal")
+    triggers = card_workflow().get(True) or card_workflow().get("on")
+    assert list(triggers) == ["workflow_dispatch"], triggers
+
+
+def test_the_card_workflow_cannot_dispatch_anything():
+    assert "actions" not in (card_workflow()["jobs"]["build"]["permissions"] or {})
+    assert "actions" not in (card_workflow()["permissions"] or {})
+
+
+def test_the_card_workflow_commits_only_the_trees_it_owns():
+    """`data/` as a whole belongs to fetch-slate.yml, which may still be
+    running against it when this commits."""
+    build = card_workflow()["jobs"]["build"]
+    commit = next(s for s in build["steps"]
+                  if (s.get("name") or "").startswith("Commit the card"))
+    assert "data/handicapping_card/ data/handicap_runtime/" in commit["run"]
+    assert "git_data_commit.py" in commit["run"]
+    assert " data/ " not in commit["run"], "it would race the slate writer"
+
+
+def test_the_card_workflow_does_not_share_the_ledger_writer_lock():
+    """fetch-slate dispatches it while still running its own later steps.
+    Sharing that lock would deadlock this run behind the run that asked
+    for it."""
+    assert card_workflow()["concurrency"]["group"] != "edge-finder-ledger-writer"
+    assert card_workflow()["concurrency"]["cancel-in-progress"] is False
+
+
+def test_the_card_workflow_still_prints_no_amount():
+    # Executable bodies only. The workflow's comments discuss
+    # `--reveal-bankroll` to explain why it is off, which is documentation,
+    # not a flag anything passes.
+    bodies = "\n".join(s.get("run") or ""
+                       for s in card_workflow()["jobs"]["build"]["steps"])
+    assert "--reveal-bankroll" not in bodies, (
+        "the card build would put the amount in a committed, public file")
+    report = next(s for s in card_workflow()["jobs"]["build"]["steps"]
+                  if (s.get("name") or "").startswith("Report the bankroll"))
+    body = report["run"]
+    for key in ("bankrollStatus", "dollarSizingVerdict", "numericBankrollAvailable"):
+        assert key in body
+    assert "'bankroll'" not in body and '"bankroll"' not in body, (
+        "the report step names the amount field")

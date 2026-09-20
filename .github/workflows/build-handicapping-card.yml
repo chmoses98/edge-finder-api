@@ -1,0 +1,222 @@
+name: Build Handicapping Card
+
+# THE CARD BUILD LIVES IN ITS OWN RUN, AND THAT IS THE WHOLE POINT.
+#
+# `lib/bankroll_context.py` only sizes in dollars from a reading less than
+# 30 minutes old. `fetch-slate.yml` refreshes that reading just in time by
+# dispatching the router's publisher and waiting for the seal -- but a
+# refresh performed INSIDE a run cannot be seen BY that run.
+#
+# MEASURED, NOT ASSUMED (2026-09-20):
+#   run 35520484888 created 15:43:41Z; its refresh job sealed a reading at
+#   15:45:23Z and the `fetch` job started nine seconds later at 15:45:36Z.
+#   The card it built at 15:48:48Z still read observedAt 13:58:57Z -- the
+#   PREVIOUS reading -- for ageMinutes 109.9 and NO_DOLLAR_SIZING.
+#   run 35520916833, created 15:52:08Z, then built its card reading
+#   observedAt 15:45:23Z: the value the EARLIER run had sealed, not the one
+#   its own refresh sealed at 15:53:33Z.
+#
+# So `secrets.*` is snapshotted when the RUN IS CREATED, not when a job
+# starts. Splitting the refresh into its own job was not enough; a run
+# created before the seal can never see it. The only thing that can is a
+# run created AFTER it -- this one.
+#
+# fetch-slate.yml therefore refreshes the bankroll, publishes the slate,
+# and then dispatches this workflow. This run is created minutes after the
+# seal, snapshots the fresh reading, and builds a card that is FRESH
+# because of that invocation rather than because an unrelated cron
+# happened to fire recently.
+#
+# THIS WORKFLOW DISPATCHES NOTHING. The cross-repo edge is
+# edge-finder-api -> the router's publisher and stops there; this second
+# hop is same-repo and terminal, so neither can cycle. Pinned by
+# tests/test_bankroll_refresh_coupling.py.
+#
+# Run it by hand any time (e.g. after lineups confirm) with a date, or
+# leave the date blank for today ET.
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Slate date to build (YYYY-MM-DD). Blank = today ET.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  # Deliberately NOT the `edge-finder-ledger-writer` group. fetch-slate.yml
+  # dispatches this while it is still running its own later steps, so
+  # sharing that lock would deadlock this run behind the very run that
+  # asked for it. Safe because this workflow writes only
+  # data/handicapping_card/ and data/handicap_runtime/, which no other
+  # workflow writes, and it commits through scripts/ci/git_data_commit.py
+  # like everything else.
+  group: handicapping-card-builder
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    timeout-minutes: 20
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
+        ref: main
+
+    - name: Set date
+      id: date
+      env:
+        REQUESTED_DATE: ${{ inputs.date }}
+      run: |
+        set -euo pipefail
+        # Same convention as fetch-slate.yml: today in ET, because a slate
+        # belongs to its Eastern calendar day, not to UTC's.
+        if [ -n "${REQUESTED_DATE}" ]; then
+          case "${REQUESTED_DATE}" in
+            [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+            *) echo "::error::date input must be YYYY-MM-DD"; exit 1 ;;
+          esac
+          echo "DATE=${REQUESTED_DATE}" >> "$GITHUB_ENV"
+        else
+          echo "DATE=$(TZ='America/New_York' date +'%Y-%m-%d')" >> "$GITHUB_ENV"
+        fi
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Python dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        pip install -r requirements-ci.txt
+
+    # Purely additive: writes only data/handicapping_card/, computes no
+    # probability/edge/recommendation, and never touches data/slate.json,
+    # bets.json, marketLedger or risk_gate output.
+    - name: Build real-money handicapping card (lineup-confirmed games + full market universe)
+      id: handicapping_card
+      continue-on-error: true
+      env:
+        # THE BANKROLL ARRIVES AS AN ENCRYPTED SECRET, NOT AS A FILE.
+        #
+        # This repository is PUBLIC, so a committed balance is public
+        # forever and an Actions artifact is a public download link.
+        # kalshi-bet-router's publish-bankroll.yml reads the authenticated
+        # Kalshi balance and seals it into this secret; it is decrypted
+        # only inside this job. The card COMMITTED below carries the
+        # bankroll's status, age, source, semantics and sizingAllowed --
+        # never the amount (--reveal-bankroll is off).
+        #
+        # Absent or older than 30 minutes, the card still gets built and
+        # simply reports that stake sizing is unavailable. It never
+        # substitutes a remembered or derived number. THIS RUN existing at
+        # all is what makes the reading recent; the age check is still the
+        # only thing that decides whether it counts.
+        KALSHI_BANKROLL_CONTEXT: ${{ secrets.KALSHI_BANKROLL_CONTEXT }}
+      run: |
+        set +e
+        python3 scripts/build_handicapping_card.py --date "${{ env.DATE }}" --print-summary
+        status=$?
+        set -e
+        if [ "${status}" -ne 0 ]; then
+          echo "::error::The handicapping card was NOT written (exit ${status}). If the reason above is the exhaustiveness invariant, a Kalshi contract attributable to an eligible game is visible in none of the card's three states -- most likely a NEW market family. Do not hand-wave it: the card refuses to publish a falsely complete file."
+          echo "handicapping card: NOT WRITTEN (exit ${status})" >> "${GITHUB_STEP_SUMMARY}"
+          exit "${status}"
+        fi
+
+    # COMPACT HANDICAP RUNTIME: the serving layer a chat handicapper
+    # actually reads. A lossless projection of the card written directly
+    # above -- same games, same eligibility, same market universe, in a
+    # form small enough to load. It runs no market discovery of its own,
+    # so it cannot drift from the card's semantics.
+    #
+    # GATED ON THE CARD'S ACTUAL OUTCOME, not merely placed after it: once
+    # a step's failure is masked by continue-on-error the job is never in a
+    # failing state, so every later step still runs by default -- including
+    # ones whose input is the failed step's output. If the card refused to
+    # write, the newest card on disk is a PREVIOUS run's, and projecting it
+    # would publish a runtime that silently describes an older universe
+    # under today's date.
+    - name: Build compact handicap runtime (manifest + per-game bundles)
+      id: handicap_runtime
+      if: steps.handicapping_card.outcome == 'success'
+      continue-on-error: true
+      run: |
+        set +e
+        python3 scripts/build_handicap_runtime.py --date "${{ env.DATE }}" --print-sizes
+        status=$?
+        set -e
+        if [ "${status}" -ne 0 ]; then
+          echo "::error::The compact handicap runtime was NOT written (exit ${status}). Consumers will fall back to the previous runtime for this date, or to the archival card. The projection refuses to publish a runtime it cannot prove is a complete, unaltered view of the card."
+          echo "handicap runtime: NOT WRITTEN (exit ${status})" >> "${GITHUB_STEP_SUMMARY}"
+          exit "${status}"
+        fi
+        echo "handicap runtime: data/handicap_runtime/${{ env.DATE }}/" >> "${GITHUB_STEP_SUMMARY}"
+
+    # WALK THE CONSUMER PATH, NOT JUST THE BUILD.
+    #
+    # The build step above proves the artifact is CORRECT. This proves it
+    # is USABLE, which is the claim the whole serving layer exists for: it
+    # opens the pointer, the manifest and only the eligible bundles --
+    # never the archival card -- and fails if a betting-eligible game's
+    # complete market universe is not reachable that way.
+    - name: Verify the RUN MLB consumer path
+      id: consumer_path
+      if: steps.handicap_runtime.outcome == 'success'
+      continue-on-error: true
+      run: |
+        set +e
+        python3 scripts/verify_handicap_runtime.py --date "${{ env.DATE }}" \
+          --audit-against-card
+        status=$?
+        set -e
+        if [ "${status}" -ne 0 ]; then
+          echo "::error::The RUN MLB consumer path is BROKEN for ${{ env.DATE }} (exit ${status}). A chat handicapper following RUN_THE_SLATE.md would not see every market for every eligible game. The failing check is named above."
+          echo "RUN MLB consumer path: BROKEN (exit ${status})" >> "${GITHUB_STEP_SUMMARY}"
+          exit "${status}"
+        fi
+
+    # NARROW ON PURPOSE. Only the two trees this workflow owns. `data/` as a
+    # whole belongs to fetch-slate.yml, which may still be running its own
+    # later steps against it while this run commits.
+    - name: Commit the card and the runtime (only if changed)
+      if: always()
+      run: |
+        set -euo pipefail
+        git config user.name  "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        python3 scripts/ci/git_data_commit.py \
+          --message "handicapping card + runtime ${{ env.DATE }} $(date -u +'%H:%M UTC')" \
+          --branch "main" \
+          data/handicapping_card/ data/handicap_runtime/
+
+    - name: Report the bankroll's shape (never the amount)
+      if: always()
+      run: |
+        set -euo pipefail
+        POINTER="data/handicap_runtime/latest.json"
+        if [ ! -f "${POINTER}" ]; then
+          echo "no runtime pointer was produced this run" >> "${GITHUB_STEP_SUMMARY}"
+          exit 0
+        fi
+        # Keys and non-monetary values only. The card's committed bankroll
+        # block is already the redacted projection (lib/bankroll_context.py
+        # `redacted()`, an allowlist), so there is no amount to withhold
+        # here -- but this prints named fields rather than the file, so a
+        # future field cannot ride along unnoticed.
+        python3 - "${POINTER}" <<'PYEOF' >> "${GITHUB_STEP_SUMMARY}"
+        import json, sys
+        p = json.load(open(sys.argv[1]))
+        print(f"- Runtime date: `{p.get('date')}`")
+        print(f"- Bankroll status: `{p.get('bankrollStatus')}`")
+        print(f"- Dollar sizing verdict: `{p.get('dollarSizingVerdict')}`")
+        print(f"- Numeric bankroll available to this consumer: `{p.get('numericBankrollAvailable')}`")
+        PYEOF

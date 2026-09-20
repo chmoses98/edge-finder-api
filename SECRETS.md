@@ -7,8 +7,8 @@ This document is the authoritative reference for secrets required by all workflo
 | Secret | Used By | Purpose |
 |--------|---------|---------|
 | `ODDS_API_KEY` | `fetch-slate.yml`, `clv-update.yml` | The Odds API key for fetching sportsbook odds and historical scores for settlement |
-| `KALSHI_BANKROLL_CONTEXT` | `fetch-slate.yml` → "Build real-money handicapping card" | The sealed authenticated available-cash reading. **Written by `kalshi-bet-router`, never by a human.** |
-| `ROUTER_BANKROLL_DISPATCH_TOKEN` | `fetch-slate.yml` → job `refresh_bankroll` | Lets a slate build ask the router for a *fresh* reading before it builds a card. Optional; absent, the card falls back to fail-closed. |
+| `KALSHI_BANKROLL_CONTEXT` | `build-handicapping-card.yml` → "Build real-money handicapping card" | The sealed authenticated available-cash reading. **Written by `kalshi-bet-router`, never by a human.** |
+| `ROUTER_BANKROLL_DISPATCH_TOKEN` | `fetch-slate.yml` → job `refresh_bankroll` | Lets a slate build ask the router for a *fresh* reading before the card is built. Optional; absent, the card falls back to fail-closed. |
 
 `ODDS_API_KEY` is used by:
 - `fetch-slate.yml` → step "Fetch odds" (`scripts/validate_odds.py`) and "Capture Kalshi closing lines" (`scripts/capture_closing_lines.py`)
@@ -42,8 +42,23 @@ build ever happened within 30 minutes of one. Raising the cron frequency
 does not fix that; it just gives the same best-effort scheduler more
 chances to be late.
 
-So `fetch-slate.yml` now has a `refresh_bankroll` job that **pulls** a
-reading before the card is built. It needs one credential:
+So `fetch-slate.yml` now **pulls** a reading, and the card is built by a
+**separate run** that starts afterwards.
+
+That second part is not incidental. `secrets.*` is snapshotted when a
+workflow **run is created**, not when a job starts — measured in
+production on 2026-09-20: run `35520484888` was created at 15:43:41Z,
+sealed a fresh reading at 15:45:23Z, and the card it built three minutes
+later still read the *previous* 13:58:57Z reading (`ageMinutes 109.9`,
+`STALE`). A run created before the seal can never see it, however its
+jobs are arranged. So `fetch-slate.yml` refreshes the bankroll, publishes
+the slate, and then dispatches **`Build Handicapping Card`**, whose run is
+created after the seal and therefore snapshots the fresh value.
+
+`Build Handicapping Card` is also runnable by hand with a date, which is
+the supported way to rebuild a card after lineups confirm.
+
+The coupling needs one credential:
 
 1. GitHub → Settings → Developer settings → **Fine-grained personal
    access tokens** → Generate new token.

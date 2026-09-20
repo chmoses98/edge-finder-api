@@ -1,0 +1,70 @@
+{
+  "captureMode": "LIVE_CAPTURE",
+  "capturedAt": "2026-09-20T11:41:44Z",
+  "completenessStatus": "MISSING_REQUIRED_INPUT",
+  "components": [
+    {
+      "availabilityStatus": "MISSING",
+      "byteSize": null,
+      "capturedAt": null,
+      "componentType": "SETTLEMENT",
+      "contentHash": null,
+      "limitationReason": "OVERWRITTEN_SOURCE_NOT_YET_FROZEN",
+      "producer": null,
+      "requiredStatus": "REQUIRED",
+      "rowCount": null,
+      "snapshotPath": null,
+      "sourcePath": "data/edgelab/settlements/2026-09-20.jsonl",
+      "storageMode": null
+    },
+    {
+      "availabilityStatus": "AVAILABLE",
+      "byteSize": 20,
+      "capturedAt": null,
+      "componentType": "CLV",
+      "contentHash": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "limitationReason": null,
+      "producer": "lib/edgelab/clv.py",
+      "requiredStatus": "REQUIRED",
+      "rowCount": 0,
+      "snapshotPath": "data/edgelab/snapshots/2026-09-20/post_game_settlement/frozen/clv_quotes.jsonl.gz",
+      "sourcePath": "data/edgelab/clv_quotes/2026-09-20.jsonl",
+      "storageMode": "FROZEN_COPY"
+    }
+  ],
+  "limitationReasons": [
+    "OVERWRITTEN_SOURCE_NOT_YET_FROZEN"
+  ],
+  "linkedSnapshotIds": [],
+  "manifestHash": "89a02345feb616432839fd613cde84346d0c453729f5ef62f91fea33edfac06f",
+  "missingComponents": [
+    "SETTLEMENT"
+  ],
+  "modelVersion": null,
+  "pricingVersionsByFamily": {},
+  "productionCommitSha": null,
+  "productionProvenance": null,
+  "productionRunId": null,
+  "provenance": {
+    "capturedAt": "2026-09-20T11:41:44Z",
+    "ingestedAt": "2026-09-20T11:41:44Z",
+    "sourceFile": null,
+    "sourceKey": null,
+    "sourceSystem": "snapshot_foundation"
+  },
+  "replayFidelityPotential": "LEVEL_1_APPROXIMATE",
+  "rulesConfigVersion": null,
+  "schemaVersion": "1",
+  "snapshotDate": "2026-09-20",
+  "snapshotId": "3b1fd6db5ce8dc290f84abcf4621b4094049b1c4",
+  "snapshotStage": "POST_GAME_SETTLEMENT",
+  "snapshotWriterCommitSha": "cc9a39dd9438cef738c5e82a7860484c60c0ff2e",
+  "temporalConsistency": {
+    "detail": {},
+    "maxSkewHours": 1.0,
+    "referenceTimestamp": null,
+    "skewDetected": false
+  },
+  "validationStatus": "valid",
+  "workflowRunId": null
+}

@@ -8,21 +8,21 @@
   "PRODUCTION_MODEL_SUPPORT": "the production model prices it (config/rules.json market_list)"
  },
  "bankroll": {
-  "ageMinutes": 109.865,
+  "ageMinutes": 11.338,
   "consumerSizingVerdict": {
    "mayPresentDollarStakes": false,
-   "reason": "bankroll observed 109.9 minutes ago, older than the 30-minute sizing window -- this is NOT the current bankroll",
-   "verdict": "NO_DOLLAR_SIZING"
+   "reason": "NO_DOLLAR_SIZING_FOR_THIS_CONSUMER: an authenticated, fresh bankroll EXISTS and the private workflow that produced this artifact was permitted to size against it -- but its numeric value is redacted from this copy, because this repository is public. You do not know the amount, so you cannot compute a dollar stake. Handicap normally, give edge, confidence and a bet-up-to fraction, and say that the bankroll exists but is redacted from this consumer.",
+   "verdict": "NO_DOLLAR_SIZING_FOR_THIS_CONSUMER"
   },
   "currency": "USD",
   "maxAgeMinutes": 30,
   "numericBankrollAvailable": false,
-  "observedAt": "2026-09-20T13:58:57Z",
-  "resolvedAt": "2026-09-20T15:48:48Z",
-  "sizingAllowed": false,
+  "observedAt": "2026-09-20T15:45:23Z",
+  "resolvedAt": "2026-09-20T15:56:43Z",
+  "sizingAllowed": true,
   "source": "kalshi_authenticated_balance",
-  "status": "STALE",
-  "unavailableReason": "bankroll observed 109.9 minutes ago, older than the 30-minute sizing window -- this is NOT the current bankroll",
+  "status": "FRESH",
+  "unavailableReason": null,
   "valueType": "KALSHI_AVAILABLE_CASH_BALANCE"
  },
  "completeness": {
@@ -58,7 +58,7 @@
   "unclassifiedRawContracts": 0
  },
  "date": "2026-09-20",
- "eligibilityEvaluatedAt": "2026-09-20T15:48:48Z",
+ "eligibilityEvaluatedAt": "2026-09-20T15:56:43Z",
  "eligibilityPolicy": "Only games that have NOT started and have BOTH official lineups confirmed (lineupConfirmedOfficial on awayTeamStats AND homeTeamStats) are real-money candidates. Probable/projected lineups are never treated as confirmed. Every other game stays archived and researchable and must not produce a real-money recommendation from the normal slate card.",
  "executionConstants": {
   "_note": "Projected verbatim from config/rules.json at build time. RULES.md and MODEL_CORE.md remain authoritative for everything else; this is the subset needed to size and threshold a wager without loading them.",
@@ -189,9 +189,9 @@
    "accounted": 196,
    "bettingEligible": true,
    "bundle": "data/handicap_runtime/2026-09-20/games/823570.json",
-   "bundleBytes": 64137,
+   "bundleBytes": 64140,
    "bundleGzip": "data/handicap_runtime/2026-09-20/games/823570.json.gz",
-   "bundleGzipBytes": 12529,
+   "bundleGzipBytes": 12526,
    "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
    "eligibilityStatus": "BETTING_ELIGIBLE",
    "excludedOrUnresolved": 0,
@@ -202,7 +202,7 @@
    "lineups": {
     "away": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "PHI"
@@ -210,7 +210,7 @@
     "bothConfirmed": true,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "NYM"
@@ -250,7 +250,7 @@
    "bundle": "data/handicap_runtime/2026-09-20/games/823329.json",
    "bundleBytes": 43075,
    "bundleGzip": "data/handicap_runtime/2026-09-20/games/823329.json.gz",
-   "bundleGzipBytes": 9908,
+   "bundleGzipBytes": 9906,
    "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
    "eligibilityStatus": "BETTING_ELIGIBLE",
    "excludedOrUnresolved": 0,
@@ -261,7 +261,7 @@
    "lineups": {
     "away": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "KC"
@@ -269,7 +269,7 @@
     "bothConfirmed": true,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "PIT"
@@ -304,7 +304,7 @@
    "bundle": "data/handicap_runtime/2026-09-20/games/824381.json",
    "bundleBytes": 51887,
    "bundleGzip": "data/handicap_runtime/2026-09-20/games/824381.json.gz",
-   "bundleGzipBytes": 11285,
+   "bundleGzipBytes": 11291,
    "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
    "eligibilityStatus": "BETTING_ELIGIBLE",
    "excludedOrUnresolved": 0,
@@ -315,7 +315,7 @@
    "lineups": {
     "away": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "ATH"
@@ -323,7 +323,7 @@
     "bothConfirmed": true,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "CLE"
@@ -363,7 +363,7 @@
    "bundle": "data/handicap_runtime/2026-09-20/games/822922.json",
    "bundleBytes": 57357,
    "bundleGzip": "data/handicap_runtime/2026-09-20/games/822922.json.gz",
-   "bundleGzipBytes": 11717,
+   "bundleGzipBytes": 11715,
    "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
    "eligibilityStatus": "BETTING_ELIGIBLE",
    "excludedOrUnresolved": 0,
@@ -374,7 +374,7 @@
    "lineups": {
     "away": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "BOS"
@@ -382,7 +382,7 @@
     "bothConfirmed": true,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "TB"
@@ -422,7 +422,7 @@
    "bundle": "data/handicap_runtime/2026-09-20/games/824462.json",
    "bundleBytes": 60858,
    "bundleGzip": "data/handicap_runtime/2026-09-20/games/824462.json.gz",
-   "bundleGzipBytes": 11858,
+   "bundleGzipBytes": 11855,
    "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
    "eligibilityStatus": "BETTING_ELIGIBLE",
    "excludedOrUnresolved": 0,
@@ -433,7 +433,7 @@
    "lineups": {
     "away": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "CHC"
@@ -441,7 +441,7 @@
     "bothConfirmed": true,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "CIN"
@@ -479,9 +479,9 @@
    "accounted": 219,
    "bettingEligible": true,
    "bundle": "data/handicap_runtime/2026-09-20/games/824139.json",
-   "bundleBytes": 66868,
+   "bundleBytes": 66956,
    "bundleGzip": "data/handicap_runtime/2026-09-20/games/824139.json.gz",
-   "bundleGzipBytes": 12726,
+   "bundleGzipBytes": 12799,
    "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
    "eligibilityStatus": "BETTING_ELIGIBLE",
    "excludedOrUnresolved": 0,
@@ -492,7 +492,7 @@
    "lineups": {
     "away": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "ATL"
@@ -500,7 +500,7 @@
     "bothConfirmed": true,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "HOU"
@@ -540,7 +540,7 @@
    "bundle": "data/handicap_runtime/2026-09-20/games/824546.json",
    "bundleBytes": 57103,
    "bundleGzip": "data/handicap_runtime/2026-09-20/games/824546.json.gz",
-   "bundleGzipBytes": 11540,
+   "bundleGzipBytes": 11538,
    "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
    "eligibilityStatus": "BETTING_ELIGIBLE",
    "excludedOrUnresolved": 0,
@@ -551,7 +551,7 @@
    "lineups": {
     "away": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "DET"
@@ -559,7 +559,7 @@
     "bothConfirmed": true,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "CWS"
@@ -610,7 +610,7 @@
    "lineups": {
     "away": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "TOR"
@@ -618,7 +618,7 @@
     "bothConfirmed": true,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "TEX"
@@ -649,9 +649,9 @@
    "accounted": 151,
    "bettingEligible": false,
    "bundle": "data/handicap_runtime/2026-09-20/games/823001.json",
-   "bundleBytes": 54031,
+   "bundleBytes": 54030,
    "bundleGzip": "data/handicap_runtime/2026-09-20/games/823001.json.gz",
-   "bundleGzipBytes": 11298,
+   "bundleGzipBytes": 11297,
    "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(WSH): official lineup not posted yet",
    "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
    "excludedOrUnresolved": 0,
@@ -662,7 +662,7 @@
    "lineups": {
     "away": {
      "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": false,
      "reason": "official lineup not posted yet",
      "team": "WSH"
@@ -670,7 +670,7 @@
     "bothConfirmed": false,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "STL"
@@ -710,9 +710,9 @@
    "accounted": 129,
    "bettingEligible": false,
    "bundle": "data/handicap_runtime/2026-09-20/games/824300.json",
-   "bundleBytes": 48264,
+   "bundleBytes": 48261,
    "bundleGzip": "data/handicap_runtime/2026-09-20/games/824300.json.gz",
-   "bundleGzipBytes": 10304,
+   "bundleGzipBytes": 10299,
    "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(SEA): official lineup not posted yet, home(COL): official lineup not posted yet",
    "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
    "excludedOrUnresolved": 0,
@@ -723,7 +723,7 @@
    "lineups": {
     "away": {
      "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": false,
      "reason": "official lineup not posted yet",
      "team": "SEA"
@@ -731,7 +731,7 @@
     "bothConfirmed": false,
     "home": {
      "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": false,
      "reason": "official lineup not posted yet",
      "team": "COL"
@@ -773,7 +773,7 @@
    "bundle": "data/handicap_runtime/2026-09-20/games/823975.json",
    "bundleBytes": 39596,
    "bundleGzip": "data/handicap_runtime/2026-09-20/games/823975.json.gz",
-   "bundleGzipBytes": 9124,
+   "bundleGzipBytes": 9123,
    "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(MIN): official lineup not posted yet, home(LAA): official lineup not posted yet",
    "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
    "excludedOrUnresolved": 0,
@@ -784,7 +784,7 @@
    "lineups": {
     "away": {
      "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": false,
      "reason": "official lineup not posted yet",
      "team": "MIN"
@@ -792,7 +792,7 @@
     "bothConfirmed": false,
     "home": {
      "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": false,
      "reason": "official lineup not posted yet",
      "team": "LAA"
@@ -828,9 +828,9 @@
    "accounted": 54,
    "bettingEligible": false,
    "bundle": "data/handicap_runtime/2026-09-20/games/823247.json",
-   "bundleBytes": 35871,
+   "bundleBytes": 36049,
    "bundleGzip": "data/handicap_runtime/2026-09-20/games/823247.json.gz",
-   "bundleGzipBytes": 8474,
+   "bundleGzipBytes": 8521,
    "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(MIA): official lineup not posted yet, home(SD): official lineup not posted yet",
    "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
    "excludedOrUnresolved": 0,
@@ -841,7 +841,7 @@
    "lineups": {
     "away": {
      "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": false,
      "reason": "official lineup not posted yet",
      "team": "MIA"
@@ -849,7 +849,7 @@
     "bothConfirmed": false,
     "home": {
      "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": false,
      "reason": "official lineup not posted yet",
      "team": "SD"
@@ -883,9 +883,9 @@
    "accounted": 143,
    "bettingEligible": false,
    "bundle": "data/handicap_runtime/2026-09-20/games/825028.json",
-   "bundleBytes": 48901,
+   "bundleBytes": 48902,
    "bundleGzip": "data/handicap_runtime/2026-09-20/games/825028.json.gz",
-   "bundleGzipBytes": 10314,
+   "bundleGzipBytes": 10304,
    "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(NYY): official lineup not posted yet, home(AZ): official lineup not posted yet",
    "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
    "excludedOrUnresolved": 0,
@@ -896,7 +896,7 @@
    "lineups": {
     "away": {
      "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": false,
      "reason": "official lineup not posted yet",
      "team": "NYY"
@@ -904,7 +904,7 @@
     "bothConfirmed": false,
     "home": {
      "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": false,
      "reason": "official lineup not posted yet",
      "team": "AZ"
@@ -944,9 +944,9 @@
    "accounted": 3,
    "bettingEligible": false,
    "bundle": "data/handicap_runtime/2026-09-20/games/823896.json",
-   "bundleBytes": 24845,
+   "bundleBytes": 24843,
    "bundleGzip": "data/handicap_runtime/2026-09-20/games/823896.json.gz",
-   "bundleGzipBytes": 5646,
+   "bundleGzipBytes": 5642,
    "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(SF): official lineup not posted yet, home(LAD): official lineup not posted yet",
    "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
    "excludedOrUnresolved": 0,
@@ -957,7 +957,7 @@
    "lineups": {
     "away": {
      "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": false,
      "reason": "official lineup not posted yet",
      "team": "SF"
@@ -965,7 +965,7 @@
     "bothConfirmed": false,
     "home": {
      "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": false,
      "reason": "official lineup not posted yet",
      "team": "LAD"
@@ -994,9 +994,9 @@
    "accounted": 54,
    "bettingEligible": false,
    "bundle": "data/handicap_runtime/2026-09-20/games/824789.json",
-   "bundleBytes": 35970,
+   "bundleBytes": 35969,
    "bundleGzip": "data/handicap_runtime/2026-09-20/games/824789.json.gz",
-   "bundleGzipBytes": 8793,
+   "bundleGzipBytes": 8791,
    "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(MIL): official lineup not posted yet, home(BAL): official lineup not posted yet",
    "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
    "excludedOrUnresolved": 0,
@@ -1007,7 +1007,7 @@
    "lineups": {
     "away": {
      "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": false,
      "reason": "official lineup not posted yet",
      "team": "MIL"
@@ -1015,7 +1015,7 @@
     "bothConfirmed": false,
     "home": {
      "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-20T15:47:56Z",
+     "lineupCheckedAt": "2026-09-20T15:55:53Z",
      "lineupConfirmedOfficial": false,
      "reason": "official lineup not posted yet",
      "team": "BAL"
@@ -1046,7 +1046,7 @@
    "unclassified": 0
   }
  ],
- "generatedAt": "2026-09-20T15:48:48Z",
+ "generatedAt": "2026-09-20T15:56:43Z",
  "guarantees": [
   "Only games that have NOT started and have BOTH official lineups confirmed appear under bettingEligibleGames. Everything else is researchOnly and carries realMoneyEligible=false on every market row.",
   "For a betting-eligible game, EVERY raw Kalshi contract attributable to it is accounted for in exactly one visible state: a normalized market, a registry exclusion with its reason, or an unclassified contract with the normalizer's reason. contractAccounting.silentRemainderCount is 0 on every game of a written card -- a violation aborts the build rather than publishing a falsely complete file.",

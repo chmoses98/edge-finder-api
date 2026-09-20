@@ -89,7 +89,68 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # JUST-IN-TIME BANKROLL FRESHNESS -- a SEPARATE JOB, deliberately.
+  #
+  # `lib/bankroll_context.py` only sizes in dollars from a reading less
+  # than 30 minutes old. The router's publisher is scheduled `*/15`, but
+  # GitHub's scheduler is best-effort: on 2026-09-19 it actually fired at
+  # 17:48, 19:31, 20:08, 22:19 and 00:15. The card build and the
+  # publisher were two independent crons, so nothing guaranteed one ran
+  # shortly before the other, and the public runtime sat at
+  # `bankrollStatus: STALE` / `dollarSizingVerdict: NO_DOLLAR_SIZING`
+  # even though every publisher run SUCCEEDED. Safe, and unusable.
+  #
+  # Raising the cron frequency does not fix that -- it just gives the
+  # same best-effort scheduler more chances to be late. This does: the
+  # build PULLS a reading whose age it knows.
+  #
+  # It is its own job, not a step, because `secrets.*` is resolved when a
+  # JOB starts. A refresh performed inside `fetch` could not be seen by
+  # `fetch`'s own already-resolved KALSHI_BANKROLL_CONTEXT. Running first
+  # and handing over via `needs:` is what makes the fresh value visible.
+  #
+  # It holds a dispatch token and NOTHING else: no Kalshi credential, no
+  # `contents` write. The router stays the only component that reads an
+  # authenticated balance, and the amount is never visible here.
+  refresh_bankroll:
+    runs-on: ubuntu-latest
+    # `contents: read` is what actions/checkout needs and nothing more.
+    # This job may not write to this repository, and the GITHUB_TOKEN it
+    # gets cannot read a secret -- the only credential that leaves it is
+    # the dispatch PAT below, scoped to the router's Actions alone.
+    permissions:
+      contents: read
+    timeout-minutes: 12
+    outputs:
+      outcome: ${{ steps.refresh.outputs.outcome }}
+      refreshed: ${{ steps.refresh.outputs.refreshed }}
+      router_run_id: ${{ steps.refresh.outputs.router_run_id }}
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
+        ref: main
+        persist-credentials: false
+
+    - name: Ask the router for a fresh authenticated balance
+      id: refresh
+      env:
+        # Fine-grained PAT, Actions: read and write on
+        # chmoses98/kalshi-bet-router ONLY. It cannot read a secret and
+        # cannot push a commit. Absent (forks, or before it is set up)
+        # the script reports NO_CREDENTIAL and exits 0, and the card
+        # below falls back to exactly today's fail-closed behaviour.
+        ROUTER_BANKROLL_DISPATCH_TOKEN: ${{ secrets.ROUTER_BANKROLL_DISPATCH_TOKEN }}
+      run: |
+        python3 scripts/ci/refresh_bankroll_context.py --max-wait-seconds 420
+
   fetch:
+    # NEVER `needs` alone: a slate fetch must not be skipped because the
+    # bankroll could not be refreshed. The refresh job already exits 0 on
+    # every outcome; this is the second belt, so that even an
+    # infrastructure failure in that job leaves the slate chain running.
+    needs: refresh_bankroll
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

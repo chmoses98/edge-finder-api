@@ -7,10 +7,63 @@ This document is the authoritative reference for secrets required by all workflo
 | Secret | Used By | Purpose |
 |--------|---------|---------|
 | `ODDS_API_KEY` | `fetch-slate.yml`, `clv-update.yml` | The Odds API key for fetching sportsbook odds and historical scores for settlement |
+| `KALSHI_BANKROLL_CONTEXT` | `fetch-slate.yml` → "Build real-money handicapping card" | The sealed authenticated available-cash reading. **Written by `kalshi-bet-router`, never by a human.** |
+| `ROUTER_BANKROLL_DISPATCH_TOKEN` | `fetch-slate.yml` → job `refresh_bankroll` | Lets a slate build ask the router for a *fresh* reading before it builds a card. Optional; absent, the card falls back to fail-closed. |
 
-That is the **only** secret required. Both workflows that use it are:
+`ODDS_API_KEY` is used by:
 - `fetch-slate.yml` → step "Fetch odds" (`scripts/validate_odds.py`) and "Capture Kalshi closing lines" (`scripts/capture_closing_lines.py`)
 - `clv-update.yml` → step "Run CLV update" (`clv_update.py`) for post-game settlement via The Odds API historical scores endpoint
+
+### `KALSHI_BANKROLL_CONTEXT` — do not set this by hand
+
+`kalshi-bet-router` reads the balance (one `GET /portfolio/balance`) and
+seals the result into this secret with libsodium. Its contents are a
+small JSON object — `schemaVersion, bankroll, currency, observedAt,
+source, valueType` — and `lib/bankroll_context.py` refuses to size in
+dollars unless `valueType == KALSHI_AVAILABLE_CASH_BALANCE`, `source ==
+kalshi_authenticated_balance`, and `observedAt` is **less than 30
+minutes old**. A hand-written value will simply be refused.
+
+The amount never reaches a committed file or a log: the card stores
+`lib/bankroll_context.py`'s `redacted()` projection (an allowlist, so a
+new field cannot leak by omission), and `data/handicap_runtime/` carries
+only `status`, `source`, `valueType`, `observedAt`, `ageMinutes`,
+`sizingAllowed` and the sizing verdict.
+
+### `ROUTER_BANKROLL_DISPATCH_TOKEN` — how to create it
+
+**Why it exists.** The 30-minute sizing window and GitHub's scheduler had
+no relationship to each other. The router's publisher is scheduled
+`*/15`, but on 2026-09-19 the scheduler actually fired it at 17:48,
+19:31, 20:08, 22:19 and 00:15. Every one of those runs SUCCEEDED, and the
+public runtime still read `bankrollStatus: STALE` /
+`dollarSizingVerdict: NO_DOLLAR_SIZING` all evening, because no card
+build ever happened within 30 minutes of one. Raising the cron frequency
+does not fix that; it just gives the same best-effort scheduler more
+chances to be late.
+
+So `fetch-slate.yml` now has a `refresh_bankroll` job that **pulls** a
+reading before the card is built. It needs one credential:
+
+1. GitHub → Settings → Developer settings → **Fine-grained personal
+   access tokens** → Generate new token.
+2. **Resource owner:** `chmoses98`. **Repository access:** *Only select
+   repositories* → **`chmoses98/kalshi-bet-router`** and nothing else.
+3. **Repository permissions:** **Actions: Read and write**. Leave every
+   other permission at *No access* — in particular Contents and Secrets.
+4. Add it to **this** repository (`edge-finder-api`) as an Actions secret
+   named `ROUTER_BANKROLL_DISPATCH_TOKEN`.
+
+That token can start a workflow in the router and read run status. It
+cannot read a secret, cannot push a commit, and cannot touch any other
+repository. It never sees the balance — only the router holds a Kalshi
+credential.
+
+**If it is absent** (forks, or before you create it) the job reports
+`NO_CREDENTIAL`, exits 0, and the slate fetch proceeds exactly as before.
+The card then reads whatever the secret already holds and refuses dollar
+sizing if it is stale — today's behaviour, unchanged. Nothing breaks; you
+just do not get just-in-time freshness.
 
 ## Not Required
 

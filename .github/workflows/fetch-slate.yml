@@ -154,6 +154,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # For ONE call: dispatching build-handicapping-card.yml in THIS
+      # repository once the slate is published. The card must be built by a
+      # run created after the bankroll seal, and this is how that run is
+      # asked for. No PAT: same-repo dispatch needs only the job's own
+      # GITHUB_TOKEN.
+      actions: write
 
     steps:
     - name: Checkout repo
@@ -595,111 +601,58 @@ jobs:
           --message "slate data ${{ env.DATE }} $(TZ='America/New_York' date +'%H:%M ET')" \
           data/
 
-    # Real-money HANDICAPPING CARD: which games have BOTH official lineups
-    # confirmed and have not started (the only ones eligible for real-money
-    # analysis), every Kalshi market attributable to each of them, and the
-    # read-only bankroll context sizing may use.
+    # THE CARD AND THE RUNTIME ARE BUILT BY A SEPARATE RUN, ON PURPOSE.
     #
-    # Deliberately AFTER the authoritative slate is published above, since it
-    # reads data/slate.json plus the already-archived complete Kalshi universe.
-    # Purely additive: writes only data/handicapping_card/, computes no
-    # probability/edge/recommendation, and never touches data/slate.json,
-    # bets.json, marketLedger or risk_gate output. continue-on-error for the
-    # same reason as the F5 audit / projection board steps -- an analysis-only
-    # artifact must never block slate publication.
+    # They used to be three steps right here. They are not any more, and
+    # the reason is the bankroll's 30-minute sizing window.
     #
-    # Rebuild it any time (e.g. after lineups confirm) with:
-    #   python3 scripts/build_handicapping_card.py --print-summary
-    - name: Build real-money handicapping card (lineup-confirmed games + full market universe)
-      id: handicapping_card
+    # `refresh_bankroll` above asks the router for a fresh authenticated
+    # reading and waits for it to be sealed into this repository's
+    # KALSHI_BANKROLL_CONTEXT. But `secrets.*` is snapshotted when a RUN IS
+    # CREATED, not when a job starts -- measured, not assumed:
+    #
+    #   run 35520484888 was created 15:43:41Z on 2026-09-20. Its refresh
+    #   sealed a reading at 15:45:23Z; `fetch` started nine seconds later
+    #   and the card it built at 15:48:48Z still read observedAt
+    #   13:58:57Z, the PREVIOUS reading -- ageMinutes 109.9, STALE,
+    #   NO_DOLLAR_SIZING.
+    #
+    # A run created before the seal can never see it, however its jobs are
+    # arranged. Only a run created AFTER the seal can. So this one
+    # dispatches build-handicapping-card.yml, which starts minutes after
+    # the seal, snapshots the fresh reading, and builds a card that is
+    # FRESH because THIS invocation refreshed it -- not because an
+    # unrelated cron happened to fire recently.
+    #
+    # Same-repo and terminal: GITHUB_TOKEN with `actions: write`, no PAT,
+    # and build-handicapping-card.yml dispatches nothing back. The only
+    # cross-repo edge remains edge-finder-api -> the router's publisher.
+    #
+    # Never fails the slate. A slate that published is worth keeping even
+    # if the analysis artifact could not be asked for; the card workflow
+    # is also runnable by hand with a date.
+    - name: Ask for the handicapping card and runtime (fresh-bankroll run)
+      if: steps.publish_slate.outcome == 'success'
       continue-on-error: true
       env:
-        # THE BANKROLL ARRIVES AS AN ENCRYPTED SECRET, NOT AS A FILE.
-        #
-        # This repository is PUBLIC, so a committed balance is public
-        # forever and an Actions artifact is a public download link.
-        # kalshi-bet-router's publish-bankroll.yml reads the authenticated
-        # Kalshi balance every 15 minutes and seals it into this secret;
-        # it is decrypted only inside this job. The card COMMITTED below
-        # carries the bankroll's status, age, source, semantics and
-        # sizingAllowed -- never the amount (--reveal-bankroll is off).
-        #
-        # Absent or older than 30 minutes, the card still gets built and
-        # simply reports that stake sizing is unavailable. It never
-        # substitutes a remembered or derived number.
-        KALSHI_BANKROLL_CONTEXT: ${{ secrets.KALSHI_BANKROLL_CONTEXT }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REFRESH_OUTCOME: ${{ needs.refresh_bankroll.outputs.outcome }}
       run: |
-        set +e
-        python3 scripts/build_handicapping_card.py --date "${{ env.DATE }}" --print-summary
-        status=$?
-        set -e
-        if [ "${status}" -ne 0 ]; then
-          # continue-on-error keeps an analysis-only artifact from blocking
-          # slate publication, and it also hides the exit code. The one
-          # failure that must never be quiet is the exhaustiveness refusal:
-          # the card was NOT written precisely because it would have
-          # claimed a completeness it did not have.
-          echo "::error::The handicapping card was NOT written (exit ${status}). If the reason above is the exhaustiveness invariant, a Kalshi contract attributable to an eligible game is visible in none of the card's three states -- most likely a NEW market family. Do not hand-wave it: the card refuses to publish a falsely complete file."
-          echo "handicapping card: NOT WRITTEN (exit ${status})" >> "${GITHUB_STEP_SUMMARY}"
-          exit "${status}"
-        fi
-
-    # COMPACT HANDICAP RUNTIME: the serving layer a chat handicapper
-    # actually reads. A lossless projection of the card written directly
-    # above -- same games, same eligibility, same market universe, in a
-    # form small enough to load. It runs no market discovery of its own,
-    # so it cannot drift from the card's semantics.
-    #
-    # It refuses to write anything it cannot prove complete: ticker-set
-    # equality and field-level price equality against the card, per game.
-    # So an error here means the projection was NOT published and the
-    # previous runtime (if any) is still what consumers read -- which is
-    # the right failure, but never a silent one.
-    #
-    # GATED ON THE CARD'S ACTUAL OUTCOME, not merely placed after it. This
-    # file's own BLOCK 7 comment spells out why: once a step's failure is
-    # masked by continue-on-error the job is never in a failing state, so
-    # every later step still runs by default -- including ones whose input
-    # is the failed step's output. If the card refused to write (the
-    # exhaustiveness invariant), the newest card on disk is a PREVIOUS run's,
-    # and projecting it would publish a runtime that silently describes an
-    # older universe under today's date.
-    - name: Build compact handicap runtime (manifest + per-game bundles)
-      id: handicap_runtime
-      if: steps.handicapping_card.outcome == 'success'
-      continue-on-error: true
-      run: |
-        set +e
-        python3 scripts/build_handicap_runtime.py --date "${{ env.DATE }}" --print-sizes
-        status=$?
-        set -e
-        if [ "${status}" -ne 0 ]; then
-          echo "::error::The compact handicap runtime was NOT written (exit ${status}). Consumers will fall back to the previous runtime for this date, or to the archival card. The projection refuses to publish a runtime it cannot prove is a complete, unaltered view of the card."
-          echo "handicap runtime: NOT WRITTEN (exit ${status})" >> "${GITHUB_STEP_SUMMARY}"
-          exit "${status}"
-        fi
-        echo "handicap runtime: data/handicap_runtime/${{ env.DATE }}/" >> "${GITHUB_STEP_SUMMARY}"
-
-    # WALK THE CONSUMER PATH, NOT JUST THE BUILD.
-    #
-    # The build step above proves the artifact is CORRECT. This proves it is
-    # USABLE, which is the claim the whole serving layer exists for: it
-    # opens the pointer, the manifest and only the eligible bundles -- never
-    # the archival card -- and fails if a betting-eligible game's complete
-    # market universe is not reachable that way.
-    - name: Verify the RUN MLB consumer path
-      if: steps.handicap_runtime.outcome == 'success'
-      continue-on-error: true
-      run: |
-        set +e
-        python3 scripts/verify_handicap_runtime.py --date "${{ env.DATE }}" \
-          --audit-against-card
-        status=$?
-        set -e
-        if [ "${status}" -ne 0 ]; then
-          echo "::error::The RUN MLB consumer path is BROKEN for ${{ env.DATE }} (exit ${status}). A chat handicapper following RUN_THE_SLATE.md would not see every market for every eligible game. The failing check is named above."
-          echo "RUN MLB consumer path: BROKEN (exit ${status})" >> "${GITHUB_STEP_SUMMARY}"
-          exit "${status}"
+        set -uo pipefail
+        echo "bankroll refresh outcome for this slate run: ${REFRESH_OUTCOME:-unknown}"
+        status="$(curl --silent --show-error --write-out '%{http_code}' --output /dev/null \
+          -X POST \
+          -H "Authorization: Bearer ${GH_TOKEN}" \
+          -H "Accept: application/vnd.github+json" \
+          -H "Content-Type: application/json" \
+          "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/build-handicapping-card.yml/dispatches" \
+          -d "{\"ref\":\"main\",\"inputs\":{\"date\":\"${DATE}\"}}")"
+        if [ "${status}" = "204" ]; then
+          echo "asked Build Handicapping Card to run for ${DATE}"
+          echo "handicapping card: requested (separate run, fresh bankroll)" >> "${GITHUB_STEP_SUMMARY}"
+        else
+          echo "::warning::Could not ask for the handicapping card (HTTP ${status}). The slate is published; run \"Build Handicapping Card\" by hand for ${DATE}."
+          echo "handicapping card: NOT REQUESTED (HTTP ${status})" >> "${GITHUB_STEP_SUMMARY}"
         fi
 
     # ── BLOCK 7: Execution / logging chain (OPTIONAL — Workflow D) ─────────

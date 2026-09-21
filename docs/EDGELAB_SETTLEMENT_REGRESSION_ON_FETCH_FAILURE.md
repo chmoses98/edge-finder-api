@@ -2,9 +2,10 @@
 
 **Found:** 2026-09-21, while running the canonical settlement path for
 2026-09-17 … 2026-09-20.
-**Status:** unfixed — reported, not remediated. Changing settlement
-semantics needs a run against live authoritative data to validate, and
-that data was not reachable from the session that found this.
+**Status: FIXED.** The transition rule now lives in one place,
+`lib/edgelab/settlement.classify_settlement_transition()`, and is
+verified against the real partitions that were damaged — see
+*Verification* at the end.
 
 ## What happens
 
@@ -67,25 +68,73 @@ It also makes the settlement path unsafe to run as a diagnostic. The
 present mission could not re-run settlement to inspect its behavior
 without first proving it would not eat the ledger.
 
-## Proposed remediation
+## Remediation applied
 
-Add a monotonicity guard in `merge_settlement_record()`: a stored
-`SETTLED` (or `VOID`) record must never be replaced by a computed
-`SETTLEMENT_UNRESOLVED` one. Keep the stored record and surface the
-attempt as a run warning instead.
-
-A genuine correction — `SETTLED` with a *different* result, from a fetch
-that actually succeeded — must still be allowed through, so the guard has
-to key on the settlement **status transition**, not on equality of the
-whole record. Suggested rule:
+`lib/edgelab/settlement.classify_settlement_transition()` is now the one
+canonical rule; `merge_settlement_record()` and
+`scripts/edgelab/settle_markets.py` both ask it rather than carrying
+their own guards.
 
 | stored | computed | outcome |
 |---|---|---|
-| `SETTLEMENT_UNRESOLVED` | anything | take computed |
-| `SETTLED` / `VOID` | `SETTLED` / `VOID` | take computed (real correction) |
-| `SETTLED` / `VOID` | `SETTLEMENT_UNRESOLVED` | **keep stored**, warn |
+| (none) | anything | `FIRST_RECORD` — store it |
+| non-terminal | anything | `NO_OP` / `ACCEPTED` |
+| `SETTLED` / `VOID` | `SETTLED` / `VOID` | `NO_OP` / `ACCEPTED` (real correction) |
+| `SETTLED` / `VOID` | anything non-terminal | **`REFUSED_TERMINAL_REGRESSION`** — keep stored |
 
-Tests should cover all three rows, plus the existing byte-identical no-op
-case. The run summary should additionally report a
-`settlementsRegressionSuppressed` count so a bad run is visible rather
-than silent.
+Terminal = `{SETTLED, VOID}`.
+
+A refused transition returns the stored record **by identity**, so not a
+single field is rewritten — not even an audit stamp, since stamping the
+row would mean writing to the very record the rule exists to protect.
+The audit trail lives in the run instead:
+
+- `counts.terminalSettlementRegressionPrevented` on the returned summary
+  and on the persisted `research_runs` record;
+- one aggregate warning (not one per market — the failure mode hits
+  thousands at once and would bury the per-bet `REFUSED` warnings);
+- the warning forces the run's `status` to `partial`, so a blinded run
+  can never be recorded as clean;
+- `terminal_regressions_prevented=N` on the CLI summary line.
+
+The wording is deliberate: a non-zero count means the run was **blind**
+for those markets, not that it re-confirmed them.
+
+**Not immutability.** Keying on the status transition rather than on
+record equality is what separates *the truth changed* from *we went
+blind*. A corrected box score, or a game wrongly marked Suspended that
+in fact completed, arrives via a fetch that SUCCEEDED — terminal →
+terminal — and still flows through the normal correction path.
+
+## Verification
+
+Reproduced deterministically with no network access, by settling a
+fixture successfully and then re-running it blind
+(`tests/edgelab/test_settle_markets_script.py`), and against the two real
+partitions the incident damaged:
+
+```
+$ python3 scripts/edgelab/settle_markets.py --date 2026-09-19
+... settled_or_void=4967 bets_settled=0 terminal_regressions_prevented=4967
+$ python3 scripts/edgelab/settle_markets.py --date 2026-09-20
+... settled_or_void=3297 bets_settled=0 terminal_regressions_prevented=3297
+```
+
+4967 + 3297 = **8,264** — precisely the records destroyed by the original
+run. Diffing both partitions against `HEAD` afterwards:
+
+| partition | status transitions | terminal records modified in any way |
+|---|---|---|
+| `2026-09-19.jsonl` | none | **0** |
+| `2026-09-20.jsonl` | 25 new `SETTLEMENT_UNRESOLVED` (first records) | **0** |
+
+`data/edgelab/bets/bets.jsonl` was byte-identical before and after
+(md5 `80502175d92de851226ad51ab739f082`).
+
+Note what the first line now reports: `settled_or_void=4967` where the
+pre-fix run reported `0`. The old zero was not a quiet run — it was the
+sound of the facts already having been erased.
+
+This proves the monotonicity rule only. It does **not** show that live
+settlement works; the authoritative sources remain egress-blocked from
+this environment.

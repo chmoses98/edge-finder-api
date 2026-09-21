@@ -362,3 +362,174 @@ def test_player_prop_stays_unresolved_when_boxscore_unavailable_even_with_resolv
     settlements = {r["marketTicker"]: r for r in storage.read_records(storage.partition_path("settlements", date))}
     assert settlements[ticker]["settlementStatus"] == "SETTLEMENT_UNRESOLVED"
     assert settlements[ticker]["unavailableReason"]  # a specific reason, never blank
+
+
+# ---------------------------------------------------------------------------
+# Regression: the destructive terminal->unresolved rewrite, end to end.
+#
+# The real incident: a settle_markets run whose authoritative source was
+# unreachable computed SETTLEMENT_UNRESOLVED for every market on every game
+# and overwrote 8,264 stored SETTLED records, while reporting
+# settled_or_void=0 bets_settled=0 -- indistinguishable from a clean no-op.
+# See docs/EDGELAB_SETTLEMENT_REGRESSION_ON_FETCH_FAILURE.md.
+#
+# These tests reproduce that exact shape deterministically -- no network, no
+# live MLB/Kalshi access -- by settling a fixture successfully and then
+# re-running it blind.
+# ---------------------------------------------------------------------------
+
+def _seed_settled_slate(storage, date, market_count):
+    """A game whose markets all settle cleanly from a successful fetch."""
+    game_id = "2026-08-05_DET_ATH"
+    storage.write_all_records(storage.partition_path("games", date), [{
+        "gameId": game_id, "mlbGamePk": 777001, "awayTeam": "DET", "homeTeam": "ATH",
+        "status": "Final",
+    }])
+    markets = [{
+        "marketTicker": f"KXMLBTOTAL-TEST-{i}", "gameId": game_id,
+        "marketFamily": "game_total", "marketHorizon": "FULL_GAME",
+        # Offset so no threshold is 0.0: a total settles YES at >= threshold,
+        # so a 0.0 line is YES for every conceivable score and could never
+        # show a correction changing anything.
+        "team": None, "outcomeLabel": "Over", "threshold": float(i) + 6.0,
+    } for i in range(market_count)]
+    storage.write_all_records(storage.partition_path("markets", date), markets)
+    return game_id
+
+
+def _fetch_succeeds(monkeypatch, mlb_boxscore):
+    monkeypatch.setattr(
+        settle_markets_script, "fetch_mlb_linescore",
+        lambda game_pk: {"teams": {"away": {"runs": 5}, "home": {"runs": 2}}, "innings": []},
+    )
+    monkeypatch.setattr(mlb_boxscore, "fetch_game_feed", lambda game_pk, timeout=15: _live_feed())
+
+
+def _fetch_fails(monkeypatch, mlb_boxscore):
+    """Exactly what a 403/unreachable upstream looks like to this script."""
+    monkeypatch.setattr(settle_markets_script, "fetch_mlb_linescore", lambda game_pk: None)
+    monkeypatch.setattr(mlb_boxscore, "fetch_game_feed", lambda game_pk, timeout=15: None)
+
+
+def test_blind_rerun_makes_zero_destructive_changes_to_many_settled_markets(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    from lib.edgelab import mlb_boxscore, storage
+
+    date = "2026-08-05"
+    market_count = 40
+    _seed_settled_slate(storage, date, market_count)
+    storage.write_all_records(storage.singleton_path("bets", "bets.jsonl"), [])
+
+    _fetch_succeeds(monkeypatch, mlb_boxscore)
+    first = settle_markets_script.settle_date(date)
+    assert first["counts"]["settledOrVoid"] == market_count
+    assert first["counts"]["terminalSettlementRegressionPrevented"] == 0
+
+    settlements_path = storage.partition_path("settlements", date)
+    before = {r["settlementId"]: r for r in storage.read_records(settlements_path)}
+    assert len(before) == market_count
+    assert all(r["settlementStatus"] == "SETTLED" for r in before.values())
+
+    # ...now the authoritative source goes away.
+    _fetch_fails(monkeypatch, mlb_boxscore)
+    second = settle_markets_script.settle_date(date)
+
+    after = {r["settlementId"]: r for r in storage.read_records(settlements_path)}
+    assert after == before, "a blind rerun rewrote stored settlement facts"
+    assert all(r["settlementStatus"] == "SETTLED" for r in after.values())
+    # Nothing was downgraded, and nothing was quietly "corrected" either.
+    assert second["counts"]["terminalSettlementRegressionPrevented"] == market_count
+    assert second["counts"]["settlementsMeaningfullyChanged"] == 0
+
+
+def test_blind_rerun_reports_prevented_regressions_rather_than_looking_like_a_no_op(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    from lib.edgelab import mlb_boxscore, storage
+
+    date = "2026-08-05"
+    _seed_settled_slate(storage, date, 12)
+    storage.write_all_records(storage.singleton_path("bets", "bets.jsonl"), [])
+
+    _fetch_succeeds(monkeypatch, mlb_boxscore)
+    settle_markets_script.settle_date(date)
+
+    _fetch_fails(monkeypatch, mlb_boxscore)
+    summary = settle_markets_script.settle_date(date)
+
+    assert summary["counts"]["terminalSettlementRegressionPrevented"] == 12
+    regression_warnings = [w for w in summary["warnings"] if "REGRESSION PREVENTED" in w]
+    assert len(regression_warnings) == 1, "expected exactly one aggregate warning, not one per market"
+    assert "12 market(s)" in regression_warnings[0]
+
+    # The run record persists the count, so a blinded run is auditable after the fact.
+    runs = list(storage.read_records(storage.partition_path("research_runs", date)))
+    assert runs[-1]["counts"]["terminalSettlementRegressionPrevented"] == 12
+    assert runs[-1]["status"] == "partial"   # warnings present -> never reported as clean
+
+
+def test_blind_rerun_leaves_the_bet_ledger_untouched(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    from lib.edgelab import mlb_boxscore, storage
+
+    date = "2026-08-05"
+    game_id = _seed_settled_slate(storage, date, 3)
+    ticker = "KXMLBTOTAL-TEST-0"
+    bets_path = storage.singleton_path("bets", "bets.jsonl")
+
+    settled_bet = {
+        "betId": "settled-bet", "marketTicker": ticker, "side": "YES", "stake": 10.0,
+        "entryPrice": 0.5, "status": "pending", "recordStatus": "ACTIVE", "gameDate": date,
+    }
+    # A wager on a market this run can never authoritatively grade.
+    ungradeable_bet = {
+        "betId": "ungradeable-bet", "marketTicker": "KXMLBTOTAL-NOT-OBSERVED", "side": "YES",
+        "stake": 25.0, "entryPrice": 0.4, "status": "pending", "recordStatus": "ACTIVE",
+        "gameDate": date,
+    }
+    storage.write_all_records(bets_path, [settled_bet, ungradeable_bet])
+
+    _fetch_succeeds(monkeypatch, mlb_boxscore)
+    settle_markets_script.settle_date(date)
+    before = {r["betId"]: r for r in storage.read_records(bets_path)}
+    assert before["settled-bet"]["status"] == "settled"
+    assert before["ungradeable-bet"]["status"] == "pending"
+
+    _fetch_fails(monkeypatch, mlb_boxscore)
+    summary = settle_markets_script.settle_date(date)
+
+    after = {r["betId"]: r for r in storage.read_records(bets_path)}
+    assert after == before, "a blind rerun modified the canonical bet ledger"
+    assert summary["counts"]["betsSettled"] == 0
+    assert after["ungradeable-bet"]["status"] == "pending"
+    assert after["ungradeable-bet"].get("result") is None
+
+
+def test_successful_correction_still_flows_through_after_a_blind_run(tmp_path, monkeypatch):
+    """The guard must not strand a market in a stale terminal state forever."""
+    monkeypatch.chdir(tmp_path)
+    from lib.edgelab import mlb_boxscore, storage
+
+    date = "2026-08-05"
+    _seed_settled_slate(storage, date, 1)
+    storage.write_all_records(storage.singleton_path("bets", "bets.jsonl"), [])
+    settlements_path = storage.partition_path("settlements", date)
+
+    _fetch_succeeds(monkeypatch, mlb_boxscore)
+    settle_markets_script.settle_date(date)
+    assert list(storage.read_records(settlements_path))[0]["result"] == "YES"   # 5+2=7 > 0.0
+
+    _fetch_fails(monkeypatch, mlb_boxscore)
+    settle_markets_script.settle_date(date)
+
+    # The source comes back, and genuinely reports a different final score.
+    monkeypatch.setattr(
+        settle_markets_script, "fetch_mlb_linescore",
+        lambda game_pk: {"teams": {"away": {"runs": 0}, "home": {"runs": 0}}, "innings": []},
+    )
+    monkeypatch.setattr(mlb_boxscore, "fetch_game_feed", lambda game_pk, timeout=15: _live_feed())
+    summary = settle_markets_script.settle_date(date)
+
+    assert summary["counts"]["terminalSettlementRegressionPrevented"] == 0
+    corrected = list(storage.read_records(settlements_path))[0]
+    assert corrected["result"] == "NO"          # 0+0=0, not over 0.0
+    assert corrected["settlementStatus"] == "SETTLED"

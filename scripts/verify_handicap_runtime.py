@@ -195,10 +195,29 @@ def main(argv=None):
 
     # Pitcher and hitter props are explicitly in scope and explicitly not
     # settled automatically (issue #43). Their ABSENCE would be the bug.
+    #
+    # ONLY WHEN SOMETHING WAS ACTUALLY LOADED. This check exists to catch
+    # the universe being FILTERED DOWN -- props present on the card but
+    # missing from what a consumer sees. A slate with zero betting-eligible
+    # games loads zero bundles, so there is nothing that could have been
+    # filtered, and reporting "no prop families reached the consumer" there
+    # states a defect that did not happen.
+    #
+    # It is not a rare corner. Every night once the last game starts, the
+    # committed runtime correctly has bettingEligibleGames: 0, and on
+    # 2026-09-21 the slate could not build at all (post-fetch gate:
+    # "WSH@DET: BOTH starters have no xFIP/seasonFIP"), so main carried a
+    # zero-eligible pointer for eighteen hours. For that whole window this
+    # verifier called the committed runtime broken and
+    # test_the_committed_runtime_serves_the_real_run_mlb_consumer_path was
+    # red on main, blocking every unrelated merge.
     prop_families = sorted(f for f in families if f.startswith(("pitcher_", "hitter_")))
-    if not prop_families:
+    if wanted and not prop_families:
         problems.append("no pitcher or hitter prop families reached the consumer")
     print(f"    props    -> {prop_families}")
+    if not wanted:
+        print("    (no betting-eligible games in this runtime, so no bundle was "
+              "loaded and there is no market universe to check for filtering)")
 
     # ── step 5: the consumer never opened the card ───────────────────
     opened = {path for path, _size in reader.files}

@@ -757,3 +757,68 @@ def test_real_slate_is_dramatically_smaller_to_handicap(real_projection):
     # A consumer that handicaps the whole eligible slate reads well under
     # a tenth of the archival card.
     assert manifest_bytes + eligible_bytes < card_bytes / 10
+
+
+# ── a slate with nothing to bet is not a broken runtime ───────────────
+
+#: The same slate with no pitcher or hitter prop in the raw universe at
+#: all. Built from raw tickers rather than by editing a built card:
+#: marketFamily is DERIVED by the normalizer, so overwriting it after the
+#: fact makes the projection's own round-trip check fail ("lost field
+#: marketFamily") instead of testing what it means to.
+NO_PROP_FAMILIES = [
+    _raw("KXMLBGAME-26SEP171510SDCOL-COL", "KXMLBGAME-26SEP171510SDCOL"),
+    _raw("KXMLBGAME-26SEP171510SDCOL-SD", "KXMLBGAME-26SEP171510SDCOL"),
+    _raw("KXMLBTOTAL-26SEP171510SDCOL-10", "KXMLBTOTAL-26SEP171510SDCOL"),
+    _raw("KXMLBF5-26SEP171510SDCOL-SD", "KXMLBF5-26SEP171510SDCOL"),
+]
+
+
+def test_a_runtime_with_no_eligible_games_is_not_reported_as_broken(tmp_path, capsys):
+    """THE 2026-09-21 MERGE BLOCKER.
+
+    The props check exists to catch the market universe being FILTERED
+    DOWN -- props on the card but missing from what a consumer sees. With
+    zero betting-eligible games no bundle is loaded at all, so nothing
+    could have been filtered, and calling that "no prop families reached
+    the consumer" reports a defect that did not happen.
+
+    It kept main red for eighteen hours (committed pointer
+    2026-09-20T23:43:48Z, bettingEligibleGames: 0, and the 2026-09-21
+    slate could not build past the post-fetch gate: "WSH@DET: BOTH
+    starters have no xFIP/seasonFIP"), blocking every unrelated merge.
+
+    Unconfirmed lineups are the supported way to make a game
+    research-only, so this is the real eligibility path, not a doctored
+    card.
+    """
+    unconfirmed = _slate(lineups_confirmed=False)
+    card = _card(TWO_FAMILIES, slate=unconfirmed)
+    assert card["bettingEligibleGames"] == [], "fixture still has an eligible game"
+    manifest, _path, problems = runtime_builder.build(
+        card, unconfirmed, rules=_rules(), root=str(tmp_path))
+    assert problems == [], problems
+    assert manifest["counts"]["bettingEligibleGames"] == 0
+
+    verifier = _load("verify_handicap_runtime")
+    assert verifier.main(["--root", str(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "no betting-eligible games in this runtime" in out
+    assert "no pitcher or hitter prop families" not in out
+
+
+def test_the_props_check_still_bites_when_a_bundle_IS_loaded(tmp_path, capsys):
+    """The other half, and the one that matters: with an eligible game
+    whose universe carries no prop family, the props really are missing
+    and the verifier must still refuse. The fix must not have softened
+    this into never firing."""
+    card = _card(NO_PROP_FAMILIES)
+    assert card["bettingEligibleGames"], "fixture loads no bundle"
+    manifest, _path, problems = runtime_builder.build(
+        card, _slate(), rules=_rules(), root=str(tmp_path))
+    assert problems == [], problems
+    assert manifest["counts"]["bettingEligibleGames"] >= 1
+
+    verifier = _load("verify_handicap_runtime")
+    assert verifier.main(["--root", str(tmp_path)]) == 1
+    assert "no pitcher or hitter prop families" in capsys.readouterr().err

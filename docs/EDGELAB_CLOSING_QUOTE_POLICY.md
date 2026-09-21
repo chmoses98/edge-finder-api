@@ -117,3 +117,31 @@ declared `priceUnit` and fails closed without one.
 
 A missing closing quote is reported as missing. It is never replaced by
 the nearest available number.
+
+---
+
+# Appendix: running PR CI on an agent-created PR
+
+PR #230 received **no check run at all** — `total_count: 0`, combined status
+`pending`, zero workflow runs on its branch, both when opened and after a
+later push. Actions itself was healthy throughout (scheduled workflows kept
+running on `main`). GitHub does not trigger further workflow runs from events
+raised with an app installation token, and a PR opened through the Claude
+GitHub App is exactly that case.
+
+`.github/workflows/pr-ci.yml` had only `on: pull_request`, so there was no
+way to evaluate such a PR short of merging it unevaluated or pushing an empty
+commit to bait the trigger.
+
+It now also accepts `workflow_dispatch` with an optional `ref`:
+
+```
+workflow_id: pr-ci.yml
+ref:         <the PR branch>
+inputs:      {}            # or {"ref": "<branch or SHA>"}
+```
+
+Same job, same deselects, same read-only permissions — the only change is
+that the suite can be **asked for** on a given ref. Branch protection is not
+weakened: a dispatch run is not a `pull_request` check run and cannot satisfy
+a required status check by itself. It provides evidence, not an override.

@@ -36,6 +36,30 @@ name: PR Checks (deterministic test suite)
 on:
   pull_request:
 
+  # PR CI RELIABILITY (2026-09-21). PR #230 -- a settlement-safety fix --
+  # received NO check run at all: total_count 0, combined status "pending",
+  # zero workflow runs on its branch, both at open and after a later push.
+  # Actions itself was healthy (scheduled workflows ran on main throughout).
+  # The documented GitHub behaviour is that events raised with an app
+  # installation token do not trigger further workflow runs, and a PR opened
+  # through the Claude GitHub App hits exactly that case.
+  #
+  # `pull_request` alone therefore offers no way to evaluate such a PR: the
+  # workflow had no manual entry point, so the only options were to merge
+  # unevaluated or to push an empty commit to bait the trigger. Both are bad.
+  #
+  # workflow_dispatch adds that entry point. It changes nothing about what
+  # runs -- same job, same deselects, same read-only permissions -- it only
+  # allows a human or an agent to ASK for the suite on a given ref. It does
+  # not weaken branch protection: a dispatch run is not a `pull_request` check
+  # run and cannot satisfy a required status check on its own.
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch or SHA to test (defaults to the branch this is dispatched on)'
+        required: false
+        default: ''
+
 permissions:
   contents: read
 
@@ -50,6 +74,9 @@ jobs:
       - name: Checkout repo (full history)
         uses: actions/checkout@v4
         with:
+          # On a dispatch, test the ref the caller named; on a pull_request,
+          # leave it unset so the existing merge-ref behaviour is untouched.
+          ref: ${{ github.event.inputs.ref || '' }}
           # fetch-depth: 0, not the GitHub Actions default of 1 --
           # several existing "changed-file-scope" regression tests
           # (e.g. tests/test_validate_slate_final_pr9_changed_file_scope.py)

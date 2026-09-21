@@ -1096,9 +1096,35 @@ def _find_near_duplicates(record, existing_rows, window_seconds):
 # They meet this group's stated criterion exactly: neither has a caller-facing
 # parameter in build_manual_bet_record, so a freshly built record never carries
 # a value for either, and taking the existing row's is always correct.
+#
+# AND THEN IT HAPPENED A THIRD TIME, 2026-09-21.
+#
+# The closing-coverage work added three MORE fields that
+# scripts/edgelab/collect_clv.py writes onto a bet in the very same
+# assignment block as clv/closingPrice/clvQuoteId -- closingCoverageClass,
+# closingSecondsBeforeStart, closingCheckpoint -- and they were not added
+# here either. Kalshi router run 35591679347 re-imported its open batch
+# against destination main d5d20c52 and got 65 rows: 2 DUPLICATE_NOOP and
+# 63 CONFLICT, on exactly those three names.
+#
+# The 63 were precisely the rows the CLV pipeline had already scored; the 2
+# were the only two it had not. Nothing disagreed about a VALUE: the
+# importer emits no such key at all, so `_content_fingerprint` differed by
+# KEY PRESENCE and the refusal was unavoidable and permanent. The canonical
+# rows were right the whole time -- no ledger repair was needed, and none
+# was done.
+#
+# The pattern is now unmistakable, so it is pinned rather than re-fixed a
+# fourth time: tests/edgelab/test_clv_owned_fields_are_preserved.py fails
+# if collect_clv.py ever writes a bet field this tuple does not name.
 _ALWAYS_PRESERVE_FIELDS = (
     "status", "result", "returnAmount", "netProfitLoss",
     "closingPrice", "clv", "clvQuoteId", "clvConvention", "clvUnit",
+    # Coverage quality travels WITH the CLV number (see
+    # docs/EDGELAB_CLOSING_QUOTE_POLICY.md) and is written by the same
+    # pipeline, in the same block, from the same finalized closing quote.
+    # It is owned by that pipeline for the same reason the five above are.
+    "closingCoverageClass", "closingSecondsBeforeStart", "closingCheckpoint",
     "recordStatus",
 )
 

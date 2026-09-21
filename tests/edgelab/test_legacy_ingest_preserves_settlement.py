@@ -35,6 +35,13 @@ def _settled(**over):
         # out of this fixture is how they went unnoticed when they were
         # missing from _ALWAYS_PRESERVE_FIELDS.
         "clvConvention": "POSITIVE_IS_GOOD_V1", "clvUnit": "PERCENTAGE_POINTS",
+        # ...and it writes these three in the SAME block, from the same
+        # finalized closing quote. They were missing from the fixture and
+        # from _ALWAYS_PRESERVE_FIELDS for exactly the same reason, which is
+        # how router run 35591679347 came to refuse 63 of 65 rows on them.
+        "closingCoverageClass": "PRE_CLOSE",
+        "closingSecondsBeforeStart": 58437.084,
+        "closingCheckpoint": "FIRST_DAILY",
         "recordStatus": "ACTIVE",
         "recommendationId": "rec-1", "modelEvaluationId": "me-1", "modelSupported": True,
         "snapshotId": "snap-1", "productionRunId": "prod-1", "replayRunId": "replay-1",

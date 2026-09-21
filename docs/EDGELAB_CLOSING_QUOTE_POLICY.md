@@ -122,18 +122,36 @@ the nearest available number.
 
 # Appendix: running PR CI on an agent-created PR
 
-PR #230 received **no check run at all** — `total_count: 0`, combined status
-`pending`, zero workflow runs on its branch, both when opened and after a
-later push. Actions itself was healthy throughout (scheduled workflows kept
-running on `main`). GitHub does not trigger further workflow runs from events
-raised with an app installation token, and a PR opened through the Claude
-GitHub App is exactly that case.
+## What is established
 
-`.github/workflows/pr-ci.yml` had only `on: pull_request`, so there was no
-way to evaluate such a PR short of merging it unevaluated or pushing an empty
-commit to bait the trigger.
+PR #230 received **no check run at any point in its life** — `total_count: 0`,
+combined status `pending`, zero workflow runs on its branch, both when opened
+(04:29Z) and after a later push. The run-number sequence confirms it: runs
+jump from **373** (2026-09-20 19:55Z, an unrelated branch) straight to **375**.
+There is no run 374. Actions itself was healthy throughout — scheduled
+workflows kept running on `main` the whole time.
 
-It now also accepts `workflow_dispatch` with an optional `ref`:
+## What is NOT established — an earlier claim of mine was wrong
+
+I initially attributed this to GitHub not triggering workflows from events
+raised with a GitHub App installation token. **The evidence contradicts that.**
+PR #231 was created through the same app, by the same actor, against the same
+base, roughly 100 minutes later — and received a `pull_request` run
+(**376**) immediately.
+
+So the app-token theory does not survive contact with the data, and the true
+cause of #230's non-delivery **remains unexplained**. It presents as a one-off
+event-delivery failure. Nothing in `pr-ci.yml`'s triggers, branch filters,
+path filters or permissions differs between the two PRs; the workflow has no
+path filter at all and `on: pull_request` is unconditional.
+
+Do not treat "it was the app token" as the answer. It is not.
+
+## Why the remediation still stands
+
+The fix is not aimed at the unexplained cause — it removes the dependency on
+event delivery altogether. `pr-ci.yml` now also accepts `workflow_dispatch`
+with an optional `ref`:
 
 ```
 workflow_id: pr-ci.yml
@@ -141,7 +159,17 @@ ref:         <the PR branch>
 inputs:      {}            # or {"ref": "<branch or SHA>"}
 ```
 
-Same job, same deselects, same read-only permissions — the only change is
-that the suite can be **asked for** on a given ref. Branch protection is not
-weakened: a dispatch run is not a `pull_request` check run and cannot satisfy
-a required status check by itself. It provides evidence, not an override.
+Verified by real invocation on this branch (run **375**, `event:
+workflow_dispatch`). Before the change this call was impossible — the
+workflow had no dispatch entry point, so a PR whose `pull_request` event
+never arrived could only be merged unevaluated or have an empty commit
+pushed to bait the trigger.
+
+Same job, same deselects, same read-only permissions. Branch protection is
+unchanged: a dispatch run is not a `pull_request` check run and cannot
+satisfy a required status check by itself. It supplies evidence, not an
+override.
+
+**For future sessions:** if a PR shows no check run a few minutes after
+opening, dispatch `pr-ci.yml` against its branch rather than assuming the
+absence is benign or pushing a commit to force it.

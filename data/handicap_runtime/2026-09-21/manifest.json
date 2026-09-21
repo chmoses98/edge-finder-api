@@ -1,0 +1,387 @@
+{
+ "artifactType": "MLB_HANDICAP_RUNTIME_MANIFEST",
+ "axes": {
+  "AUTOMATIC_SETTLEMENT_SUPPORT": "scripts/edgelab/settle_markets.py can grade it automatically",
+  "GAME_ELIGIBILITY": "not started AND both official lineups confirmed AND integrity gates pass",
+  "MANUAL_HANDICAPPING_ELIGIBILITY": "the analyst can evaluate it from the available evidence",
+  "MARKET_AVAILABILITY": "Kalshi lists the contract (this row exists)",
+  "PRODUCTION_MODEL_SUPPORT": "the production model prices it (config/rules.json market_list)"
+ },
+ "bankroll": {
+  "ageMinutes": 4.595,
+  "consumerSizingVerdict": {
+   "mayPresentDollarStakes": false,
+   "reason": "NO_DOLLAR_SIZING_FOR_THIS_CONSUMER: an authenticated, fresh bankroll EXISTS and the private workflow that produced this artifact was permitted to size against it -- but its numeric value is redacted from this copy, because this repository is public. You do not know the amount, so you cannot compute a dollar stake. Handicap normally, give edge, confidence and a bet-up-to fraction, and say that the bankroll exists but is redacted from this consumer.",
+   "verdict": "NO_DOLLAR_SIZING_FOR_THIS_CONSUMER"
+  },
+  "currency": "USD",
+  "maxAgeMinutes": 30,
+  "numericBankrollAvailable": false,
+  "observedAt": "2026-09-21T23:05:10Z",
+  "resolvedAt": "2026-09-21T23:09:45Z",
+  "sizingAllowed": true,
+  "source": "kalshi_authenticated_balance",
+  "status": "FRESH",
+  "unavailableReason": null,
+  "valueType": "KALSHI_AVAILABLE_CASH_BALANCE"
+ },
+ "completeness": {
+  "bundleRowsEqualCardMarkets": true,
+  "holds": true,
+  "invariant": "silentRemainderCount == 0 on every game",
+  "note": "Every raw Kalshi contract attributable to a game is in exactly one visible state: a market row in that game's bundle, a registry exclusion with its reason, or an unclassified contract with the normalizer's reason. A build that cannot prove this refuses to write.",
+  "silentRemainderTotal": 0
+ },
+ "consumerFlow": [
+  "Read HANDICAPPING_PLAYBOOK.md and PLAYBOOK_LESSONS.md (methodology; ~19 KB total).",
+  "Read this manifest.",
+  "Select games where bettingEligible is true (not started AND both official lineups confirmed).",
+  "Load ONLY those games' bundles, by the `bundle` path on each manifest row. The full-day handicapping card is NOT required and must not be loaded to handicap a slate.",
+  "For EACH eligible game, independently: build the baseball thesis first, then inspect EVERY market row in that bundle, compare all viable expressions, and keep only wagers clearing the threshold in manifest.executionConstants.",
+  "Run one final portfolio/correlation pass across all games (playbook section 5).",
+  "Return the betting card."
+ ],
+ "counts": {
+  "bettingEligibleGames": 0,
+  "eligibleMarketsTotal": 0,
+  "gamesTotal": 3,
+  "normalizedRegistryValidatedMarkets": 727,
+  "rawUniverseContracts": 727,
+  "registryExcludedMarkets": 0,
+  "researchOnlyByReason": {
+   "BLOCKED_GAME_STARTED": 2,
+   "BLOCKED_LINEUPS_UNCONFIRMED": 1
+  },
+  "researchOnlyGames": 3,
+  "researchOnlyMarketsTotal": 727,
+  "runtimeBundleMarketRows": 727,
+  "silentRemainderTotal": 0,
+  "unclassifiedRawContracts": 0
+ },
+ "date": "2026-09-21",
+ "eligibilityEvaluatedAt": "2026-09-21T23:09:45Z",
+ "eligibilityPolicy": "Only games that have NOT started and have BOTH official lineups confirmed (lineupConfirmedOfficial on awayTeamStats AND homeTeamStats) are real-money candidates. Probable/projected lineups are never treated as confirmed. Every other game stays archived and researchable and must not produce a real-money recommendation from the normal slate card.",
+ "executionConstants": {
+  "_note": "Projected verbatim from config/rules.json at build time. RULES.md and MODEL_CORE.md remain authoritative for everything else; this is the subset needed to size and threshold a wager without loading them.",
+  "_source": "config/rules.json",
+  "_sourceUpdated": "2026-06-07",
+  "_sourceVersion": "1.0",
+  "base_sizes": {
+   "High": 4.0,
+   "Medium": 3.0,
+   "Paper": 1.0,
+   "max_per_bet": 8.0,
+   "session_cap": 110.0
+  },
+  "calibration": {
+   "High": {
+    "factor": 0.187,
+    "min_n_to_update": 50,
+    "n_settled": 52,
+    "wr": 0.519
+   },
+   "Medium": {
+    "factor": 0.255,
+    "min_n_to_update": 50,
+    "n_settled": 76,
+    "wr": 0.658
+   },
+   "Paper": {
+    "factor": 0.18,
+    "min_n_to_update": 50,
+    "n_settled": 41,
+    "wr": 0.512
+   }
+  },
+  "edge_thresholds": {
+   "High": {
+    "min_calibrated_pct": 3.0
+   },
+   "Medium": {
+    "min_calibrated_pct": 1.5
+   },
+   "Paper": {
+    "min_calibrated_pct": 1.0
+   },
+   "f5Amplified": {
+    "condition": "xERAGap >= 1.5",
+    "min_calibrated_pct": 1.0
+   }
+  },
+  "multipliers": {
+   "F5_ML": {
+    "avg_clv": 2.31,
+    "n": 45,
+    "status": "ACTIVE",
+    "value": 1.5,
+    "wr": 0.56
+   },
+   "Game_Total": {
+    "avg_clv": -1.43,
+    "n": 32,
+    "status": "PAPER_ONLY",
+    "value": 0,
+    "wr": 0.41
+   },
+   "K_Prop": {
+    "avg_clv": null,
+    "n": 6,
+    "status": "ACTIVE",
+    "value": 1.5,
+    "wr": 0.67
+   },
+   "ML": {
+    "avg_clv": -1.58,
+    "n": 76,
+    "status": "NEUTRAL_negative_clv",
+    "value": 1.0,
+    "wr": 0.55
+   },
+   "NRFI": {
+    "avg_clv": null,
+    "n": 6,
+    "status": "NEUTRAL",
+    "value": 1.0,
+    "wr": 0.5
+   },
+   "Run_Line": {
+    "avg_clv": -4.09,
+    "n": 22,
+    "status": "SUSPENDED_paper_only",
+    "value": 0,
+    "wr": 0.36
+   },
+   "Team_Total": {
+    "avg_clv": null,
+    "n": 30,
+    "status": "ACTIVE",
+    "value": 1.25,
+    "wr": 0.57
+   },
+   "YRFI": {
+    "avg_clv": null,
+    "n": 13,
+    "status": "ACTIVE",
+    "value": 1.25,
+    "wr": 0.58
+   },
+   "starterXERA_signal": {
+    "n": 86,
+    "status": "ACTIVE",
+    "value": 1.25,
+    "wr": 0.58
+   },
+   "streak_signal": {
+    "n": 9,
+    "status": "PENALTY_max_wt_0.1",
+    "value": 0.5,
+    "wr": 0.33
+   },
+   "xERAGap_signal": {
+    "n": 14,
+    "status": "ACTIVE",
+    "value": 1.5,
+    "wr": 0.64
+   }
+  }
+ },
+ "games": [
+  {
+   "accounted": 285,
+   "bettingEligible": false,
+   "bundle": "data/handicap_runtime/2026-09-21/games/824787.json",
+   "bundleBytes": 77207,
+   "bundleGzip": "data/handicap_runtime/2026-09-21/games/824787.json.gz",
+   "bundleGzipBytes": 13975,
+   "eligibilityReason": "game has already started -- first-pitch timestamp has passed",
+   "eligibilityStatus": "BLOCKED_GAME_STARTED",
+   "excludedOrUnresolved": 0,
+   "gameId": 824787,
+   "gameStatus": "Warmup",
+   "invariantHolds": true,
+   "isPostponed": false,
+   "lineups": {
+    "away": {
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-09-21T23:07:21Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "TOR"
+    },
+    "bothConfirmed": true,
+    "home": {
+     "battersResolved": 8,
+     "lineupCheckedAt": "2026-09-21T23:07:21Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "BAL"
+    },
+    "unconfirmedSides": []
+   },
+   "marketsByFamily": {
+    "first_inning_run": 1,
+    "game_result": 2,
+    "game_total": 11,
+    "hitter_hits": 58,
+    "hitter_hits_runs_rbis": 76,
+    "hitter_rbis": 8,
+    "hitter_stolen_bases": 4,
+    "hitter_total_bases": 69,
+    "inning_result": 9,
+    "inning_total": 7,
+    "pitcher_outs": 1,
+    "pitcher_strikeouts": 15,
+    "team_total": 14,
+    "winning_margin": 10
+   },
+   "marketsToInspect": 285,
+   "matchup": "TOR@BAL",
+   "normalizedMarkets": 285,
+   "rawAttributableContracts": 285,
+   "realMoneyEligible": false,
+   "registryExcluded": 0,
+   "scheduledStart": "2026-09-21T22:35:00Z",
+   "silentRemainderCount": 0,
+   "started": true,
+   "unclassified": 0
+  },
+  {
+   "accounted": 341,
+   "bettingEligible": false,
+   "bundle": "data/handicap_runtime/2026-09-21/games/824221.json",
+   "bundleBytes": 81249,
+   "bundleGzip": "data/handicap_runtime/2026-09-21/games/824221.json.gz",
+   "bundleGzipBytes": 13752,
+   "eligibilityReason": "game has already started -- status is In Progress",
+   "eligibilityStatus": "BLOCKED_GAME_STARTED",
+   "excludedOrUnresolved": 0,
+   "gameId": 824221,
+   "gameStatus": "In Progress",
+   "invariantHolds": true,
+   "isPostponed": false,
+   "lineups": {
+    "away": {
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-09-21T23:07:21Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "WSH"
+    },
+    "bothConfirmed": true,
+    "home": {
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-09-21T23:07:21Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "DET"
+    },
+    "unconfirmedSides": []
+   },
+   "marketsByFamily": {
+    "first_inning_run": 1,
+    "game_result": 2,
+    "game_total": 11,
+    "hitter_hits": 55,
+    "hitter_hits_runs_rbis": 90,
+    "hitter_rbis": 38,
+    "hitter_stolen_bases": 17,
+    "hitter_total_bases": 71,
+    "inning_result": 9,
+    "inning_total": 7,
+    "pitcher_outs": 1,
+    "pitcher_strikeouts": 15,
+    "team_total": 14,
+    "winning_margin": 10
+   },
+   "marketsToInspect": 341,
+   "matchup": "WSH@DET",
+   "normalizedMarkets": 341,
+   "rawAttributableContracts": 341,
+   "realMoneyEligible": false,
+   "registryExcluded": 0,
+   "scheduledStart": "2026-09-21T22:40:00Z",
+   "silentRemainderCount": 0,
+   "started": true,
+   "unclassified": 0
+  },
+  {
+   "accounted": 101,
+   "bettingEligible": false,
+   "bundle": "data/handicap_runtime/2026-09-21/games/823169.json",
+   "bundleBytes": 47152,
+   "bundleGzip": "data/handicap_runtime/2026-09-21/games/823169.json.gz",
+   "bundleGzipBytes": 10792,
+   "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: home(SF): official lineup not posted yet",
+   "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
+   "excludedOrUnresolved": 0,
+   "gameId": 823169,
+   "gameStatus": "Pre-Game",
+   "invariantHolds": true,
+   "isPostponed": false,
+   "lineups": {
+    "away": {
+     "battersResolved": 8,
+     "lineupCheckedAt": "2026-09-21T23:07:21Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "MIN"
+    },
+    "bothConfirmed": false,
+    "home": {
+     "battersResolved": 0,
+     "lineupCheckedAt": "2026-09-21T23:07:21Z",
+     "lineupConfirmedOfficial": false,
+     "reason": "official lineup not posted yet",
+     "team": "SF"
+    },
+    "unconfirmedSides": [
+     "home"
+    ]
+   },
+   "marketsByFamily": {
+    "first_inning_run": 1,
+    "game_result": 2,
+    "game_total": 11,
+    "hitter_hits": 7,
+    "hitter_hits_runs_rbis": 10,
+    "hitter_rbis": 4,
+    "hitter_stolen_bases": 2,
+    "hitter_total_bases": 8,
+    "inning_result": 9,
+    "inning_total": 7,
+    "pitcher_outs": 2,
+    "pitcher_strikeouts": 14,
+    "team_total": 14,
+    "winning_margin": 10
+   },
+   "marketsToInspect": 101,
+   "matchup": "MIN@SF",
+   "normalizedMarkets": 101,
+   "rawAttributableContracts": 101,
+   "realMoneyEligible": false,
+   "registryExcluded": 0,
+   "scheduledStart": "2026-09-22T01:45:00Z",
+   "silentRemainderCount": 0,
+   "started": false,
+   "unclassified": 0
+  }
+ ],
+ "generatedAt": "2026-09-21T23:09:45Z",
+ "guarantees": [
+  "Only games that have NOT started and have BOTH official lineups confirmed appear under bettingEligibleGames. Everything else is researchOnly and carries realMoneyEligible=false on every market row.",
+  "For a betting-eligible game, EVERY raw Kalshi contract attributable to it is accounted for in exactly one visible state: a normalized market, a registry exclusion with its reason, or an unclassified contract with the normalizer's reason. contractAccounting.silentRemainderCount is 0 on every game of a written card -- a violation aborts the build rather than publishing a falsely complete file.",
+  "No probability, edge or recommendation is computed here, and no unsupported family is ever given a fabricated model probability.",
+  "Markets without automatic settlement support are surfaced, not hidden -- they need manual reconciliation after the game.",
+  "bankroll.sizingAllowed says the PRIVATE WORKFLOW that built this card held a fresh authenticated balance. It does NOT mean the reader of this file knows the amount. Dollar stake sizing requires bankroll.numericBankrollAvailable to ALSO be true -- see bankroll.consumerSizingVerdict."
+ ],
+ "playbookVersion": "1.2.0",
+ "provenance": {
+  "derivation": "A lossless projection of the canonical handicapping card. This layer runs no market discovery, no normalisation, no registry and no eligibility logic of its own.",
+  "rawUniverseSnapshot": "data/kalshi_registry_snapshots/kalshi_search_2026-09-21_2023.json",
+  "slateSource": "data/slate.json",
+  "sourceArtifact": "data/handicapping_card/2026-09-21.json",
+  "sourceArtifactType": "REAL_MONEY_HANDICAPPING_CARD"
+ },
+ "root": "data/handicap_runtime/2026-09-21",
+ "schemaVersion": "1"
+}

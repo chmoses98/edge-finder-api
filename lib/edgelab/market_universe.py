@@ -46,6 +46,10 @@ from lib.kalshi_mlb_single_game_registry import (
 from lib.research.market_taxonomy import classify_market
 
 SNAPSHOT_DIR = os.path.join("data", "kalshi_registry_snapshots")
+
+# The scope api/kalshisearch.js uses for its unfiltered exchange-wide pass,
+# which carries no series_ticker to name in a failure record.
+BROAD_DISCOVERY_SCOPE = "__broad_discovery__"
 PIPELINE_DIR = os.path.join("data", "pipeline")
 
 _OPERATOR_MAP = {"greater_than": "OVER", "equals": "YES", "at_least": "AT_LEAST"}
@@ -216,6 +220,62 @@ def _extract_captured_at(snapshot: dict, raw_market: dict, snapshot_path: str):
         or snapshot.get("fetched_at")
         or ids.utc_now_iso()
     )
+
+
+def snapshot_fetch_completeness(snapshot):
+    """
+    Pure. Did the capture that produced this snapshot fetch everything it
+    set out to fetch?
+
+    api/kalshisearch.js already records this on every snapshot it writes:
+    `fetchFailures` (one entry per aborted page loop, carrying the URL and
+    the HTTP status), `fetchFailureCount`, and `priceFetchFailureCount`.
+    Nothing had ever read them, so a capture that got three of seventeen
+    series was ingested and reported a clean success, indistinguishable
+    from a complete one.
+
+    It matters which series failed, not just how many. `fetchAllPages`
+    breaks out of its page loop on a non-ok response and the series are
+    fetched sequentially, so a rate limit truncates whichever series come
+    LAST -- consistently the high-volume hitter prop families. The loss is
+    systematic, so the families it biases have to be nameable downstream.
+
+    Returns {"isComplete", "fetchFailureCount", "priceFetchFailureCount",
+             "failedSeries", "failures"}.
+    """
+    failures = list(snapshot.get("fetchFailures") or [])
+    failed_series = []
+    for failure in failures:
+        url = failure.get("url") or ""
+        if "series_ticker=" in url:
+            failed_series.append(url.split("series_ticker=")[-1].split("&")[0])
+        else:
+            failed_series.append(BROAD_DISCOVERY_SCOPE)
+
+    # The count is authoritative even if the detail list is absent: a
+    # snapshot claiming failures with no detail is still incomplete.
+    count = snapshot.get("fetchFailureCount")
+    if count is None:
+        count = len(failures)
+    return {
+        "isComplete": not count and not failures,
+        "fetchFailureCount": count,
+        "priceFetchFailureCount": snapshot.get("priceFetchFailureCount") or 0,
+        "failedSeries": sorted(set(failed_series)),
+        "failures": failures,
+    }
+
+
+def read_snapshot_fetch_completeness(snapshot_path):
+    """snapshot_fetch_completeness for a path. An unreadable snapshot is
+    never reported complete -- absence of evidence is not evidence."""
+    try:
+        with open(snapshot_path) as fh:
+            return snapshot_fetch_completeness(json.load(fh))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"isComplete": False, "fetchFailureCount": None,
+                "priceFetchFailureCount": 0, "failedSeries": [],
+                "failures": [{"error": "snapshot unreadable: %s" % exc}]}
 
 
 def build_observations_from_snapshot(

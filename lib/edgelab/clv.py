@@ -46,6 +46,7 @@ reimplemented.
 from lib.edgelab import ids
 from lib.edgelab import SCHEMA_VERSION
 from lib.edgelab import clv_convention
+from lib.edgelab import checkpoints
 from lib.edgelab.checkpoints import classify_checkpoint, select_closing_quote
 from scripts.clv_from_snapshot import implied_to_american
 
@@ -101,6 +102,13 @@ def project_observations_to_clv_quotes(observations, placed_bet_tickers, run_id)
                 "noBid": obs.get("noBid"),
                 "noAsk": obs.get("noAsk"),
                 "lastPrice": obs.get("lastPrice"),
+                # The market's own scheduled start, carried so closing-quote
+                # coverage (distance from start) is computable from the quote
+                # ALONE -- without it every consumer had to re-join back to
+                # the observations partition, and none of them did, which is
+                # how a 14-hour-old FIRST_DAILY quote came to be reported as
+                # closing-line value. See docs/EDGELAB_CLOSING_QUOTE_POLICY.md.
+                "scheduledStart": scheduled_start,
                 # The unit the four price fields above are denominated in,
                 # carried EXPLICITLY so no consumer has to guess (the 100x
                 # CLV defect -- see _executable_closing_implied). A
@@ -173,7 +181,7 @@ def _executable_closing_implied(closing_quote, side):
     return clv_convention.convert(price, unit, clv_convention.UNIT_PROBABILITY)
 
 
-def compute_clv_for_bet(bet, clv_quotes_for_ticker):
+def compute_clv_for_bet(bet, clv_quotes_for_ticker, scheduled_start=None):
     """
     Returns a dict: either the full CLV computation, or
     {"clvStatus": "UNAVAILABLE", "unavailableReason": "..."} -- never a
@@ -188,6 +196,36 @@ def compute_clv_for_bet(bet, clv_quotes_for_ticker):
     if closing_quote is None:
         return {"clvStatus": "UNAVAILABLE", "unavailableReason": "NO_VALID_PRE_CLOSE_QUOTE"}
 
+    # Coverage verdict for the selected quote. Selection itself is unchanged
+    # (finalize_closing_quotes already picked the latest valid pre-start quote
+    # by timestamp); this states how close to the start that quote actually
+    # was, so a caller can never again treat "a quote exists" as "closing-line
+    # evidence exists". Derived from the quote's OWN recorded scheduledStart
+    # where present; when absent (archived rows written before that field
+    # existed) the distance is simply unknown and is reported as such rather
+    # than assumed favourable.
+    start_used = scheduled_start or closing_quote.get("scheduledStart")
+    seconds_to_start = checkpoints.seconds_before_start(closing_quote.get("capturedAt"), start_used)
+    coverage_class = (
+        checkpoints.classify_closing_coverage(seconds_to_start)
+        if seconds_to_start is not None else None
+    )
+    coverage = {
+        "closingCoverageClass": coverage_class,
+        "closingSecondsBeforeStart": seconds_to_start,
+        "closingCheckpoint": closing_quote.get("checkpoint"),
+        "closingCapturedAt": closing_quote.get("capturedAt"),
+        "closingScheduledStart": start_used,
+    }
+
+    # A post-start quote must never score CLV. finalize_closing_quotes should
+    # already have excluded it, so reaching here means the stored isClosingQuote
+    # flag disagrees with the timestamps -- fail closed rather than trust a flag
+    # over the evidence that produced it.
+    if seconds_to_start is not None and seconds_to_start < 0:
+        return dict(coverage, clvStatus="UNAVAILABLE",
+                    unavailableReason="CLOSING_QUOTE_IS_POST_START")
+
     side = bet.get("side") or "YES"
     # An undeclared price unit is reported as its OWN reason, never folded
     # into "missing executable price": the two demand different remedies
@@ -197,10 +235,12 @@ def compute_clv_for_bet(bet, clv_quotes_for_ticker):
     if closing_quote.get("priceUnit") not in (
         clv_convention.UNIT_CENTS, clv_convention.UNIT_PROBABILITY,
     ):
-        return {"clvStatus": "UNAVAILABLE", "unavailableReason": "CLOSING_QUOTE_PRICE_UNIT_UNDECLARED"}
+        return dict(coverage, clvStatus="UNAVAILABLE",
+                    unavailableReason="CLOSING_QUOTE_PRICE_UNIT_UNDECLARED")
     closing_implied = _executable_closing_implied(closing_quote, side)
     if closing_implied is None:
-        return {"clvStatus": "UNAVAILABLE", "unavailableReason": "CLOSING_QUOTE_MISSING_EXECUTABLE_PRICE"}
+        return dict(coverage, clvStatus="UNAVAILABLE",
+                    unavailableReason="CLOSING_QUOTE_MISSING_EXECUTABLE_PRICE")
 
     entry_implied = bet["entryPrice"]
     # CANONICAL: closing - entry, positive is good. Delegated to the single
@@ -209,7 +249,7 @@ def compute_clv_for_bet(bet, clv_quotes_for_ticker):
         entry_implied, closing_implied,
         unit=clv_convention.UNIT_PERCENTAGE_POINTS), 2)
 
-    return {
+    return dict(coverage, **{
         "clvStatus": "VALID",
         "clvQuoteId": closing_quote["clvQuoteId"],
         "clvCents": clv_cents,
@@ -219,4 +259,4 @@ def compute_clv_for_bet(bet, clv_quotes_for_ticker):
         "entryAmericanOdds": implied_to_american(entry_implied),
         "closingAmericanOdds": implied_to_american(closing_implied),
         "clvConvention": clv_convention.CONVENTION_ID,
-    }
+    })

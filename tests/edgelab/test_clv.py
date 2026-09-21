@@ -318,3 +318,90 @@ def test_unrecognised_price_unit_is_rejected_not_coerced():
     result = compute_clv_for_bet({"entryPrice": 0.72, "side": "NO"}, [closing_quote])
     assert result["clvStatus"] == "UNAVAILABLE"
     assert result["unavailableReason"] == "CLOSING_QUOTE_PRICE_UNIT_UNDECLARED"
+
+
+# ---------------------------------------------------------------------------
+# Regression: FIRST_DAILY must never silently masquerade as closing-line
+# evidence.
+#
+# 57 of 94 recent CLV rows were scored against a FIRST_DAILY quote sitting a
+# median 863 minutes -- 14.4 hours -- before first pitch, and reported as
+# "Average CLV" without qualification. Selection was never wrong (the latest
+# valid pre-start quote IS the right choice when it is the only one); what was
+# missing was any statement of how far from the close that quote actually was.
+# See docs/EDGELAB_CLOSING_QUOTE_POLICY.md.
+# ---------------------------------------------------------------------------
+
+_PROB_QUOTE = {
+    "clvQuoteId": "c", "isClosingQuote": True, "priceUnit": "PROBABILITY",
+    "yesBid": 0.34, "yesAsk": 0.37, "noBid": 0.63, "noAsk": 0.66,
+}
+_START = "2026-09-20T17:40:00Z"
+
+
+def _closing(captured_at, checkpoint="FIRST_DAILY"):
+    return dict(_PROB_QUOTE, capturedAt=captured_at, scheduledStart=_START, checkpoint=checkpoint)
+
+
+def test_stale_first_daily_close_is_classified_pre_close_not_true_close():
+    """The live defect vector: captured 08:11, game starts 17:40."""
+    result = compute_clv_for_bet({"entryPrice": 0.72, "side": "NO"},
+                                 [_closing("2026-09-20T08:11:00Z")])
+    assert result["clvStatus"] == "VALID"          # still computed
+    assert result["closingCoverageClass"] == "PRE_CLOSE"
+    assert result["closingSecondsBeforeStart"] == 34140.0
+    assert result["closingCheckpoint"] == "FIRST_DAILY"
+
+
+def test_first_daily_near_start_is_true_close_label_does_not_decide():
+    """Coverage is decided by the clock, never by the provenance label."""
+    result = compute_clv_for_bet({"entryPrice": 0.72, "side": "NO"},
+                                 [_closing("2026-09-20T17:20:00Z", checkpoint="FIRST_DAILY")])
+    assert result["closingCoverageClass"] == "TRUE_CLOSE"
+    assert result["closingSecondsBeforeStart"] == 1200.0
+    assert result["closingCheckpoint"] == "FIRST_DAILY"
+
+
+def test_t_minus_90_label_far_from_start_is_still_pre_close():
+    """The mirror case: a near-close-sounding label on a stale quote."""
+    result = compute_clv_for_bet({"entryPrice": 0.72, "side": "NO"},
+                                 [_closing("2026-09-20T03:00:00Z", checkpoint="T_MINUS_90")])
+    assert result["closingCoverageClass"] == "PRE_CLOSE"
+
+
+def test_exactly_at_threshold_is_true_close():
+    result = compute_clv_for_bet({"entryPrice": 0.72, "side": "NO"},
+                                 [_closing("2026-09-20T17:10:00Z")])
+    assert result["closingSecondsBeforeStart"] == 1800.0
+    assert result["closingCoverageClass"] == "TRUE_CLOSE"
+
+
+def test_one_second_past_threshold_is_pre_close():
+    result = compute_clv_for_bet({"entryPrice": 0.72, "side": "NO"},
+                                 [_closing("2026-09-20T17:09:59Z")])
+    assert result["closingSecondsBeforeStart"] == 1801.0
+    assert result["closingCoverageClass"] == "PRE_CLOSE"
+
+
+def test_post_start_quote_never_scores_clv_even_if_flagged_closing():
+    """A stored isClosingQuote flag never outranks the timestamps."""
+    result = compute_clv_for_bet({"entryPrice": 0.72, "side": "NO"},
+                                 [_closing("2026-09-20T18:00:00Z")])
+    assert result["clvStatus"] == "UNAVAILABLE"
+    assert result["unavailableReason"] == "CLOSING_QUOTE_IS_POST_START"
+    assert "clvCents" not in result
+
+
+def test_unknown_start_reports_unknown_distance_rather_than_assuming_closeness():
+    quote = dict(_PROB_QUOTE, capturedAt="2026-09-20T08:11:00Z", checkpoint="FIRST_DAILY")
+    result = compute_clv_for_bet({"entryPrice": 0.72, "side": "NO"}, [quote])
+    assert result["clvStatus"] == "VALID"
+    assert result["closingCoverageClass"] is None
+    assert result["closingSecondsBeforeStart"] is None
+
+
+def test_produced_quotes_carry_scheduled_start_for_coverage():
+    quotes = project_observations_to_clv_quotes(
+        [_obs("T", "2026-07-31T12:00:00Z", 0.34, 0.37)], {"T": "bet-1"}, run_id="r1",
+    )
+    assert all(q["scheduledStart"] == "2026-07-31T22:10:00Z" for q in quotes)

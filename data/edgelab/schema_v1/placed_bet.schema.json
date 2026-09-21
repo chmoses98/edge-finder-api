@@ -57,7 +57,7 @@
         "string",
         "null"
       ],
-      "description": "Exact Kalshi contract ticker \u2014 required so CLV can poll the exact market. Null ONLY for a wagerStructure=MULTI_LEG parent, which is one economic position spanning several contracts and therefore has no single ticker; its per-contract tickers live on legs[].marketTicker. See requiredUnless below."
+      "description": "Exact Kalshi contract ticker — required so CLV can poll the exact market. Null ONLY for a wagerStructure=MULTI_LEG parent, which is one economic position spanning several contracts and therefore has no single ticker; its per-contract tickers live on legs[].marketTicker. See requiredUnless below."
     },
     "eventTicker": {
       "type": [
@@ -121,7 +121,7 @@
         "number",
         "null"
       ],
-      "description": "0-1 implied probability / Kalshi cents-as-fraction, the executed price. Null ONLY for a wagerStructure=MULTI_LEG parent whose combined executed price is not known from evidence (Kalshi's combo card does not always show one) \u2014 never guessed from the legs, which would fabricate a price. See requiredUnless below."
+      "description": "0-1 implied probability / Kalshi cents-as-fraction, the executed price. Null ONLY for a wagerStructure=MULTI_LEG parent whose combined executed price is not known from evidence (Kalshi's combo card does not always show one) — never guessed from the legs, which would fabricate a price. See requiredUnless below."
     },
     "entryOdds": {
       "type": [
@@ -599,7 +599,7 @@
         "string",
         "null"
       ],
-      "description": "DEPRECATED \u2014 a single legacy correlation group. New writes should use correlationGroups (plural, array) instead; kept for backward compatibility with existing rows, never removed (additive-only schema policy)."
+      "description": "DEPRECATED — a single legacy correlation group. New writes should use correlationGroups (plural, array) instead; kept for backward compatibility with existing rows, never removed (additive-only schema policy)."
     },
     "correlationGroups": {
       "type": "array",
@@ -619,14 +619,14 @@
         "REAL_PROBE",
         null
       ],
-      "description": "Whether this bet counts toward real bankroll \u2014 see lib/tracking_type.py. Preserved distinctly from status/result so aggregate P/L never silently mixes paper and real stakes."
+      "description": "Whether this bet counts toward real bankroll — see lib/tracking_type.py. Preserved distinctly from status/result so aggregate P/L never silently mixes paper and real stakes."
     },
     "thesisTags": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "Controlled vocabulary \u2014 see data/edgelab/schema_v1/tags.json. Zero or more."
+      "description": "Controlled vocabulary — see data/edgelab/schema_v1/tags.json. Zero or more."
     },
     "rationale": {
       "type": [
@@ -963,7 +963,7 @@
         "MULTI_LEG",
         null
       ],
-      "description": "Shape of this wager. Absent/null and \"SINGLE\" both mean an ordinary one-contract wager \u2014 every pre-existing row is therefore already correct without migration. \"MULTI_LEG\" means one user-placed combo/parlay: ONE economic position (one stake, one payout, one result) spanning the contracts in legs[]. Legs are embedded here rather than written as their own PlacedBet rows precisely so that bankroll, ROI, P/L and every report count the position exactly once and a leg can never independently contribute stake or profit."
+      "description": "Shape of this wager. Absent/null and \"SINGLE\" both mean an ordinary one-contract wager — every pre-existing row is therefore already correct without migration. \"MULTI_LEG\" means one user-placed combo/parlay: ONE economic position (one stake, one payout, one result) spanning the contracts in legs[]. Legs are embedded here rather than written as their own PlacedBet rows precisely so that bankroll, ROI, P/L and every report count the position exactly once and a leg can never independently contribute stake or profit."
     },
     "legs": {
       "type": "array",
@@ -1055,7 +1055,7 @@
               "VOID",
               null
             ],
-            "description": "Per-leg outcome when the user's own evidence records one. Reporting/context only: it is NEVER aggregated into P/L, bankroll or ROI, and it never settles the parent \u2014 the parent's own result/confirmedReceipt* fields are the only economics."
+            "description": "Per-leg outcome when the user's own evidence records one. Reporting/context only: it is NEVER aggregated into P/L, bankroll or ROI, and it never settles the parent — the parent's own result/confirmedReceipt* fields are the only economics."
           }
         }
       },
@@ -1071,7 +1071,7 @@
         "LEGACY_ENTRY_MINUS_CLOSING",
         null
       ],
-      "description": "Which CLV sign convention this row's `clv` is expressed in \u2014 lib.edgelab.clv_convention.CONVENTION_ID for anything written after the sign migration. Written by scripts/edgelab/collect_clv.py and scripts/edgelab/migrate_clv_sign.py; see docs/EDGELAB_CLV_SIGN_AUDIT.md. Declared here because those writers already emit it on real rows: it was added to the data by the migration but never to this schema, so every CLV-bearing row failed its own additionalProperties contract."
+      "description": "Which CLV sign convention this row's `clv` is expressed in — lib.edgelab.clv_convention.CONVENTION_ID for anything written after the sign migration. Written by scripts/edgelab/collect_clv.py and scripts/edgelab/migrate_clv_sign.py; see docs/EDGELAB_CLV_SIGN_AUDIT.md. Declared here because those writers already emit it on real rows: it was added to the data by the migration but never to this schema, so every CLV-bearing row failed its own additionalProperties contract."
     },
     "clvUnit": {
       "type": [
@@ -1084,7 +1084,7 @@
         "PERCENTAGE_POINTS",
         null
       ],
-      "description": "Unit of this row's `clv` value \u2014 lib.edgelab.clv_convention's UNIT_* constants. Always written alongside clvConvention so a bare number's scale is never guessed."
+      "description": "Unit of this row's `clv` value — lib.edgelab.clv_convention's UNIT_* constants. Always written alongside clvConvention so a bare number's scale is never guessed."
     },
     "sideResolutionBasis": {
       "type": [
@@ -1132,6 +1132,33 @@
         null
       ],
       "description": "WAVE 1 subwave A. Which KIND of side refusal: MISSING_EVIDENCE (nothing recorded), CONTRADICTION (two proven facts disagree), DEFERRED (player props under issue #43, multi-market combos)."
+    },
+    "closingCoverageClass": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "TRUE_CLOSE",
+        "PRE_CLOSE",
+        "NO_VALID_PRESTART_QUOTE",
+        null
+      ],
+      "description": "Quality of the closing quote this row's `clv` was scored against — lib.edgelab.checkpoints' COVERAGE_* constants. TRUE_CLOSE means the latest valid executable pre-start quote was captured within the near-close threshold (30 minutes, the coarsest scheduled capture cadence). PRE_CLOSE means it was a valid pre-start quote but older than that, so it is NOT closing-line evidence and must never feed a headline average. null means the row predates coverage tracking and its distance from start is unknown — also excluded from headlines, because unknown is not evidence. See docs/EDGELAB_CLOSING_QUOTE_POLICY.md."
+    },
+    "closingSecondsBeforeStart": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Seconds between the closing quote's capturedAt and the market's scheduled start. Always stored so the coverage threshold stays a reporting convention rather than a lossy bucket: a consumer wanting a 5- or 15-minute definition can re-bucket from this without recomputation. Never negative — a post-start quote cannot score CLV."
+    },
+    "closingCheckpoint": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Provenance label of the closing quote (FIRST_DAILY, T_MINUS_15, ...). DESCRIPTIVE ONLY: it never influences selection and never determines coverage class. A FIRST_DAILY quote 10 minutes before start is TRUE_CLOSE; a T_MINUS_90 label 14 hours out is still PRE_CLOSE. Only timestamps decide."
     }
   },
   "additionalProperties": false,

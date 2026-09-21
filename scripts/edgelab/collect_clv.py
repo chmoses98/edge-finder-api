@@ -137,6 +137,12 @@ def main():
                 updated_bet["clv"] = result["clvCents"]
                 updated_bet["closingPrice"] = result["closingImpliedProbability"]
                 updated_bet["clvQuoteId"] = result["clvQuoteId"]
+                # Coverage quality travels WITH the number, so no downstream
+                # report can aggregate a 14-hour-old quote as closing-line
+                # value. See docs/EDGELAB_CLOSING_QUOTE_POLICY.md.
+                updated_bet["closingCoverageClass"] = result.get("closingCoverageClass")
+                updated_bet["closingSecondsBeforeStart"] = result.get("closingSecondsBeforeStart")
+                updated_bet["closingCheckpoint"] = result.get("closingCheckpoint")
                 updated_bet.update(_CLV_MARKER)
                 updated_bet["updatedAt"] = ids.utc_now_iso()
                 clv_computed += 1
@@ -197,6 +203,12 @@ def main():
             updated_bet["clv"] = result["clvCents"]
             updated_bet["closingPrice"] = result["closingImpliedProbability"]
             updated_bet["clvQuoteId"] = result["clvQuoteId"]
+                # Coverage quality travels WITH the number, so no downstream
+            # report can aggregate a 14-hour-old quote as closing-line
+            # value. See docs/EDGELAB_CLOSING_QUOTE_POLICY.md.
+            updated_bet["closingCoverageClass"] = result.get("closingCoverageClass")
+            updated_bet["closingSecondsBeforeStart"] = result.get("closingSecondsBeforeStart")
+            updated_bet["closingCheckpoint"] = result.get("closingCheckpoint")
             updated_bet.update(_CLV_MARKER)
             updated_bet["updatedAt"] = ids.utc_now_iso()
             bet_updates.append(updated_bet)

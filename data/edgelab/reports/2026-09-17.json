@@ -2,11 +2,26 @@
   "apiErrors": [],
   "closingQuotesCaptured": 1714,
   "clvSummary": {
-    "avgClvCents": -45.55,
+    "avgClvCents": -0.5,
+    "avgClvCentsAllCoverageIncludingStale": -1.0,
     "betsTotal": 8,
     "betsWithClv": 7,
-    "negativeClvCount": 7,
-    "positiveClvCount": 0
+    "clvEligibleCount": 2,
+    "coverageClassCounts": {
+      "PRE_CLOSE": 5,
+      "TRUE_CLOSE": 2
+    },
+    "headlineCoverageClasses": [
+      "TRUE_CLOSE"
+    ],
+    "medianSecondsBeforeStart": 39153.1,
+    "negativeClvCount": 1,
+    "noValidPrestartQuoteCount": 0,
+    "p90SecondsBeforeStart": 55353.1,
+    "positiveClvCount": 0,
+    "preCloseOnlyCount": 5,
+    "trueCloseCount": 2,
+    "unclassifiedCount": 0
   },
   "dataQualityWarnings": [
     "no kalshi_registry_snapshots file found for 2026-09-17",
@@ -56,11 +71,14 @@
     "settlement REFUSED for betId=f4b9f2d6638079ab0c00d0cd597932d5c4878eab ticker=KXMLBF5-26SEP171915PHINYM-NYM: SETTLEMENT_CONTRADICTED_SETTLEMENT_GAME_IS_NOT_THE_WAGERS_GAME (CONTRADICTION) -- the market settled, but this wager's purchased side is not proven, so it was left ungraded rather than defaulted",
     "settlement REFUSED for betId=2378a0c45d7da211d2c84fc9c188c6b0427b3d76 ticker=KXMLBTEAMTOTAL-26SEP171940DETCWS-DET5: SETTLEMENT_CONTRADICTED_SETTLEMENT_GAME_IS_NOT_THE_WAGERS_GAME (CONTRADICTION) -- the market settled, but this wager's purchased side is not proven, so it was left ungraded rather than defaulted",
     "settlement REFUSED for betId=8e7b4739ccabc76d5dda2282b293586e21658e47 ticker=KXMLBF5-26SEP172005BOSTEX-TEX: SETTLEMENT_CONTRADICTED_SETTLEMENT_GAME_IS_NOT_THE_WAGERS_GAME (CONTRADICTION) -- the market settled, but this wager's purchased side is not proven, so it was left ungraded rather than defaulted",
+    "settlement REFUSED for betId=f4b9f2d6638079ab0c00d0cd597932d5c4878eab ticker=KXMLBF5-26SEP171915PHINYM-NYM: SETTLEMENT_CONTRADICTED_SETTLEMENT_GAME_IS_NOT_THE_WAGERS_GAME (CONTRADICTION) -- the market settled, but this wager's purchased side is not proven, so it was left ungraded rather than defaulted",
+    "settlement REFUSED for betId=2378a0c45d7da211d2c84fc9c188c6b0427b3d76 ticker=KXMLBTEAMTOTAL-26SEP171940DETCWS-DET5: SETTLEMENT_CONTRADICTED_SETTLEMENT_GAME_IS_NOT_THE_WAGERS_GAME (CONTRADICTION) -- the market settled, but this wager's purchased side is not proven, so it was left ungraded rather than defaulted",
+    "settlement REFUSED for betId=8e7b4739ccabc76d5dda2282b293586e21658e47 ticker=KXMLBF5-26SEP172005BOSTEX-TEX: SETTLEMENT_CONTRADICTED_SETTLEMENT_GAME_IS_NOT_THE_WAGERS_GAME (CONTRADICTION) -- the market settled, but this wager's purchased side is not proven, so it was left ungraded rather than defaulted",
     "settlement REFUSED for betId=f4b9f2d6638079ab0c00d0cd597932d5c4878eab ticker=KXMLBF5-26SEP171915PHINYM-NYM: SETTLEMENT_CONTRADICTED_SETTLEMENT_GAME_IS_NOT_THE_WAGERS_GAME (CONTRADICTION) -- the market settled, but this wager's purchased side is not proven, so it was left ungraded rather than defaulted"
   ],
   "date": "2026-09-17",
   "gamesObserved": 7,
-  "generatedAt": "2026-09-21T03:57:55Z",
+  "generatedAt": "2026-09-21T06:14:02Z",
   "insufficientModelSupportCount": 2293,
   "marketFamilyCounts": {
     "first_inning_run": 18,
@@ -80,7 +98,7 @@
   },
   "marketsObserved": 2641,
   "newUnclassifiedSeriesWarnings": [],
-  "notEvaluatedCount": 305,
+  "notEvaluatedCount": 300,
   "passCountsByReason": {
     "PASS_DATA_QUALITY": 40,
     "PASS_NO_EDGE": 50
@@ -92,7 +110,7 @@
   },
   "quotesCaptured": 6186,
   "realWagerCount": 5,
-  "recommendedBets": 9,
+  "recommendedBets": 14,
   "schemaVersion": "1",
   "settlementCompletion": {
     "marketsObserved": 2641,

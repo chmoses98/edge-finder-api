@@ -89,9 +89,19 @@ def test_clv_summary_ignores_bets_without_clv():
     clv = report["clvSummary"]
     assert clv["betsTotal"] == 3
     assert clv["betsWithClv"] == 2
-    assert clv["avgClvCents"] == 0.75  # (2.5 + -1.0) / 2
-    assert clv["positiveClvCount"] == 1
-    assert clv["negativeClvCount"] == 1
+    # These sample rows carry a clv value but NO closingCoverageClass, so they
+    # predate coverage tracking and their distance from first pitch is unknown.
+    # Unknown is not closing-line evidence, so the headline excludes them and
+    # they surface as UNCLASSIFIED. The raw mean is still reported, but only as
+    # an explicitly-named diagnostic. Previously this asserted 0.75 as
+    # "Average CLV", which is exactly the unqualified claim that let a
+    # 14-hour-old quote be reported as closing-line value.
+    assert clv["avgClvCents"] is None
+    assert clv["clvEligibleCount"] == 0
+    assert clv["unclassifiedCount"] == 2
+    assert clv["avgClvCentsAllCoverageIncludingStale"] == 0.75  # (2.5 + -1.0) / 2
+    assert clv["positiveClvCount"] == 0
+    assert clv["negativeClvCount"] == 0
 
 
 def test_settlement_completion_and_unresolved_reasons():
@@ -223,7 +233,16 @@ def test_postmortem_gross_return_and_clv():
     assert by_id["b1"]["grossReturn"] == 20.0  # stake 10 + netProfitLoss 10
     assert by_id["b2"]["grossReturn"] == 0.0  # a loss returns nothing
     assert by_id["b3"]["grossReturn"] is None  # still pending
-    assert report["avgClvCents"] == 0.5  # (2.0 + -1.0) / 2, b3/b4 have no clv
+    # These fixtures carry a clv value but no closingCoverageClass, so their
+    # distance from first pitch is unknown and they are NOT closing-line
+    # evidence. The headline excludes them; the raw mean survives only as an
+    # explicitly-named diagnostic. Previously this asserted 0.5 as
+    # "avgClvCents" -- the same unqualified claim that let a 14-hour-old
+    # quote be reported as closing-line value.
+    assert report["avgClvCents"] is None
+    assert report["clvCoverage"]["clvEligibleCount"] == 0
+    assert report["clvCoverage"]["unclassifiedCount"] == 2
+    assert report["clvCoverage"]["avgClvCentsAllCoverageIncludingStale"] == 0.5
 
 
 def test_postmortem_model_supported_vs_manual():
@@ -832,3 +851,87 @@ def test_real_wager_count_does_not_absorb_paper_or_model_rows():
     assert report["placedBets"] == 3
     assert report["realWagerCount"] == 1
     assert report["placedBetsByTrackingType"] == {"REAL": 1, "PAPER": 1, "MODEL_ONLY": 1}
+
+
+# ---------------------------------------------------------------------------
+# Regression: a report must never headline CLV that is not closing-line
+# evidence. See docs/EDGELAB_CLOSING_QUOTE_POLICY.md.
+# ---------------------------------------------------------------------------
+
+def _clv_bet(bet_id, clv, coverage, seconds=None):
+    return {"betId": bet_id, "gameDate": DATE, "trackingType": "REAL", "clv": clv,
+            "closingCoverageClass": coverage, "closingSecondsBeforeStart": seconds}
+
+
+def _clv_daily_report_with(bets):
+    games, markets, observations, recommendations, clv_quotes, settlements, _, research_runs = _sample_inputs()
+    return build_daily_report(DATE, games, markets, observations, recommendations,
+                              clv_quotes, settlements, bets, research_runs)
+
+
+def test_headline_clv_uses_true_close_rows_only():
+    report = _clv_daily_report_with([
+        _clv_bet("a", 4.0, "TRUE_CLOSE", 600),
+        _clv_bet("b", 2.0, "TRUE_CLOSE", 1200),
+        _clv_bet("c", -60.0, "PRE_CLOSE", 34140),   # the stale-quote shape
+    ])
+    clv = report["clvSummary"]
+    assert clv["avgClvCents"] == 3.0            # (4 + 2) / 2 -- the -60 is excluded
+    assert clv["clvEligibleCount"] == 2
+    assert clv["trueCloseCount"] == 2
+    assert clv["preCloseOnlyCount"] == 1
+    assert clv["positiveClvCount"] == 2 and clv["negativeClvCount"] == 0
+    # ...and the stale value is still visible, just never as the headline.
+    assert clv["avgClvCentsAllCoverageIncludingStale"] == -18.0
+
+
+def test_all_pre_close_yields_no_headline_clv_rather_than_a_misleading_number():
+    report = _clv_daily_report_with([
+        _clv_bet("a", -59.0, "PRE_CLOSE", 34140),
+        _clv_bet("b", -61.0, "PRE_CLOSE", 50000),
+    ])
+    clv = report["clvSummary"]
+    assert clv["avgClvCents"] is None
+    assert clv["clvEligibleCount"] == 0
+    assert clv["preCloseOnlyCount"] == 2
+    assert clv["avgClvCentsAllCoverageIncludingStale"] == -60.0
+
+
+def test_markdown_labels_headline_as_true_close_only_and_flags_the_diagnostic():
+    markdown = render_markdown(_clv_daily_report_with([
+        _clv_bet("a", 4.0, "TRUE_CLOSE", 600),
+        _clv_bet("b", -60.0, "PRE_CLOSE", 34140),
+    ]))
+    assert "Average CLV (cents), TRUE_CLOSE only: 4.0" in markdown
+    assert "PRE_CLOSE only: 1" in markdown
+    assert "NOT closing-line value" in markdown
+
+
+def test_quote_age_distribution_is_reported():
+    report = _clv_daily_report_with([
+        _clv_bet("a", 1.0, "TRUE_CLOSE", 600),
+        _clv_bet("b", 1.0, "PRE_CLOSE", 3600),
+        _clv_bet("c", 1.0, "PRE_CLOSE", 34140),
+    ])
+    clv = report["clvSummary"]
+    assert clv["medianSecondsBeforeStart"] == 3600
+    assert clv["p90SecondsBeforeStart"] == 34140
+
+
+def test_postmortem_headline_clv_is_true_close_only():
+    """The postmortem headline is gated exactly like the daily report's."""
+    bets = [
+        {"betId": "t1", "gameDate": "2026-08-01", "trackingType": "REAL", "status": "settled",
+         "result": "WIN", "stake": 10.0, "netProfitLoss": 5.0, "clv": 3.0,
+         "closingCoverageClass": "TRUE_CLOSE", "closingSecondsBeforeStart": 600},
+        {"betId": "t2", "gameDate": "2026-08-01", "trackingType": "REAL", "status": "settled",
+         "result": "LOSS", "stake": 10.0, "netProfitLoss": -10.0, "clv": -59.0,
+         "closingCoverageClass": "PRE_CLOSE", "closingSecondsBeforeStart": 34140},
+    ]
+    report = build_postmortem("2026-08-01", bets)
+    assert report["avgClvCents"] == 3.0            # the -59 stale row is excluded
+    assert report["clvCoverage"]["preCloseOnlyCount"] == 1
+    assert report["clvCoverage"]["avgClvCentsAllCoverageIncludingStale"] == -28.0
+    markdown = render_postmortem_markdown(report)
+    assert "TRUE_CLOSE only: 3.0" in markdown
+    assert "not closing-line evidence" in markdown

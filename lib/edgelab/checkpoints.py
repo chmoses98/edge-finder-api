@@ -81,6 +81,110 @@ def classify_checkpoint(
     return best_label or "INTERMEDIATE"
 
 
+# ---------------------------------------------------------------------------
+# Canonical closing-quote coverage classification.
+#
+# select_closing_quote() answers "which quote is closest to the start we can
+# legitimately use". It does NOT answer "is that quote actually closing-line
+# evidence", and for a long time nothing did -- so a FIRST_DAILY quote sitting
+# 14 hours before first pitch was reported as "Average CLV" without
+# qualification. 57 of 94 recent CLV rows were exactly that case. See
+# docs/EDGELAB_CLOSING_QUOTE_POLICY.md.
+#
+# The threshold is 30 minutes because that is the COARSEST scheduled capture
+# cadence in this repository (capture-snapshots-scheduled.yml and
+# edgelab-capture.yml both run every 30 minutes). A scheduler delivering its
+# requested runs therefore guarantees an observation within 30 minutes of any
+# start; a tighter bound would be aspirational rather than architectural.
+#
+# The exact distance is ALWAYS returned alongside the class, so this constant
+# is a reporting convention and not a lossy bucket: a consumer wanting a
+# 5- or 15-minute definition can re-bucket from secondsBeforeStart without
+# recomputing anything.
+TRUE_CLOSE_THRESHOLD_SECONDS = 30 * 60
+
+COVERAGE_TRUE_CLOSE = "TRUE_CLOSE"
+COVERAGE_PRE_CLOSE = "PRE_CLOSE"
+COVERAGE_NONE = "NO_VALID_PRESTART_QUOTE"
+
+# Why no usable quote exists, when that is the answer.
+UNAVAILABLE_START_UNKNOWN = "START_TIME_UNRESOLVED"
+UNAVAILABLE_NO_PRESTART_QUOTE = "NO_VALID_PRESTART_QUOTE"
+
+
+def seconds_before_start(captured_at, start):
+    """Pure. Seconds from `captured_at` to `start`; negative means post-start."""
+    if captured_at is None or start is None:
+        return None
+    return (_parse(start) - _parse(captured_at)).total_seconds()
+
+
+def classify_closing_coverage(seconds, threshold_seconds=TRUE_CLOSE_THRESHOLD_SECONDS):
+    """
+    Pure. Coverage class for a quote captured `seconds` before start.
+
+    A post-start quote (negative) is NOT downgraded to PRE_CLOSE -- it is
+    not a pre-start quote at all and must never score CLV.
+    """
+    if seconds is None or seconds < 0:
+        return COVERAGE_NONE
+    return COVERAGE_TRUE_CLOSE if seconds <= threshold_seconds else COVERAGE_PRE_CLOSE
+
+
+def resolve_closing_quote(observations, scheduled_start=None, actual_start=None,
+                          threshold_seconds=TRUE_CLOSE_THRESHOLD_SECONDS):
+    """
+    THE canonical closing-quote resolution every CLV consumer must use.
+
+    Wraps select_closing_quote() -- the selection rule is unchanged and
+    still correct -- and adds the auditable verdict around it, so no
+    caller has to re-derive coverage quality or distance-to-start for
+    itself and drift.
+
+    Returns a dict, never a bare quote:
+
+        {"quote": <the chosen quote or None>,
+         "coverageClass": TRUE_CLOSE | PRE_CLOSE | NO_VALID_PRESTART_QUOTE,
+         "secondsBeforeStart": float | None,
+         "startBasis": "ACTUAL" | "SCHEDULED" | None,
+         "startUsed": iso8601 | None,
+         "checkpoint": provenance label of the chosen quote | None,
+         "unavailableReason": str | None,
+         "thresholdSeconds": int}
+
+    The checkpoint label is reported for PROVENANCE ONLY. It never
+    influences selection and never determines coverage class -- a
+    FIRST_DAILY quote captured 10 minutes before start is TRUE_CLOSE, and
+    a T_MINUS_90 label on a quote 14 hours out is still PRE_CLOSE. Only
+    the timestamp and the start time decide.
+    """
+    start_bound = actual_start or scheduled_start
+    base = {
+        "quote": None, "coverageClass": COVERAGE_NONE, "secondsBeforeStart": None,
+        "startBasis": None, "startUsed": None, "checkpoint": None,
+        "unavailableReason": UNAVAILABLE_START_UNKNOWN,
+        "thresholdSeconds": threshold_seconds,
+    }
+    if start_bound is None:
+        return base
+
+    basis = "ACTUAL" if actual_start else "SCHEDULED"
+    quote = select_closing_quote(observations, scheduled_start=scheduled_start, actual_start=actual_start)
+    if quote is None:
+        return dict(base, startBasis=basis, startUsed=start_bound,
+                    unavailableReason=UNAVAILABLE_NO_PRESTART_QUOTE)
+
+    seconds = seconds_before_start(quote.get("capturedAt"), start_bound)
+    coverage = classify_closing_coverage(seconds, threshold_seconds)
+    return {
+        "quote": quote, "coverageClass": coverage,
+        "secondsBeforeStart": seconds, "startBasis": basis, "startUsed": start_bound,
+        "checkpoint": quote.get("checkpoint"),
+        "unavailableReason": None if coverage != COVERAGE_NONE else UNAVAILABLE_NO_PRESTART_QUOTE,
+        "thresholdSeconds": threshold_seconds,
+    }
+
+
 def select_closing_quote(observations, scheduled_start=None, actual_start=None):
     """
     Given a list of observation-like dicts (each with 'capturedAt' and a

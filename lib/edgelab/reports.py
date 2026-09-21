@@ -28,6 +28,72 @@ _RECOMMENDED_LIKE_STATUSES = {"RECOMMENDED", "BET_PLACED", "RECOMMENDED_NOT_BET"
 ROLLING_WINDOW_SIZE = 30
 
 
+# Coverage classes whose CLV is genuine closing-line evidence. ONLY these may
+# feed a headline "Average CLV".
+#
+# Before this, the headline averaged every stored clv value regardless of when
+# its quote was captured. 57 of 94 recent rows were scored against a quote a
+# median 863 minutes -- 14.4 hours -- before first pitch, which produced
+# report lines like "Average CLV (cents): -59.97" that read as a catastrophic
+# closing-line result and were simply not measuring the close at all. Those
+# values are retained and counted as PRE_CLOSE research diagnostics; they are
+# never averaged into the headline.
+#
+# A row with NO recorded coverage class is treated as UNCLASSIFIED and is also
+# excluded from the headline: every such row predates coverage tracking, so
+# its distance from start is unknown, and unknown is not evidence. See
+# docs/EDGELAB_CLOSING_QUOTE_POLICY.md.
+HEADLINE_CLV_COVERAGE_CLASSES = ("TRUE_CLOSE",)
+
+
+def build_clv_summary(bets):
+    """
+    Pure. CLV aggregation that can never present unqualified evidence as
+    closing-line value.
+
+    `avgClvCents` is computed over TRUE_CLOSE rows only. The all-rows figure
+    is still reported, explicitly named `avgClvCentsAllCoverageIncludingStale`,
+    so nothing is hidden and the two can be compared -- but only the first is
+    labelled as CLV.
+    """
+    with_clv = [b for b in bets if b.get("clv") is not None]
+    by_class = Counter(b.get("closingCoverageClass") or "UNCLASSIFIED" for b in with_clv)
+    eligible = [b for b in with_clv if b.get("closingCoverageClass") in HEADLINE_CLV_COVERAGE_CLASSES]
+    eligible_values = [b["clv"] for b in eligible]
+    all_values = [b["clv"] for b in with_clv]
+    ages = sorted(b["closingSecondsBeforeStart"] for b in with_clv
+                  if b.get("closingSecondsBeforeStart") is not None)
+
+    def _pct(values, q):
+        # Nearest-rank: round, not truncate. With 3 samples, int(0.9*2)==1
+        # returns the MEDIAN as p90, which would understate how stale the
+        # worst quotes are -- the exact thing this metric exists to expose.
+        if not values:
+            return None
+        return round(values[min(round(q * (len(values) - 1)), len(values) - 1)], 1)
+
+    return {
+        "betsTotal": len(bets),
+        "betsWithClv": len(with_clv),
+        # Headline: genuine near-close evidence only.
+        "clvEligibleCount": len(eligible_values),
+        "avgClvCents": round(sum(eligible_values) / len(eligible_values), 2) if eligible_values else None,
+        "positiveClvCount": sum(1 for v in eligible_values if v > 0),
+        "negativeClvCount": sum(1 for v in eligible_values if v < 0),
+        "headlineCoverageClasses": list(HEADLINE_CLV_COVERAGE_CLASSES),
+        # Diagnostics -- reported, never headlined.
+        "coverageClassCounts": dict(by_class),
+        "trueCloseCount": by_class.get("TRUE_CLOSE", 0),
+        "preCloseOnlyCount": by_class.get("PRE_CLOSE", 0),
+        "unclassifiedCount": by_class.get("UNCLASSIFIED", 0),
+        "noValidPrestartQuoteCount": by_class.get("NO_VALID_PRESTART_QUOTE", 0),
+        "avgClvCentsAllCoverageIncludingStale":
+            round(sum(all_values) / len(all_values), 2) if all_values else None,
+        "medianSecondsBeforeStart": _pct(ages, 0.5),
+        "p90SecondsBeforeStart": _pct(ages, 0.9),
+    }
+
+
 def build_daily_report(date, games, markets, observations, recommendations, clv_quotes, settlements, bets, research_runs):
     """
     All arguments are already-loaded lists of records for `date` (the
@@ -42,14 +108,7 @@ def build_daily_report(date, games, markets, observations, recommendations, clv_
     insufficient_support_count = sum(1 for r in recommendations if r["status"] == "INSUFFICIENT_MODEL_SUPPORT")
     closing_quotes_captured = sum(1 for q in clv_quotes if q.get("isClosingQuote"))
 
-    clv_values = [b["clv"] for b in bets if b.get("clv") is not None]
-    clv_summary = {
-        "betsTotal": len(bets),
-        "betsWithClv": len(clv_values),
-        "avgClvCents": round(sum(clv_values) / len(clv_values), 2) if clv_values else None,
-        "positiveClvCount": sum(1 for v in clv_values if v > 0),
-        "negativeClvCount": sum(1 for v in clv_values if v < 0),
-    }
+    clv_summary = build_clv_summary(bets)
 
     settlement_completion = {
         "marketsObserved": len(markets),
@@ -161,9 +220,19 @@ def render_markdown(report):
     lines += [
         "",
         "## CLV summary",
-        f"- Bets with CLV computed: {clv['betsWithClv']} / {clv['betsTotal']}",
-        f"- Average CLV (cents): {clv['avgClvCents']}",
-        f"- Positive / negative CLV: {clv['positiveClvCount']} / {clv['negativeClvCount']}",
+        f"- Bets with a CLV value: {clv['betsWithClv']} / {clv['betsTotal']}",
+        f"- Closing-line eligible (TRUE_CLOSE): {clv['clvEligibleCount']}",
+        f"- **Average CLV (cents), TRUE_CLOSE only: {clv['avgClvCents']}**",
+        f"- Positive / negative CLV (eligible only): {clv['positiveClvCount']} / {clv['negativeClvCount']}",
+        "",
+        "### CLV coverage quality",
+        f"- TRUE_CLOSE: {clv['trueCloseCount']}",
+        f"- PRE_CLOSE only: {clv['preCloseOnlyCount']}",
+        f"- No valid pre-start quote: {clv['noValidPrestartQuoteCount']}",
+        f"- Unclassified (predates coverage tracking): {clv['unclassifiedCount']}",
+        f"- Median / p90 seconds before start: {clv['medianSecondsBeforeStart']} / {clv['p90SecondsBeforeStart']}",
+        f"- Diagnostic only, NOT closing-line value — avg CLV across all "
+        f"coverage incl. stale: {clv['avgClvCentsAllCoverageIncludingStale']}",
     ]
 
     sc = report["settlementCompletion"]
@@ -383,8 +452,11 @@ def build_postmortem(date, bets, bankroll_summary=None):
     total_returned = round(sum(gross for gross, _net in _economics if gross is not None), 2)
     roi_pct = round((total_net_pl / total_risked_settled) * 100, 2) if total_risked_settled else None
 
-    clv_values = [b["clv"] for b in real_bets if b.get("clv") is not None]
-    avg_clv = round(sum(clv_values) / len(clv_values), 2) if clv_values else None
+    # Coverage-gated, exactly as build_daily_report: only TRUE_CLOSE rows may
+    # feed a headline average. Mixing a 14-hour-old quote into "Avg CLV" is
+    # what made -59.97 look like a closing-line catastrophe.
+    _clv = build_clv_summary(real_bets)
+    avg_clv = _clv["avgClvCents"]
 
     family_stats = {}
     for b in settled_bets:
@@ -466,6 +538,7 @@ def build_postmortem(date, bets, bankroll_summary=None):
         "totalNetProfitLoss": total_net_pl,
         "roiPct": roi_pct,
         "avgClvCents": avg_clv,
+        "clvCoverage": _clv,
         # Canonical/objective only, same scope as dailyRecord above.
         "performanceByMarketFamily": performance_by_family,
         # Realized economics: canonical settlement + confirmed manual
@@ -535,7 +608,12 @@ def render_postmortem_markdown(report):
         f"- Total returned: ${report['totalReturned']}",
         f"- Net P/L: ${report['totalNetProfitLoss']}",
         f"- ROI: {report['roiPct']}%" if report["roiPct"] is not None else "- ROI: n/a (nothing settled yet)",
-        f"- Avg CLV (cents): {report['avgClvCents']}",
+        f"- Avg CLV (cents), TRUE_CLOSE only: {report['avgClvCents']} "
+        f"(eligible {(report.get('clvCoverage') or {}).get('clvEligibleCount', 0)}"
+        f" of {(report.get('clvCoverage') or {}).get('betsWithClv', 0)} with a CLV value; "
+        f"PRE_CLOSE {(report.get('clvCoverage') or {}).get('preCloseOnlyCount', 0)}, "
+        f"unclassified {(report.get('clvCoverage') or {}).get('unclassifiedCount', 0)} "
+        f"— excluded, not closing-line evidence)",
         f"- Snapshot-linked: {report['snapshotLinkedCount']} / Replay-linked: {report['replayLinkedCount']}",
         f"- Unresolved (still pending): {report['unresolvedCount']}",
     ]
@@ -675,8 +753,11 @@ def build_canonical_era_summary(bets, bankroll_summary=None, *, include_legacy=F
     total_returned = round(sum(gross for gross, _net in _economics if gross is not None), 2)
     roi_pct = round((total_net_pl / total_risked_settled) * 100, 2) if total_risked_settled else None
 
-    clv_values = [b["clv"] for b in real_bets if b.get("clv") is not None]
-    avg_clv = round(sum(clv_values) / len(clv_values), 2) if clv_values else None
+    # Coverage-gated, exactly as build_daily_report: only TRUE_CLOSE rows may
+    # feed a headline average. Mixing a 14-hour-old quote into "Avg CLV" is
+    # what made -59.97 look like a closing-line catastrophe.
+    _clv = build_clv_summary(real_bets)
+    avg_clv = _clv["avgClvCents"]
 
     family_stats = {}
     for b in settled_bets:
@@ -702,6 +783,7 @@ def build_canonical_era_summary(bets, bankroll_summary=None, *, include_legacy=F
         "totalNetProfitLoss": total_net_pl,
         "roiPct": roi_pct,
         "avgClvCents": avg_clv,
+        "clvCoverage": _clv,
         "performanceByMarketFamily": performance_by_family,
         "bankroll": bankroll_summary,
     }
@@ -887,6 +969,11 @@ def build_rolling_window_report(bets, window_size=ROLLING_WINDOW_SIZE, *, includ
         if calibration_n else None
     )
 
+    # This block's own heading claims "legitimate pregame close only", so it
+    # must actually mean it. Coverage-gated exactly like every other CLV
+    # surface: TRUE_CLOSE feeds the headline, everything else is counted and
+    # named. See docs/EDGELAB_CLOSING_QUOTE_POLICY.md.
+    window_clv = build_clv_summary(window)
     clv_values = [b["clv"] for b in window if b.get("clv") is not None]
 
     return {
@@ -913,7 +1000,16 @@ def build_rolling_window_report(bets, window_size=ROLLING_WINDOW_SIZE, *, includ
             "withClv": len(clv_values),
             "withoutClv": window_actual - len(clv_values),
             "coveragePct": round(len(clv_values) / window_actual * 100, 1) if window_actual else None,
-            "avgClvCents": round(sum(clv_values) / len(clv_values), 2) if clv_values else None,
+            # TRUE_CLOSE only -- the heading promises closing-line evidence.
+            "avgClvCents": window_clv["avgClvCents"],
+            "clvEligibleCount": window_clv["clvEligibleCount"],
+            "trueCloseCount": window_clv["trueCloseCount"],
+            "preCloseOnlyCount": window_clv["preCloseOnlyCount"],
+            "unclassifiedCount": window_clv["unclassifiedCount"],
+            "medianSecondsBeforeStart": window_clv["medianSecondsBeforeStart"],
+            "p90SecondsBeforeStart": window_clv["p90SecondsBeforeStart"],
+            "avgClvCentsAllCoverageIncludingStale":
+                window_clv["avgClvCentsAllCoverageIncludingStale"],
         },
         "oldestBetIdInWindow": window[-1].get("betId") if window else None,
         "newestBetIdInWindow": window[0].get("betId") if window else None,
@@ -984,6 +1080,18 @@ def render_rolling_window_markdown(report):
         f"- Without a legitimate close: {clv['withoutClv']}",
     ]
     if clv["avgClvCents"] is not None:
-        lines.append(f"- Avg CLV (cents): {clv['avgClvCents']}")
+        lines.append(f"- Avg CLV (cents), TRUE_CLOSE only: {clv['avgClvCents']}")
+        lines.append(
+            f"- TRUE_CLOSE {clv.get('trueCloseCount', 0)} / PRE_CLOSE {clv.get('preCloseOnlyCount', 0)}"
+            f" / unclassified {clv.get('unclassifiedCount', 0)}"
+        )
+        lines.append(
+            f"- Median / p90 seconds before start: {clv.get('medianSecondsBeforeStart')}"
+            f" / {clv.get('p90SecondsBeforeStart')}"
+        )
+        lines.append(
+            f"- Diagnostic only, NOT closing-line value — avg across all coverage: "
+            f"{clv.get('avgClvCentsAllCoverageIncludingStale')}"
+        )
 
     return "\n".join(lines) + "\n"

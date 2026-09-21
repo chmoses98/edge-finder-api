@@ -64,7 +64,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: pr-ci-${{ github.event.pull_request.number }}
+  # On a pull_request this is the PR number, as before. On a
+  # workflow_dispatch there IS no pull_request.number, so the expression
+  # would collapse to the bare "pr-ci-" for every dispatch and, with
+  # cancel-in-progress, each manual run would cancel the previous one --
+  # including a run someone was waiting on. Falling back to the ref keeps
+  # dispatches isolated per branch.
+  group: pr-ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:

@@ -77,18 +77,48 @@ class TestNoAutomatedCommits:
 
 class TestTriggerAndConcurrency:
 
-    def test_only_triggers_on_pull_request(self):
+    def test_triggers_are_limited_to_pull_request_and_manual_dispatch(self):
+        """
+        pull_request is the automatic path; workflow_dispatch is the manual
+        one, added after PR #230 received NO check run at all (run numbers go
+        373 -> 375, no 374) while Actions was otherwise healthy. Without a
+        dispatch entry point such a PR can only be merged unevaluated or have
+        an empty commit pushed to bait the trigger.
+
+        The trigger set stays CLOSED to these two. Nothing here may listen to
+        `push`, `schedule`, `workflow_run` or `pull_request_target` -- the
+        last especially, since it would run PR-authored code with repository
+        credentials, which is exactly the isolation this file exists to pin.
+        The other guarantees (no secrets, read-only permissions, no writes, no
+        commits) are asserted by the tests above and are unaffected by
+        dispatch: it runs the same job with the same permissions.
+        """
         doc = _load()
         # PyYAML (1.1 spec) parses the bare `on:` key as the boolean True.
         trigger = doc.get("on", doc.get(True))
-        assert trigger == "pull_request" or trigger == ["pull_request"] or (
-            isinstance(trigger, dict) and set(trigger) == {"pull_request"}
+        if isinstance(trigger, str):
+            trigger = [trigger]
+        names = set(trigger)
+        assert names <= {"pull_request", "workflow_dispatch"}, (
+            "pr-ci.yml gained an unexpected trigger: %s" % sorted(names - {"pull_request", "workflow_dispatch"})
         )
+        assert "pull_request" in names, "pr-ci.yml must still run automatically on PRs"
+
+    def test_dispatch_cannot_be_used_to_run_pr_authored_code_with_credentials(self):
+        """pull_request_target is the dangerous sibling -- it must never appear."""
+        doc = _load()
+        trigger = doc.get("on", doc.get(True))
+        names = {trigger} if isinstance(trigger, str) else set(trigger)
+        assert "pull_request_target" not in names
+        assert doc["permissions"] == {"contents": "read"}
 
     def test_concurrency_group_is_scoped_per_pr_number(self):
         doc = _load()
         concurrency = doc["concurrency"]
         assert "github.event.pull_request.number" in concurrency["group"]
+        # ...and must not collapse to one shared group when that is empty on a
+        # manual dispatch, or each dispatch would cancel the previous one.
+        assert "github.ref" in concurrency["group"]
         assert concurrency["cancel-in-progress"] is True
 
     def test_checkout_uses_full_history_for_changed_file_scope_tests(self):

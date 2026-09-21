@@ -1,6 +1,6 @@
 # Daily Postmortem — 2026-09-17
 
-_Generated 2026-09-21T05:47:12Z_
+_Generated 2026-09-21T06:15:03Z_
 
 - Bets placed: 8
 - Record: 3-2-0 (pushes), 0 void, 3 still pending
@@ -8,7 +8,7 @@ _Generated 2026-09-21T05:47:12Z_
 - Total returned: $328.34
 - Net P/L: $33.35
 - ROI: 11.31%
-- Avg CLV (cents): -45.55
+- Avg CLV (cents), TRUE_CLOSE only: -0.5 (eligible 2 of 7 with a CLV value; PRE_CLOSE 5, unclassified 0 — excluded, not closing-line evidence)
 - Snapshot-linked: 0 / Replay-linked: 0
 - Unresolved (still pending): 3
 

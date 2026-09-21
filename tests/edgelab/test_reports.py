@@ -233,7 +233,16 @@ def test_postmortem_gross_return_and_clv():
     assert by_id["b1"]["grossReturn"] == 20.0  # stake 10 + netProfitLoss 10
     assert by_id["b2"]["grossReturn"] == 0.0  # a loss returns nothing
     assert by_id["b3"]["grossReturn"] is None  # still pending
-    assert report["avgClvCents"] == 0.5  # (2.0 + -1.0) / 2, b3/b4 have no clv
+    # These fixtures carry a clv value but no closingCoverageClass, so their
+    # distance from first pitch is unknown and they are NOT closing-line
+    # evidence. The headline excludes them; the raw mean survives only as an
+    # explicitly-named diagnostic. Previously this asserted 0.5 as
+    # "avgClvCents" -- the same unqualified claim that let a 14-hour-old
+    # quote be reported as closing-line value.
+    assert report["avgClvCents"] is None
+    assert report["clvCoverage"]["clvEligibleCount"] == 0
+    assert report["clvCoverage"]["unclassifiedCount"] == 2
+    assert report["clvCoverage"]["avgClvCentsAllCoverageIncludingStale"] == 0.5
 
 
 def test_postmortem_model_supported_vs_manual():
@@ -907,3 +916,22 @@ def test_quote_age_distribution_is_reported():
     clv = report["clvSummary"]
     assert clv["medianSecondsBeforeStart"] == 3600
     assert clv["p90SecondsBeforeStart"] == 34140
+
+
+def test_postmortem_headline_clv_is_true_close_only():
+    """The postmortem headline is gated exactly like the daily report's."""
+    bets = [
+        {"betId": "t1", "gameDate": "2026-08-01", "trackingType": "REAL", "status": "settled",
+         "result": "WIN", "stake": 10.0, "netProfitLoss": 5.0, "clv": 3.0,
+         "closingCoverageClass": "TRUE_CLOSE", "closingSecondsBeforeStart": 600},
+        {"betId": "t2", "gameDate": "2026-08-01", "trackingType": "REAL", "status": "settled",
+         "result": "LOSS", "stake": 10.0, "netProfitLoss": -10.0, "clv": -59.0,
+         "closingCoverageClass": "PRE_CLOSE", "closingSecondsBeforeStart": 34140},
+    ]
+    report = build_postmortem("2026-08-01", bets)
+    assert report["avgClvCents"] == 3.0            # the -59 stale row is excluded
+    assert report["clvCoverage"]["preCloseOnlyCount"] == 1
+    assert report["clvCoverage"]["avgClvCentsAllCoverageIncludingStale"] == -28.0
+    markdown = render_postmortem_markdown(report)
+    assert "TRUE_CLOSE only: 3.0" in markdown
+    assert "not closing-line evidence" in markdown

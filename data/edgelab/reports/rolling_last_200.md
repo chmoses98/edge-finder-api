@@ -1,6 +1,6 @@
 # Rolling Last-200 Canonical Performance Report
 
-_Generated 2026-09-21T05:47:16Z_
+_Generated 2026-09-21T06:16:01Z_
 
 Window: 200 / 200 settled canonical bets (CALIBRATED), canonical era starting 2026-08-03
 
@@ -40,4 +40,7 @@ Window: 200 / 200 settled canonical bets (CALIBRATED), canonical era starting 20
 ## CLV coverage (legitimate pregame close only)
 - Covered: 185 / 200 (92.5%)
 - Without a legitimate close: 15
-- Avg CLV (cents): -24.06
+- Avg CLV (cents), TRUE_CLOSE only: -1.63
+- TRUE_CLOSE 19 / PRE_CLOSE 68 / unclassified 98
+- Median / p90 seconds before start: 34130.4 / 58856.5
+- Diagnostic only, NOT closing-line value — avg across all coverage: 0.36

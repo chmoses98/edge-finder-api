@@ -1,6 +1,6 @@
 # Rolling Last-30 Canonical Performance Report
 
-_Generated 2026-09-21T05:47:16Z_
+_Generated 2026-09-21T06:16:01Z_
 
 Window: 30 / 30 settled canonical bets (DESCRIPTIVE_ONLY), canonical era starting 2026-08-03
 
@@ -31,4 +31,7 @@ Window: 30 / 30 settled canonical bets (DESCRIPTIVE_ONLY), canonical era startin
 ## CLV coverage (legitimate pregame close only)
 - Covered: 29 / 30 (96.7%)
 - Without a legitimate close: 1
-- Avg CLV (cents): -54.78
+- Avg CLV (cents), TRUE_CLOSE only: -8.25
+- TRUE_CLOSE 4 / PRE_CLOSE 25 / unclassified 0
+- Median / p90 seconds before start: 5581.4 / 56929.1
+- Diagnostic only, NOT closing-line value — avg across all coverage: -1.01

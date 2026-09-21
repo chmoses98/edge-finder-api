@@ -83,7 +83,21 @@ def build_daily_report(date, games, markets, observations, recommendations, clv_
         "marketsObserved": len(markets),
         "quotesCaptured": len(observations),
         "marketFamilyCounts": dict(family_counts),
+        # placedBets counts EVERY canonical ledger row for the date, which
+        # is not the same thing as the number of real-money wagers: the
+        # ledger also carries model/paper rows and unclassified legacy
+        # rows backfilled out of bets.json. On 2026-09-17 that difference
+        # is 8 vs 5, and reporting only the 8 made the day look like it
+        # carried three wagers it never did. The breakdown below is
+        # REPORTING ONLY -- it deliberately does not touch the P/L
+        # filters in build_postmortem/build_rolling_report, which still
+        # treat a null trackingType as real because 331 receipt-imported
+        # rows predate the field and ARE real money.
         "placedBets": len(bets),
+        "realWagerCount": sum(1 for b in bets if b.get("trackingType") == "REAL"),
+        "placedBetsByTrackingType": dict(
+            Counter(b.get("trackingType") or "UNCLASSIFIED_LEGACY" for b in bets)
+        ),
         "recommendedBets": recommended_count,
         "passCountsByReason": dict(pass_counts),
         "notEvaluatedCount": not_evaluated_count,
@@ -118,10 +132,22 @@ def render_markdown(report):
     lines += [
         "",
         "## Decisions",
-        f"- Placed bets: {report['placedBets']}",
+        f"- Placed bets (all tracked ledger records): {report['placedBets']}",
+        f"- REAL-money wagers: {report['realWagerCount']}",
         f"- Recommended (incl. watch/bet-placed): {report['recommendedBets']}",
         f"- Not evaluated: {report['notEvaluatedCount']}",
         f"- Insufficient model support: {report['insufficientModelSupportCount']}",
+        "",
+        "### Placed records by tracking type",
+    ]
+    by_tracking = report.get("placedBetsByTrackingType") or {}
+    if by_tracking:
+        for tracking_type, count in sorted(by_tracking.items(), key=lambda kv: (-kv[1], kv[0])):
+            lines.append(f"- {tracking_type}: {count}")
+    else:
+        lines.append("- (none)")
+
+    lines += [
         "",
         "### Pass counts by reason",
     ]

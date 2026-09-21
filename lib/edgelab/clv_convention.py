@@ -98,26 +98,46 @@ def convert(value, from_unit, to_unit):
 # Side-relevant executable prices
 # ---------------------------------------------------------------------------
 
-def executable_price_cents(quote, side):
+def executable_price(quote, side, unit):
     """
-    The side-relevant price a BUYER of `side` would pay, in CENTS, from a
-    quote carrying yesBid/yesAsk (and optionally noBid/noAsk).
+    The side-relevant price a BUYER of `side` would pay, expressed in
+    `unit` -- the unit the QUOTE's own yesBid/yesAsk/noBid/noAsk fields
+    are already denominated in. Nothing is inferred from magnitude; the
+    caller states the unit, exactly as lib/edgelab/price_units.py
+    requires of every other price path in this repository.
+
+    This exists because the NO-side derivation needs the value of "one
+    whole contract" in the quote's unit: 100 in CENTS, 1.0 in
+    PROBABILITY. Hardcoding 100.0 silently turns a 0.63 probability bid
+    into a NO price of 99.37 -- the exact class of unit error W1-B2 set
+    out to end.
 
     Returns None -- never a guess -- when the needed side of the book is
     absent. Midpoint is NEVER substituted: it is not tradable.
     """
+    _check_unit(unit)
     if quote is None:
         return None
+    one_contract = convert(1.0, UNIT_PROBABILITY, unit)
     if side == SIDE_NO:
         no_ask = quote.get("noAsk")
         if no_ask is not None:
             return float(no_ask)
         yes_bid = quote.get("yesBid")
-        return (100.0 - float(yes_bid)) if yes_bid is not None else None
+        return (one_contract - float(yes_bid)) if yes_bid is not None else None
     if side == SIDE_YES:
         yes_ask = quote.get("yesAsk")
         return float(yes_ask) if yes_ask is not None else None
     return None
+
+
+def executable_price_cents(quote, side):
+    """
+    `executable_price` for a quote whose fields are in CENTS. Kept as the
+    named entry point its existing callers use; the unit is now stated
+    once, here, rather than baked into the arithmetic.
+    """
+    return executable_price(quote, side, UNIT_CENTS)
 
 
 # ---------------------------------------------------------------------------

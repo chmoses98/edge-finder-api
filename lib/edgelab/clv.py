@@ -101,6 +101,13 @@ def project_observations_to_clv_quotes(observations, placed_bet_tickers, run_id)
                 "noBid": obs.get("noBid"),
                 "noAsk": obs.get("noAsk"),
                 "lastPrice": obs.get("lastPrice"),
+                # The unit the four price fields above are denominated in,
+                # carried EXPLICITLY so no consumer has to guess (the 100x
+                # CLV defect -- see _executable_closing_implied). A
+                # MarketObservation's prices are 0-1 probabilities: since
+                # W1-B2 lib/edgelab/market_universe.py copies them straight
+                # from the snapshot's declared `*_dollars` fields.
+                "priceUnit": clv_convention.UNIT_PROBABILITY,
                 "marketStatus": obs.get("marketStatus"),
                 "isClosingQuote": False,
                 "createdAt": now,
@@ -133,24 +140,37 @@ def finalize_closing_quotes(clv_quotes, scheduled_start=None, actual_start=None)
 
 def _executable_closing_implied(closing_quote, side):
     """
-    The executable probability a bettor on `side` would have faced at
-    close: YES side -> yesAsk (what you'd pay to buy in); NO side -> the
-    NO-side ask, derived as (1 - yesBid) when a direct noAsk isn't
-    available (Kalshi's NO ask is economically 100 - YES bid). Returns
-    None (never a guess) if neither is present.
-    """
-    if side == "NO":
-        no_ask = closing_quote.get("noAsk")
-        if no_ask is not None:
-            return no_ask / 100.0
-        yes_bid = closing_quote.get("yesBid")
-        return (1.0 - yes_bid / 100.0) if yes_bid is not None else None
+    The executable probability (0-1) a bettor on `side` would have faced
+    at close: YES side -> yesAsk (what you'd pay to buy in); NO side ->
+    the NO-side ask, derived from yesBid when a direct noAsk isn't
+    available. Returns None (never a guess) if neither is present.
 
-    yes_ask = closing_quote.get("yesAsk")
-    if yes_ask is not None:
-        return yes_ask / 100.0
-    yes_bid = closing_quote.get("yesBid")
-    return yes_bid / 100.0 if yes_bid is not None else None
+    UNIT SAFETY (the 100x CLV defect). This function used to divide
+    every ClvQuote price by 100.0 unconditionally, i.e. it assumed the
+    quote was in integer CENTS. That was true of archived rows only up
+    to 2026-09-10. From 2026-09-11 the Kalshi snapshots this repository
+    captures carry the `*_dollars` fixed-point fields, so
+    lib/edgelab/market_universe.py writes MarketObservation -- and
+    therefore project_observations_to_clv_quotes() writes ClvQuote --
+    prices as 0-1 probabilities. The consumer was never told. A 0.66 NO
+    ask became a 0.0066 closing probability and CLV came out ~100x too
+    negative against a correctly-scaled entryPrice (entryPrice is
+    independently corroborated by contractCost/contracts on every
+    receipt-imported row, so the closing side is provably the wrong one).
+
+    The fix is the rule lib/edgelab/price_units.py already states for
+    every other money path: the unit is a property of the FIELD, never
+    of the value. A ClvQuote now DECLARES its priceUnit, and a quote
+    that does not declare one is UNRESOLVABLE rather than assumed --
+    guessing is what produced the defect.
+    """
+    unit = closing_quote.get("priceUnit")
+    if unit not in (clv_convention.UNIT_CENTS, clv_convention.UNIT_PROBABILITY):
+        return None
+    price = clv_convention.executable_price(closing_quote, side, unit)
+    if price is None:
+        return None
+    return clv_convention.convert(price, unit, clv_convention.UNIT_PROBABILITY)
 
 
 def compute_clv_for_bet(bet, clv_quotes_for_ticker):
@@ -169,6 +189,15 @@ def compute_clv_for_bet(bet, clv_quotes_for_ticker):
         return {"clvStatus": "UNAVAILABLE", "unavailableReason": "NO_VALID_PRE_CLOSE_QUOTE"}
 
     side = bet.get("side") or "YES"
+    # An undeclared price unit is reported as its OWN reason, never folded
+    # into "missing executable price": the two demand different remedies
+    # (backfill the unit declaration vs. no book on that side), and the
+    # 100x CLV defect stayed invisible for ten days precisely because a
+    # unit problem could masquerade as a merely absent quote.
+    if closing_quote.get("priceUnit") not in (
+        clv_convention.UNIT_CENTS, clv_convention.UNIT_PROBABILITY,
+    ):
+        return {"clvStatus": "UNAVAILABLE", "unavailableReason": "CLOSING_QUOTE_PRICE_UNIT_UNDECLARED"}
     closing_implied = _executable_closing_implied(closing_quote, side)
     if closing_implied is None:
         return {"clvStatus": "UNAVAILABLE", "unavailableReason": "CLOSING_QUOTE_MISSING_EXECUTABLE_PRICE"}

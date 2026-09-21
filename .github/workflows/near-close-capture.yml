@@ -1,0 +1,132 @@
+name: Near-Close Market Capture (Coordinator)
+
+# PHASE 4/5. A SCHEDULE-AWARE coordinator for near-close market capture.
+#
+# WHY A COORDINATOR AND NOT ANOTHER CRON
+#
+# clv_capture.yml asks for a capture every 10 minutes; capture-snapshots-
+# scheduled.yml and edgelab-capture.yml every 30. On paper that is 28-78
+# slots a day. The archive holds 5-7 timestamped snapshots a day, every
+# day, for 13 consecutive days -- displaced from their slots and clustered
+# away from the 17:00-23:00 UTC window when MLB games actually start.
+# GitHub drops and delays scheduled runs under load, and asking for more
+# slots does not make more arrive. The measured consequence: of 94 recent
+# wagers with CLV, 57 were scored against a quote captured a MEDIAN of
+# 14.4 hours before first pitch.
+#
+# snapshot-capture-check.yml cannot fix this either. It runs once at 06:30
+# UTC, after the games, and rebuilds EdgeLab snapshot RECORDS from source
+# data still on disk. A live Kalshi quote at T-15 is not on disk once T-15
+# has passed. A missed near-close window is captured at the time or never.
+#
+# So this workflow wakes often but works rarely: it asks
+# scripts/edgelab/plan_near_close_capture.py which games are approaching a
+# T-30/T-15/T-5 window with no archived capture covering it, and dispatches
+# the canonical capture path ONLY when the answer is non-empty.
+#
+# WHY THIS CANNOT STORM
+#
+#  * The capture is a WHOLE-UNIVERSE snapshot, so one dispatch serves every
+#    game whose window is open. Fan-out is bounded by wake frequency, never
+#    by game count -- eight simultaneous starts cost one capture.
+#  * A wake whose windows are already covered by an archived snapshot
+#    dispatches nothing, so repeated wakes are idempotent against the
+#    archive rather than against a flag this workflow sets itself.
+#  * concurrency cancels an in-flight coordinator, so a backlog of delayed
+#    wakes collapses to the newest rather than firing all of them.
+#  * It dispatches ONE existing workflow and that workflow dispatches
+#    nothing, so the graph is two hops deep and cannot cycle.
+#
+# Read-only except for the plan artifact; it never touches the ledger.
+
+on:
+  schedule:
+    # Every 15 minutes across the MLB start window (17:00-01:00 UTC).
+    # Deliberately coarse: this is a WAKE cadence, not a capture cadence.
+    # Most wakes decide to do nothing, which costs one short Python run.
+    - cron: '*/15 17,18,19,20,21,22,23 * * *'
+    - cron: '*/15 0,1 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Slate date (YYYY-MM-DD). Blank = today UTC.'
+        required: false
+        default: ''
+      now:
+        description: 'Evaluation time override (ISO8601), for rehearsal only.'
+        required: false
+        default: ''
+      force:
+        description: 'Dispatch capture even if the plan says nothing is due.'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+  actions: write        # only to dispatch the capture workflow
+
+concurrency:
+  # A backlog of delayed wakes collapses to the newest one. An older wake's
+  # plan is stale by definition -- the windows it was reasoning about have
+  # moved -- so cancelling it is correct, not merely cheaper.
+  group: near-close-capture-coordinator
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          # The coordinator only needs the slate and the snapshot filenames.
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Plan near-close capture
+        id: plan
+        env:
+          INPUT_DATE: ${{ github.event.inputs.date }}
+          INPUT_NOW: ${{ github.event.inputs.now }}
+        run: |
+          set -euo pipefail
+          ARGS=""
+          [ -n "${INPUT_DATE:-}" ] && ARGS="$ARGS --date $INPUT_DATE"
+          [ -n "${INPUT_NOW:-}" ]  && ARGS="$ARGS --now $INPUT_NOW"
+          python3 scripts/edgelab/plan_near_close_capture.py $ARGS \
+            --out /tmp/near_close_plan.json
+
+      - name: Upload the plan (evidence of what this wake decided, and why)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: near-close-plan-${{ github.run_id }}
+          path: /tmp/near_close_plan.json
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Dispatch the canonical capture path
+        if: steps.plan.outputs.should_capture == 'true' || github.event.inputs.force == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "Dispatching capture for ${{ steps.plan.outputs.games_due }} game(s) with an open window."
+          gh workflow run capture-snapshots-scheduled.yml --ref main
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Near-close capture coordinator"
+            echo ""
+            echo "- should capture: \`${{ steps.plan.outputs.should_capture }}\`"
+            echo "- games with an open uncovered window: \`${{ steps.plan.outputs.games_due }}\`"
+            echo ""
+            echo "A wake that dispatches nothing is the normal case. Coverage is"
+            echo "judged against the ARCHIVE, so repeated wakes are idempotent."
+          } >> "$GITHUB_STEP_SUMMARY"

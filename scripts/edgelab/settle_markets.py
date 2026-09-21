@@ -38,8 +38,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from lib.edgelab import ids, mlb_boxscore, player_stats, storage
 from lib.edgelab.settlement import (
+    TRANSITION_REFUSED_TERMINAL_REGRESSION,
     bet_needs_settlement_update,
     build_settlement_record,
+    classify_settlement_transition,
     hypothetical_yes_return,
     merge_settlement_record,
     settle_bets_for_ticker,
@@ -241,6 +243,7 @@ def settle_date(date, dry_run=False):
     by_family = {}
     unresolved_reasons_by_family = {}
     meaningful_settlement_changes = 0
+    terminal_regressions_prevented = 0
 
     for market in markets:
         game_id = market.get("gameId")
@@ -386,10 +389,32 @@ def settle_date(date, dry_run=False):
             settlement_evidence=evidence,
         )
         existing_record = existing_settlements_by_id.get(new_record["settlementId"])
+        # One canonical rule, asked once and used for BOTH the merge and
+        # the audit count -- see lib.edgelab.settlement.
+        # classify_settlement_transition for the transition table.
+        transition = classify_settlement_transition(existing_record, new_record)
         merged_record = merge_settlement_record(existing_record, new_record)
-        if merged_record is not existing_record:
+        if transition == TRANSITION_REFUSED_TERMINAL_REGRESSION:
+            terminal_regressions_prevented += 1
+        elif merged_record is not existing_record:
             meaningful_settlement_changes += 1
         settlement_records.append(merged_record)
+
+    # A blinded run must never read as a quiet one. This is ONE aggregate
+    # warning rather than one per market: the failure mode that motivates
+    # it (an unreachable authoritative source) regresses every market on
+    # every affected game at once -- 8,264 of them in the incident that
+    # produced this guard -- and 8,264 individual warnings would bury the
+    # per-bet REFUSED warnings above rather than surface anything.
+    if terminal_regressions_prevented:
+        warnings.append(
+            f"settlement REGRESSION PREVENTED for {terminal_regressions_prevented} market(s): "
+            "an already-SETTLED/VOID record would have been overwritten with a non-terminal "
+            "status computed without authoritative evidence (typically an unreachable "
+            "upstream). The stored terminal records were preserved unchanged. This run did "
+            "NOT re-verify those markets -- treat its settlement coverage as stale, not "
+            "confirmed. See docs/EDGELAB_SETTLEMENT_REGRESSION_ON_FETCH_FAILURE.md"
+        )
 
     bets_path = storage.singleton_path("bets", "bets.jsonl")
 
@@ -416,6 +441,7 @@ def settle_date(date, dry_run=False):
                 "settlementsInserted": s_inserted,
                 "settlementsUpdated": s_updated,
                 "settlementsMeaningfullyChanged": meaningful_settlement_changes,
+                "terminalSettlementRegressionPrevented": terminal_regressions_prevented,
                 "betsSettled": len(bet_updates),
             },
             "errors": [],
@@ -443,6 +469,10 @@ def settle_date(date, dry_run=False):
             # above may still report every row as "touched" by the
             # underlying upsert mechanics).
             "settlementsMeaningfullyChanged": meaningful_settlement_changes,
+            # Stored SETTLED/VOID records this run declined to downgrade to
+            # a non-terminal status. Non-zero means the run was BLIND for
+            # those markets, not that they were re-confirmed.
+            "terminalSettlementRegressionPrevented": terminal_regressions_prevented,
             "betsSettled": len(bet_updates),
         },
         "byFamily": by_family,
@@ -461,7 +491,9 @@ def main():
     print(
         f"[settle_markets] date={date} markets={summary['counts']['marketsConsidered']} settled_or_void="
         f"{summary['counts']['settledOrVoid']} "
-        f"bets_settled={summary['counts']['betsSettled']} warnings={len(summary['warnings'])}"
+        f"bets_settled={summary['counts']['betsSettled']} "
+        f"terminal_regressions_prevented={summary['counts']['terminalSettlementRegressionPrevented']} "
+        f"warnings={len(summary['warnings'])}"
     )
     return 0
 

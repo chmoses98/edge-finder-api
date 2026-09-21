@@ -543,6 +543,70 @@ def _comparable_settlement_view(record):
     return view
 
 
+# A settlement status that states a decided outcome. Reaching one of
+# these is the point of the whole pipeline, and losing one is not a
+# recoverable event: re-running settlement later can recompute a
+# `result`, but the original `settledAt` and the `settlementEvidence`
+# captured at that moment are gone for good.
+TERMINAL_SETTLEMENT_STATUSES = frozenset({"SETTLED", "VOID"})
+
+# classify_settlement_transition() outcomes.
+TRANSITION_FIRST_RECORD = "FIRST_RECORD"
+TRANSITION_NO_OP = "NO_OP"
+TRANSITION_ACCEPTED = "ACCEPTED"
+TRANSITION_REFUSED_TERMINAL_REGRESSION = "REFUSED_TERMINAL_REGRESSION"
+
+
+def is_terminal_settlement_status(status):
+    """Pure. True when `status` states a decided settlement outcome."""
+    return status in TERMINAL_SETTLEMENT_STATUSES
+
+
+def classify_settlement_transition(existing_record, new_record):
+    """
+    Pure. THE canonical rule for what a freshly computed settlement
+    record is allowed to do to the stored one. Every caller asks this
+    one function rather than carrying its own guard, so the transition
+    table lives in exactly one place:
+
+        stored              computed              outcome
+        ------------------  --------------------  ----------------------------
+        (none)              anything              FIRST_RECORD  -> store it
+        non-terminal        anything              NO_OP / ACCEPTED
+        terminal            terminal              NO_OP / ACCEPTED (correction)
+        terminal            NON-terminal          REFUSED_TERMINAL_REGRESSION
+
+    The last row is the fix for
+    docs/EDGELAB_SETTLEMENT_REGRESSION_ON_FETCH_FAILURE.md. When the
+    authoritative source cannot be reached, settle_markets.py correctly
+    computes SETTLEMENT_UNRESOLVED for every market on that game. Before
+    this guard, that record differed from the stored SETTLED one and so
+    simply overwrote it -- 8,264 decided market facts were destroyed by
+    a single run that reported `settled_or_void=0` and looked like a
+    clean no-op.
+
+    A terminal record is therefore MONOTONIC WITH RESPECT TO LOSS OF
+    EVIDENCE: an absence of evidence never unmakes a decided fact.
+
+    It is deliberately NOT immutable. A terminal -> terminal transition
+    still flows through the normal correction path, because that only
+    happens when the fetch SUCCEEDED and genuinely determined something
+    different (a corrected box score, a player who became resolvable).
+    Keying on the status transition rather than on record equality is
+    what separates "the truth changed" from "we went blind".
+    """
+    if existing_record is None:
+        return TRANSITION_FIRST_RECORD
+    if (
+        is_terminal_settlement_status(existing_record.get("settlementStatus"))
+        and not is_terminal_settlement_status(new_record.get("settlementStatus"))
+    ):
+        return TRANSITION_REFUSED_TERMINAL_REGRESSION
+    if _comparable_settlement_view(existing_record) == _comparable_settlement_view(new_record):
+        return TRANSITION_NO_OP
+    return TRANSITION_ACCEPTED
+
+
 def merge_settlement_record(existing_record, new_record):
     """
     Semantic-idempotency merge (GitHub issue #43 correction round): a
@@ -550,25 +614,38 @@ def merge_settlement_record(existing_record, new_record):
     canonical settlements file byte-for-byte unchanged, never rewriting
     createdAt/updatedAt/settledAt just because the run happened again.
 
-    - No prior record (`existing_record` is None, i.e. first-ever
-      settlement of this ticker): returns `new_record` verbatim.
-    - Prior record exists and its canonical content (everything except
+    Applies classify_settlement_transition() -- see it for the full
+    transition table and why a terminal record is monotonic with
+    respect to loss of evidence.
+
+    - FIRST_RECORD (no prior record, i.e. first-ever settlement of this
+      ticker): returns `new_record` verbatim.
+    - NO_OP: prior record's canonical content (everything except
       createdAt/updatedAt/settledAt and settlementEvidence's own
       fetchedAt/sourcePayloadHash -- see _comparable_settlement_view)
-      is IDENTICAL to the freshly computed one: returns
+      is IDENTICAL to the freshly computed one. Returns
       `existing_record` COMPLETELY UNCHANGED (the exact same dict,
       including its original settledAt) -- a true no-op.
-    - Prior record exists but the canonical content genuinely differs
-      (a corrected authoritative statistic, a player now resolvable,
-      etc.): returns `new_record` with `createdAt` overridden back to
+    - REFUSED_TERMINAL_REGRESSION: the freshly computed record would
+      downgrade a decided SETTLED/VOID fact to a non-terminal one.
+      Returns `existing_record` COMPLETELY UNCHANGED -- the same
+      identity, so nothing about the stored row is rewritten, not even
+      an audit stamp. The refusal is surfaced by the CALLER, in the run
+      summary and warnings, so a blinded run is never mistaken for a
+      quiet one; recording it on the row itself would mean writing to
+      the very record this rule exists to leave alone.
+    - ACCEPTED: the canonical content genuinely differs (a corrected
+      authoritative statistic, a player now resolvable, etc.). Returns
+      `new_record` with `createdAt` overridden back to
       `existing_record`'s original createdAt -- the fact was first
       recorded when it was first recorded; only updatedAt/settledAt
       (already fresh on `new_record`) advance to reflect the
       correction.
     """
-    if existing_record is None:
+    transition = classify_settlement_transition(existing_record, new_record)
+    if transition == TRANSITION_FIRST_RECORD:
         return new_record
-    if _comparable_settlement_view(existing_record) == _comparable_settlement_view(new_record):
+    if transition in (TRANSITION_NO_OP, TRANSITION_REFUSED_TERMINAL_REGRESSION):
         return existing_record
     return dict(new_record, createdAt=existing_record.get("createdAt", new_record["createdAt"]))
 

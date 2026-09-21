@@ -157,7 +157,7 @@ def test_active_writers_use_the_canonical_helper(rel):
 def test_edgelab_clv_writer_produces_positive_for_a_good_buy():
     from lib.edgelab.clv import compute_clv_for_bet
     bet = {"entryPrice": 0.33, "side": "YES"}
-    quotes = [{"clvQuoteId": "q1", "isClosingQuote": True, "yesAsk": 34.0, "yesBid": 33.0}]
+    quotes = [{"clvQuoteId": "q1", "isClosingQuote": True, "priceUnit": "CENTS", "yesAsk": 34.0, "yesBid": 33.0}]
     out = compute_clv_for_bet(bet, quotes)
     assert out["clvCents"] == pytest.approx(1.0)
     assert out["clvConvention"] == CONVENTION_ID

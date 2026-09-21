@@ -12,8 +12,13 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from lib.edgelab.settlement import (
+    TRANSITION_ACCEPTED,
+    TRANSITION_FIRST_RECORD,
+    TRANSITION_NO_OP,
+    TRANSITION_REFUSED_TERMINAL_REGRESSION,
     bet_needs_settlement_update,
     build_settlement_record,
+    classify_settlement_transition,
     compare_confirmed_receipt_to_settlement,
     derive_bet_result,
     hypothetical_yes_return,
@@ -709,3 +714,145 @@ def test_exact_evidence_never_changes_settlement_truth_or_identity():
                   "contracts", "actualCashConsumed", "economicsSource"):
         assert settled[field] == before[field], field
     assert settled["result"] == "WIN"
+
+
+# ---------------------------------------------------------------------------
+# Regression: a terminal settlement fact is MONOTONIC with respect to loss of
+# evidence.
+#
+# When the authoritative source is unreachable, settle_markets.py correctly
+# computes SETTLEMENT_UNRESOLVED for every market on the affected game. That
+# record used to differ from the stored SETTLED one and so simply overwrote
+# it -- 8,264 decided market facts were destroyed by a single run that
+# reported settled_or_void=0 and read as a clean no-op. See
+# docs/EDGELAB_SETTLEMENT_REGRESSION_ON_FETCH_FAILURE.md.
+#
+# An absence of evidence must never unmake a decided fact. A genuine
+# authoritative correction must still get through.
+# ---------------------------------------------------------------------------
+
+def _unresolved_record(reason="missing_final_score", **overrides):
+    base = build_settlement_record(
+        "TICKER", "GAME1", "pitcher_strikeouts", "SETTLEMENT_UNRESOLVED", None,
+        "test_source", None, unavailable_reason=reason,
+    )
+    base.update(overrides)
+    return base
+
+
+def test_settled_to_unresolved_is_refused_and_preserves_stored_record():
+    existing = _settlement_record(createdAt="2026-08-01T00:00:00Z",
+                                  updatedAt="2026-08-01T00:00:00Z",
+                                  settledAt="2026-08-01T00:00:00Z")
+    before = dict(existing)
+    blinded = _unresolved_record()
+
+    assert classify_settlement_transition(existing, blinded) == TRANSITION_REFUSED_TERMINAL_REGRESSION
+    merged = merge_settlement_record(existing, blinded)
+
+    assert merged is existing          # same object -- nothing rewritten at all
+    assert merged == before            # ...and byte-for-byte unchanged
+    assert merged["settlementStatus"] == "SETTLED"
+    assert merged["result"] == "YES"
+    assert merged["settledAt"] == "2026-08-01T00:00:00Z"
+    assert merged["settlementEvidence"]["actualValue"] == 9
+
+
+def test_void_to_unresolved_is_refused_and_preserves_stored_record():
+    existing = _settlement_record(settlementStatus="VOID", outcome=None, result=None,
+                                  createdAt="2026-08-01T00:00:00Z",
+                                  settledAt="2026-08-01T00:00:00Z")
+    before = dict(existing)
+
+    assert classify_settlement_transition(existing, _unresolved_record()) == TRANSITION_REFUSED_TERMINAL_REGRESSION
+    merged = merge_settlement_record(existing, _unresolved_record())
+
+    assert merged is existing
+    assert merged == before
+    assert merged["settlementStatus"] == "VOID"
+    assert merged["settledAt"] == "2026-08-01T00:00:00Z"
+
+
+def test_terminal_record_is_not_immutable_settled_to_settled_correction_still_applies():
+    """The guard keys on the STATUS transition, not on record equality.
+
+    A corrected box score arrives via a fetch that SUCCEEDED, so it is a
+    SETTLED -> SETTLED transition and must still be written.
+    """
+    existing = _settlement_record(createdAt="2026-08-01T00:00:00Z",
+                                  updatedAt="2026-08-01T00:00:00Z",
+                                  settledAt="2026-08-01T00:00:00Z")
+    corrected = _settlement_record(
+        outcome="NO", result="NO", createdAt="2026-08-02T12:00:00Z",
+        updatedAt="2026-08-02T12:00:00Z", settledAt="2026-08-02T12:00:00Z",
+        settlementEvidence={"actualValue": 8, "threshold": 9,
+                            "fetchedAt": "2026-08-02T12:00:00Z", "sourcePayloadHash": "hash2"},
+    )
+    assert classify_settlement_transition(existing, corrected) == TRANSITION_ACCEPTED
+    merged = merge_settlement_record(existing, corrected)
+    assert merged is not existing
+    assert merged["result"] == "NO"
+    assert merged["createdAt"] == "2026-08-01T00:00:00Z"   # original recording preserved
+    assert merged["settledAt"] == "2026-08-02T12:00:00Z"   # correction advances
+
+
+def test_settled_to_void_is_permitted_both_are_terminal():
+    """A game retroactively ruled Postponed/Suspended is authoritative evidence, not blindness."""
+    existing = _settlement_record(createdAt="2026-08-01T00:00:00Z")
+    voided = _settlement_record(settlementStatus="VOID", outcome=None, result=None,
+                                createdAt="2026-08-02T00:00:00Z", settledAt="2026-08-02T00:00:00Z")
+    assert classify_settlement_transition(existing, voided) == TRANSITION_ACCEPTED
+    merged = merge_settlement_record(existing, voided)
+    assert merged["settlementStatus"] == "VOID"
+    assert merged["createdAt"] == "2026-08-01T00:00:00Z"
+
+
+def test_void_to_settled_is_permitted_both_are_terminal():
+    """A game wrongly marked Suspended that in fact completed must be settleable."""
+    existing = _settlement_record(settlementStatus="VOID", outcome=None, result=None,
+                                  createdAt="2026-08-01T00:00:00Z")
+    settled = _settlement_record(createdAt="2026-08-02T00:00:00Z", settledAt="2026-08-02T00:00:00Z")
+    assert classify_settlement_transition(existing, settled) == TRANSITION_ACCEPTED
+    merged = merge_settlement_record(existing, settled)
+    assert merged["settlementStatus"] == "SETTLED"
+    assert merged["result"] == "YES"
+    assert merged["createdAt"] == "2026-08-01T00:00:00Z"
+
+
+def test_unresolved_advances_to_settled_normally():
+    existing = _unresolved_record(createdAt="2026-08-01T00:00:00Z")
+    settled = _settlement_record(createdAt="2026-08-02T00:00:00Z", settledAt="2026-08-02T00:00:00Z")
+    assert classify_settlement_transition(existing, settled) == TRANSITION_ACCEPTED
+    merged = merge_settlement_record(existing, settled)
+    assert merged["settlementStatus"] == "SETTLED"
+    assert merged["createdAt"] == "2026-08-01T00:00:00Z"
+
+
+def test_unresolved_advances_to_void_normally():
+    existing = _unresolved_record(createdAt="2026-08-01T00:00:00Z")
+    voided = _settlement_record(settlementStatus="VOID", outcome=None, result=None,
+                                createdAt="2026-08-02T00:00:00Z", settledAt="2026-08-02T00:00:00Z")
+    assert classify_settlement_transition(existing, voided) == TRANSITION_ACCEPTED
+    assert merge_settlement_record(existing, voided)["settlementStatus"] == "VOID"
+
+
+def test_unresolved_to_unresolved_may_improve_its_diagnostic_reason():
+    """Losing evidence about an UNDECIDED market costs nothing -- that path stays open."""
+    existing = _unresolved_record(reason="missing_final_score", createdAt="2026-08-01T00:00:00Z")
+    better = _unresolved_record(reason="game_not_final", createdAt="2026-08-02T00:00:00Z")
+    assert classify_settlement_transition(existing, better) == TRANSITION_ACCEPTED
+    merged = merge_settlement_record(existing, better)
+    assert merged["unavailableReason"] == "game_not_final"
+    assert merged["createdAt"] == "2026-08-01T00:00:00Z"
+
+
+def test_identical_unresolved_rerun_is_still_a_no_op():
+    existing = _unresolved_record(createdAt="2026-08-01T00:00:00Z")
+    assert classify_settlement_transition(existing, _unresolved_record()) == TRANSITION_NO_OP
+    assert merge_settlement_record(existing, _unresolved_record()) is existing
+
+
+def test_first_record_is_classified_and_stored_verbatim():
+    new_record = _settlement_record()
+    assert classify_settlement_transition(None, new_record) == TRANSITION_FIRST_RECORD
+    assert merge_settlement_record(None, new_record) is new_record

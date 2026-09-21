@@ -783,3 +783,52 @@ def test_confirmed_receipt_economics_still_returns_the_receipt_pair():
     from lib.edgelab import bets as bets_lib
     assert bets_lib.confirmed_receipt_economics(_disagreeing_bet()) == (RECEIPT_GROSS, RECEIPT_NET_PL)
     assert bets_lib.confirmed_receipt_economics(_bet("none", status="settled", result="WIN", net_pl=1.0)) == (None, None)
+
+
+# ---------------------------------------------------------------------------
+# Regression: the 2026-09-17 "8 placed bets vs 5 REAL wagers" discrepancy.
+#
+# The canonical ledger held 8 rows for that date -- 5 real-money Kalshi
+# receipt imports plus 3 LEGACY_BACKFILL model rows carried over from
+# bets.json (sourceKeys 2026-09-17-181/182/183, reference-sized at
+# $10 notional, never executed). The daily report printed only
+# len(bets)=8, so a reader had no way to see that three of them were not
+# wagers at all.
+# ---------------------------------------------------------------------------
+
+def _tracked(tracking_type, bet_id):
+    return {"betId": bet_id, "gameDate": DATE, "trackingType": tracking_type}
+
+
+def test_daily_report_separates_real_wagers_from_other_tracked_records():
+    games, markets, observations, recommendations, clv_quotes, settlements, _, research_runs = _sample_inputs()
+    bets = (
+        [_tracked("REAL", f"real-{i}") for i in range(5)]
+        + [_tracked(None, f"legacy-{i}") for i in range(3)]
+    )
+    report = build_daily_report(
+        DATE, games, markets, observations, recommendations,
+        clv_quotes, settlements, bets, research_runs,
+    )
+    # The all-records total stays what it was -- it is still a true count.
+    assert report["placedBets"] == 8
+    # ...but the real-money count is now stated separately, and is 5.
+    assert report["realWagerCount"] == 5
+    assert report["placedBetsByTrackingType"] == {"REAL": 5, "UNCLASSIFIED_LEGACY": 3}
+
+    markdown = render_markdown(report)
+    assert "- REAL-money wagers: 5" in markdown
+    assert "- Placed bets (all tracked ledger records): 8" in markdown
+    assert "- UNCLASSIFIED_LEGACY: 3" in markdown
+
+
+def test_real_wager_count_does_not_absorb_paper_or_model_rows():
+    games, markets, observations, recommendations, clv_quotes, settlements, _, research_runs = _sample_inputs()
+    bets = [_tracked("REAL", "r1"), _tracked("PAPER", "p1"), _tracked("MODEL_ONLY", "m1")]
+    report = build_daily_report(
+        DATE, games, markets, observations, recommendations,
+        clv_quotes, settlements, bets, research_runs,
+    )
+    assert report["placedBets"] == 3
+    assert report["realWagerCount"] == 1
+    assert report["placedBetsByTrackingType"] == {"REAL": 1, "PAPER": 1, "MODEL_ONLY": 1}

@@ -295,7 +295,7 @@ def test_clv_attachment_does_not_mutate_entry_snapshot(tmp_path, monkeypatch):
 
     # Mirrors scripts/edgelab/collect_clv.py's own update pattern exactly:
     # dict(bet) copy, then only clv/closingPrice/clvQuoteId/updatedAt set.
-    closing_quote = {"clvQuoteId": "q1", "isClosingQuote": True, "yesBid": 48, "yesAsk": 53, "noBid": None, "noAsk": None}
+    closing_quote = {"clvQuoteId": "q1", "isClosingQuote": True, "priceUnit": "CENTS", "yesBid": 48, "yesAsk": 53, "noBid": None, "noAsk": None}
     result = compute_clv_for_bet(bet_before, [closing_quote])
     assert result["clvStatus"] == "VALID"
 
@@ -357,7 +357,7 @@ def test_pregame_observation_still_accepted_for_clv_when_present():
     failure."""
     scheduled_start = "2026-08-03T23:00:00Z"
     quotes = [
-        {"clvQuoteId": "pregame-1", "capturedAt": "2026-08-03T22:45:00Z", "marketStatus": "active", "isClosingQuote": False, "yesBid": 48, "yesAsk": 53},
+        {"clvQuoteId": "pregame-1", "capturedAt": "2026-08-03T22:45:00Z", "marketStatus": "active", "isClosingQuote": False, "priceUnit": "CENTS", "yesBid": 48, "yesAsk": 53},
         {"clvQuoteId": "post-start-1", "capturedAt": "2026-08-03T23:05:00Z", "marketStatus": "active", "isClosingQuote": False},
     ]
     finalized = finalize_closing_quotes(quotes, scheduled_start=scheduled_start)
@@ -464,7 +464,7 @@ def test_rolling_report_automatically_consumes_captured_context_for_a_settled_be
     import_script.main()
     bet = list(storage.read_records(BETS_PATH))[0]
 
-    closing_quote = {"clvQuoteId": "q1", "isClosingQuote": True, "yesBid": 48, "yesAsk": 53, "noBid": None, "noAsk": None}
+    closing_quote = {"clvQuoteId": "q1", "isClosingQuote": True, "priceUnit": "CENTS", "yesBid": 48, "yesAsk": 53, "noBid": None, "noAsk": None}
     clv_result = compute_clv_for_bet(bet, [closing_quote])
 
     settled_bet = dict(bet)

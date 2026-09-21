@@ -109,7 +109,7 @@ def test_missing_close_never_guesses():
 
 
 def test_clv_yes_side_uses_yes_ask():
-    closing_quote = {"clvQuoteId": "c", "isClosingQuote": True, "yesBid": 48, "yesAsk": 50, "noBid": None, "noAsk": None}
+    closing_quote = {"clvQuoteId": "c", "isClosingQuote": True, "priceUnit": "CENTS", "yesBid": 48, "yesAsk": 50, "noBid": None, "noAsk": None}
     bet = {"entryPrice": 0.45, "side": "YES"}
     result = compute_clv_for_bet(bet, [closing_quote])
     assert result["clvStatus"] == "VALID"
@@ -122,7 +122,7 @@ def test_clv_yes_side_uses_yes_ask():
 
 
 def test_clv_no_side_uses_no_ask_derived_from_yes_bid():
-    closing_quote = {"clvQuoteId": "c", "isClosingQuote": True, "yesBid": 40, "yesAsk": 42, "noBid": None, "noAsk": None}
+    closing_quote = {"clvQuoteId": "c", "isClosingQuote": True, "priceUnit": "CENTS", "yesBid": 40, "yesAsk": 42, "noBid": None, "noAsk": None}
     bet = {"entryPrice": 0.55, "side": "NO"}  # bought NO at 0.55 implied
     result = compute_clv_for_bet(bet, [closing_quote])
     assert result["clvStatus"] == "VALID"
@@ -132,7 +132,7 @@ def test_clv_no_side_uses_no_ask_derived_from_yes_bid():
 
 
 def test_clv_positive_when_entered_better_than_close():
-    closing_quote = {"clvQuoteId": "c", "isClosingQuote": True, "yesBid": 55, "yesAsk": 57, "noBid": None, "noAsk": None}
+    closing_quote = {"clvQuoteId": "c", "isClosingQuote": True, "priceUnit": "CENTS", "yesBid": 55, "yesAsk": 57, "noBid": None, "noAsk": None}
     bet = {"entryPrice": 0.50, "side": "YES"}
     result = compute_clv_for_bet(bet, [closing_quote])
     assert result["clvCents"] == 7.0   # canonical: closing 0.57 - entry 0.50
@@ -140,13 +140,13 @@ def test_clv_positive_when_entered_better_than_close():
 
 
 def test_entry_price_missing_is_unavailable_not_zero():
-    result = compute_clv_for_bet({"entryPrice": None, "side": "YES"}, [{"isClosingQuote": True, "yesAsk": 50}])
+    result = compute_clv_for_bet({"entryPrice": None, "side": "YES"}, [{"isClosingQuote": True, "priceUnit": "CENTS", "yesAsk": 50}])
     assert result["clvStatus"] == "UNAVAILABLE"
     assert result["unavailableReason"] == "ENTRY_PRICE_MISSING"
 
 
 def test_closing_quote_missing_executable_price_is_unavailable():
-    closing_quote = {"clvQuoteId": "c", "isClosingQuote": True, "yesBid": None, "yesAsk": None, "noBid": None, "noAsk": None}
+    closing_quote = {"clvQuoteId": "c", "isClosingQuote": True, "priceUnit": "CENTS", "yesBid": None, "yesAsk": None, "noBid": None, "noAsk": None}
     result = compute_clv_for_bet({"entryPrice": 0.5, "side": "YES"}, [closing_quote])
     assert result["clvStatus"] == "UNAVAILABLE"
     assert result["unavailableReason"] == "CLOSING_QUOTE_MISSING_EXECUTABLE_PRICE"
@@ -190,7 +190,7 @@ def test_finalize_closing_quotes_selects_none_when_start_timing_unresolved():
 
 def test_wide_spread_quote_still_computes_clv():
     """CLV validity is gated on marketStatus/executable price presence, never on spread width."""
-    wide_spread_quote = {"clvQuoteId": "c", "isClosingQuote": True, "yesBid": 10, "yesAsk": 90, "noBid": None, "noAsk": None}
+    wide_spread_quote = {"clvQuoteId": "c", "isClosingQuote": True, "priceUnit": "CENTS", "yesBid": 10, "yesAsk": 90, "noBid": None, "noAsk": None}
     result = compute_clv_for_bet({"entryPrice": 0.5, "side": "YES"}, [wide_spread_quote])
     assert result["clvStatus"] == "VALID"
     assert result["closingImpliedProbability"] == 0.9
@@ -215,7 +215,7 @@ def test_multiple_tranches_on_one_ticker_each_get_own_clv_from_the_shared_closin
     same clvQuoteId.
     """
     closing_quote = {
-        "clvQuoteId": "q1", "marketTicker": "T", "isClosingQuote": True,
+        "clvQuoteId": "q1", "marketTicker": "T", "isClosingQuote": True, "priceUnit": "CENTS",
         "yesBid": 48, "yesAsk": 50, "noBid": None, "noAsk": None,
     }
     tranche1 = {"betId": "bet-1", "marketTicker": "T", "side": "YES", "entryPrice": 0.45}
@@ -229,3 +229,92 @@ def test_multiple_tranches_on_one_ticker_each_get_own_clv_from_the_shared_closin
     assert result1["clvCents"] != result2["clvCents"]  # different entry price -> different CLV
     assert result1["clvCents"] == round((0.50 - 0.45) * 100, 2)
     assert result2["clvCents"] == round((0.50 - 0.52) * 100, 2)
+
+
+# ---------------------------------------------------------------------------
+# Regression: the 100x CLV scale defect at the ClvQuote producer/consumer
+# boundary.
+#
+# ClvQuote prices used to carry no declared unit. The consumer
+# (_executable_closing_implied) divided by 100 unconditionally -- correct
+# only while MarketObservation prices were integer cents, which stopped
+# being true on 2026-09-11 when the captured Kalshi snapshots switched to
+# the declared `*_dollars` fixed-point fields. From that date a 0.66 NO ask
+# was read as a 0.0066 closing probability, and CLV came out ~100x too
+# negative against a correctly-scaled entryPrice.
+#
+# entryPrice is provably the SOUND side of that comparison: on every
+# receipt-imported row it equals contractCost/contracts exactly, so these
+# tests pin the CLOSING side's unit handling.
+# ---------------------------------------------------------------------------
+
+def test_clv_quotes_declare_their_price_unit():
+    """The producer states the unit; it is never left for a consumer to guess."""
+    quotes = project_observations_to_clv_quotes(
+        [_obs("T", "2026-07-31T12:00:00Z", 0.34, 0.37)], {"T": "bet-1"}, run_id="r1",
+    )
+    assert quotes, "producer emitted no quote"
+    assert all(q["priceUnit"] == "PROBABILITY" for q in quotes)
+
+
+def test_probability_denominated_close_is_not_divided_by_100_again():
+    """The live defect vector: KXMLBTOTAL-26SEP201435TORTEX-10, bet 997fd52d.
+
+    Archived closing quote yesBid=0.34 / noAsk=0.66 against a NO entry at
+    0.72. Stored CLV was -71.34 (closingPrice 0.0066). The truth is a
+    6-cent adverse move, not a 71-cent one.
+    """
+    closing_quote = {
+        "clvQuoteId": "c", "isClosingQuote": True, "priceUnit": "PROBABILITY",
+        "yesBid": 0.34, "yesAsk": 0.37, "noBid": 0.63, "noAsk": 0.66,
+    }
+    result = compute_clv_for_bet({"entryPrice": 0.72, "side": "NO"}, [closing_quote])
+    assert result["clvStatus"] == "VALID"
+    assert result["closingImpliedProbability"] == 0.66
+    assert result["clvCents"] == -6.0
+
+
+def test_no_side_derived_from_yes_bid_respects_the_declared_unit():
+    """(one contract - yesBid) is 1.0-0.34 in PROBABILITY, never 100-0.34."""
+    closing_quote = {
+        "clvQuoteId": "c", "isClosingQuote": True, "priceUnit": "PROBABILITY",
+        "yesBid": 0.34, "yesAsk": 0.37, "noBid": None, "noAsk": None,
+    }
+    result = compute_clv_for_bet({"entryPrice": 0.72, "side": "NO"}, [closing_quote])
+    assert result["clvStatus"] == "VALID"
+    assert result["closingImpliedProbability"] == 0.66
+
+
+def test_same_book_in_either_unit_yields_identical_clv():
+    """Unit is a property of the field, so it must not change the answer."""
+    bet = {"entryPrice": 0.45, "side": "YES"}
+    cents = {"clvQuoteId": "c", "isClosingQuote": True, "priceUnit": "CENTS",
+             "yesBid": 48, "yesAsk": 50, "noBid": None, "noAsk": None}
+    probability = {"clvQuoteId": "c", "isClosingQuote": True, "priceUnit": "PROBABILITY",
+                   "yesBid": 0.48, "yesAsk": 0.50, "noBid": None, "noAsk": None}
+    a, b = compute_clv_for_bet(bet, [cents]), compute_clv_for_bet(bet, [probability])
+    assert a["clvStatus"] == b["clvStatus"] == "VALID"
+    assert a["clvCents"] == b["clvCents"] == 5.0
+    assert a["closingImpliedProbability"] == b["closingImpliedProbability"] == 0.50
+
+
+def test_undeclared_price_unit_fails_closed_and_never_fabricates_a_number():
+    """An archived row with no declared unit is UNRESOLVABLE, not assumed.
+
+    Assuming is exactly what produced the defect, so the absence of a
+    declaration gets its own reason rather than a plausible-looking CLV.
+    """
+    closing_quote = {"clvQuoteId": "c", "isClosingQuote": True,
+                     "yesBid": 0.34, "yesAsk": 0.37, "noBid": None, "noAsk": 0.66}
+    result = compute_clv_for_bet({"entryPrice": 0.72, "side": "NO"}, [closing_quote])
+    assert result["clvStatus"] == "UNAVAILABLE"
+    assert result["unavailableReason"] == "CLOSING_QUOTE_PRICE_UNIT_UNDECLARED"
+    assert "clvCents" not in result
+
+
+def test_unrecognised_price_unit_is_rejected_not_coerced():
+    closing_quote = {"clvQuoteId": "c", "isClosingQuote": True, "priceUnit": "DOLLARS",
+                     "yesBid": 0.34, "yesAsk": 0.37, "noBid": None, "noAsk": 0.66}
+    result = compute_clv_for_bet({"entryPrice": 0.72, "side": "NO"}, [closing_quote])
+    assert result["clvStatus"] == "UNAVAILABLE"
+    assert result["unavailableReason"] == "CLOSING_QUOTE_PRICE_UNIT_UNDECLARED"

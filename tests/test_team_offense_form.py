@@ -332,6 +332,24 @@ def test_capture_writes_a_form_profile_per_team(tmp_path, monkeypatch):
 
 # ── the addition must be strictly additive ──────────────────────────────
 
+def _slate_team_abbrs(slate_path):
+    """Every team abbreviation on a slate file, in stable order.
+
+    Keeps the offensive-form fixture pinned to the slate actually committed
+    in this checkout, so the test measures behaviour rather than measuring
+    which teams happened to play on the day the fixture was written.
+    """
+    with open(slate_path) as fh:
+        slate = json.load(fh)
+    abbrs = []
+    for game in slate.get("games") or []:
+        for side in ("awayTeamStats", "homeTeamStats"):
+            abbr = (game.get(side) or {}).get("abbr")
+            if abbr and abbr not in abbrs:
+                abbrs.append(abbr)
+    return abbrs
+
+
 def test_enrich_data_offense_baseline_is_identical_with_and_without_form_context(tmp_path):
     """
     The guard against silently changing production behaviour: run
@@ -354,8 +372,18 @@ def test_enrich_data_offense_baseline_is_identical_with_and_without_form_context
         for name in required:
             shutil.copy(os.path.join(source, name), work / "data" / name)
         if with_form:
+            # The abbreviations MUST come from the slate this checkout
+            # actually carries, not from a hardcoded list. OUTLIER_WINDOW is
+            # synthetic, so the OUTLIER_INFLATED label is produced by the
+            # fixture and would attach to any team -- but only if that team is
+            # ON the slate. data/slate.json rolls forward daily, so a fixed
+            # list (MIL/PIT/NYY/BOS) stops intersecting it, no form context
+            # attaches to anything, and the final assertion below fails for a
+            # reason unrelated to the behaviour under test. Measured on
+            # 2026-09-21: the committed slate held BAL/DET/MIN/SF/TOR/WSH and
+            # none of the four.
             teams = {}
-            for abbr in ("MIL", "PIT", "NYY", "BOS"):
+            for abbr in _slate_team_abbrs(work / "data" / "slate.json"):
                 form = build_form(OUTLIER_WINDOW, team=abbr, as_of_date="2026-09-16")
                 label, reason = hot_label(form)
                 form["formLabel"] = {"label": label, "reason": reason, "window": "L7"}
@@ -386,4 +414,8 @@ def test_enrich_data_offense_baseline_is_identical_with_and_without_form_context
     # ...and the new context really was attached in the with-form run.
     attached = [g[s].get("offenseFormLabel") for g in with_form["games"]
                 for s in ("awayTeamStats", "homeTeamStats") if g.get(s)]
+    assert attached, "no team stats on the committed slate to attach form context to"
+    # OUTLIER_WINDOW is synthetic, so every team built above is inflated by
+    # construction. This asserts the context actually reached the slate --
+    # the mechanism -- not that any particular real team was hot.
     assert any(label == "OUTLIER_INFLATED" for label in attached)

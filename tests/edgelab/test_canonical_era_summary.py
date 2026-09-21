@@ -89,7 +89,16 @@ def test_roi_and_clv_computed_only_over_era_bets_by_default():
     ]
     summary = build_canonical_era_summary(bets)
     assert summary["roiPct"] == 90.0  # 9 / 10 * 100, legacy bet's -100% ROI never mixed in
-    assert summary["avgClvCents"] == 2.0
+    # The era bet carries a clv value but no closingCoverageClass, so how far
+    # from first pitch its quote was captured is unknown -- and unknown is not
+    # closing-line evidence. The headline excludes it; the raw mean survives
+    # only as an explicitly-named diagnostic. Previously this asserted 2.0 as
+    # "avgClvCents", the same unqualified claim that let a 14-hour-old quote be
+    # reported as closing-line value. See docs/EDGELAB_CLOSING_QUOTE_POLICY.md.
+    assert summary["avgClvCents"] is None
+    assert summary["clvCoverage"]["clvEligibleCount"] == 0
+    assert summary["clvCoverage"]["unclassifiedCount"] == 1
+    assert summary["clvCoverage"]["avgClvCentsAllCoverageIncludingStale"] == 2.0
 
 
 def test_cancelled_and_paper_excluded_same_as_build_postmortem():
@@ -114,3 +123,20 @@ def test_never_mutates_input_bets():
     snapshot = [dict(b) for b in bets]
     build_canonical_era_summary(bets)
     assert bets == snapshot
+
+
+def test_era_summary_headline_clv_uses_true_close_rows_only():
+    """The era summary is gated exactly like every other CLV surface."""
+    bets = [
+        _bet("close", "2026-08-03", stake=10.0, result="WIN", net_pl=9.0, clv=3.0),
+        _bet("stale", "2026-08-04", stake=10.0, result="LOSS", net_pl=-10.0, clv=-59.0),
+    ]
+    bets[0]["closingCoverageClass"] = "TRUE_CLOSE"
+    bets[0]["closingSecondsBeforeStart"] = 600
+    bets[1]["closingCoverageClass"] = "PRE_CLOSE"
+    bets[1]["closingSecondsBeforeStart"] = 34140
+    summary = build_canonical_era_summary(bets)
+    assert summary["avgClvCents"] == 3.0          # the stale -59 row is excluded
+    assert summary["clvCoverage"]["trueCloseCount"] == 1
+    assert summary["clvCoverage"]["preCloseOnlyCount"] == 1
+    assert summary["clvCoverage"]["avgClvCentsAllCoverageIncludingStale"] == -28.0

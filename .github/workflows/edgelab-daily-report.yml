@@ -63,6 +63,31 @@ jobs:
             "data/edgelab/reports/${{ env.DATE }}.json" \
             "data/edgelab/reports/${{ env.DATE }}_calibration.jsonl"
 
+      # PHASE 6: near-close capture health. Reported here rather than on a
+      # schedule of its own because this slot already runs once a day, after
+      # the ET day has rolled over, and already commits to reports/.
+      #
+      # It answers one question the rest of this workflow cannot: did the
+      # near-close captures the schedule ASKED for actually ARRIVE? For 13
+      # consecutive days they did not -- 28-78 slots requested, 5-7
+      # delivered -- and because nothing put the two numbers side by side,
+      # CLV went on being scored against quotes a median 14.4 hours before
+      # first pitch. always() so a failure in the report step above never
+      # hides a coverage outage.
+      - name: Build near-close capture health report
+        if: always()
+        run: python3 scripts/edgelab/build_capture_health_report.py --date "${{ env.DATE }}" --days 7
+
+      - name: Commit capture health report (only if changed)
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "capture health report: ${{ env.DATE }} $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            "data/edgelab/reports/capture_health.md" \
+            "data/edgelab/reports/capture_health.json"
+
       # Corpus Storage Growth mission: this nightly slot (08:00 UTC, well
       # after the ET day rolls over) is the natural once-daily point to
       # gzip-compact every settlements/clv_quotes/model_evaluations/

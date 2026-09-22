@@ -147,13 +147,33 @@ jobs:
               json.dump(d, f, separators=(',', ':'))
           EOF
 
-          # Write both copies
-          cp data/kalshi_search_live.json "$SNAP_DATE"
+          # The TIMESTAMPED copy is always written: it is the record that this
+          # attempt happened, and recording a failed attempt is the entire
+          # point of archiving unconditionally.
           cp data/kalshi_search_live.json "$SNAP_TS"
-          echo "snapshot_date_path=$SNAP_DATE" >> $GITHUB_OUTPUT
           echo "snapshot_ts_path=$SNAP_TS" >> $GITHUB_OUTPUT
-          echo "Archived: $SNAP_DATE"
           echo "Archived: $SNAP_TS"
+
+          # The DATED copy is different. lib/snapshot_retention.py keeps it
+          # FOREVER as the per-slate-date reference other consumers reconcile
+          # against, and it is overwritten in place by each capture. Letting a
+          # capture that retrieved NOTHING clobber a good one would destroy
+          # evidence in the name of recording it -- turning a transient fetch
+          # failure into permanent data loss on the one file that is never
+          # pruned.
+          #
+          # So it is advanced only by a capture that actually retrieved
+          # markets. The failed attempt is fully recorded in the timestamped
+          # file either way, and the completeness ledger reads both.
+          if [ "${{ steps.fetch_markets.outputs.markets_count }}" -gt 0 ]; then
+            cp data/kalshi_search_live.json "$SNAP_DATE"
+            echo "snapshot_date_path=$SNAP_DATE" >> $GITHUB_OUTPUT
+            echo "Archived: $SNAP_DATE"
+          else
+            echo "NOT advancing $SNAP_DATE: this capture retrieved 0 markets."
+            echo "The attempt is recorded in $SNAP_TS; the kept-forever dated"
+            echo "reference is left pointing at the last capture that succeeded."
+          fi
           
           # Prune old timestamped snapshots (dated per-slate-date files are
           # always kept forever -- see lib/snapshot_retention.py).
@@ -177,8 +197,13 @@ jobs:
 
           rm -f data/kalshi_search_live.json
 
+      # Gated on the TIMESTAMPED path, not the dated one. The dated copy is
+      # deliberately not advanced by a capture that retrieved nothing (see
+      # above), so gating the commit on it would write a failed attempt to the
+      # runner's disk and then throw it away when the runner is reclaimed --
+      # no artifact, which is the exact defect PHASE G exists to close.
       - name: Commit snapshot
-        if: steps.archive.outputs.snapshot_date_path != ''
+        if: steps.archive.outputs.snapshot_ts_path != ''
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

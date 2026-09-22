@@ -52,13 +52,56 @@ jobs:
         id: fetch_markets
         run: |
           CB=$(date +%s)
-          curl -sf \
+          # PHASE G: an attempt that fails must still leave DURABLE EVIDENCE.
+          #
+          # This step used to `exit 1` on a failed fetch, and the archive step
+          # below was gated on markets_count > 0. Between them, a capture that
+          # failed and a capture that never ran were indistinguishable in the
+          # archive forever after -- which is why the 21-day audit could only
+          # ever report a LOWER bound on what was lost.
+          #
+          # The endpoint now returns a well-formed empty snapshot with
+          # captureStatus FAILED (HTTP 200) rather than a bare {error}. If even
+          # that does not arrive -- DNS, TLS, a function timeout -- we
+          # synthesise the same shape locally so the attempt is still on the
+          # record. `-f` is dropped so an error BODY is kept rather than
+          # discarded.
+          HTTP=$(curl -s -w '%{http_code}' \
             "https://edge-finder-api.vercel.app/api/kalshisearch?_cb=${CB}" \
             -H "Accept: application/json" \
             -H "Cache-Control: no-cache" \
-            -o data/kalshi_search_live.json \
-            && echo "kalshi_search_live.json: $(wc -c < data/kalshi_search_live.json) bytes" \
-            || { echo "ERROR: Kalshi search fetch failed"; exit 1; }
+            -o data/kalshi_search_live.json) || HTTP="000"
+          echo "kalshisearch HTTP $HTTP"
+
+          if ! python3 -c "import json,sys; d=json.load(open('data/kalshi_search_live.json')); sys.exit(0 if isinstance(d.get('markets'), (list,dict)) else 1)" 2>/dev/null; then
+            echo "ERROR: no usable snapshot body (HTTP $HTTP) -- recording a FAILED capture attempt"
+            HTTP_STATUS="$HTTP" python3 - <<'PYFAIL'
+          import datetime, json, os
+          body = None
+          try:
+              with open("data/kalshi_search_live.json") as fh:
+                  body = fh.read()[:2000]
+          except OSError:
+              pass
+          json.dump({
+              "date": os.environ.get("DATE", ""),
+              "fetched_at": datetime.datetime.now(datetime.timezone.utc)
+                            .strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+              "total_markets": 0, "markets": [], "results": [],
+              "by_type": {}, "by_event": {}, "series_counts": {},
+              "discoveredUnknownSeriesMarkets": [], "discoveredUnknownSeriesCount": 0,
+              "captureContractVersion": "kalshi_capture_v4",
+              "captureStatus": "FAILED", "captureComplete": False,
+              "pagination": [], "exclusions": {},
+              "fetchFailures": [{"scope": "transport", "url": "api/kalshisearch",
+                                 "status": os.environ.get("HTTP_STATUS")}],
+              "fetchFailureCount": 1, "priceFetchFailureCount": 1,
+              "captureError": "no usable snapshot body from api/kalshisearch",
+              "captureErrorBody": body,
+          }, open("data/kalshi_search_live.json", "w"), separators=(",", ":"))
+          PYFAIL
+          fi
+          echo "kalshi_search_live.json: $(wc -c < data/kalshi_search_live.json) bytes"
 
           # Verify it has content
           MARKETS=$(python3 -c "
@@ -77,8 +120,10 @@ jobs:
             echo "WARNING: Only $MARKETS markets found — possibly stale or empty response"
           fi
 
+      # PHASE G: archive UNCONDITIONALLY. `markets_count > 0` was the
+      # condition that made a failed capture leave no trace at all; a capture
+      # that retrieved nothing is exactly the one worth having a record of.
       - name: Archive snapshot with timestamp
-        if: steps.fetch_markets.outputs.markets_count > 0
         id: archive
         run: |
           SNAP_DIR="data/kalshi_registry_snapshots"

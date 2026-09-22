@@ -1,0 +1,2433 @@
+{
+  "generatedAt": "2026-09-22T03:43:20Z",
+  "interpretation": {
+    "consequence": "Until the v4 contract has been capturing for a while there is almost no COMPLETE history. Research requiring proven completeness must say so and report its reduced sample rather than quietly falling back.",
+    "whyCleanLegacySnapshotsAreNotComplete": "Under the pre-v4 capture path a live cursor at maxPages=10 was discarded with no failure recorded anywhere, so fetchFailureCount=0 means 'nothing reported an error', which is strictly weaker than 'everything was retrieved'. Calling those COMPLETE would launder an absence of evidence into evidence of absence, on exactly the busiest captures a page cap bites first.",
+    "whyPartialIsRefusedForResearch": "The missingness is systematic, not random: the old sequential fetch meant a rate limit truncated whatever series came last, so the same hitter prop families absorbed the loss every time. Mixing that into a family-level calibration adds bias in a known direction, not noise."
+  },
+  "rows": [
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-07-30",
+      "fetchedAt": "2026-07-31T00:56:23.830Z",
+      "incompleteSeries": [],
+      "marketsArchived": 260,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-07-30_recheck_0056.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-04",
+      "fetchedAt": "2026-08-04T23:17:28.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4933,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-04_231726_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-05",
+      "fetchedAt": "2026-08-05T17:07:41.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2318,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-05_170739_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-05",
+      "fetchedAt": "2026-08-05T22:41:10.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1301,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-05_224108_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-06",
+      "fetchedAt": "2026-08-07T00:45:44.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1658,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-06_004543_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-06",
+      "fetchedAt": "2026-08-06T16:26:48.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1721,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-06_162647_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-08",
+      "fetchedAt": "2026-08-08T18:53:37.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2366,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-08_185336_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-09",
+      "fetchedAt": "2026-08-10T00:00:28.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 339,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-09_000026_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-09",
+      "fetchedAt": "2026-08-09T15:59:35.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3113,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-09_155934_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-09",
+      "fetchedAt": "2026-08-09T19:53:49.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4365,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-09_195347_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-10",
+      "fetchedAt": "2026-08-10T23:21:02.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2934,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-10_232100_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-11",
+      "fetchedAt": "2026-08-12T01:08:35.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4407,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-11_010833_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-11",
+      "fetchedAt": "2026-08-11T22:11:17.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2351,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-11_221116_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-12",
+      "fetchedAt": "2026-08-13T00:23:15.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3042,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-12_002313_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-12",
+      "fetchedAt": "2026-08-12T17:17:50.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2050,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-12_171749_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-12",
+      "fetchedAt": "2026-08-12T22:08:20.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1923,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-12_220818_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-13",
+      "fetchedAt": "2026-08-13T16:39:57.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1911,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-13_163956_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-13",
+      "fetchedAt": "2026-08-13T22:27:22.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 877,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-13_222720_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-14",
+      "fetchedAt": "2026-08-14T17:25:47.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1548,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-14_172545_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-15",
+      "fetchedAt": "2026-08-16T00:39:50.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3289,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-15_003948_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-15",
+      "fetchedAt": "2026-08-15T05:16:13.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1156,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-15_051611_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-15",
+      "fetchedAt": "2026-08-15T16:32:21.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2077,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-15_163219_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-15",
+      "fetchedAt": "2026-08-15T18:24:22.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2727,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-15_182419_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-15",
+      "fetchedAt": "2026-08-15T21:24:09.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3779,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-15_212407_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-15",
+      "fetchedAt": "2026-08-15T22:04:04.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3499,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-15_220402_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-16",
+      "fetchedAt": "2026-08-16T19:21:45.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4437,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-16_192143_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-17",
+      "fetchedAt": "2026-08-17T15:50:55.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1122,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-17_155053_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-18",
+      "fetchedAt": "2026-08-18T22:57:04.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 5106,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-18_185702_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-19",
+      "fetchedAt": "2026-08-19T15:55:21.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2057,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-19_115520_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-19",
+      "fetchedAt": "2026-08-19T19:10:16.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2726,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-19_151015_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-19",
+      "fetchedAt": "2026-08-19T22:50:55.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3751,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-19_185053_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-20",
+      "fetchedAt": "2026-08-20T23:28:29.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1007,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-20_192828_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-21",
+      "fetchedAt": "2026-08-21T18:40:18.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1795,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-21_144016_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-21",
+      "fetchedAt": "2026-08-21T22:13:19.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4306,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-21_181317_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-21",
+      "fetchedAt": "2026-08-22T01:11:45.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3938,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-21_211143_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-22",
+      "fetchedAt": "2026-08-22T16:59:15.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1833,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-22_125914_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-22",
+      "fetchedAt": "2026-08-22T22:18:15.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3909,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-22_181813_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-24",
+      "fetchedAt": "2026-08-24T16:54:57.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1050,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-24_125455_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-08-25",
+      "fetchedAt": "2026-08-26T02:00:32.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4242,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-08-25_220030_standalone.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-01",
+      "fetchedAt": "2026-09-02T02:18:07.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2909,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-01_0218.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-01",
+      "fetchedAt": "2026-09-01T08:19:18.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2020,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-01_0819.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-01",
+      "fetchedAt": "2026-09-01T19:20:09.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2341,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-01_1920.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-01",
+      "fetchedAt": "2026-09-01T21:56:13.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2113,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-01_2156.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-01",
+      "fetchedAt": "2026-09-01T23:58:49.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3259,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-01_2358.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-02",
+      "fetchedAt": "2026-09-03T00:01:43.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3009,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-02_0001.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-02",
+      "fetchedAt": "2026-09-03T02:25:55.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1917,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-02_0225.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-02",
+      "fetchedAt": "2026-09-02T07:13:24.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1970,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-02_0713.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-02",
+      "fetchedAt": "2026-09-02T19:20:23.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3507,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-02_1920.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-02",
+      "fetchedAt": "2026-09-02T21:56:39.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3343,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-02_2156.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-03",
+      "fetchedAt": "2026-09-04T02:20:50.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1281,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-03_0220.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-03",
+      "fetchedAt": "2026-09-03T07:17:41.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1409,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-03_0717.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-03",
+      "fetchedAt": "2026-09-03T19:14:39.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1880,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-03_1914.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-03",
+      "fetchedAt": "2026-09-03T21:51:45.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1611,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-03_2151.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-03",
+      "fetchedAt": "2026-09-03T23:55:18.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2029,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-03_2355.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-04",
+      "fetchedAt": "2026-09-05T01:19:09.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4422,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-04_0119.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-04",
+      "fetchedAt": "2026-09-05T02:21:25.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2417,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-04_0221.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-04",
+      "fetchedAt": "2026-09-04T07:20:19.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2076,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-04_0720.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-04",
+      "fetchedAt": "2026-09-04T18:57:01.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2651,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-04_1857.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-04",
+      "fetchedAt": "2026-09-04T21:22:16.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3909,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-04_2122.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-04",
+      "fetchedAt": "2026-09-04T23:13:27.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4486,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-04_2313.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-05",
+      "fetchedAt": "2026-09-06T00:47:21.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3425,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-05_0047.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-05",
+      "fetchedAt": "2026-09-06T02:17:40.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1949,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-05_0217.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-05",
+      "fetchedAt": "2026-09-05T07:02:08.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1681,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-05_0702.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-05",
+      "fetchedAt": "2026-09-05T18:05:29.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2805,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-05_1805.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-05",
+      "fetchedAt": "2026-09-05T20:39:32.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3403,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-05_2039.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-05",
+      "fetchedAt": "2026-09-05T22:45:36.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4544,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-05_2245.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-06",
+      "fetchedAt": "2026-09-07T00:50:06.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 448,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-06_0050.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-06",
+      "fetchedAt": "2026-09-07T02:14:27.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 331,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-06_0214.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-06",
+      "fetchedAt": "2026-09-06T07:13:44.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1750,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-06_0713.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-06",
+      "fetchedAt": "2026-09-06T18:12:00.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3952,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-06_1812.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-06",
+      "fetchedAt": "2026-09-06T20:44:09.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2464,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-06_2044.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-06",
+      "fetchedAt": "2026-09-06T22:51:07.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 485,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-06_2251.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-07",
+      "fetchedAt": "2026-09-08T01:05:54.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 991,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-07_0105.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-07",
+      "fetchedAt": "2026-09-08T02:26:57.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 965,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-07_0226.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-07",
+      "fetchedAt": "2026-09-07T07:27:06.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1244,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-07_0727.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-07",
+      "fetchedAt": "2026-09-07T19:49:18.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2506,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-07_1949.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-07",
+      "fetchedAt": "2026-09-07T22:44:26.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 919,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-07_2244.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-08",
+      "fetchedAt": "2026-09-09T00:06:04.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 5043,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-08_0006.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-08",
+      "fetchedAt": "2026-09-09T02:29:23.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2313,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-08_0229.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-08",
+      "fetchedAt": "2026-09-08T07:21:53.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2144,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-08_0721.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-08",
+      "fetchedAt": "2026-09-08T19:22:56.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2550,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-08_1922.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-08",
+      "fetchedAt": "2026-09-08T21:59:11.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4139,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-08_2159.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-09",
+      "fetchedAt": "2026-09-10T00:02:15.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3418,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-09_0002.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-09",
+      "fetchedAt": "2026-09-10T02:29:31.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1293,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-09_0229.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-09",
+      "fetchedAt": "2026-09-09T07:31:27.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2025,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-09_0731.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-09",
+      "fetchedAt": "2026-09-09T19:13:03.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3350,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-09_1913.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-09",
+      "fetchedAt": "2026-09-09T21:54:12.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2546,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-09_2154.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-10",
+      "fetchedAt": "2026-09-10T07:28:05.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 848,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-10_0728.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-10",
+      "fetchedAt": "2026-09-10T19:04:15.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 954,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-10_1904.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-10",
+      "fetchedAt": "2026-09-10T21:48:24.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 986,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-10_2148.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-10",
+      "fetchedAt": "2026-09-10T23:57:30.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 673,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-10_2357.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-11",
+      "fetchedAt": "2026-09-12T00:04:27.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4706,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-11_0004.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-11",
+      "fetchedAt": "2026-09-12T02:31:36.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1991,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-11_0231.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "PARTIAL",
+      "contractVersion": null,
+      "date": "2026-09-11",
+      "fetchedAt": "2026-09-11T07:24:04.000Z",
+      "incompleteSeries": [
+        "__broad_discovery__"
+      ],
+      "marketsArchived": 1685,
+      "reason": "snapshot records explicit fetch failures",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-11_0724.json",
+      "truncationReasons": [
+        "RECORDED_FETCH_FAILURE"
+      ]
+    },
+    {
+      "class": "PARTIAL",
+      "contractVersion": null,
+      "date": "2026-09-11",
+      "fetchedAt": "2026-09-11T19:06:46.000Z",
+      "incompleteSeries": [
+        "KXMLBHRR",
+        "KXMLBRBI",
+        "KXMLBSB",
+        "KXMLBTB"
+      ],
+      "marketsArchived": 1553,
+      "reason": "snapshot records explicit fetch failures",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-11_1906.json",
+      "truncationReasons": [
+        "RECORDED_FETCH_FAILURE"
+      ]
+    },
+    {
+      "class": "PARTIAL",
+      "contractVersion": null,
+      "date": "2026-09-11",
+      "fetchedAt": "2026-09-11T21:52:27.000Z",
+      "incompleteSeries": [
+        "KXMLBHRR",
+        "KXMLBRBI"
+      ],
+      "marketsArchived": 2530,
+      "reason": "snapshot records explicit fetch failures",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-11_2152.json",
+      "truncationReasons": [
+        "RECORDED_FETCH_FAILURE"
+      ]
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-12",
+      "fetchedAt": "2026-09-13T00:48:55.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1971,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-12_0048.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-12",
+      "fetchedAt": "2026-09-13T02:30:35.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 974,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-12_0230.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-12",
+      "fetchedAt": "2026-09-12T07:32:49.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1469,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-12_0732.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "PARTIAL",
+      "contractVersion": null,
+      "date": "2026-09-12",
+      "fetchedAt": "2026-09-12T18:17:08.000Z",
+      "incompleteSeries": [
+        "__broad_discovery__"
+      ],
+      "marketsArchived": 3858,
+      "reason": "snapshot records explicit fetch failures",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-12_1817.json",
+      "truncationReasons": [
+        "RECORDED_FETCH_FAILURE"
+      ]
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-12",
+      "fetchedAt": "2026-09-12T20:52:06.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3308,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-12_2052.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-12",
+      "fetchedAt": "2026-09-12T22:56:28.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2471,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-12_2256.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-13",
+      "fetchedAt": "2026-09-14T01:30:16.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 297,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-13_0130.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-13",
+      "fetchedAt": "2026-09-13T07:38:05.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1907,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-13_0738.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-13",
+      "fetchedAt": "2026-09-13T18:43:01.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4467,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-13_1843.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-13",
+      "fetchedAt": "2026-09-13T21:22:44.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1329,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-13_2122.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-13",
+      "fetchedAt": "2026-09-13T23:25:05.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 950,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-13_2325.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-14",
+      "fetchedAt": "2026-09-15T01:49:30.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2823,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-14_0149.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-14",
+      "fetchedAt": "2026-09-15T02:49:46.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1005,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-14_0249.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-14",
+      "fetchedAt": "2026-09-14T08:26:04.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1526,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-14_0826.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-14",
+      "fetchedAt": "2026-09-14T20:16:08.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2102,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-14_2016.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "PARTIAL",
+      "contractVersion": null,
+      "date": "2026-09-14",
+      "fetchedAt": "2026-09-14T23:22:27.000Z",
+      "incompleteSeries": [
+        "KXMLBHRR",
+        "KXMLBRBI",
+        "KXMLBSB"
+      ],
+      "marketsArchived": 2698,
+      "reason": "snapshot records explicit fetch failures",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-14_2322.json",
+      "truncationReasons": [
+        "RECORDED_FETCH_FAILURE"
+      ]
+    },
+    {
+      "class": "PARTIAL",
+      "contractVersion": null,
+      "date": "2026-09-15",
+      "fetchedAt": "2026-09-16T01:16:43.000Z",
+      "incompleteSeries": [
+        "KXMLBHRR",
+        "KXMLBRBI",
+        "KXMLBTB"
+      ],
+      "marketsArchived": 2133,
+      "reason": "snapshot records explicit fetch failures",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-15_0116.json",
+      "truncationReasons": [
+        "RECORDED_FETCH_FAILURE"
+      ]
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-15",
+      "fetchedAt": "2026-09-16T02:45:11.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1387,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-15_0245.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-15",
+      "fetchedAt": "2026-09-15T08:16:52.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2083,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-15_0816.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-15",
+      "fetchedAt": "2026-09-15T19:39:02.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2457,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-15_1939.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-15",
+      "fetchedAt": "2026-09-15T22:50:16.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4409,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-15_2250.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-16",
+      "fetchedAt": "2026-09-17T00:50:44.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3447,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-16_0050.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-16",
+      "fetchedAt": "2026-09-17T02:49:09.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1588,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-16_0249.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-16",
+      "fetchedAt": "2026-09-16T08:10:38.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1990,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-16_0810.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-16",
+      "fetchedAt": "2026-09-16T19:30:38.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3039,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-16_1930.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-16",
+      "fetchedAt": "2026-09-16T22:18:43.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3012,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-16_2218.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-17",
+      "fetchedAt": "2026-09-18T01:12:00.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1597,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-17_0112.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-17",
+      "fetchedAt": "2026-09-18T02:35:56.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 616,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-17_0235.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-17",
+      "fetchedAt": "2026-09-17T08:17:28.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1151,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-17_0817.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-17",
+      "fetchedAt": "2026-09-17T19:41:32.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1490,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-17_1941.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-17",
+      "fetchedAt": "2026-09-17T22:48:06.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1456,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-17_2248.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-18",
+      "fetchedAt": "2026-09-19T00:07:12.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 5040,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-18_0007.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-18",
+      "fetchedAt": "2026-09-19T02:35:00.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3265,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-18_0235.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-18",
+      "fetchedAt": "2026-09-18T07:51:13.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1960,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-18_0751.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-18",
+      "fetchedAt": "2026-09-18T18:59:25.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2340,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-18_1859.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-18",
+      "fetchedAt": "2026-09-18T21:37:00.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4247,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-18_2137.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-19",
+      "fetchedAt": "2026-09-20T01:31:45.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 2618,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-19_0131.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "PARTIAL",
+      "contractVersion": null,
+      "date": "2026-09-19",
+      "fetchedAt": "2026-09-20T02:47:10.000Z",
+      "incompleteSeries": [
+        "KXMLBHRR",
+        "KXMLBRBI",
+        "KXMLBSB"
+      ],
+      "marketsArchived": 1390,
+      "reason": "snapshot records explicit fetch failures",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-19_0247.json",
+      "truncationReasons": [
+        "RECORDED_FETCH_FAILURE"
+      ]
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-19",
+      "fetchedAt": "2026-09-19T07:43:31.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1951,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-19_0743.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "PARTIAL",
+      "contractVersion": null,
+      "date": "2026-09-19",
+      "fetchedAt": "2026-09-19T18:33:36.000Z",
+      "incompleteSeries": [
+        "KXMLBHRR",
+        "KXMLBRBI",
+        "KXMLBSB"
+      ],
+      "marketsArchived": 2294,
+      "reason": "snapshot records explicit fetch failures",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-19_1833.json",
+      "truncationReasons": [
+        "RECORDED_FETCH_FAILURE"
+      ]
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-19",
+      "fetchedAt": "2026-09-19T21:24:22.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3880,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-19_2124.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-19",
+      "fetchedAt": "2026-09-19T23:26:47.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 3834,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-19_2326.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-20",
+      "fetchedAt": "2026-09-21T01:30:33.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 316,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-20_0130.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-20",
+      "fetchedAt": "2026-09-20T08:11:11.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1751,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-20_0811.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-20",
+      "fetchedAt": "2026-09-20T18:40:51.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 4876,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-20_1840.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "PARTIAL",
+      "contractVersion": null,
+      "date": "2026-09-20",
+      "fetchedAt": "2026-09-20T21:25:08.000Z",
+      "incompleteSeries": [
+        "KXMLBSB"
+      ],
+      "marketsArchived": 2797,
+      "reason": "snapshot records explicit fetch failures",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-20_2125.json",
+      "truncationReasons": [
+        "RECORDED_FETCH_FAILURE"
+      ]
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-20",
+      "fetchedAt": "2026-09-20T23:26:17.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 669,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-20_2326.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-21",
+      "fetchedAt": "2026-09-22T02:45:25.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 324,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-21_0245.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-21",
+      "fetchedAt": "2026-09-21T08:28:06.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 389,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-21_0828.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-21",
+      "fetchedAt": "2026-09-21T20:23:15.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 727,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-21_2023.json",
+      "truncationReasons": []
+    },
+    {
+      "class": "UNKNOWN_LEGACY",
+      "contractVersion": null,
+      "date": "2026-09-21",
+      "fetchedAt": "2026-09-21T23:32:17.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 774,
+      "reason": "predates the completeness contract: a live cursor at the old maxPages=10 ceiling was discarded with no failure recorded, so fetchFailureCount=0 means 'nothing reported an error', not 'everything was retrieved'",
+      "reconciliation": {
+        "reason": "snapshot records no source row count to reconcile against",
+        "reconcilable": false,
+        "unaccounted": null
+      },
+      "snapshot": "kalshi_search_2026-09-21_2332.json",
+      "truncationReasons": []
+    }
+  ],
+  "schemaVersion": "capture_completeness_ledger_v1",
+  "totals": {
+    "COMPLETE": 0,
+    "FAILED": 0,
+    "PARTIAL": 9,
+    "UNKNOWN_LEGACY": 138,
+    "marketsArchived": 344843,
+    "reconcilableSnapshots": 0,
+    "researchQualifiedSnapshots": 0,
+    "seriesIncompleteFrequency": {
+      "KXMLBHRR": 6,
+      "KXMLBRBI": 6,
+      "KXMLBSB": 5,
+      "KXMLBTB": 2,
+      "__broad_discovery__": 2
+    },
+    "snapshots": 147,
+    "truncationReasonFrequency": {
+      "RECORDED_FETCH_FAILURE": 9
+    },
+    "unaccountedRows": 0,
+    "unreadable": 0
+  }
+}

@@ -4,23 +4,124 @@
   "title": "ResearchRunMetadata",
   "description": "Audit record for one EdgeLab ingestion/collection run.",
   "type": "object",
-  "required": ["schemaVersion", "runId", "runType", "startedAt", "status", "createdAt", "provenance"],
+  "required": [
+    "schemaVersion",
+    "runId",
+    "runType",
+    "startedAt",
+    "status",
+    "createdAt",
+    "provenance"
+  ],
   "properties": {
-    "schemaVersion": {"$ref": "_common.schema.json#/definitions/schemaVersion"},
-    "runId": {"type": "string"},
-    "runType": {"type": "string", "enum": ["MARKET_OBSERVATION_INGEST", "BET_LEDGER_INGEST", "RECOMMENDATION_SYNC", "CLV_COLLECTION", "SETTLEMENT", "DAILY_REPORT", "PROSPECTIVE_SNAPSHOT"]},
-    "startedAt": {"type": "string", "format": "date-time"},
-    "completedAt": {"type": ["string", "null"], "format": "date-time"},
-    "status": {"type": "string", "enum": ["running", "success", "partial", "failed", "no_op"], "description": "'no_op' (EdgeLab Prospective Model Snapshots milestone): the run completed with zero errors and genuinely had nothing to do (no game had a due checkpoint) -- distinct from 'success', which means at least one snapshot was actually captured. 'partial' means at least one game succeeded and at least one genuinely failed (not merely skipped/ineligible). 'failed' means every game that was attempted failed. Never write 'success' merely because the process reached the end -- see lib/edgelab/prospective_snapshot.py / scripts/edgelab/run_prospective_snapshots.py."},
-    "sourceWorkflow": {"type": ["string", "null"]},
-    "githubRunId": {"type": ["string", "null"]},
-    "inputFiles": {"type": "array", "items": {"type": "string"}},
-    "outputFiles": {"type": "array", "items": {"type": "string"}},
-    "counts": {"type": "object"},
-    "errors": {"type": "array", "items": {"type": "string"}},
-    "warnings": {"type": "array", "items": {"type": "string"}},
-    "createdAt": {"type": "string", "format": "date-time"},
-    "provenance": {"$ref": "_common.schema.json#/definitions/provenance"}
+    "schemaVersion": {
+      "$ref": "_common.schema.json#/definitions/schemaVersion"
+    },
+    "runId": {
+      "type": "string"
+    },
+    "runType": {
+      "type": "string",
+      "enum": [
+        "MARKET_OBSERVATION_INGEST",
+        "BET_LEDGER_INGEST",
+        "RECOMMENDATION_SYNC",
+        "CLV_COLLECTION",
+        "SETTLEMENT",
+        "DAILY_REPORT",
+        "PROSPECTIVE_SNAPSHOT"
+      ]
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "running",
+        "success",
+        "partial",
+        "failed",
+        "no_op"
+      ],
+      "description": "'no_op' (EdgeLab Prospective Model Snapshots milestone): the run completed with zero errors and genuinely had nothing to do (no game had a due checkpoint) -- distinct from 'success', which means at least one snapshot was actually captured. 'partial' means at least one game succeeded and at least one genuinely failed (not merely skipped/ineligible). 'failed' means every game that was attempted failed. Never write 'success' merely because the process reached the end -- see lib/edgelab/prospective_snapshot.py / scripts/edgelab/run_prospective_snapshots.py."
+    },
+    "sourceWorkflow": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "githubRunId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "inputFiles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "outputFiles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "counts": {
+      "type": "object"
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "provenance": {
+      "$ref": "_common.schema.json#/definitions/provenance"
+    },
+    "exclusionSummary": {
+      "type": "object",
+      "description": "PHASE H (archive completeness): the deterministic aggregate of every market this run EXCLUDED rather than archived. The registry gate has always built a full record per excluded market -- ticker, series, title, reason -- and then reported only the integer counts.marketsExcluded, so 'N markets were excluded' could never be interrogated. Persisting every row would grow unbounded on a bad day, so this carries counts by reason, the series each reason affected, a few sampled tickers, and a sha256 digest over the sorted exclusion set. Identical digests mean identical exclusions regardless of sampling or snapshot ordering. Built by lib.edgelab.market_universe.summarize_exclusions.",
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "digest": {
+          "type": "string",
+          "description": "sha256 over the sorted reason|series|ticker fingerprint set."
+        },
+        "byReason": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "total",
+        "digest",
+        "byReason"
+      ]
+    }
   },
   "additionalProperties": false
 }

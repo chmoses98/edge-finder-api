@@ -41,8 +41,41 @@ class TestKalshiSearchJsBroadDiscovery:
         assert "ALL_SERIES.includes(series)" in src
 
     def test_broad_pass_does_not_replace_per_series_loop(self):
+        """Every series in the allowlist is still fetched individually.
+
+        This used to grep for the literal `for (const series of ALL_SERIES)`.
+        The loop now iterates `fetchOrder`, a deterministic rotation of
+        ALL_SERIES (PHASE F: a rate limit must not keep truncating the same
+        families), so the string no longer appears -- but the invariant it
+        was standing in for is unchanged and is now asserted directly: the
+        loop covers a permutation of ALL_SERIES, losing none of them.
+        """
         src = _read("api/kalshisearch.js")
-        assert "for (const series of ALL_SERIES)" in src
+        assert "for (const series of fetchOrder)" in src
+        assert "rotateSeries(ALL_SERIES, seed)" in src
+
+    def test_the_rotated_fetch_order_is_a_permutation_losing_no_series(self):
+        """The rotation must never be able to drop a family it reorders."""
+        import json as _json
+        import shutil as _shutil
+        import subprocess as _subprocess
+        if _shutil.which("node") is None:
+            import pytest as _pytest
+            _pytest.skip("node is not available in this environment")
+        endpoint = os.path.join(ROOT, "api", "kalshisearch.js")
+        driver = (
+            "import { rotateSeries } from %s;\n"
+            "const S = ['a','b','c','d','e','f','g'];\n"
+            "const out = [];\n"
+            "for (let s = 0; s < 40; s++) out.push(rotateSeries(S, s).slice().sort().join(','));\n"
+            "process.stdout.write(JSON.stringify([...new Set(out)]));\n"
+            % _json.dumps(endpoint)
+        )
+        proc = _subprocess.run(["node", "--input-type=module", "-e", driver],
+                               capture_output=True, text=True, timeout=60)
+        assert proc.returncode == 0, proc.stderr[-2000:]
+        assert _json.loads(proc.stdout) == ["a,b,c,d,e,f,g"], (
+            "every rotation must contain exactly the same series")
 
     def test_f3_f7_title_classification_added(self):
         src = _read("api/kalshisearch.js")

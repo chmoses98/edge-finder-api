@@ -41,6 +41,7 @@ from lib.edgelab.market_universe import (
     new_unclassified_series_warnings,
     select_observations_for_retention,
     read_snapshot_fetch_completeness,
+    summarize_exclusions,
 )
 from lib.edgelab.mlb_schedule import backfill_missing_game_pks_via_schedule
 
@@ -220,6 +221,8 @@ def main():
     for w in new_series_warnings:
         run_record["warnings"].append(f"NEW_UNCLASSIFIED_MLB_SERIES: {w['seriesTicker']} ({w['title']})")
 
+    exclusion_summary = summarize_exclusions(all_excluded)
+
     for snapshot in incomplete_snapshots:
         run_record["warnings"].append(
             "INCOMPLETE_SOURCE_CAPTURE: %s fetchFailures=%s priceFetchFailures=%s "
@@ -254,10 +257,19 @@ def main():
         "marketsExcluded": len(all_excluded),
         "newUnclassifiedSeries": len(new_series_warnings),
         "snapshotsWithIncompleteFetch": len(incomplete_snapshots),
+        # PHASE H: the exclusion trail now survives the run. Previously the
+        # gate built a full record per excluded market and reported only the
+        # integer below, so "N markets were excluded" could never be
+        # interrogated.
+        "exclusionsByReason": {
+            reason: bucket["count"]
+            for reason, bucket in exclusion_summary["byReason"].items()
+        },
         "sourceFetchFailures": sum(s["fetchFailureCount"] or 0 for s in incomplete_snapshots),
         "seriesTruncatedAtSource": sorted(
             {s for snap in incomplete_snapshots for s in snap["failedSeries"]}),
     }
+    run_record["exclusionSummary"] = exclusion_summary
     _write_run_record(date, run_record)
 
     print(

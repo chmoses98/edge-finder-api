@@ -50,6 +50,15 @@ import sys
 from collections import defaultdict
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+sys.path.insert(0, REPO)
+from lib.edgelab.research.ladder_semantics import (  # noqa: E402
+    LEGACY_GT_RULE_LAST_GAME_DATE, parse_ladder_ticker, ladder_rule_for_game_date)
+
+# DATE-AWARE (MRV, 2026-09-22). The archived engine used "> N" only for game
+# dates through LEGACY_GT_RULE_LAST_GAME_DATE; from 2026-09-01 the archive
+# already settles ">= N". Applying the rung shift to a GE-rule ladder would
+# double-correct it, so such tickers are recorded with basis
+# "archive_already_ge_semantics" and corrected == archived.
 EDGELAB = os.path.join(REPO, "data", "edgelab")
 ART = os.path.join(EDGELAB, "research_artifacts", "mlb_alpha_0001")
 
@@ -89,6 +98,15 @@ def main():
         if yes and no and max(yes) > min(no):
             stats["nonmonotone_event_skipped"] += len(ladder)
             continue
+        parsed = parse_ladder_ticker("%s-%s-%d" % (series, event, next(iter(ladder))))
+        if parsed is not None and ladder_rule_for_game_date(parsed[3]) == "GE":
+            # Archive already settles >= N for this game date: no shift.
+            for rung, archived in ladder.items():
+                ticker = "%s-%s-%d" % (series, event, rung)
+                stats[fam + "_already_ge_kept"] += 1
+                out[ticker] = {"family": fam, "archived": archived, "corrected": archived,
+                               "basis": "archive_already_ge_semantics"}
+            continue
         lower = (max(yes) + 1) if yes else None  # T >= lower
         upper = min(no) if no else None          # T <= upper
         for rung, archived in ladder.items():
@@ -111,7 +129,8 @@ def main():
     doc = {
         "program": "MLB-ALPHA-0001",
         "researchOnly": True,
-        "semantics": "Kalshi total ladders settle YES iff value >= rung (N+); archive engine used value > rung",
+        "semantics": "Kalshi total ladders settle YES iff value >= rung (N+); archive engine used value > rung for game dates <= %s and >= rung afterwards" % LEGACY_GT_RULE_LAST_GAME_DATE,
+        "legacyGtRuleLastGameDate": LEGACY_GT_RULE_LAST_GAME_DATE,
         "affectedFamilies": ["game_total", "inning_total"],
         "stats": dict(stats),
         "tickers": out,

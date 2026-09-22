@@ -46,6 +46,7 @@ from lib.edgelab.storage import read_records
 from lib.edgelab.kalshi_fees import taker_fee
 from lib.edgelab.research_stats import independent_unit_count
 from lib.edgelab.research import frozen_forward_scorer as ffs
+from lib.edgelab.research.ladder_semantics import corrected_ladder_outcome, observation_quote_cents
 
 ANALYTICS_DIR = os.path.join(_ROOT, "data", "edgelab", "analytics")
 SETTLEMENTS_DIR = os.path.join(_ROOT, "data", "edgelab", "settlements")
@@ -62,11 +63,16 @@ OUT_MD = os.path.join(_ROOT, "docs", "EDGELAB_FROZEN_FORWARD_SCORECARD.md")
 # ── Forward corpus assembly (settled outcomes strictly after the cutoff) ──
 
 def load_forward_settled_outcomes():
-    """Only settlement partitions strictly after FORWARD_START_DATE."""
-    out = {}
-    if not os.path.isdir(SETTLEMENTS_DIR):
-        return out
-    for fn in sorted(os.listdir(SETTLEMENTS_DIR)):
+    """Only settlement partitions strictly after FORWARD_START_DATE.
+
+    Outcomes are read under KALSHI'S rule: integer total ladders on game
+    dates through 2026-08-31 were archived as "total > N" and are corrected
+    to "total >= N" via the exact rung shift in
+    lib.edgelab.research.ladder_semantics; later game dates are archived
+    correctly and pass through.  A ladder row whose shifted neighbour is not
+    archived is excluded, never guessed."""
+    archived = {}
+    for fn in sorted(os.listdir(SETTLEMENTS_DIR)) if os.path.isdir(SETTLEMENTS_DIR) else []:
         if not (fn.endswith(".jsonl") or fn.endswith(".jsonl.gz")):
             continue
         settle_date = fn.split(".jsonl")[0]
@@ -76,8 +82,15 @@ def load_forward_settled_outcomes():
             ticker, outcome = d.get("marketTicker"), d.get("outcome")
             if not ticker or outcome not in ("YES", "NO"):
                 continue
-            out[ticker] = {"outcome": 1 if outcome == "YES" else 0, "settleDate": settle_date,
-                           "gameId": d.get("gameId"), "marketFamily": d.get("marketFamily")}
+            archived[ticker] = {"outcome": outcome, "settleDate": settle_date,
+                                "gameId": d.get("gameId"), "marketFamily": d.get("marketFamily")}
+    out = {}
+    for ticker, rec in archived.items():
+        corrected = corrected_ladder_outcome(ticker, lambda t: (archived.get(t) or {}).get("outcome"))
+        if corrected not in ("YES", "NO"):
+            continue
+        out[ticker] = {"outcome": 1 if corrected == "YES" else 0, "settleDate": rec["settleDate"],
+                       "gameId": rec["gameId"], "marketFamily": rec["marketFamily"]}
     return out
 
 
@@ -122,7 +135,10 @@ def load_pregame_fair_prices():
         for d in read_records(os.path.join(OBSERVATIONS_DIR, fn)):
             if not d.get("isValidPregameObservation") or d.get("gameStartedAtCapture"):
                 continue
-            yes_bid, yes_ask = d.get("yesBid"), d.get("yesAsk")
+            # Unit-aware: the archive stores cents before 2026-09-10 and
+            # dollars from that date under the same field names
+            # (lib.edgelab.research.ladder_semantics.observation_quote_cents).
+            yes_bid, yes_ask = observation_quote_cents(d.get("yesBid")), observation_quote_cents(d.get("yesAsk"))
             if yes_bid is None or yes_ask is None:
                 continue
             ticker, captured = d.get("marketTicker"), d.get("capturedAt") or ""
@@ -266,6 +282,14 @@ def main(out_json=None, out_md=None):
             "productionChanged": False, "newSegmentsInvented": False,
             "statusVocabularyExcludesProductionApproved": True,
         },
+        "scoringMechanics": {
+            "version": ffs.SCORING_MECHANICS_VERSION,
+            "symmetricClamp": list(ffs.PROB_CLAMP),
+            "observationQuoteUnits": "unit-aware (cents before 2026-09-10, dollars after)",
+            "ladderSettlement": "Kalshi >= N rule; archived > N rows on game dates <= 2026-08-31 corrected by exact rung shift",
+            "note": ("Scorecards produced under mechanics V1 (before 2026-09-22) read dollars-era quotes as cents and "
+                     "clamped only the candidate; their FORWARD_SUPPORTS verdicts were artifacts and are superseded."),
+        },
     }
 
     if not rows:
@@ -383,6 +407,14 @@ def _write_markdown(report, out_md=None):
     if fa.get("MLB-RSCH-0026"):
         b = fa["MLB-RSCH-0026"]
         lines.append(f"| MLB-RSCH-0026 | beta = {b['beta']}, base = {b['base']} | {b['trainingEndDate']} |")
+    sm = report.get("scoringMechanics") or {}
+    if sm:
+        lines += ["", "## Scoring mechanics", "",
+                  f"- version: `{sm.get('version')}`",
+                  f"- symmetric clamp on candidate AND reference: {sm.get('symmetricClamp')}",
+                  f"- observation quote units: {sm.get('observationQuoteUnits')}",
+                  f"- ladder settlement: {sm.get('ladderSettlement')}",
+                  f"- {sm.get('note')}"]
     lines += ["", "## Coverage", "",
               f"- settled forward tickers: {cov.get('settledForwardTickers')}",
               f"- joined rows: {cov.get('joinedRows')} (excluded: {cov.get('excludedNoEvaluation')} without a pregame evaluation, {cov.get('excludedNoFairPrice')} without a pregame fair price)",

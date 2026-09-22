@@ -14,16 +14,10 @@ import json
 import os
 
 from lib.edgelab.research.market_structure.identity import parse_ticker
+from lib.edgelab.research.ladder_semantics import (
+    LEGACY_GT_RULE_LAST_GAME_DATE, corrected_ladder_outcome)
 
 LADDER_FAMILIES = ("game_total", "inning_total")
-
-# The archived engine settled integer total ladders as "total > N" for game
-# dates through 2026-08-31 and as "total >= N" (Kalshi's rule) from
-# 2026-09-01.  Verified empirically in this program by reconstructing each
-# game's final total from its two team-total ladders (unchanged semantics)
-# and reading the archived result at the rung equal to that total: NO on
-# every one of 167 August games, YES on every one of 138 September games.
-LEGACY_GT_RULE_LAST_GAME_DATE = "2026-08-31"
 
 
 def _open(path):
@@ -60,26 +54,14 @@ def load_alpha_corrections(root):
 
 def corrected_outcome(ticker, archived, alpha=None):
     """
-    'YES'/'NO'/None under Kalshi semantics.  Non-ladder families: archived
-    result as is.  Ladder rung N: archived result of rung N-1 (the `> N-1`
-    rule == `>= N`); if rung N-1 is not archived, fall back to the ALPHA-0001
-    mapping; else None.
+    'YES'/'NO'/None under Kalshi semantics via the shared date-aware rule
+    (lib.edgelab.research.ladder_semantics).  When the shifted neighbour rung
+    is not archived, fall back to the ALPHA-0001 mapping (August only); else
+    None.
     """
-    ident = parse_ticker(ticker)
-    if ident.get("status") != "RESOLVED":
-        return archived.get(ticker)
-    if ident["family"] not in LADDER_FAMILIES:
-        return archived.get(ticker)
-    n = ident["rung"]
-    if n is None:
-        return None
-    if ident["gameDate"] > LEGACY_GT_RULE_LAST_GAME_DATE:
-        return archived.get(ticker)          # archive already uses >= N
-    prev = "%s-%s-%d" % (ident["seriesTicker"], ident["physicalGameKey"], n - 1)
-    if prev in archived:
-        return archived[prev]
-    if n == 1:
-        return "YES" if archived.get(ticker) is not None else None  # total >= 1 is near-certain but only assert when the game settled at all
+    out = corrected_ladder_outcome(ticker, archived)
+    if out in ("YES", "NO"):
+        return out
     if alpha and ticker in alpha and alpha[ticker] in ("YES", "NO"):
         return alpha[ticker]
     return None

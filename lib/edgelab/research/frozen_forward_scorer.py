@@ -77,6 +77,19 @@ MIN_SEGMENT_GAMES = 10
 FDR_ALPHA = 0.10
 PROB_CLAMP = (0.01, 0.99)
 
+# SCORING MECHANICS VERSION. Bumped when the way a frozen candidate and its
+# reference are SCORED changes; the frozen parameters themselves never do.
+#   V1: candidate probabilities passed through _logit (clamped to
+#       PROB_CLAMP) while the raw market reference reached the log-loss with
+#       only a 1e-9 guard -- an asymmetric treatment that, combined with the
+#       runner's cents-only reading of dollars-era observation quotes, made
+#       reference log losses enormous on ~48% of forward rows.
+#   V2: every forecaster -- candidate AND reference -- is clamped to
+#       PROB_CLAMP inside the scoring functions (the frozen artifacts declare
+#       probClamp [0.01, 0.99] for the fair price, so this is the frozen
+#       specification applied symmetrically, not a new parameter).
+SCORING_MECHANICS_VERSION = "V2_SYMMETRIC_CLAMP_2026_09_22"
+
 
 def classify_checkpoint(n_rows, n_games):
     for name, min_rows, min_games, label in CHECKPOINTS:
@@ -134,7 +147,7 @@ def _row_log_loss(p, y):
 def score_forecaster(rows, prob_fn):
     if not rows:
         return {"n": 0, "independentGames": 0, "brier": None, "logLoss": None, "ece": None}
-    pairs = [(prob_fn(r), r["outcome"]) for r in rows]
+    pairs = [(_clamp(prob_fn(r)), r["outcome"]) for r in rows]
     brier, log_loss = brier_and_log_loss_summary(pairs)
     return {"n": len(rows), "independentGames": independent_unit_count(rows, key="gameId"),
             "brier": brier, "logLoss": log_loss, "ece": expected_calibration_error(pairs)}
@@ -145,9 +158,11 @@ def paired_delta(rows, cand_fn, ref_fn, *, with_ci=True):
     CIs are computed only when the sample can support them."""
     if not rows:
         return {"n": 0, "brierDelta": None, "logLossDelta": None, "brierDeltaCI": None}
+    # Symmetric scoring (SCORING_MECHANICS_VERSION V2): both forecasters are
+    # clamped to the frozen PROB_CLAMP before either metric is computed.
     paired = [{"gameId": r["gameId"],
-               "b": (cand_fn(r) - r["outcome"]) ** 2 - (ref_fn(r) - r["outcome"]) ** 2,
-               "l": _row_log_loss(cand_fn(r), r["outcome"]) - _row_log_loss(ref_fn(r), r["outcome"])}
+               "b": (_clamp(cand_fn(r)) - r["outcome"]) ** 2 - (_clamp(ref_fn(r)) - r["outcome"]) ** 2,
+               "l": _row_log_loss(_clamp(cand_fn(r)), r["outcome"]) - _row_log_loss(_clamp(ref_fn(r)), r["outcome"])}
               for r in rows]
 
     def _mb(s):

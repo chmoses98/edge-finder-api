@@ -301,3 +301,64 @@ class TestDeterminismAndIsolation:
         source = open(SCRIPT_PATH).read()
         assert "sys.exit(0)" in source
         assert "except Exception as exc:" in source
+
+
+class TestScoringMechanicsV2:
+    """Correctness fixes of 2026-09-22: symmetric clamp, unit-aware quotes,
+    date-aware ladder outcomes.  The frozen parameters are untouched."""
+
+    def test_mechanics_version_is_declared(self):
+        assert ffs.SCORING_MECHANICS_VERSION.startswith("V2_SYMMETRIC_CLAMP")
+
+    def test_reference_is_clamped_exactly_like_the_candidate(self):
+        rows = [_row(outcome=1, market_fair=0.001), _row(ticker="T2", game="G2", outcome=0, market_fair=0.999)]
+        # candidate == reference numerically; with symmetric clamping the paired delta is exactly zero
+        d = ffs.paired_delta(rows, lambda r: r["marketFair"], lambda r: r["marketFair"], with_ci=False)
+        assert d["brierDelta"] == 0.0 and d["logLossDelta"] == 0.0
+        # and a reference at 0.001 scores identically to one at the clamp floor
+        a = ffs.score_forecaster(rows, lambda r: r["marketFair"])
+        b = ffs.score_forecaster(rows, lambda r: ffs._clamp(r["marketFair"]))
+        assert a["logLoss"] == b["logLoss"] and a["brier"] == b["brier"]
+
+    def test_asymmetric_extreme_reference_no_longer_inflates_log_loss(self):
+        rows = [_row(outcome=1, market_fair=0.0001)]
+        d = ffs.paired_delta(rows, lambda r: 0.01, lambda r: r["marketFair"], with_ci=False)
+        assert d["logLossDelta"] == 0.0
+
+    def test_fair_price_loader_reads_dollars_era_rows_as_dollars(self, tmp_path, monkeypatch):
+        import gzip
+        obs = tmp_path / "obs"
+        obs.mkdir()
+        rows = [{"marketTicker": "KXMLBGAME-26SEP151940PITCWS-PIT", "capturedAt": "2026-09-15T08:00:00Z",
+                 "isValidPregameObservation": True, "gameStartedAtCapture": False, "yesBid": 0.42, "yesAsk": 0.44},
+                {"marketTicker": "KXMLBGAME-26SEP051940PITCWS-PIT", "capturedAt": "2026-09-05T08:00:00Z",
+                 "isValidPregameObservation": True, "gameStartedAtCapture": False, "yesBid": 42.0, "yesAsk": 44.0}]
+        with gzip.open(obs / "2026-09-15.jsonl.gz", "wt") as f:
+            for r in rows:
+                f.write(json.dumps(r) + "\n")
+        monkeypatch.setattr(runner, "OBSERVATIONS_DIR", str(obs))
+        fair = runner.load_pregame_fair_prices()
+        assert fair["KXMLBGAME-26SEP151940PITCWS-PIT"]["marketFair"] == pytest.approx(0.43)
+        assert fair["KXMLBGAME-26SEP051940PITCWS-PIT"]["marketFair"] == pytest.approx(0.43)
+        assert fair["KXMLBGAME-26SEP151940PITCWS-PIT"]["executableAsk"] == pytest.approx(0.44)
+
+    def test_forward_outcomes_are_date_aware_for_total_ladders(self, tmp_path, monkeypatch):
+        sett = tmp_path / "settlements"
+        sett.mkdir()
+        recs = [{"marketTicker": "KXMLBTOTAL-26AUG301845CHCWSH-8", "outcome": "YES", "gameId": "g", "marketFamily": "game_total"},
+                {"marketTicker": "KXMLBTOTAL-26AUG301845CHCWSH-9", "outcome": "NO", "gameId": "g", "marketFamily": "game_total"},
+                {"marketTicker": "KXMLBTOTAL-26SEP101845CHCWSH-9", "outcome": "YES", "gameId": "h", "marketFamily": "game_total"},
+                {"marketTicker": "KXMLBTOTAL-26SEP101845CHCWSH-10", "outcome": "NO", "gameId": "h", "marketFamily": "game_total"}]
+        with open(sett / "2026-09-11.jsonl", "w") as f:
+            for r in recs:
+                f.write(json.dumps(r) + "\n")
+        monkeypatch.setattr(runner, "SETTLEMENTS_DIR", str(sett))
+        out = runner.load_forward_settled_outcomes()
+        assert out["KXMLBTOTAL-26AUG301845CHCWSH-9"]["outcome"] == 1        # shifted: archived(8)
+        assert "KXMLBTOTAL-26AUG301845CHCWSH-8" not in out                   # rung 7 not archived -> excluded, not guessed
+        assert out["KXMLBTOTAL-26SEP101845CHCWSH-9"]["outcome"] == 1        # as archived
+        assert out["KXMLBTOTAL-26SEP101845CHCWSH-10"]["outcome"] == 0
+
+    def test_report_declares_scoring_mechanics(self, tmp_path):
+        rep = runner.main(**_isolated_outputs(tmp_path))
+        assert rep["scoringMechanics"]["version"] == ffs.SCORING_MECHANICS_VERSION

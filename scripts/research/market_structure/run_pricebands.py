@@ -33,19 +33,7 @@ def _ts(s):
     return int(datetime.strptime(s[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc).timestamp())
 
 
-def _cents(v):
-    """Observation archive price -> integer cents.  Rows before 2026-09-10 store
-    cents (e.g. 47.0); rows from 2026-09-10 store dollars (0.47).  Magnitude
-    decides: v > 1 is cents, v < 1 is dollars, v == 1.0 is ambiguous (1c or
-    100c, neither executable) and is refused."""
-    if v is None:
-        return None
-    v = float(v)
-    if v > 1.0:
-        return int(round(v))
-    if v < 1.0:
-        return int(round(v * 100))
-    return None
+from lib.edgelab.research.ladder_semantics import observation_quote_cents as _cents  # noqa: E402
 
 
 def last_pregame_quotes(start, end):

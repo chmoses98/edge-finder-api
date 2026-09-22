@@ -159,6 +159,44 @@ def test_v4_recorded_failures_override_a_complete_looking_pagination_block():
     assert result["class"] == PARTIAL
 
 
+def test_exhausting_every_series_is_not_enough_if_reconciliation_does_not_balance():
+    """Pagination completeness is necessary, not sufficient.
+
+    Not hypothetical: the two captures taken before the #241 fix deployed
+    exhausted all 17 series and carried unaccounted rows of 4 and 29. Under
+    the previous rule both were COMPLETE and research-qualified, despite
+    holding rows the source returned that the capture could neither show nor
+    explain.
+    """
+    snap = _v4([_pg("A")])
+    snap["reconciliation"] = {"sourceRecordsReceived": 100, "marketsArchived": 70,
+                              "discoveredUnknownSeriesArchived": 0,
+                              "explicitlyExcluded": 26}
+    result = classify_snapshot(snap)
+    assert result["class"] == PARTIAL
+    assert result["unaccounted"] == 4
+    assert "neither archived nor explained" in result["reason"]
+    assert is_research_qualified(result["class"]) is False
+
+
+def test_a_balanced_reconciliation_with_exhausted_series_is_complete():
+    snap = _v4([_pg("A")])
+    snap["reconciliation"] = {"sourceRecordsReceived": 100, "marketsArchived": 70,
+                              "discoveredUnknownSeriesArchived": 5,
+                              "explicitlyExcluded": 25}
+    result = classify_snapshot(snap)
+    assert result["class"] == COMPLETE
+    assert result["unaccounted"] == 0
+    assert is_research_qualified(result["class"]) is True
+
+
+def test_a_v4_capture_with_no_reconciliation_block_is_not_blocked_by_it():
+    """Absence of the block is not evidence of imbalance; pagination decides."""
+    result = classify_snapshot(_v4([_pg("A")]))
+    assert result["class"] == COMPLETE
+    assert result["unaccounted"] is None
+
+
 # ── PHASE I: per-capture reconciliation ─────────────────────────────────────
 
 def test_a_balanced_capture_reconciles_to_zero_unaccounted():

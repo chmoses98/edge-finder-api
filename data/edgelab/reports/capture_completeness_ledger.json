@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T07:26:30Z",
+  "generatedAt": "2026-09-22T08:05:45Z",
   "interpretation": {
     "consequence": "Until the v4 contract has been capturing for a while there is almost no COMPLETE history. Research requiring proven completeness must say so and report its reduced sample rather than quietly falling back.",
     "whyCleanLegacySnapshotsAreNotComplete": "Under the pre-v4 capture path a live cursor at maxPages=10 was discarded with no failure recorded anywhere, so fetchFailureCount=0 means 'nothing reported an error', which is strictly weaker than 'everything was retrieved'. Calling those COMPLETE would launder an absence of evidence into evidence of absence, on exactly the busiest captures a page cap bites first.",
@@ -2407,13 +2407,13 @@
       "truncationReasons": []
     },
     {
-      "class": "COMPLETE",
+      "class": "PARTIAL",
       "contractVersion": "kalshi_capture_v4",
       "date": "2026-09-22",
       "fetchedAt": "2026-09-22T07:24:03.000Z",
       "incompleteSeries": [],
       "marketsArchived": 1941,
-      "reason": "every series paginated to exhaustion",
+      "reason": "every series paginated to exhaustion, but 4 row(s) the source returned are neither archived nor explained",
       "reconciliation": {
         "balanced": false,
         "discoveredUnknownSeriesArchived": 58,
@@ -2426,17 +2426,64 @@
       "snapshot": "kalshi_search_2026-09-22_0724.json",
       "truncationReasons": [
         "PAGE_CAP_REACHED_WITH_LIVE_CURSOR"
-      ]
+      ],
+      "unaccounted": 4
+    },
+    {
+      "class": "PARTIAL",
+      "contractVersion": "kalshi_capture_v4",
+      "date": "2026-09-22",
+      "fetchedAt": "2026-09-22T08:00:55.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1971,
+      "reason": "every series paginated to exhaustion, but 29 row(s) the source returned are neither archived nor explained",
+      "reconciliation": {
+        "balanced": false,
+        "discoveredUnknownSeriesArchived": 83,
+        "explicitlyExcluded": 39969,
+        "marketsArchived": 1971,
+        "reconcilable": true,
+        "sourceRecordsReceived": 42052,
+        "unaccounted": 29
+      },
+      "snapshot": "kalshi_search_2026-09-22_0800.json",
+      "truncationReasons": [
+        "PAGE_CAP_REACHED_WITH_LIVE_CURSOR"
+      ],
+      "unaccounted": 29
+    },
+    {
+      "class": "COMPLETE",
+      "contractVersion": "kalshi_capture_v4",
+      "date": "2026-09-22",
+      "fetchedAt": "2026-09-22T08:04:03.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1971,
+      "reason": "every series paginated to exhaustion and reconciliation balances",
+      "reconciliation": {
+        "balanced": true,
+        "discoveredUnknownSeriesArchived": 275,
+        "explicitlyExcluded": 39806,
+        "marketsArchived": 1971,
+        "reconcilable": true,
+        "sourceRecordsReceived": 42052,
+        "unaccounted": 0
+      },
+      "snapshot": "kalshi_search_2026-09-22_0804.json",
+      "truncationReasons": [
+        "PAGE_CAP_REACHED_WITH_LIVE_CURSOR"
+      ],
+      "unaccounted": 0
     }
   ],
   "schemaVersion": "capture_completeness_ledger_v1",
   "totals": {
     "COMPLETE": 1,
     "FAILED": 0,
-    "PARTIAL": 9,
+    "PARTIAL": 11,
     "UNKNOWN_LEGACY": 138,
-    "marketsArchived": 346784,
-    "reconcilableSnapshots": 1,
+    "marketsArchived": 350726,
+    "reconcilableSnapshots": 3,
     "researchQualifiedSnapshots": 1,
     "seriesIncompleteFrequency": {
       "KXMLBHRR": 6,
@@ -2445,12 +2492,12 @@
       "KXMLBTB": 2,
       "__broad_discovery__": 2
     },
-    "snapshots": 148,
+    "snapshots": 150,
     "truncationReasonFrequency": {
-      "PAGE_CAP_REACHED_WITH_LIVE_CURSOR": 1,
+      "PAGE_CAP_REACHED_WITH_LIVE_CURSOR": 3,
       "RECORDED_FETCH_FAILURE": 9
     },
-    "unaccountedRows": 4,
+    "unaccountedRows": 33,
     "unreadable": 0
   }
 }

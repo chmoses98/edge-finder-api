@@ -191,3 +191,39 @@ def test_status_is_partial_for_a_truncated_capture_with_no_errors(tmp_path, monk
     run = _run(tmp_path, monkeypatch, failures=[_fail("KXMLBTB")])
     assert run["errors"] == []
     assert run["status"] == "partial"
+
+
+# ── a run that ingested nothing did not succeed ────────────────────────────
+
+def test_a_run_with_no_snapshot_at_all_is_no_op_not_success(tmp_path, monkeypatch):
+    """The schema defines 'no_op' as "distinct from 'success', which means at
+    least one snapshot was actually captured". This path reported success.
+
+    Measured on production before the fix: 38 runs found no snapshot at all
+    and every one reported success, so an operator scanning for failures saw
+    green while the fetch workflow was starved for hours.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", ["ingest_market_observations.py", "--date", DATE])
+    assert ingest_script.main() == 0
+
+    run = list(storage.read_records(storage.partition_path("research_runs", DATE)))[-1]
+    assert run["status"] == "no_op"
+    assert any("no kalshi_registry_snapshots file found" in w for w in run["warnings"])
+
+
+def test_no_op_is_a_status_the_schema_allows():
+    import json as _json
+    schema_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "data", "edgelab", "schema_v1", "research_run.schema.json")
+    with open(schema_path) as fh:
+        schema = _json.load(fh)
+    assert "no_op" in schema["properties"]["status"]["enum"]
+
+
+def test_a_run_that_did_ingest_a_snapshot_still_reports_success(tmp_path, monkeypatch):
+    """The fix must not turn every real ingest into a no-op."""
+    run = _run(tmp_path, monkeypatch)
+    assert run["status"] == "success"
+    assert run["counts"]["observationsWritten"] == 31

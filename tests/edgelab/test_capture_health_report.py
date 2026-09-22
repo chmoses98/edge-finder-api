@@ -238,3 +238,42 @@ def test_a_game_with_an_unparseable_start_does_not_shorten_the_replay():
 
 def test_schema_version_is_pinned():
     assert SCHEMA_VERSION == "capture_health_v1"
+
+
+# --------------------------------------------------------------------------
+# why a market lacks usable evidence -- three problems, three buckets
+# --------------------------------------------------------------------------
+
+def test_no_usable_price_is_distinguished_from_never_seen_before_first_pitch():
+    """A market we watched pre-start but could never price is a QUOTE problem.
+    A market we only ever saw after first pitch is a COVERAGE problem. They
+    have different fixes, so one bucket for both hides which is happening."""
+    evidence = evidence_from_observations([
+        {"marketTicker": "unpriced", "capturedAt": "2026-09-20T17:20:00Z",
+         "scheduledStart": START, "marketStatus": "active"},
+        _obs("late", "2026-09-20T19:00:00Z"),
+    ])
+    assert evidence["marketsWithNoPrestartEvidence"] == 2
+    assert evidence["marketsSeenPrestartWithNoUsablePrice"] == 1
+    assert evidence["marketsSeenOnlyAfterFirstPitch"] == 1
+
+
+def test_a_closed_market_seen_prestart_counts_as_a_quote_problem():
+    evidence = evidence_from_observations(
+        [_obs("A", "2026-09-20T17:25:00Z", marketStatus="closed")])
+    assert evidence["marketsSeenPrestartWithNoUsablePrice"] == 1
+    assert evidence["marketsSeenOnlyAfterFirstPitch"] == 0
+
+
+def test_the_two_sub_buckets_never_exceed_their_parent():
+    evidence = evidence_from_observations([
+        _obs("ok", "2026-09-20T17:20:00Z"),
+        _obs("late", "2026-09-20T19:00:00Z"),
+        {"marketTicker": "unpriced", "capturedAt": "2026-09-20T17:20:00Z",
+         "scheduledStart": START, "marketStatus": "active"},
+        _obs("nostart", "2026-09-20T17:20:00Z", start=None),
+    ])
+    assert (evidence["marketsSeenPrestartWithNoUsablePrice"]
+            + evidence["marketsSeenOnlyAfterFirstPitch"]
+            == evidence["marketsWithNoPrestartEvidence"])
+    assert evidence["startUnresolvedMarkets"] == 1

@@ -28,17 +28,46 @@ class TestVercelConfigSyntacticValidity:
         doc = _load()  # raises if malformed
         assert isinstance(doc, dict)
 
+    # The five functions that were configured before any of this, pinned
+    # exactly. A change to one of THESE is what this guard exists to catch.
+    PREEXISTING_FUNCTIONS = {
+        "api/slate.js": {"maxDuration": 60},
+        "api/savant.js": {"maxDuration": 60},
+        "api/enrich.js": {"maxDuration": 60},
+        "api/bullpen.js": {"maxDuration": 30},
+        "api/teamstats.js": {"maxDuration": 30},
+    }
+
     def test_existing_function_duration_config_untouched(self):
-        """The Vercel preview-deployment fix is infrastructure-only -- it must
-        never touch the existing production function configuration."""
+        """The existing production function configuration must never change.
+
+        This previously asserted equality of the WHOLE functions map, which
+        also forbade configuring a function that had none -- a different
+        thing from modifying one that did. api/kalshisearch.js had no
+        maxDuration at all and so ran on the platform default, which is not
+        enough budget for the bounded retries the capture completeness
+        contract needs (PHASE D). Each pre-existing entry is still pinned
+        exactly; only ADDING a new one is permitted.
+        """
         doc = _load()
-        assert doc["functions"] == {
-            "api/slate.js": {"maxDuration": 60},
-            "api/savant.js": {"maxDuration": 60},
-            "api/enrich.js": {"maxDuration": 60},
-            "api/bullpen.js": {"maxDuration": 30},
-            "api/teamstats.js": {"maxDuration": 30},
-        }
+        for name, config in self.PREEXISTING_FUNCTIONS.items():
+            assert doc["functions"][name] == config, (
+                "pre-existing production function config must not change")
+
+    def test_a_newly_configured_function_must_actually_exist(self):
+        """An entry for a file that isn't there is dead config at best."""
+        import os
+        doc = _load()
+        for name in doc["functions"]:
+            assert os.path.exists(os.path.join(ROOT, name)), (
+                "vercel.json configures %s, which does not exist" % name)
+
+    def test_the_capture_endpoint_has_a_duration_budget(self):
+        """The capture path retries on rate limits; retries are only safe if
+        they cannot get the function killed mid-flight, which is exactly what
+        running on the unconfigured platform default risked."""
+        doc = _load()
+        assert doc["functions"]["api/kalshisearch.js"]["maxDuration"] >= 60
 
 
 class TestVercelAutomaticPreviewDeploymentsDisabled:

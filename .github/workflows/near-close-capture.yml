@@ -46,6 +46,34 @@ on:
     # Most wakes decide to do nothing, which costs one short Python run.
     - cron: '*/15 17,18,19,20,21,22,23 * * *'
     - cron: '*/15 0,1 * * *'
+  # PHASE O -- MEASURED FALLBACK, because the coordinator is itself starved.
+  #
+  # Its own cron asks for 4 wakes an hour across 17:00-01:00 UTC. In its
+  # first hours on main it got TWO, and one of those was delivered at 03:13
+  # UTC -- more than an hour past the last slot its schedule even contains.
+  # A coordinator built to work around GitHub dropping scheduled runs cannot
+  # depend on a scheduled run to wake it.
+  #
+  # workflow_run events are NOT subject to the scheduled-run throttling, so
+  # chaining off workflows that DID get delivered converts each of their
+  # deliveries into an extra, independent wake opportunity. These two are
+  # the right hosts because:
+  #   * they cover 13:00-05:45 UTC, spanning this window entirely;
+  #   * they are cron-only and dispatch nothing, so they cannot be starved
+  #     by anything this workflow does;
+  #   * neither is in this workflow's own dispatch closure
+  #     (coordinator -> capture-snapshots-scheduled.yml -> edgelab-capture.yml),
+  #     so chaining off them CANNOT create a cycle. Chaining off either of
+  #     those two would, and a test forbids it.
+  #
+  # This is mitigation, not a fix. Scheduled-run starvation is GitHub's, and
+  # cannot be repaired from inside the repository -- only routed around.
+  workflow_run:
+    workflows:
+      - "Prospective Model Snapshots (Scheduled)"
+      - "Hitter Projection Snapshots (Scheduled)"
+    types: [completed]
+
   workflow_dispatch:
     inputs:
       date:

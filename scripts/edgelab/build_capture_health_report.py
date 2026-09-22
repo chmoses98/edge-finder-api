@@ -72,6 +72,12 @@ def evidence_from_observations(rows):
     """Coverage of the markets present in `rows`. Pure; no disk."""
     best = {}
     starts = {}
+    # Why each market without usable evidence lacks it. "Seen only after first
+    # pitch", "priced but we never saw a quote" and "start time unresolvable"
+    # are three different problems with three different fixes, and collapsing
+    # them into one bucket hides which one is actually happening.
+    priced_prestart = set()
+    seen_prestart = set()
     for obs in rows:
         ticker = obs.get("marketTicker")
         if not ticker:
@@ -87,11 +93,13 @@ def evidence_from_observations(rows):
         # to first pitch it landed. It is excluded, never clamped to zero.
         if seconds is None or seconds < 0:
             continue
+        seen_prestart.add(ticker)
         status = (obs.get("marketStatus") or "active").lower()
         if status not in ("active", "unknown"):
             continue
         if not any(obs.get(k) is not None for k in ("yesAsk", "yesBid", "noAsk", "noBid")):
             continue
+        priced_prestart.add(ticker)
         if best[ticker] is None or seconds < best[ticker]:
             best[ticker] = seconds
 
@@ -103,6 +111,16 @@ def evidence_from_observations(rows):
         "preCloseOnlyMarkets": len(ages) - true_close,
         "marketsWithNoPrestartEvidence": sum(
             1 for t, s in best.items() if s is None and t in starts),
+        # Of those, the ones we DID observe pre-start but could not price --
+        # a quote problem, not a coverage problem.
+        "marketsSeenPrestartWithNoUsablePrice": sum(
+            1 for t, s in best.items()
+            if s is None and t in starts and t in seen_prestart and t not in priced_prestart),
+        # And the ones we only ever saw after first pitch -- a coverage
+        # problem, which is what the capture windows above exist to fix.
+        "marketsSeenOnlyAfterFirstPitch": sum(
+            1 for t, s in best.items()
+            if s is None and t in starts and t not in seen_prestart),
         "startUnresolvedMarkets": sum(1 for t in best if t not in starts),
         "secondsBeforeStart": _percentiles(ages),
     }
@@ -110,7 +128,10 @@ def evidence_from_observations(rows):
 
 EMPTY_EVIDENCE = {
     "marketsArchived": 0, "trueCloseMarkets": 0, "preCloseOnlyMarkets": 0,
-    "marketsWithNoPrestartEvidence": 0, "startUnresolvedMarkets": 0,
+    "marketsWithNoPrestartEvidence": 0,
+    "marketsSeenPrestartWithNoUsablePrice": 0,
+    "marketsSeenOnlyAfterFirstPitch": 0,
+    "startUnresolvedMarkets": 0,
     "secondsBeforeStart": {"median": None, "p90": None},
 }
 

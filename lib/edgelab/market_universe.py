@@ -30,6 +30,7 @@ scheduledStart stays null.
 """
 
 import glob
+import hashlib
 import json
 import os
 import re
@@ -50,6 +51,11 @@ SNAPSHOT_DIR = os.path.join("data", "kalshi_registry_snapshots")
 # The scope api/kalshisearch.js uses for its unfiltered exchange-wide pass,
 # which carries no series_ticker to name in a failure record.
 BROAD_DISCOVERY_SCOPE = "__broad_discovery__"
+
+# PHASE H: every attributable response row must end in a counted category.
+# A row with no ticker has no identity to archive under, but "we could not
+# identify it" is itself a finding and is recorded as one.
+MARKET_TICKER_MISSING = "MARKET_TICKER_MISSING"
 PIPELINE_DIR = os.path.join("data", "pipeline")
 
 _OPERATOR_MAP = {"greater_than": "OVER", "equals": "YES", "at_least": "AT_LEAST"}
@@ -331,6 +337,19 @@ def build_observations_from_snapshot(
     for raw in all_raw_markets:
         ticker = raw.get("ticker") or raw.get("market_ticker")
         if not ticker:
+            # PHASE H: this was the one exclusion in the whole path that was
+            # neither recorded nor counted -- a row entered the pipeline and
+            # left no trace of where it went, so observationsBuilt simply came
+            # out lower than the raw market count and nothing could tell.
+            # A malformed row is still NOT archived; it is accounted for.
+            excluded.append({
+                "marketTicker": None,
+                "seriesTicker": raw.get("series_ticker") or raw.get("seriesTicker"),
+                "title": raw.get("title"),
+                "exclusionReason": MARKET_TICKER_MISSING,
+                # Enough to audit the malformed row without archiving it.
+                "rawFieldsPresent": sorted(k for k in raw if not k.startswith("_")),
+            })
             continue
         series_ticker = raw.get("series_ticker") or raw.get("seriesTicker") or ticker.split("-", 1)[0]
         title = raw.get("title")
@@ -516,6 +535,54 @@ def select_observations_for_retention(new_observations, previous_by_ticker=None)
             retained.append(obs)
             previous_by_ticker[ticker] = obs
     return retained
+
+
+def summarize_exclusions(excluded, sample_size=5):
+    """
+    Pure. PHASE H: make the exclusion trail survive the run.
+
+    The registry gate already builds a full record for every excluded market
+    -- ticker, series, title, reason -- and then reports only the integer
+    `marketsExcluded`. The audit trail existed in memory and was thrown away,
+    so "3,000 markets were excluded" could never be interrogated.
+
+    Persisting every row would grow the run record without bound on a bad
+    day, so this aggregates deterministically: counts by reason, the distinct
+    series each reason hit, a few real sampled tickers per reason, and a
+    stable digest over the whole exclusion set. The digest is what makes two
+    runs comparable -- identical digests mean identical exclusions, sample or
+    no sample.
+    """
+    by_reason = {}
+    for row in excluded:
+        reason = row.get("exclusionReason") or "UNKNOWN"
+        bucket = by_reason.setdefault(reason, {"count": 0, "series": set(), "samples": []})
+        bucket["count"] += 1
+        series = row.get("seriesTicker")
+        if series:
+            bucket["series"].add(series)
+        if len(bucket["samples"]) < sample_size:
+            bucket["samples"].append(row.get("marketTicker"))
+
+    # Sorted before hashing so the digest depends on the exclusion SET, never
+    # on the order the snapshot happened to list markets in.
+    fingerprint = sorted(
+        "%s|%s|%s" % (r.get("exclusionReason"), r.get("seriesTicker"), r.get("marketTicker"))
+        for r in excluded)
+    digest = hashlib.sha256("\n".join(fingerprint).encode("utf-8")).hexdigest()
+
+    return {
+        "total": len(excluded),
+        "byReason": {
+            reason: {
+                "count": bucket["count"],
+                "seriesAffected": sorted(bucket["series"]),
+                "sampleTickers": bucket["samples"],
+            }
+            for reason, bucket in sorted(by_reason.items())
+        },
+        "digest": digest,
+    }
 
 
 def new_unclassified_series_warnings(observations, excluded):

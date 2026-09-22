@@ -206,6 +206,293 @@ export function parseMarketRecord(mkt, eventTicker, snapshotTs) {
 }
 
 
+// ============================================================================
+// THE CAPTURE COMPLETENESS CONTRACT
+// ============================================================================
+//
+// DISCOVERED == ARCHIVED + EXPLICITLY EXCLUDED + EXPLICITLY FAILED
+//
+// with zero silent loss. Before this, none of the three terms on the right
+// was knowable from a snapshot:
+//
+//   * a 429 broke the page loop and the live cursor was DISCARDED with no
+//     record that more pages existed;
+//   * maxPages = 10 ceilinged a series at 2,000 markets with no truncation
+//     flag;
+//   * the broad pass stopped at 500 entries, and the count read 500 either
+//     way;
+//   * markets filtered out by date were never counted, only the survivors;
+//   * a handler error produced a body with no `markets` key at all, and the
+//     workflow's `markets_count > 0` gate then skipped archiving, so a failed
+//     capture was indistinguishable from a capture that never ran.
+//
+// Measured consequence over 21 days: 9 of 106 captures were partial, every
+// one an HTTP 429, at least 7,356 markets lost -- and all 227 ingest runs
+// reported success. Because the 17 series are fetched SEQUENTIALLY and the
+// loop broke on the first rate limit, the loss landed on whichever families
+// came last, every time: KXMLBHRR x6, KXMLBRBI x6, KXMLBSB x5, KXMLBTB x2.
+// Systematically biased research, not random noise.
+//
+// Everything below is injectable (fetchImpl/sleepImpl/nowImpl) so the real
+// shipped code is what the tests drive -- no network, no reimplementation.
+
+export const TRUNCATION_NONE = null;
+export const TRUNCATION_PAGE_CAP = 'PAGE_CAP_REACHED_WITH_LIVE_CURSOR';
+export const TRUNCATION_DEADLINE = 'DEADLINE_EXCEEDED';
+export const TRUNCATION_RETRIES = 'RETRIES_EXHAUSTED';
+export const TRUNCATION_TRANSPORT = 'TRANSPORT_ERROR';
+export const TRUNCATION_ENTRY_CAP = 'ENTRY_CAP_REACHED';
+
+export const CAPTURE_COMPLETE = 'COMPLETE';
+export const CAPTURE_PARTIAL = 'PARTIAL';
+export const CAPTURE_FAILED = 'FAILED';
+
+// A safety maximum, not a budget. It exists so a runaway cursor cannot loop
+// forever; reaching it is a TRUNCATION, never a silent stop. The old value
+// of 10 ceilinged a series at 2,000 markets/capture against an observed peak
+// of 1,268 -- 63% of the way to silently losing data.
+export const MAX_PAGES_SAFETY = 60;
+export const BROAD_MAX_PAGES_SAFETY = 40;
+// Likewise: hitting it marks the broad pass truncated rather than pretending
+// the exchange held exactly this many unknown-series markets.
+export const BROAD_DISCOVERY_ENTRY_CAP = 2000;
+
+export const CAPTURE_CONTRACT_VERSION = 'kalshi_capture_v4';
+// Well inside the function's configured maxDuration (see vercel.json), with
+// room left to serialise a large response.
+export const CAPTURE_DEADLINE_MS = 45000;
+// Never start a second-pass series fetch without this much budget left.
+export const SECOND_PASS_RESERVE_MS = 6000;
+
+export const MAX_RETRIES_PER_PAGE = 3;
+export const BASE_BACKOFF_MS = 400;
+export const MAX_BACKOFF_MS = 4000;
+
+// Deterministic, no jitter: this is one sequential invocation, so there is no
+// thundering herd to spread, and an auditable capture is worth more than a
+// randomised one. Doubling from 400ms caps at 4s -- 400, 800, 1600.
+export function backoffDelayMs(attempt, retryAfterHeader) {
+  const retryAfter = parseRetryAfterMs(retryAfterHeader);
+  if (retryAfter != null) return Math.min(retryAfter, MAX_BACKOFF_MS);
+  return Math.min(BASE_BACKOFF_MS * Math.pow(2, attempt), MAX_BACKOFF_MS);
+}
+
+// Kalshi sends Retry-After in seconds; the HTTP-date form is accepted too so
+// a spec-compliant server is never ignored.
+export function parseRetryAfterMs(header, nowMs) {
+  if (header == null || header === '') return null;
+  const seconds = Number(header);
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.round(seconds * 1000);
+  const when = Date.parse(String(header));
+  if (Number.isNaN(when)) return null;
+  const delta = when - (nowMs == null ? Date.now() : nowMs);
+  return delta > 0 ? delta : 0;
+}
+
+export function isRetryableStatus(status) {
+  return status === 429 || status === 408 || (status >= 500 && status < 600);
+}
+
+/**
+ * Deterministically rotate the fetch order so missingness cannot keep
+ * landing on the same families.
+ *
+ * Rotation does not by itself prevent a rate limit from truncating whatever
+ * is last -- retries do most of that work. What it prevents is the SAME
+ * families absorbing the loss every single time, which is what turned a
+ * transport problem into biased research. The seed is derived from the
+ * capture's own date and hour, so the order is reproducible from the
+ * snapshot alone and auditable after the fact.
+ */
+export function rotateSeries(series, seed) {
+  const n = series.length;
+  if (n === 0) return [];
+  const offset = ((Math.trunc(seed) % n) + n) % n;
+  return [...series.slice(offset), ...series.slice(0, offset)];
+}
+
+export function rotationSeed(kalshiDate, hourUtc) {
+  let hash = 0;
+  for (const ch of String(kalshiDate)) {
+    hash = (hash * 31 + ch.charCodeAt(0)) % 1000003;
+  }
+  return hash + (Number(hourUtc) || 0);
+}
+
+/**
+ * Page a cursor-driven Kalshi endpoint to exhaustion, or say exactly why not.
+ *
+ * Returns { records, pagination }. The pagination block is the evidence: one
+ * entry per page attempt carrying the cursor before and after, the HTTP
+ * status, retries spent and backoff waited -- plus `complete`, which is false
+ * whenever a live cursor was left in hand for ANY reason.
+ */
+export async function fetchPaginated(baseUrl, key, opts = {}) {
+  const {
+    scope = 'series',
+    series = null,
+    maxPages = MAX_PAGES_SAFETY,
+    maxRetries = MAX_RETRIES_PER_PAGE,
+    deadlineAt = null,
+    fetchImpl = fetch,
+    sleepImpl = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    nowImpl = () => Date.now(),
+  } = opts;
+
+  const records = [];
+  const pages = [];
+  let cursor = '';
+  let truncationReason = TRUNCATION_NONE;
+  let retriesAttempted = 0;
+  let totalBackoffMs = 0;
+
+  for (let page = 0; page < maxPages; page++) {
+    if (deadlineAt != null && nowImpl() >= deadlineAt) {
+      truncationReason = TRUNCATION_DEADLINE;
+      break;
+    }
+
+    const url = cursor ? `${baseUrl}&cursor=${cursor}` : baseUrl;
+    const attemptLog = {
+      page, scope, series,
+      cursorBefore: cursor || null,
+      cursorAfter: null,
+      httpStatus: null,
+      retries: 0,
+      backoffMs: 0,
+      recordsReceived: 0,
+      error: null,
+    };
+
+    let data = null;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      let response;
+      try {
+        response = await fetchImpl(url, { headers: { 'Content-Type': 'application/json' } });
+      } catch (e) {
+        attemptLog.error = String((e && e.message) || e);
+        attemptLog.httpStatus = null;
+        // A transport error is as retryable as a 5xx: the request never
+        // reached a server that said no.
+        if (attempt < maxRetries) {
+          const delay = backoffDelayMs(attempt, null);
+          if (deadlineAt != null && nowImpl() + delay >= deadlineAt) {
+            truncationReason = TRUNCATION_DEADLINE;
+            break;
+          }
+          attemptLog.retries = attempt + 1;
+          attemptLog.backoffMs += delay;
+          retriesAttempted += 1;
+          totalBackoffMs += delay;
+          await sleepImpl(delay);
+          continue;
+        }
+        truncationReason = TRUNCATION_TRANSPORT;
+        break;
+      }
+
+      attemptLog.httpStatus = response.status;
+      if (response.ok) {
+        data = await response.json();
+        attemptLog.error = null;
+        break;
+      }
+
+      if (isRetryableStatus(response.status) && attempt < maxRetries) {
+        const header = response.headers && typeof response.headers.get === 'function'
+          ? response.headers.get('retry-after')
+          : null;
+        const delay = backoffDelayMs(attempt, header);
+        // Never sleep past the deadline: returning a truthful partial
+        // capture beats being killed mid-flight with no artifact at all.
+        if (deadlineAt != null && nowImpl() + delay >= deadlineAt) {
+          truncationReason = TRUNCATION_DEADLINE;
+          break;
+        }
+        attemptLog.retries = attempt + 1;
+        attemptLog.backoffMs += delay;
+        retriesAttempted += 1;
+        totalBackoffMs += delay;
+        await sleepImpl(delay);
+        continue;
+      }
+
+      // Either a non-retryable status, or retries are spent.
+      truncationReason = isRetryableStatus(response.status)
+        ? TRUNCATION_RETRIES
+        : TRUNCATION_TRANSPORT;
+      break;
+    }
+
+    if (data == null) {
+      // The page never arrived. Whatever cursor we were holding is still
+      // live, so this series is NOT complete -- and the log says why.
+      if (truncationReason === TRUNCATION_NONE) truncationReason = TRUNCATION_TRANSPORT;
+      attemptLog.cursorAfter = cursor || null;
+      pages.push(attemptLog);
+      break;
+    }
+
+    const items = data[key] || [];
+    records.push(...items);
+    cursor = data.cursor || '';
+    attemptLog.cursorAfter = cursor || null;
+    attemptLog.recordsReceived = items.length;
+    pages.push(attemptLog);
+
+    if (!cursor) break;                 // genuinely exhausted
+    if (!items.length) break;           // a cursor with no items cannot advance
+
+    if (page === maxPages - 1) {
+      // THE defect this constant used to hide: a live cursor at the cap.
+      truncationReason = TRUNCATION_PAGE_CAP;
+    }
+  }
+
+  return {
+    records,
+    pagination: {
+      scope,
+      series,
+      pages,
+      pagesFetched: pages.length,
+      recordsReceived: records.length,
+      finalCursor: cursor || null,
+      retriesAttempted,
+      totalBackoffMs,
+      truncationReason,
+      // The single question every downstream consumer actually asks.
+      complete: truncationReason === TRUNCATION_NONE && !cursor,
+    },
+  };
+}
+
+/**
+ * Roll per-series pagination evidence up into one capture verdict.
+ *
+ * A capture is COMPLETE only if every series paginated to exhaustion AND the
+ * broad discovery pass did too. Anything else is PARTIAL, and a capture that
+ * retrieved nothing at all is FAILED. There is deliberately no fourth state
+ * meaning "probably fine".
+ */
+export function summarizeCapture(paginations, { marketsArchived = 0 } = {}) {
+  const incomplete = paginations.filter((p) => p && !p.complete);
+  const seriesIncomplete = incomplete.filter((p) => p.scope === 'series');
+  let status = CAPTURE_COMPLETE;
+  if (incomplete.length) status = CAPTURE_PARTIAL;
+  if (marketsArchived === 0 && incomplete.length) status = CAPTURE_FAILED;
+  return {
+    captureStatus: status,
+    captureComplete: status === CAPTURE_COMPLETE,
+    seriesAttempted: paginations.filter((p) => p && p.scope === 'series').length,
+    seriesIncomplete: seriesIncomplete.map((p) => p.series).filter(Boolean).sort(),
+    incompleteScopes: incomplete.map((p) => p.scope),
+    truncationReasons: [...new Set(incomplete.map((p) => p.truncationReason))].sort(),
+    totalRetries: paginations.reduce((sum, p) => sum + ((p && p.retriesAttempted) || 0), 0),
+    totalBackoffMs: paginations.reduce((sum, p) => sum + ((p && p.totalBackoffMs) || 0), 0),
+  };
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -269,102 +556,143 @@ export default async function handler(req, res) {
   // W1-B2 (CEO review of PR #206). `if (!r.ok) break;` returned an empty list
   // and the response then reported a perfectly successful fetch of zero
   // markets -- indistinguishable from "the exchange has no markets today".
-  // This was found the hard way: a rehearsal against a network that rejects
-  // the Kalshi host reported success, 0 markets, error: null, and looked for
-  // all the world like a quiet day. Downstream, an empty kalshi_search.json
-  // means the registry backfill silently repairs nothing.
   //
-  // This does not change a single price. It makes "we could not ask" legible
-  // as something other than "the answer was nothing".
-  // Failures carry a SCOPE, because the two callers below are not equally
-  // consequential and collapsing them makes the signal useless:
-  //
-  //   'series'    -- the per-series MLB price fetches. These ARE the price
-  //                  universe. A failure here means the registry backfill has
-  //                  nothing to repair from, and the run has proven nothing.
-  //   'discovery' -- the broad unfiltered sweep, which is pure
-  //                  research-visibility scaffolding (see the block below its
-  //                  call site: never read by build_kalshi_registry.py's
-  //                  backfill or by merge_odds.py). It pages over the whole
-  //                  exchange and is the one call likely to be rate-limited.
-  //
-  // Both are recorded. Only a 'series' failure invalidates a price rehearsal.
+  // `fetchFailures` / `fetchFailureCount` / `priceFetchFailureCount` are kept
+  // verbatim so every existing consumer and every archived snapshot keeps its
+  // meaning. What is new is `pagination` and `captureStatus` alongside them:
+  // the old fields say a request failed, the new ones say whether the capture
+  // is COMPLETE -- which a failure count alone cannot, because a live cursor
+  // discarded at the page cap is a loss with no failure attached to it.
   const fetchFailures = [];
+  const paginations = [];
 
-  async function fetchAllPages(baseUrl, key, maxPages = 10, scope = 'series') {
-    const results = [];
-    let cursor = '';
-    for (let page = 0; page < maxPages; page++) {
-      const url = cursor ? `${baseUrl}&cursor=${cursor}` : baseUrl;
-      let r;
-      try {
-        r = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
-      } catch (e) {
-        fetchFailures.push({ scope, url: baseUrl, page, error: String(e && e.message || e) });
-        break;
+  // Budget for the whole capture. Retries are only safe if they cannot get
+  // the function killed mid-flight: a truthful PARTIAL artifact is worth far
+  // more than a timeout that leaves no artifact at all.
+  const deadlineAt = Date.now() + CAPTURE_DEADLINE_MS;
+
+  async function pagedFetch(baseUrl, key, { scope = 'series', series = null,
+                                            maxPages = MAX_PAGES_SAFETY } = {}) {
+    const { records, pagination } = await fetchPaginated(baseUrl, key, {
+      scope, series, maxPages, deadlineAt,
+    });
+    paginations.push(pagination);
+    for (const page of pagination.pages) {
+      if (page.httpStatus != null && page.httpStatus >= 400) {
+        fetchFailures.push({ scope, url: baseUrl, page: page.page, status: page.httpStatus });
+      } else if (page.error) {
+        fetchFailures.push({ scope, url: baseUrl, page: page.page, error: page.error });
       }
-      if (!r.ok) {
-        fetchFailures.push({ scope, url: baseUrl, page, status: r.status });
-        break;
-      }
-      const data = await r.json();
-      const items = data[key] || [];
-      results.push(...items);
-      cursor = data.cursor || '';
-      if (!cursor || !items.length) break;
     }
-    return results;
+    return { records, pagination };
   }
-
 
   try {
     const allMarkets = [];
     const seriesResults = {};
+    const exclusions = {};
 
-    // Fetch each series independently
-    for (const series of ALL_SERIES) {
+    function recordExclusion(reason, count) {
+      if (count > 0) exclusions[reason] = (exclusions[reason] || 0) + count;
+    }
+
+    // PHASE F -- fetch order is ROTATED, deterministically.
+    //
+    // The 17 series are still fetched sequentially, so whatever is last is
+    // still the most exposed to a rate limit. What must not happen is the
+    // SAME families being last every time: that is what turned a transport
+    // problem into systematically biased research (KXMLBHRR/RBI/SB/TB
+    // truncated 6/6/5/2 times in 21 days while the early series never were).
+    // The seed comes from the capture's own date and hour, so the order is
+    // reproducible from the snapshot and auditable after the fact.
+    const hourUtc = new Date(snapshotTs).getUTCHours();
+    const seed = rotationSeed(kalshiDate, hourUtc);
+    const fetchOrder = rotateSeries(ALL_SERIES, seed);
+
+    async function fetchSeries(series) {
       const mktsUrl = `${KALSHI_BASE}/markets?series_ticker=${series}&status=open&limit=200`;
-      const mkts = await fetchAllPages(mktsUrl, 'markets');
-      const todayMkts = mkts.filter(m => (m.event_ticker || '').includes(kalshiDate));
+      const { records, pagination } = await pagedFetch(mktsUrl, 'markets', { series });
+      const todayMkts = records.filter(m => (m.event_ticker || '').includes(kalshiDate));
+      // PHASE H: the date filter's DROPS are counted, not just its survivors.
+      recordExclusion('event_ticker_not_for_this_slate_date', records.length - todayMkts.length);
+      return { todayMkts, pagination };
+    }
+
+    for (const series of fetchOrder) {
+      const { todayMkts, pagination } = await fetchSeries(series);
       seriesResults[series] = todayMkts.length;
       for (const mkt of todayMkts) {
         allMarkets.push(parseMarketRecord(mkt, mkt.event_ticker, snapshotTs));
       }
+      if (!pagination.complete) {
+        console.log(`[kalshisearch v4] ${series} INCOMPLETE: ${pagination.truncationReason}`);
+      }
     }
 
-    console.log(`[kalshisearch v3] ${kalshiDate} | series: ${JSON.stringify(seriesResults)}`);
+    // PHASE F -- one bounded second pass, after the earlier series have let
+    // the rate-limit window recover. A series that failed while the budget
+    // was tight often succeeds now, and this is the difference between
+    // losing a family for the day and losing it for a few seconds. Strictly
+    // bounded: one retry per series, and only while the deadline allows.
+    const retryable = paginations.filter(
+      p => p.scope === 'series' && !p.complete
+        && (p.truncationReason === TRUNCATION_RETRIES
+            || p.truncationReason === TRUNCATION_TRANSPORT));
+    for (const stale of retryable) {
+      if (Date.now() >= deadlineAt - SECOND_PASS_RESERVE_MS) break;
+      const { todayMkts, pagination } = await fetchSeries(stale.series);
+      if (pagination.complete) {
+        // Supersede the failed attempt; both remain in `pagination` for audit.
+        stale.supersededBy = pagination.pages.length ? 'SECOND_PASS' : null;
+        stale.complete = true;
+        stale.truncationReason = TRUNCATION_NONE;
+        const already = new Set(allMarkets.map(m => m.market_ticker));
+        seriesResults[stale.series] = todayMkts.length;
+        for (const mkt of todayMkts) {
+          const row = parseMarketRecord(mkt, mkt.event_ticker, snapshotTs);
+          if (!already.has(row.market_ticker)) allMarkets.push(row);
+        }
+        console.log(`[kalshisearch v4] ${stale.series} RECOVERED on second pass`);
+      }
+    }
 
-    // Model Performance Phase 2A correction: ALL_SERIES above is a fixed,
-    // pre-known allowlist -- a real Kalshi series this repository doesn't
-    // yet know the name of (e.g. the real F3/F7 series tickers, per
-    // user-confirmed real-money wagers placed on both) would never be
-    // queried by the per-series loop above, no matter how long ALL_SERIES
-    // grows. This broad, unfiltered pass SUPPLEMENTS (never replaces) that
-    // loop: it fetches open markets with no series_ticker filter, then
-    // retains any market whose series ISN'T already in ALL_SERIES under a
-    // separate, additive field so nothing is silently dropped. Existing
-    // consumers (scripts/build_kalshi_registry.py's backfill,
-    // scripts/merge_odds.py) read only markets/results/series_counts and
-    // are therefore completely unaffected by this addition -- it is pure
-    // research-visibility scaffolding, capped defensively at 500 entries
-    // to avoid unbounded response growth from an unrelated exchange-wide
-    // category briefly sharing this date's ticker substring.
+    console.log(`[kalshisearch v4] ${kalshiDate} | series: ${JSON.stringify(seriesResults)}`);
+
+    // Broad, unfiltered supplementary pass -- see the note below. It never
+    // replaces the per-series loop; it exists so a real Kalshi series this
+    // repository does not yet know the name of is still visible.
     const discoveredUnknownSeriesMarkets = [];
     let broadDiscoveryError = null;
+    let broadEntryCapHit = false;
     try {
       const broadUrl = `${KALSHI_BASE}/markets?status=open&limit=1000`;
-      const broadMkts = await fetchAllPages(broadUrl, 'markets', 10, 'discovery');
+      const { records: broadMkts } = await pagedFetch(broadUrl, 'markets', {
+        scope: 'discovery', maxPages: BROAD_MAX_PAGES_SAFETY,
+      });
+      let offDate = 0;
       for (const mkt of broadMkts) {
         const et = mkt.event_ticker || '';
-        if (!et.includes(kalshiDate)) continue;
+        if (!et.includes(kalshiDate)) { offDate += 1; continue; }
         const series = et.split('-')[0] || '';
         if (ALL_SERIES.includes(series)) continue; // already covered above
-        if (discoveredUnknownSeriesMarkets.length >= 500) break;
+        if (discoveredUnknownSeriesMarkets.length >= BROAD_DISCOVERY_ENTRY_CAP) {
+          // PHASE E: hitting a safety cap is a TRUNCATION, not a stop. The
+          // old 500-entry cap reported 500 whether the exchange held 500 or
+          // 50,000.
+          broadEntryCapHit = true;
+          break;
+        }
         discoveredUnknownSeriesMarkets.push(parseMarketRecord(mkt, et, snapshotTs));
+      }
+      recordExclusion('broad_discovery_not_for_this_slate_date', offDate);
+      if (broadEntryCapHit) {
+        const broadPagination = paginations[paginations.length - 1];
+        broadPagination.complete = false;
+        broadPagination.truncationReason = TRUNCATION_ENTRY_CAP;
       }
     } catch (e) {
       broadDiscoveryError = e.message;
-      console.log(`[kalshisearch v3] broad discovery pass failed: ${e.message}`);
+      console.log(`[kalshisearch v4] broad discovery pass failed: ${e.message}`);
     }
 
     const byType = {};
@@ -373,6 +701,10 @@ export default async function handler(req, res) {
       byType[m.market_type] = (byType[m.market_type] || 0) + 1;
       byEvent[m.event_ticker] = (byEvent[m.event_ticker] || 0) + 1;
     }
+
+    const summary = summarizeCapture(paginations, { marketsArchived: allMarkets.length });
+    const recordsReceived = paginations.reduce((n, p) => n + p.recordsReceived, 0);
+    const excludedTotal = Object.values(exclusions).reduce((n, v) => n + v, 0);
 
     const result = {
       date:          todayET,
@@ -390,19 +722,29 @@ export default async function handler(req, res) {
         market_type:  m.market_type,
         event_ticker: m.event_ticker,
       })),
-      // Model Performance Phase 2A correction: additive, research-only.
-      // Never read by scripts/build_kalshi_registry.py or
-      // scripts/merge_odds.py -- see the broad-discovery block above.
       discoveredUnknownSeriesMarkets,
       discoveredUnknownSeriesCount: discoveredUnknownSeriesMarkets.length,
       broadDiscoveryError,
-      // Every upstream fetch that did not succeed. Empty is the healthy case;
-      // a non-empty list with total_markets: 0 says the exchange was
-      // unreachable, not quiet.
       fetchFailures,
       fetchFailureCount: fetchFailures.length,
-      // The count that decides whether a PRICE rehearsal proved anything.
       priceFetchFailureCount: fetchFailures.filter(f => f.scope === 'series').length,
+
+      // ---- the completeness contract -------------------------------------
+      captureContractVersion: CAPTURE_CONTRACT_VERSION,
+      fetchOrder,
+      rotationSeed: seed,
+      pagination: paginations,
+      exclusions,
+      // DISCOVERED == ARCHIVED + EXCLUDED + (unknown, which must be zero).
+      reconciliation: {
+        sourceRecordsReceived: recordsReceived,
+        marketsArchived: allMarkets.length,
+        discoveredUnknownSeriesArchived: discoveredUnknownSeriesMarkets.length,
+        explicitlyExcluded: excludedTotal,
+        unaccounted: recordsReceived - allMarkets.length
+                     - discoveredUnknownSeriesMarkets.length - excludedTotal,
+      },
+      ...summary,
     };
 
     if (callback) {
@@ -412,11 +754,48 @@ export default async function handler(req, res) {
     return res.status(200).json(result);
 
   } catch (error) {
-    const result = { error: error.message, date: todayET };
+    // PHASE G: a capture that failed must still leave DURABLE EVIDENCE.
+    //
+    // This used to return `{error, date}` -- a body with no `markets` key at
+    // all. The capture workflow's `markets_count > 0` gate then skipped
+    // archiving entirely, so a failed capture and a capture that never ran
+    // were indistinguishable in the archive forever after. The shape below is
+    // a well-formed snapshot that happens to contain nothing, and it is
+    // returned with HTTP 200 precisely so the workflow archives it.
+    const result = {
+      date:          todayET,
+      kalshi_date:   kalshiDate,
+      fetched_at:    snapshotTs,
+      total_markets: 0,
+      by_type:       {},
+      by_event:      {},
+      series_counts: {},
+      markets:       [],
+      results:       [],
+      discoveredUnknownSeriesMarkets: [],
+      discoveredUnknownSeriesCount: 0,
+      broadDiscoveryError: null,
+      fetchFailures,
+      fetchFailureCount: fetchFailures.length,
+      priceFetchFailureCount: fetchFailures.filter(f => f.scope === 'series').length,
+      captureContractVersion: CAPTURE_CONTRACT_VERSION,
+      pagination: paginations,
+      exclusions: {},
+      reconciliation: {
+        sourceRecordsReceived: 0, marketsArchived: 0,
+        discoveredUnknownSeriesArchived: 0, explicitlyExcluded: 0, unaccounted: 0,
+      },
+      captureStatus: CAPTURE_FAILED,
+      captureComplete: false,
+      seriesAttempted: paginations.filter(p => p && p.scope === 'series').length,
+      seriesIncomplete: ALL_SERIES.slice().sort(),
+      truncationReasons: [TRUNCATION_TRANSPORT],
+      captureError: error.message,
+    };
     if (callback) {
       res.setHeader('Content-Type', 'application/javascript');
       return res.status(200).send(`${callback}(${JSON.stringify(result)})`);
     }
-    return res.status(500).json(result);
+    return res.status(200).json(result);
   }
 }

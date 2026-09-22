@@ -734,5 +734,47 @@
     "independentGames": 217,
     "trueCloseRows": 7811
   },
-  "schemaVersion": "full_universe_calibration_v1"
+  "schemaVersion": "full_universe_calibration_v1",
+  "supersededBy": {
+    "aggregateResultStands": true,
+    "doc": "docs/EDGELAB_QUALIFIED_CALIBRATION.md",
+    "familyLevelClaims": {
+      "game_total": {
+        "clusteredBootstrap95GapCI": {
+          "games": 85,
+          "hi": 0.1123,
+          "iterations": 2000,
+          "lo": -0.0103,
+          "pValue": 0.094
+        },
+        "finding": "NO_EVIDENCE",
+        "independentGames": 85,
+        "originalCalibrationGap": 0.0376,
+        "originalVerdict": "outside its naive Wilson interval",
+        "qualifiedCalibrationGap": 0.0518,
+        "qualifiedN": 826,
+        "status": "RETRACTED",
+        "survivesMultiplicityCorrection": false
+      },
+      "hitter_stolen_bases": {
+        "clusteredBootstrap95GapCI": {
+          "games": 113,
+          "hi": -0.0043,
+          "iterations": 2000,
+          "lo": -0.0361,
+          "pValue": 0.021
+        },
+        "finding": "EXPLORATORY",
+        "independentGames": 113,
+        "originalCalibrationGap": -0.0217,
+        "originalVerdict": "outside its naive Wilson interval",
+        "qualifiedCalibrationGap": -0.0202,
+        "qualifiedN": 1228,
+        "status": "DOWNGRADED_TO_EXPLORATORY",
+        "survivesMultiplicityCorrection": false
+      }
+    },
+    "report": "data/edgelab/reports/full_universe_qualified_calibration.json",
+    "why": "The family-level verdicts in this report came from Wilson intervals over rows that are not independent (~145 per game), computed without regard to the completeness of the captures behind the quotes, and without correcting for testing eleven families at once. The aggregate result here stands. The family-level ones do not."
+  }
 }

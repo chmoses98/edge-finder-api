@@ -280,11 +280,28 @@ def test_one_incomplete_series_makes_the_whole_capture_partial():
     assert out["truncationReasons"] == ["RETRIES_EXHAUSTED"]
 
 
-def test_an_incomplete_broad_pass_also_blocks_complete():
+def test_an_incomplete_broad_pass_no_longer_blocks_complete():
+    """DELIBERATELY REVERSED after the first live v4 capture.
+
+    This previously asserted that an incomplete broad pass makes the capture
+    PARTIAL. That looked conservative and was in fact unsatisfiable: the broad
+    pass has no series filter, so it pages the whole Kalshi exchange and can
+    never be exhausted in one invocation. The first real capture had all 17
+    series complete, pulled 40,000 broad records of which 39,938 were not even
+    for that slate date, and reported PARTIAL -- meaning no capture would ever
+    qualify for research and the whole completeness classification would be
+    dead on arrival.
+
+    captureStatus is a claim about the PRICE UNIVERSE, which is the 17 series.
+    The broad pass is supplementary scaffolding by the endpoint's own
+    description, and its truncation is reported in its own fields rather than
+    invalidating a price universe that was captured whole.
+    """
     out = _summary([_pg("A"), _pg(None, complete=False, scope="discovery",
                                   reason="ENTRY_CAP_REACHED")], 100)
-    assert out["captureStatus"] == "PARTIAL"
-    assert "discovery" in out["incompleteScopes"]
+    assert out["captureStatus"] == "COMPLETE"
+    assert out["discoveryComplete"] is False
+    assert "discovery" in out["incompleteScopes"]   # still reported, never hidden
 
 
 def test_retrieving_nothing_at_all_is_failed_not_partial():
@@ -403,3 +420,47 @@ def test_the_capture_function_has_an_explicit_timeout_budget():
     assert deadline < max_duration * 1000, (
         "the internal deadline must fire before the platform kills the function")
 
+
+
+# ── what the first live v4 capture taught ───────────────────────────────────
+
+def test_an_unexhausted_broad_pass_does_not_block_a_complete_capture():
+    """The broad pass has no series filter, so it pages the whole exchange and
+    can never be exhausted in one invocation. Requiring it for COMPLETE made
+    COMPLETE unreachable: the first real v4 capture had all 17 series complete
+    and still reported PARTIAL."""
+    out = _summary([_pg("A"), _pg("B"),
+                    _pg(None, complete=False, scope="discovery",
+                        reason="PAGE_CAP_REACHED_WITH_LIVE_CURSOR")], 1941)
+    assert out["captureStatus"] == "COMPLETE"
+    assert out["captureComplete"] is True
+    assert out["discoveryComplete"] is False
+    assert out["discoveryTruncationReasons"] == ["PAGE_CAP_REACHED_WITH_LIVE_CURSOR"]
+
+
+def test_broad_truncation_is_never_hidden_even_when_it_does_not_block():
+    out = _summary([_pg("A"),
+                    _pg(None, complete=False, scope="discovery",
+                        reason="ENTRY_CAP_REACHED")], 100)
+    assert "discovery" in out["incompleteScopes"]
+    assert "ENTRY_CAP_REACHED" in out["truncationReasons"]
+
+
+def test_a_truncated_series_still_makes_the_capture_partial():
+    out = _summary([_pg("A"), _pg("KXMLBSB", complete=False, reason="RETRIES_EXHAUSTED"),
+                    _pg(None, scope="discovery")], 100)
+    assert out["captureStatus"] == "PARTIAL"
+    assert out["seriesIncomplete"] == ["KXMLBSB"]
+
+
+def test_the_broad_pass_counts_markets_it_skips_as_already_covered():
+    """The 4 unaccounted rows in the first live capture were broad-pass markets
+    whose series the per-series loop had already archived. Not archiving them
+    twice is right; not COUNTING them was the same defect as the Python side's
+    `if not ticker: continue`."""
+    with open(ENDPOINT) as fh:
+        src = fh.read()
+    assert "alreadyCovered += 1" in src
+    assert "broad_discovery_already_covered_by_series_pass" in src
+    assert "if (ALL_SERIES.includes(series)) continue;" not in src, (
+        "the bare uncounted continue is what left rows unaccounted")

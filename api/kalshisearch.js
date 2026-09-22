@@ -478,15 +478,41 @@ export async function fetchPaginated(baseUrl, key, opts = {}) {
 export function summarizeCapture(paginations, { marketsArchived = 0 } = {}) {
   const incomplete = paginations.filter((p) => p && !p.complete);
   const seriesIncomplete = incomplete.filter((p) => p.scope === 'series');
+  const discoveryIncomplete = incomplete.filter((p) => p.scope === 'discovery');
+
+  // captureStatus is a claim about THE PRICE UNIVERSE, which is the 17 series.
+  //
+  // It used to require every scope, including the broad discovery pass. That
+  // made COMPLETE definitionally unreachable: the broad pass has no series
+  // filter, so it pages the ENTIRE Kalshi exchange and can never be exhausted
+  // inside one invocation. The first live v4 capture proved it -- all 17
+  // series complete, 40,000 records pulled by the broad pass, 39,938 of them
+  // not even for this slate date, and the whole capture reported PARTIAL.
+  //
+  // A contract that can never be satisfied is worse than no contract: every
+  // capture would be PARTIAL forever, no capture would ever qualify for
+  // research, and the completeness classification would be dead on arrival.
+  //
+  // So COMPLETE means "every series paginated to exhaustion". The broad pass
+  // is supplementary by design -- api/kalshisearch.js's own note calls it
+  // "pure research-visibility scaffolding ... never read by
+  // build_kalshi_registry.py's backfill or by merge_odds.py" -- and its
+  // truncation is reported in its OWN fields, never hidden, just not allowed
+  // to invalidate a price universe that was in fact captured whole.
   let status = CAPTURE_COMPLETE;
-  if (incomplete.length) status = CAPTURE_PARTIAL;
+  if (seriesIncomplete.length) status = CAPTURE_PARTIAL;
   if (marketsArchived === 0 && incomplete.length) status = CAPTURE_FAILED;
+
   return {
     captureStatus: status,
     captureComplete: status === CAPTURE_COMPLETE,
     seriesAttempted: paginations.filter((p) => p && p.scope === 'series').length,
     seriesIncomplete: seriesIncomplete.map((p) => p.series).filter(Boolean).sort(),
-    incompleteScopes: incomplete.map((p) => p.scope),
+    // Reported separately and never folded into captureStatus.
+    discoveryComplete: discoveryIncomplete.length === 0,
+    discoveryTruncationReasons: [...new Set(
+      discoveryIncomplete.map((p) => p.truncationReason))].sort(),
+    incompleteScopes: [...new Set(incomplete.map((p) => p.scope))].sort(),
     truncationReasons: [...new Set(incomplete.map((p) => p.truncationReason))].sort(),
     totalRetries: paginations.reduce((sum, p) => sum + ((p && p.retriesAttempted) || 0), 0),
     totalBackoffMs: paginations.reduce((sum, p) => sum + ((p && p.totalBackoffMs) || 0), 0),
@@ -670,11 +696,20 @@ export default async function handler(req, res) {
         scope: 'discovery', maxPages: BROAD_MAX_PAGES_SAFETY,
       });
       let offDate = 0;
+      let alreadyCovered = 0;
       for (const mkt of broadMkts) {
         const et = mkt.event_ticker || '';
         if (!et.includes(kalshiDate)) { offDate += 1; continue; }
         const series = et.split('-')[0] || '';
-        if (ALL_SERIES.includes(series)) continue; // already covered above
+        if (ALL_SERIES.includes(series)) {
+          // Already archived by the per-series loop. NOT archiving it twice is
+          // right; not COUNTING it was the same defect as the Python side's
+          // `if not ticker: continue` -- a row the source returned that the
+          // capture could neither show nor explain. The first live v4 capture
+          // reported unaccounted: 4, and these were all four of them.
+          alreadyCovered += 1;
+          continue;
+        }
         if (discoveredUnknownSeriesMarkets.length >= BROAD_DISCOVERY_ENTRY_CAP) {
           // PHASE E: hitting a safety cap is a TRUNCATION, not a stop. The
           // old 500-entry cap reported 500 whether the exchange held 500 or
@@ -685,6 +720,7 @@ export default async function handler(req, res) {
         discoveredUnknownSeriesMarkets.push(parseMarketRecord(mkt, et, snapshotTs));
       }
       recordExclusion('broad_discovery_not_for_this_slate_date', offDate);
+      recordExclusion('broad_discovery_already_covered_by_series_pass', alreadyCovered);
       if (broadEntryCapHit) {
         const broadPagination = paginations[paginations.length - 1];
         broadPagination.complete = false;

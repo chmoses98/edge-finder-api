@@ -88,27 +88,40 @@ def classify_snapshot(snapshot):
     if contract in CONTRACTS_WITH_PAGINATION_EVIDENCE:
         paginations = snapshot.get("pagination") or []
         incomplete = [p for p in paginations if not p.get("complete")]
+        # The PRICE UNIVERSE is the per-series scopes. The broad discovery pass
+        # has no series filter, so it pages the entire Kalshi exchange and can
+        # never be exhausted inside one invocation -- requiring it for COMPLETE
+        # made COMPLETE unreachable, which the first live v4 capture proved
+        # (all 17 series complete, broad pass truncated at 40,000 records of
+        # which 39,938 were not even for that slate date). A contract that
+        # cannot be satisfied disqualifies every capture from research forever.
+        #
+        # Broad truncation is still recorded, just not allowed to invalidate a
+        # price universe that was in fact captured whole.
+        series_incomplete = [p for p in incomplete if p.get("scope") != "discovery"]
         reasons = sorted({p.get("truncationReason") for p in incomplete
                           if p.get("truncationReason")})
-        series = sorted({p.get("series") for p in incomplete if p.get("series")})
+        series = sorted({p.get("series") for p in series_incomplete if p.get("series")})
         declared = snapshot.get("captureStatus")
 
         if declared == FAILED or (archived == 0 and incomplete):
             return dict(base, **{"class": FAILED, "incompleteSeries": series,
                                  "truncationReasons": reasons,
                                  "reason": "capture retrieved nothing and reported failures"})
-        if incomplete or failures:
+        if series_incomplete or failures:
             return dict(base, **{"class": PARTIAL, "incompleteSeries": series,
                                  "truncationReasons": reasons,
-                                 "reason": "at least one scope did not paginate to exhaustion"})
+                                 "reason": "at least one series did not paginate to exhaustion"})
         if not paginations:
             # v4 claiming completeness with no evidence behind it is not
             # something to take on trust.
             return dict(base, **{"class": UNKNOWN_LEGACY,
                                  "reason": "contract version claims v4 but carries no "
                                            "pagination evidence"})
-        return dict(base, **{"class": COMPLETE,
-                             "reason": "every scope paginated to exhaustion"})
+        return dict(base, **{
+            "class": COMPLETE,
+            "truncationReasons": reasons,   # broad-pass truncation stays visible
+            "reason": "every series paginated to exhaustion"})
 
     # ---- legacy ----------------------------------------------------------
     if failures:

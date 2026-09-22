@@ -106,11 +106,41 @@ def test_v4_with_a_live_cursor_at_the_page_cap_is_partial():
     assert result["truncationReasons"] == ["PAGE_CAP_REACHED_WITH_LIVE_CURSOR"]
 
 
-def test_v4_with_an_incomplete_broad_pass_is_partial():
+def test_an_incomplete_broad_pass_alone_does_not_make_a_capture_partial():
+    """THE correction the first live v4 capture forced.
+
+    The broad discovery pass has no series filter, so it pages the entire
+    Kalshi exchange and can never be exhausted inside one invocation.
+    Requiring it for COMPLETE made COMPLETE unreachable -- the first real
+    capture had all 17 series complete and was still reported PARTIAL, on a
+    broad pass that pulled 40,000 records of which 39,938 were not even for
+    that slate date.
+
+    A contract that cannot be satisfied disqualifies every capture from
+    research forever, which is worse than having no contract at all.
+    """
     result = classify_snapshot(_v4(
         [_pg("A"), _pg(None, complete=False, scope="discovery",
-                       reason="ENTRY_CAP_REACHED")]))
+                       reason="PAGE_CAP_REACHED_WITH_LIVE_CURSOR")]))
+    assert result["class"] == COMPLETE
+    assert result["incompleteSeries"] == []
+
+
+def test_broad_pass_truncation_is_still_recorded_on_a_complete_capture():
+    """Not blocking is not the same as not reported."""
+    result = classify_snapshot(_v4(
+        [_pg("A"), _pg(None, complete=False, scope="discovery",
+                       reason="PAGE_CAP_REACHED_WITH_LIVE_CURSOR")]))
+    assert result["truncationReasons"] == ["PAGE_CAP_REACHED_WITH_LIVE_CURSOR"]
+
+
+def test_a_truncated_series_still_makes_the_capture_partial_even_if_broad_is_fine():
+    """The price universe is what captureStatus is a claim about."""
+    result = classify_snapshot(_v4(
+        [_pg("A"), _pg("KXMLBSB", complete=False, reason="RETRIES_EXHAUSTED"),
+         _pg(None, scope="discovery")]))
     assert result["class"] == PARTIAL
+    assert result["incompleteSeries"] == ["KXMLBSB"]
 
 
 def test_v4_that_retrieved_nothing_and_failed_is_failed():

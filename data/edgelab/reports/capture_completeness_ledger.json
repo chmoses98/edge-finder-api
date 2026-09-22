@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T03:43:20Z",
+  "generatedAt": "2026-09-22T07:26:30Z",
   "interpretation": {
     "consequence": "Until the v4 contract has been capturing for a while there is almost no COMPLETE history. Research requiring proven completeness must say so and report its reduced sample rather than quietly falling back.",
     "whyCleanLegacySnapshotsAreNotComplete": "Under the pre-v4 capture path a live cursor at maxPages=10 was discarded with no failure recorded anywhere, so fetchFailureCount=0 means 'nothing reported an error', which is strictly weaker than 'everything was retrieved'. Calling those COMPLETE would launder an absence of evidence into evidence of absence, on exactly the busiest captures a page cap bites first.",
@@ -2405,17 +2405,39 @@
       },
       "snapshot": "kalshi_search_2026-09-21_2332.json",
       "truncationReasons": []
+    },
+    {
+      "class": "COMPLETE",
+      "contractVersion": "kalshi_capture_v4",
+      "date": "2026-09-22",
+      "fetchedAt": "2026-09-22T07:24:03.000Z",
+      "incompleteSeries": [],
+      "marketsArchived": 1941,
+      "reason": "every series paginated to exhaustion",
+      "reconciliation": {
+        "balanced": false,
+        "discoveredUnknownSeriesArchived": 58,
+        "explicitlyExcluded": 40019,
+        "marketsArchived": 1941,
+        "reconcilable": true,
+        "sourceRecordsReceived": 42022,
+        "unaccounted": 4
+      },
+      "snapshot": "kalshi_search_2026-09-22_0724.json",
+      "truncationReasons": [
+        "PAGE_CAP_REACHED_WITH_LIVE_CURSOR"
+      ]
     }
   ],
   "schemaVersion": "capture_completeness_ledger_v1",
   "totals": {
-    "COMPLETE": 0,
+    "COMPLETE": 1,
     "FAILED": 0,
     "PARTIAL": 9,
     "UNKNOWN_LEGACY": 138,
-    "marketsArchived": 344843,
-    "reconcilableSnapshots": 0,
-    "researchQualifiedSnapshots": 0,
+    "marketsArchived": 346784,
+    "reconcilableSnapshots": 1,
+    "researchQualifiedSnapshots": 1,
     "seriesIncompleteFrequency": {
       "KXMLBHRR": 6,
       "KXMLBRBI": 6,
@@ -2423,11 +2445,12 @@
       "KXMLBTB": 2,
       "__broad_discovery__": 2
     },
-    "snapshots": 147,
+    "snapshots": 148,
     "truncationReasonFrequency": {
+      "PAGE_CAP_REACHED_WITH_LIVE_CURSOR": 1,
       "RECORDED_FETCH_FAILURE": 9
     },
-    "unaccountedRows": 0,
+    "unaccountedRows": 4,
     "unreadable": 0
   }
 }

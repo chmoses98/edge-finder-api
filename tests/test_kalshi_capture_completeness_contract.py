@@ -355,6 +355,33 @@ class TestFailedCaptureLeavesEvidence:
         assert "curl -sf" not in self._fetch_code(), (
             "-f discards the error body, which is the only evidence of why")
 
+    def test_the_kept_forever_dated_snapshot_is_not_clobbered_by_a_failed_capture(self):
+        """Archiving unconditionally must not destroy evidence in the name of
+        recording it. lib/snapshot_retention.py keeps kalshi_search_<date>.json
+        FOREVER as the per-slate-date reference other consumers reconcile
+        against; letting a capture that retrieved nothing overwrite a good one
+        would turn a transient fetch failure into permanent loss on the one
+        file that is never pruned."""
+        archive = next(s for s in self._steps() if s.get("id") == "archive")
+        run = archive["run"]
+        assert 'cp data/kalshi_search_live.json "$SNAP_TS"' in run, (
+            "the timestamped attempt record must always be written")
+        dated = run[run.index('cp data/kalshi_search_live.json "$SNAP_DATE"'):]
+        guard = run[:run.index('cp data/kalshi_search_live.json "$SNAP_DATE"')]
+        assert "markets_count" in guard.rsplit("\n", 6)[-1] or "-gt 0" in guard, (
+            "advancing the kept-forever dated copy must be conditional on "
+            "having actually retrieved markets")
+
+    def test_the_commit_is_gated_on_the_attempt_record_not_the_dated_copy(self):
+        """Gating on the dated copy would write a failed attempt to the
+        runner's disk and then discard it when the runner is reclaimed -- no
+        artifact, which is the exact defect PHASE G exists to close."""
+        commit = next(s for s in self._steps()
+                      if (s.get("name") or "").startswith("Commit snapshot"))
+        condition = str(commit.get("if"))
+        assert "snapshot_ts_path" in condition
+        assert "snapshot_date_path" not in condition
+
     def test_the_handler_returns_a_snapshot_shape_on_error_not_a_bare_error(self):
         with open(ENDPOINT) as fh:
             src = fh.read()
@@ -375,3 +402,4 @@ def test_the_capture_function_has_an_explicit_timeout_budget():
     deadline = _run("process.stdout.write(JSON.stringify(K.CAPTURE_DEADLINE_MS));")
     assert deadline < max_duration * 1000, (
         "the internal deadline must fire before the platform kills the function")
+

@@ -1,0 +1,735 @@
+{
+  "arms": {
+    "partial_capture_evidence_only": {
+      "brier": 0.15931,
+      "calibrationGap": -0.0071,
+      "clusteredBootstrap95GapCI": {
+        "games": 79,
+        "hi": 0.0197,
+        "iterations": 2000,
+        "lo": -0.0334,
+        "pValue": 0.622
+      },
+      "gapSignificantUnderClustering": false,
+      "independentGames": 79,
+      "logLoss": 0.48804,
+      "meanExecutablePrice": 0.3214,
+      "n": 6915,
+      "naiveWilson95": {
+        "hi": 0.3254,
+        "lo": 0.3036,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.3144,
+      "rowsPerIndependentGame": 87.5
+    },
+    "qualified_excluding_partial_captures": {
+      "brier": 0.15973,
+      "calibrationGap": 0.0014,
+      "clusteredBootstrap95GapCI": {
+        "games": 178,
+        "hi": 0.0176,
+        "iterations": 2000,
+        "lo": -0.0151,
+        "pValue": 0.889
+      },
+      "gapSignificantUnderClustering": false,
+      "independentGames": 178,
+      "logLoss": 0.48686,
+      "meanExecutablePrice": 0.3025,
+      "n": 24669,
+      "naiveWilson95": {
+        "hi": 0.3097,
+        "lo": 0.2982,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.3039,
+      "rowsPerIndependentGame": 138.6
+    },
+    "unqualified_all_evidence": {
+      "brier": 0.15964,
+      "calibrationGap": -0.0004,
+      "clusteredBootstrap95GapCI": {
+        "games": 217,
+        "hi": 0.014,
+        "iterations": 2000,
+        "lo": -0.0142,
+        "pValue": 0.969
+      },
+      "gapSignificantUnderClustering": false,
+      "independentGames": 217,
+      "logLoss": 0.48712,
+      "meanExecutablePrice": 0.3066,
+      "n": 31584,
+      "naiveWilson95": {
+        "hi": 0.3113,
+        "lo": 0.3011,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.3062,
+      "rowsPerIndependentGame": 145.5
+    }
+  },
+  "excludedFromResearch": {
+    "no_valid_prestart_quote": 80247,
+    "not_settled": 14209,
+    "price_not_strictly_between_0_and_1": 94511
+  },
+  "familiesQualified": {
+    "_multiplicityCorrection": {
+      "alpha": 0.05,
+      "familiesTested": 11,
+      "survivors": [],
+      "thresholds": {
+        "game_total": 0.01364,
+        "hitter_hits": 0.05,
+        "hitter_hits_runs_rbis": 0.04545,
+        "hitter_rbis": 0.04091,
+        "hitter_stolen_bases": 0.00455,
+        "hitter_total_bases": 0.03636,
+        "inning_result": 0.00909,
+        "inning_total": 0.01818,
+        "pitcher_strikeouts": 0.03182,
+        "team_total": 0.02273,
+        "winning_margin": 0.02727
+      }
+    },
+    "game_total": {
+      "brier": 0.16727,
+      "calibrationGap": 0.0518,
+      "clusteredBootstrap95GapCI": {
+        "games": 85,
+        "hi": 0.1123,
+        "iterations": 2000,
+        "lo": -0.0103,
+        "pValue": 0.094
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 85,
+      "logLoss": 0.50234,
+      "meanExecutablePrice": 0.5729,
+      "n": 826,
+      "naiveWilson95": {
+        "hi": 0.6571,
+        "lo": 0.5912,
+        "marketWithinInterval": false
+      },
+      "observedYesRate": 0.6247,
+      "rowsPerIndependentGame": 9.7,
+      "survivesMultiplicityCorrection": false
+    },
+    "hitter_hits": {
+      "brier": 0.14425,
+      "calibrationGap": 0.0005,
+      "clusteredBootstrap95GapCI": {
+        "games": 136,
+        "hi": 0.0178,
+        "iterations": 2000,
+        "lo": -0.0166,
+        "pValue": 0.969
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 136,
+      "logLoss": 0.44144,
+      "meanExecutablePrice": 0.2787,
+      "n": 4105,
+      "naiveWilson95": {
+        "hi": 0.2931,
+        "lo": 0.2657,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.2792,
+      "rowsPerIndependentGame": 30.2,
+      "survivesMultiplicityCorrection": false
+    },
+    "hitter_hits_runs_rbis": {
+      "brier": 0.18313,
+      "calibrationGap": 0.0017,
+      "clusteredBootstrap95GapCI": {
+        "games": 139,
+        "hi": 0.0243,
+        "iterations": 2000,
+        "lo": -0.0202,
+        "pValue": 0.927
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 139,
+      "logLoss": 0.5452,
+      "meanExecutablePrice": 0.35,
+      "n": 6414,
+      "naiveWilson95": {
+        "hi": 0.3635,
+        "lo": 0.3401,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.3517,
+      "rowsPerIndependentGame": 46.1,
+      "survivesMultiplicityCorrection": false
+    },
+    "hitter_rbis": {
+      "brier": 0.15029,
+      "calibrationGap": -0.0033,
+      "clusteredBootstrap95GapCI": {
+        "games": 141,
+        "hi": 0.0155,
+        "iterations": 2000,
+        "lo": -0.0218,
+        "pValue": 0.726
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 141,
+      "logLoss": 0.46985,
+      "meanExecutablePrice": 0.2045,
+      "n": 2733,
+      "naiveWilson95": {
+        "hi": 0.2167,
+        "lo": 0.1866,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.2012,
+      "rowsPerIndependentGame": 19.4,
+      "survivesMultiplicityCorrection": false
+    },
+    "hitter_stolen_bases": {
+      "brier": 0.06703,
+      "calibrationGap": -0.0202,
+      "clusteredBootstrap95GapCI": {
+        "games": 113,
+        "hi": -0.0043,
+        "iterations": 2000,
+        "lo": -0.0361,
+        "pValue": 0.021
+      },
+      "finding": "EXPLORATORY",
+      "gapSignificantUnderClustering": true,
+      "independentGames": 113,
+      "logLoss": 0.25332,
+      "meanExecutablePrice": 0.0951,
+      "n": 1228,
+      "naiveWilson95": {
+        "hi": 0.091,
+        "lo": 0.0615,
+        "marketWithinInterval": false
+      },
+      "observedYesRate": 0.0749,
+      "rowsPerIndependentGame": 10.9,
+      "survivesMultiplicityCorrection": false
+    },
+    "hitter_total_bases": {
+      "brier": 0.14815,
+      "calibrationGap": -0.0046,
+      "clusteredBootstrap95GapCI": {
+        "games": 139,
+        "hi": 0.0132,
+        "iterations": 2000,
+        "lo": -0.0223,
+        "pValue": 0.559
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 139,
+      "logLoss": 0.46275,
+      "meanExecutablePrice": 0.2075,
+      "n": 5008,
+      "naiveWilson95": {
+        "hi": 0.2142,
+        "lo": 0.192,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.2029,
+      "rowsPerIndependentGame": 36.0,
+      "survivesMultiplicityCorrection": false
+    },
+    "inning_result": {
+      "brier": 0.19396,
+      "calibrationGap": -0.0096,
+      "clusteredBootstrap95GapCI": {
+        "games": 85,
+        "hi": -0.0009,
+        "iterations": 2000,
+        "lo": -0.0186,
+        "pValue": 0.033
+      },
+      "finding": "EXPLORATORY",
+      "gapSignificantUnderClustering": true,
+      "independentGames": 85,
+      "logLoss": 0.5706,
+      "meanExecutablePrice": 0.3465,
+      "n": 662,
+      "naiveWilson95": {
+        "hi": 0.3737,
+        "lo": 0.3019,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.3369,
+      "rowsPerIndependentGame": 7.8,
+      "survivesMultiplicityCorrection": false
+    },
+    "inning_total": {
+      "brier": 0.17477,
+      "calibrationGap": 0.0514,
+      "clusteredBootstrap95GapCI": {
+        "games": 85,
+        "hi": 0.1175,
+        "iterations": 2000,
+        "lo": -0.0153,
+        "pValue": 0.144
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 85,
+      "logLoss": 0.51471,
+      "meanExecutablePrice": 0.6089,
+      "n": 518,
+      "naiveWilson95": {
+        "hi": 0.6997,
+        "lo": 0.6184,
+        "marketWithinInterval": false
+      },
+      "observedYesRate": 0.6602,
+      "rowsPerIndependentGame": 6.1,
+      "survivesMultiplicityCorrection": false
+    },
+    "pitcher_strikeouts": {
+      "brier": 0.15453,
+      "calibrationGap": -0.0168,
+      "clusteredBootstrap95GapCI": {
+        "games": 88,
+        "hi": 0.0288,
+        "iterations": 2000,
+        "lo": -0.0599,
+        "pValue": 0.487
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 88,
+      "logLoss": 0.47617,
+      "meanExecutablePrice": 0.4512,
+      "n": 1022,
+      "naiveWilson95": {
+        "hi": 0.465,
+        "lo": 0.4044,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.4344,
+      "rowsPerIndependentGame": 11.6,
+      "survivesMultiplicityCorrection": false
+    },
+    "team_total": {
+      "brier": 0.18958,
+      "calibrationGap": 0.0249,
+      "clusteredBootstrap95GapCI": {
+        "games": 84,
+        "hi": 0.0723,
+        "iterations": 2000,
+        "lo": -0.023,
+        "pValue": 0.294
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 84,
+      "logLoss": 0.55908,
+      "meanExecutablePrice": 0.4737,
+      "n": 1053,
+      "naiveWilson95": {
+        "hi": 0.5287,
+        "lo": 0.4684,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.4986,
+      "rowsPerIndependentGame": 12.5,
+      "survivesMultiplicityCorrection": false
+    },
+    "winning_margin": {
+      "brier": 0.1865,
+      "calibrationGap": 0.0186,
+      "clusteredBootstrap95GapCI": {
+        "games": 84,
+        "hi": 0.0564,
+        "iterations": 2000,
+        "lo": -0.02,
+        "pValue": 0.329
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 84,
+      "logLoss": 0.55454,
+      "meanExecutablePrice": 0.2661,
+      "n": 741,
+      "naiveWilson95": {
+        "hi": 0.3183,
+        "lo": 0.2534,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.2848,
+      "rowsPerIndependentGame": 8.8,
+      "survivesMultiplicityCorrection": false
+    }
+  },
+  "familiesUnqualified": {
+    "_multiplicityCorrection": {
+      "alpha": 0.05,
+      "familiesTested": 13,
+      "survivors": [],
+      "thresholds": {
+        "game_result": 0.00385,
+        "game_total": 0.01538,
+        "hitter_hits": 0.05,
+        "hitter_hits_runs_rbis": 0.04615,
+        "hitter_rbis": 0.02692,
+        "hitter_stolen_bases": 0.00769,
+        "hitter_total_bases": 0.03462,
+        "inning_result": 0.01154,
+        "inning_total": 0.01923,
+        "pitcher_outs": 0.02308,
+        "pitcher_strikeouts": 0.04231,
+        "team_total": 0.03077,
+        "winning_margin": 0.03846
+      }
+    },
+    "game_result": {
+      "brier": 0.22632,
+      "calibrationGap": -0.0105,
+      "clusteredBootstrap95GapCI": {
+        "games": 103,
+        "hi": -0.0032,
+        "iterations": 2000,
+        "lo": -0.0201,
+        "pValue": 0.004
+      },
+      "finding": "EXPLORATORY",
+      "gapSignificantUnderClustering": true,
+      "independentGames": 103,
+      "logLoss": 0.64424,
+      "meanExecutablePrice": 0.5056,
+      "n": 202,
+      "naiveWilson95": {
+        "hi": 0.5634,
+        "lo": 0.4268,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.495,
+      "rowsPerIndependentGame": 2.0,
+      "survivesMultiplicityCorrection": false
+    },
+    "game_total": {
+      "brier": 0.17044,
+      "calibrationGap": 0.0376,
+      "clusteredBootstrap95GapCI": {
+        "games": 109,
+        "hi": 0.0932,
+        "iterations": 2000,
+        "lo": -0.0163,
+        "pValue": 0.167
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 109,
+      "logLoss": 0.51033,
+      "meanExecutablePrice": 0.5749,
+      "n": 1169,
+      "naiveWilson95": {
+        "hi": 0.64,
+        "lo": 0.5842,
+        "marketWithinInterval": false
+      },
+      "observedYesRate": 0.6125,
+      "rowsPerIndependentGame": 10.7,
+      "survivesMultiplicityCorrection": false
+    },
+    "hitter_hits": {
+      "brier": 0.14277,
+      "calibrationGap": -0.0007,
+      "clusteredBootstrap95GapCI": {
+        "games": 180,
+        "hi": 0.0136,
+        "iterations": 2000,
+        "lo": -0.0157,
+        "pValue": 0.952
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 180,
+      "logLoss": 0.43792,
+      "meanExecutablePrice": 0.2789,
+      "n": 5539,
+      "naiveWilson95": {
+        "hi": 0.2902,
+        "lo": 0.2666,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.2782,
+      "rowsPerIndependentGame": 30.8,
+      "survivesMultiplicityCorrection": false
+    },
+    "hitter_hits_runs_rbis": {
+      "brier": 0.18335,
+      "calibrationGap": -0.0009,
+      "clusteredBootstrap95GapCI": {
+        "games": 161,
+        "hi": 0.0208,
+        "iterations": 2000,
+        "lo": -0.0216,
+        "pValue": 0.898
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 161,
+      "logLoss": 0.5482,
+      "meanExecutablePrice": 0.3537,
+      "n": 7603,
+      "naiveWilson95": {
+        "hi": 0.3636,
+        "lo": 0.3421,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.3528,
+      "rowsPerIndependentGame": 47.2,
+      "survivesMultiplicityCorrection": false
+    },
+    "hitter_rbis": {
+      "brier": 0.14845,
+      "calibrationGap": -0.0069,
+      "clusteredBootstrap95GapCI": {
+        "games": 151,
+        "hi": 0.0104,
+        "iterations": 2000,
+        "lo": -0.0238,
+        "pValue": 0.416
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 151,
+      "logLoss": 0.4653,
+      "meanExecutablePrice": 0.2048,
+      "n": 3007,
+      "naiveWilson95": {
+        "hi": 0.2125,
+        "lo": 0.184,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.1979,
+      "rowsPerIndependentGame": 19.9,
+      "survivesMultiplicityCorrection": false
+    },
+    "hitter_stolen_bases": {
+      "brier": 0.06807,
+      "calibrationGap": -0.0217,
+      "clusteredBootstrap95GapCI": {
+        "games": 134,
+        "hi": -0.0064,
+        "iterations": 2000,
+        "lo": -0.0368,
+        "pValue": 0.008
+      },
+      "finding": "EXPLORATORY",
+      "gapSignificantUnderClustering": true,
+      "independentGames": 134,
+      "logLoss": 0.25737,
+      "meanExecutablePrice": 0.0964,
+      "n": 1485,
+      "naiveWilson95": {
+        "hi": 0.0892,
+        "lo": 0.0624,
+        "marketWithinInterval": false
+      },
+      "observedYesRate": 0.0747,
+      "rowsPerIndependentGame": 11.1,
+      "survivesMultiplicityCorrection": false
+    },
+    "hitter_total_bases": {
+      "brier": 0.14877,
+      "calibrationGap": -0.0031,
+      "clusteredBootstrap95GapCI": {
+        "games": 180,
+        "hi": 0.0127,
+        "iterations": 2000,
+        "lo": -0.0193,
+        "pValue": 0.663
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 180,
+      "logLoss": 0.46423,
+      "meanExecutablePrice": 0.2079,
+      "n": 6691,
+      "naiveWilson95": {
+        "hi": 0.2146,
+        "lo": 0.1953,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.2048,
+      "rowsPerIndependentGame": 37.2,
+      "survivesMultiplicityCorrection": false
+    },
+    "inning_result": {
+      "brier": 0.19913,
+      "calibrationGap": -0.0058,
+      "clusteredBootstrap95GapCI": {
+        "games": 109,
+        "hi": -0.0002,
+        "iterations": 2000,
+        "lo": -0.0112,
+        "pValue": 0.043
+      },
+      "finding": "EXPLORATORY",
+      "gapSignificantUnderClustering": true,
+      "independentGames": 109,
+      "logLoss": 0.58244,
+      "meanExecutablePrice": 0.3478,
+      "n": 918,
+      "naiveWilson95": {
+        "hi": 0.3733,
+        "lo": 0.3121,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.342,
+      "rowsPerIndependentGame": 8.4,
+      "survivesMultiplicityCorrection": false
+    },
+    "inning_total": {
+      "brier": 0.18089,
+      "calibrationGap": 0.0289,
+      "clusteredBootstrap95GapCI": {
+        "games": 109,
+        "hi": 0.0888,
+        "iterations": 2000,
+        "lo": -0.0314,
+        "pValue": 0.342
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 109,
+      "logLoss": 0.52808,
+      "meanExecutablePrice": 0.6148,
+      "n": 727,
+      "naiveWilson95": {
+        "hi": 0.6777,
+        "lo": 0.6083,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.6437,
+      "rowsPerIndependentGame": 6.7,
+      "survivesMultiplicityCorrection": false
+    },
+    "pitcher_outs": {
+      "brier": 0.24491,
+      "calibrationGap": -0.0307,
+      "clusteredBootstrap95GapCI": {
+        "games": 117,
+        "hi": 0.0424,
+        "iterations": 2000,
+        "lo": -0.1009,
+        "pValue": 0.395
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 117,
+      "logLoss": 0.69479,
+      "meanExecutablePrice": 0.5107,
+      "n": 200,
+      "naiveWilson95": {
+        "hi": 0.549,
+        "lo": 0.4118,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.48,
+      "rowsPerIndependentGame": 1.7,
+      "survivesMultiplicityCorrection": false
+    },
+    "pitcher_strikeouts": {
+      "brier": 0.15745,
+      "calibrationGap": -0.0048,
+      "clusteredBootstrap95GapCI": {
+        "games": 116,
+        "hi": 0.0337,
+        "iterations": 2000,
+        "lo": -0.0424,
+        "pValue": 0.817
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 116,
+      "logLoss": 0.48254,
+      "meanExecutablePrice": 0.4477,
+      "n": 1436,
+      "naiveWilson95": {
+        "hi": 0.4687,
+        "lo": 0.4174,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.4429,
+      "rowsPerIndependentGame": 12.4,
+      "survivesMultiplicityCorrection": false
+    },
+    "team_total": {
+      "brier": 0.18508,
+      "calibrationGap": 0.0158,
+      "clusteredBootstrap95GapCI": {
+        "games": 109,
+        "hi": 0.0577,
+        "iterations": 2000,
+        "lo": -0.0251,
+        "pValue": 0.449
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 109,
+      "logLoss": 0.5486,
+      "meanExecutablePrice": 0.4709,
+      "n": 1463,
+      "naiveWilson95": {
+        "hi": 0.5123,
+        "lo": 0.4611,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.4867,
+      "rowsPerIndependentGame": 13.4,
+      "survivesMultiplicityCorrection": false
+    },
+    "winning_margin": {
+      "brier": 0.17676,
+      "calibrationGap": -0.0052,
+      "clusteredBootstrap95GapCI": {
+        "games": 109,
+        "hi": 0.0273,
+        "iterations": 2000,
+        "lo": -0.037,
+        "pValue": 0.779
+      },
+      "finding": "NO_EVIDENCE",
+      "gapSignificantUnderClustering": false,
+      "independentGames": 109,
+      "logLoss": 0.53226,
+      "meanExecutablePrice": 0.2657,
+      "n": 1044,
+      "naiveWilson95": {
+        "hi": 0.288,
+        "lo": 0.2348,
+        "marketWithinInterval": true
+      },
+      "observedYesRate": 0.2605,
+      "rowsPerIndependentGame": 9.6,
+      "survivesMultiplicityCorrection": false
+    }
+  },
+  "generatedAt": "2026-09-22T03:49:58Z",
+  "method": {
+    "clustering": "95% intervals on the calibration gap come from a bootstrap that resamples whole GAMES with replacement (2000 iterations, seed 20260922). A game is the unit that is actually independent: every prop, team total and game total on it shares one outcome.",
+    "executablePricing": "Buying YES pays the ASK. A calibration gap is not a profit: it is before the spread and before Kalshi fees.",
+    "naiveIntervalIsReportedOnlyForComparison": "Wilson intervals assume n independent trials. At ~145 rows per game they are far too narrow, and a cell falling outside one is not evidence of miscalibration."
+  },
+  "schemaVersion": "full_universe_qualified_calibration_v1",
+  "sourceCompleteness": {
+    "completeArmExists": false,
+    "rowsByCaptureClass": {
+      "PARTIAL": 6915,
+      "UNKNOWN_LEGACY": 24669
+    },
+    "whyNoCompleteArm": "Zero historical captures can prove completeness. The pre-v4 path discarded live cursors at the page cap with no failure recorded, so a clean legacy snapshot is UNKNOWN_LEGACY, never COMPLETE. Building a COMPLETE arm out of legacy data would be precisely the laundering this exercise exists to prevent."
+  }
+}

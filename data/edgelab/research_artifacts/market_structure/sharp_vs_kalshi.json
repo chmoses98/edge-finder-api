@@ -1,0 +1,204 @@
+{
+ "bh": {
+  "MRV-XV-001_slopeLast": false,
+  "MRV-XV-001_slopeNext": false,
+  "MRV-XV-002_clv": false,
+  "MRV-XV-002_roi": false,
+  "MRV-XV-003_roi": true,
+  "MRV-XV-003_slopeLast": true,
+  "MRV-XV-003_slopeNext": true,
+  "MRV-XV-004_slope": false
+ },
+ "breakEven": {
+  "MRV-XV-001_slopeLast": {
+   "breakEvenAbsDppHold": 5.852067308386168,
+   "breakEvenAbsDppRoundTrip": 11.704134616772336,
+   "holdToSettlementCostCents": 2.75,
+   "roundTripTakerCostCents": 5.5,
+   "slopeLast": 0.4699194071228772
+  },
+  "MRV-XV-003_slopeLast": {
+   "breakEvenAbsDppHold": 6.8391406796177066,
+   "breakEvenAbsDppRoundTrip": 13.678281359235413,
+   "holdToSettlementCostCents": 2.75,
+   "roundTripTakerCostCents": 5.5,
+   "slopeLast": 0.40209729976686476
+  }
+ },
+ "conventions": "d = book no-vig HOME prob (pp) - Kalshi HOME fair mid (cents); slopes are OLS of Kalshi mid change (cents) on d; XV-002/003: first capture per game-side with |d|>=3pp, spread<=10c, Pinnacle quote age<=30min, USD 10 taker order on the book's side (HOME at ask, AWAY at 100-bid), settled with archived outcomes",
+ "dates": [
+  "2026-09-02",
+  "2026-09-03",
+  "2026-09-04",
+  "2026-09-05",
+  "2026-09-06",
+  "2026-09-07",
+  "2026-09-08",
+  "2026-09-09",
+  "2026-09-10",
+  "2026-09-11",
+  "2026-09-12",
+  "2026-09-13",
+  "2026-09-14",
+  "2026-09-15",
+  "2026-09-16",
+  "2026-09-17",
+  "2026-09-18",
+  "2026-09-19",
+  "2026-09-20",
+  "2026-09-21",
+  "2026-09-22"
+ ],
+ "descriptive": {
+  "bookStats": {
+   "books": 46508,
+   "danglingRefs": 791,
+   "oneSided": 3034,
+   "resolvedRefs": 292
+  },
+  "dates": 20,
+  "games": 205,
+  "meanAbsDCons": 0.5544478163862873,
+  "meanAbsDPin": 0.4187260971190502,
+  "medianMinutesToNext": 275.3666666666667,
+  "mlRunGames": 2919,
+  "panelRows": 675,
+  "pinnacleAgeMedianS": -95,
+  "runsPerGameMedian": 3,
+  "shareAbsDPinGe3": 0.0,
+  "totalLadderRunGames": 5,
+  "unmatched": {
+   "noKalshiMLAtRun": 1059,
+   "noUniqueKalshiGame": 34,
+   "postStart": 320
+  },
+  "xv002Episodes": 0,
+  "xv002Games": 0,
+  "xv002Settled": 0,
+  "xv003Episodes": 2,
+  "xv003Settled": 2
+ },
+ "disagreementDistribution": {
+  "dCons": {
+   "meanAbs": 0.5544478163862873,
+   "n": 675,
+   "shareGe1pp": 0.15555555555555556,
+   "shareGe2pp": 0.022222222222222223,
+   "shareGe3pp": 0.002962962962962963,
+   "shareGe5pp": 0.0
+  },
+  "dPin": {
+   "meanAbs": 0.4187260971190502,
+   "n": 451,
+   "shareGe1pp": 0.07982261640798226,
+   "shareGe2pp": 0.0,
+   "shareGe3pp": 0.0,
+   "shareGe5pp": 0.0
+  }
+ },
+ "episodesSample": [],
+ "generatedAt": "2026-09-22T20:22:38Z",
+ "tests": {
+  "MRV-XV-001_slopeLast": {
+   "ciHigh": 0.9033390869787872,
+   "ciLow": -0.016827693144937414,
+   "clusters": 133,
+   "droppedNoCluster": 0,
+   "method": "GAME_CLUSTERED_BOOTSTRAP",
+   "n": 274,
+   "pPercentile": 0.115,
+   "pTwoSided": 0.09245377311344327,
+   "point": 0.4699194071228772,
+   "resamplesUsed": 2000
+  },
+  "MRV-XV-001_slopeNext": {
+   "ciHigh": 0.4431377941987588,
+   "ciLow": -0.04665453210326991,
+   "clusters": 133,
+   "droppedNoCluster": 0,
+   "method": "GAME_CLUSTERED_BOOTSTRAP",
+   "n": 274,
+   "pPercentile": 0.163,
+   "pTwoSided": 0.1469265367316342,
+   "point": 0.21082088182953798,
+   "resamplesUsed": 2000
+  },
+  "MRV-XV-002_clv": {
+   "ciHigh": null,
+   "ciLow": null,
+   "clusters": 0,
+   "droppedNoCluster": 0,
+   "method": "GAME_CLUSTERED_BOOTSTRAP",
+   "n": 0,
+   "pTwoSided": null,
+   "point": null,
+   "resamplesUsed": 0
+  },
+  "MRV-XV-002_roi": {
+   "ciHigh": null,
+   "ciLow": null,
+   "clusters": 0,
+   "droppedNoCluster": 0,
+   "method": "GAME_CLUSTERED_BOOTSTRAP",
+   "n": 0,
+   "pTwoSided": null,
+   "point": null,
+   "resamplesUsed": 0
+  },
+  "MRV-XV-002_stability": {
+   "dates": 0,
+   "firstHalf": null,
+   "sameSign": null,
+   "secondHalf": null
+  },
+  "MRV-XV-003_roi": {
+   "ciHigh": 1.3421588594704683,
+   "ciLow": 0.6460905349794238,
+   "clusters": 2,
+   "droppedNoCluster": 0,
+   "method": "GAME_CLUSTERED_BOOTSTRAP",
+   "n": 2,
+   "pPercentile": 0.0004997501249375312,
+   "pTwoSided": 0.0004997501249375312,
+   "point": 0.9959058341862846,
+   "resamplesUsed": 2000
+  },
+  "MRV-XV-003_slopeLast": {
+   "ciHigh": 0.6603749655732476,
+   "ciLow": 0.14802300764475088,
+   "clusters": 172,
+   "droppedNoCluster": 0,
+   "method": "GAME_CLUSTERED_BOOTSTRAP",
+   "n": 470,
+   "pPercentile": 0.013,
+   "pTwoSided": 0.009995002498750625,
+   "point": 0.40209729976686476,
+   "resamplesUsed": 2000
+  },
+  "MRV-XV-003_slopeNext": {
+   "ciHigh": 0.5260802462785936,
+   "ciLow": 0.2361307968821818,
+   "clusters": 172,
+   "droppedNoCluster": 0,
+   "method": "GAME_CLUSTERED_BOOTSTRAP",
+   "n": 470,
+   "pPercentile": 0.0004997501249375312,
+   "pTwoSided": 0.0004997501249375312,
+   "point": 0.3763041439483158,
+   "resamplesUsed": 2000
+  },
+  "MRV-XV-004_slope": {
+   "ciHigh": null,
+   "ciLow": null,
+   "clusters": 1,
+   "droppedNoCluster": 0,
+   "method": "GAME_CLUSTERED_BOOTSTRAP",
+   "n": 1,
+   "pTwoSided": null,
+   "point": null,
+   "resamplesUsed": 0
+  }
+ },
+ "tier": "TIER_B_EXPLORATORY",
+ "timingCaveat": "capturedAt is the run start; the Odds API leg is fetched later in the same run (book last_update can be a few minutes NEWER than the Kalshi book), so a small part of any same-run disagreement may already be stale on the Kalshi side; horizons are hours, which bounds the contamination"
+}

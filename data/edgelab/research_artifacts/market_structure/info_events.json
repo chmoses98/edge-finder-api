@@ -1,0 +1,53 @@
+{
+ "dataBlocked": true,
+ "dates": [
+  "2026-09-02",
+  "2026-09-03",
+  "2026-09-04",
+  "2026-09-05",
+  "2026-09-06",
+  "2026-09-07",
+  "2026-09-08",
+  "2026-09-09",
+  "2026-09-10",
+  "2026-09-11",
+  "2026-09-12",
+  "2026-09-13",
+  "2026-09-14",
+  "2026-09-15",
+  "2026-09-16",
+  "2026-09-17",
+  "2026-09-18",
+  "2026-09-19",
+  "2026-09-20",
+  "2026-09-21",
+  "2026-09-22"
+ ],
+ "eventTimeResolution": {
+  "LINEUP_AWAY": {
+   "events": 244,
+   "medianBoundMinutes": 860.65,
+   "shareBoundLe30min": 0.0
+  },
+  "LINEUP_HOME": {
+   "events": 246,
+   "medianBoundMinutes": 904.4833333333333,
+   "shareBoundLe30min": 0.0
+  },
+  "PITCHER_AWAY": {
+   "events": 3,
+   "medianBoundMinutes": 856.05,
+   "shareBoundLe30min": 0.0
+  },
+  "PITCHER_HOME": {
+   "events": 2,
+   "medianBoundMinutes": 860.65,
+   "shareBoundLe30min": 0.0
+  }
+ },
+ "firstSeenOnlyEvents": 15,
+ "generatedAt": "2026-09-22T20:19:13Z",
+ "reason": "event time is bounded only by consecutive collector runs; the collector delivered 3-8 runs/day so the bound is hours, not minutes; repricing-lag tests need <=30-minute resolution",
+ "scheduledRunsSeen": 120,
+ "tier": "TIER_B_EXPLORATORY"
+}

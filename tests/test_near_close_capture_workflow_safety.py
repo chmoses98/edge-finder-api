@@ -27,15 +27,77 @@ def _raw():
         return f.read()
 
 
-def test_triggers_are_schedule_and_manual_only():
+# Workflows this coordinator can reach by dispatching. Chaining a
+# workflow_run trigger off anything in here would close a cycle.
+DISPATCH_CLOSURE = {
+    "Capture Kalshi Snapshots (Scheduled)",   # dispatched directly
+    "EdgeLab Market Capture",                 # chained off the above
+}
+
+
+def test_triggers_are_schedule_manual_or_a_chained_completion():
+    """A closed set, widened once and deliberately.
+
+    workflow_run was added in PHASE O because the coordinator is itself
+    starved: its cron asks for 4 wakes an hour and it got two in its first
+    hours on main, one of them delivered at 03:13 UTC -- past the last slot
+    its schedule contains. workflow_run events are not subject to
+    scheduled-run throttling, so chaining off workflows that DID get
+    delivered buys independent wake opportunities.
+
+    The set stays closed. This workflow holds actions:write, so a trigger
+    that can be influenced by PR-authored content is never acceptable.
+    """
     doc = _load()
     trigger = doc.get("on", doc.get(True))
     names = {trigger} if isinstance(trigger, str) else set(trigger)
-    assert names == {"schedule", "workflow_dispatch"}
+    assert names == {"schedule", "workflow_dispatch", "workflow_run"}
     # pull_request_target would run PR-authored code with repo credentials
     # AND this workflow holds actions:write. Never.
     assert "pull_request_target" not in names
     assert "pull_request" not in names
+    assert "issue_comment" not in names
+    assert "repository_dispatch" not in names
+
+
+def test_the_chained_hosts_are_outside_this_workflows_own_dispatch_closure():
+    """THE cycle guard for the workflow_run trigger.
+
+    coordinator -> capture-snapshots-scheduled.yml -> edgelab-capture.yml.
+    Waking on the completion of anything in that chain would mean the
+    coordinator could trigger the capture that triggers the coordinator.
+    """
+    doc = _load()
+    trigger = doc.get("on", doc.get(True))
+    hosts = set(trigger["workflow_run"]["workflows"])
+    assert hosts, "a workflow_run trigger with no hosts is dead config"
+    assert not (hosts & DISPATCH_CLOSURE), (
+        "chaining off %s would close a dispatch cycle" % (hosts & DISPATCH_CLOSURE))
+
+
+def test_the_chained_hosts_exist_and_dispatch_nothing_themselves():
+    """A host that dispatches could reach back into the closure indirectly."""
+    doc = _load()
+    trigger = doc.get("on", doc.get(True))
+    hosts = set(trigger["workflow_run"]["workflows"])
+
+    found = {}
+    workflow_dir = os.path.join(ROOT, ".github", "workflows")
+    for filename in os.listdir(workflow_dir):
+        if not filename.endswith((".yml", ".yaml")):
+            continue
+        path = os.path.join(workflow_dir, filename)
+        with open(path) as fh:
+            body = fh.read()
+        parsed = yaml.safe_load(body)
+        if isinstance(parsed, dict) and parsed.get("name") in hosts:
+            found[parsed["name"]] = body
+
+    assert set(found) == hosts, (
+        "workflow_run names must match a real workflow: missing %s" % (hosts - set(found)))
+    for name, body in found.items():
+        assert "gh workflow run" not in body, (
+            "%s dispatches another workflow, so chaining off it risks a cycle" % name)
 
 
 def test_permissions_are_minimal_and_cannot_write_repo_contents():

@@ -5,6 +5,42 @@
         {
           "failedSeries": [],
           "fetchFailureCount": 0,
+          "fetchedAt": "2026-09-22T07:24:03.000Z",
+          "isPartialFetch": false,
+          "lowerBoundMarketsLost": 0,
+          "priceFetchFailureCount": 0,
+          "seriesAbsentVsPeers": [],
+          "snapshot": "kalshi_search_2026-09-22_0724.json",
+          "totalMarkets": 1941
+        }
+      ],
+      "byRun": [],
+      "captures": 1,
+      "date": "2026-09-22",
+      "ingestRuns": 0,
+      "lowerBoundMarketsLost": 0,
+      "partialFetches": 0,
+      "runsReportingSuccess": 0,
+      "seriesTruncated": [],
+      "unaccountedObservations": 0,
+      "unreadableSnapshots": 0
+    },
+    {
+      "byCapture": [
+        {
+          "failedSeries": [],
+          "fetchFailureCount": 0,
+          "fetchedAt": "2026-09-22T02:45:25.000Z",
+          "isPartialFetch": false,
+          "lowerBoundMarketsLost": 0,
+          "priceFetchFailureCount": 0,
+          "seriesAbsentVsPeers": [],
+          "snapshot": "kalshi_search_2026-09-21_0245.json",
+          "totalMarkets": 324
+        },
+        {
+          "failedSeries": [],
+          "fetchFailureCount": 0,
           "fetchedAt": "2026-09-21T08:28:06.000Z",
           "isPartialFetch": false,
           "lowerBoundMarketsLost": 0,
@@ -23,6 +59,17 @@
           "seriesAbsentVsPeers": [],
           "snapshot": "kalshi_search_2026-09-21_2023.json",
           "totalMarkets": 727
+        },
+        {
+          "failedSeries": [],
+          "fetchFailureCount": 0,
+          "fetchedAt": "2026-09-21T23:32:17.000Z",
+          "isPartialFetch": false,
+          "lowerBoundMarketsLost": 0,
+          "priceFetchFailureCount": 0,
+          "seriesAbsentVsPeers": [],
+          "snapshot": "kalshi_search_2026-09-21_2332.json",
+          "totalMarkets": 774
         }
       ],
       "byRun": [
@@ -65,14 +112,54 @@
           "startedAt": "2026-09-21T20:27:37Z",
           "status": "success",
           "unaccountedObservations": 0
+        },
+        {
+          "droppedNoChange": 14,
+          "marketsExcluded": 0,
+          "observationsBuilt": 774,
+          "observationsWritten": 760,
+          "skippedDuplicate": 0,
+          "startedAt": "2026-09-21T23:33:52Z",
+          "status": "success",
+          "unaccountedObservations": 0
+        },
+        {
+          "droppedNoChange": 723,
+          "marketsExcluded": 0,
+          "observationsBuilt": 774,
+          "observationsWritten": 0,
+          "skippedDuplicate": 51,
+          "startedAt": "2026-09-21T23:41:27Z",
+          "status": "success",
+          "unaccountedObservations": 0
+        },
+        {
+          "droppedNoChange": 723,
+          "marketsExcluded": 0,
+          "observationsBuilt": 774,
+          "observationsWritten": 0,
+          "skippedDuplicate": 51,
+          "startedAt": "2026-09-22T01:56:01Z",
+          "status": "success",
+          "unaccountedObservations": 0
+        },
+        {
+          "droppedNoChange": 0,
+          "marketsExcluded": 0,
+          "observationsBuilt": 324,
+          "observationsWritten": 324,
+          "skippedDuplicate": 0,
+          "startedAt": "2026-09-22T02:47:05Z",
+          "status": "success",
+          "unaccountedObservations": 0
         }
       ],
-      "captures": 2,
+      "captures": 4,
       "date": "2026-09-21",
-      "ingestRuns": 4,
+      "ingestRuns": 8,
       "lowerBoundMarketsLost": 0,
       "partialFetches": 0,
-      "runsReportingSuccess": 4,
+      "runsReportingSuccess": 8,
       "seriesTruncated": [],
       "unaccountedObservations": 0,
       "unreadableSnapshots": 0
@@ -3877,15 +3964,15 @@
     "fetchFailuresAreRecordedButUnread": "api/kalshisearch.js writes fetchFailures/fetchFailureCount/priceFetchFailureCount into every snapshot. No Python file in this repository reads any of them, so a partial capture is ingested and reported status=success, indistinguishable from a complete one.",
     "lossIsSystematicNotRandom": "fetchAllPages breaks out of its page loop on a non-ok response, and the 17 series are fetched sequentially, so a rate limit truncates whichever series come last -- consistently the high-volume hitter prop families. Research over those families is computed on a sample biased against the busy game-time moments when rate limits bite."
   },
-  "generatedAt": "2026-09-21T22:43:38Z",
+  "generatedAt": "2026-09-22T07:26:31Z",
   "schemaVersion": "archive_completeness_v2",
   "totals": {
-    "captures": 106,
-    "ingestRuns": 227,
+    "captures": 109,
+    "ingestRuns": 231,
     "lowerBoundMarketsLost": 7356,
-    "partialFetchPct": 8.5,
+    "partialFetchPct": 8.3,
     "partialFetches": 9,
-    "runsReportingSuccess": 227,
+    "runsReportingSuccess": 231,
     "truncatedSeriesFrequency": {
       "KXMLBHRR": 6,
       "KXMLBRBI": 6,
@@ -3897,9 +3984,9 @@
     "unreadableSnapshots": 0
   },
   "window": {
-    "datesAudited": 21,
-    "days": 21,
+    "datesAudited": 22,
+    "days": 22,
     "from": "2026-09-01",
-    "to": "2026-09-21"
+    "to": "2026-09-22"
   }
 }

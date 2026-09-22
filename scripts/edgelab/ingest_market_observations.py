@@ -106,8 +106,25 @@ def main():
     }
 
     if not snapshot_paths:
+        # NOT "success". This run ingested nothing, because there was nothing
+        # to ingest -- which is a different outcome from having ingested a
+        # slate, and the schema says so in as many words: 'no_op' is
+        # "distinct from 'success', which means at least one snapshot was
+        # actually captured".
+        #
+        # Measured on production before this change: 38 runs found no
+        # snapshot at all and every one reported success, so an operator
+        # scanning for failures saw green while the fetch workflow was
+        # starved. run_prospective_snapshots.compute_run_status already
+        # models exactly this distinction, from a confirmed 6-day outage
+        # that stayed invisible for the mirror-image reason.
+        #
+        # This does not distinguish "nothing captured yet today" from "the
+        # fetch has been down for hours" -- the warning below carries that,
+        # and the capture-health report measures it. It only stops the run
+        # claiming an ingest it did not perform.
         print(f"[ingest_market_observations] no snapshot files found for {date}; nothing to do")
-        run_record["status"] = "success"
+        run_record["status"] = "no_op"
         run_record["completedAt"] = ids.utc_now_iso()
         run_record["warnings"].append(f"no kalshi_registry_snapshots file found for {date}")
         _write_run_record(date, run_record)

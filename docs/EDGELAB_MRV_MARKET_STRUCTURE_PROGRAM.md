@@ -159,7 +159,17 @@ the prospective dir is
 `data/edgelab/research_artifacts/mlb_alpha_0002/prospective/` on branch
 `research/mlb-alpha-0002-prospective`.
 
-## 10. Failure is a result
+## 10. Prospective observation layer
+
+The DATA_BLOCKED hypotheses are served by a separate, parallel collector
+(`docs/EDGELAB_MRV_PROSPECTIVE_COLLECTOR.md`): MRV prospective collector v1,
+own storage root and research branch, full per-game order-book universe
+with no cap, per-fetch timestamps, deterministic sportsbook joins,
+first-seen information-state transitions, bounded multi-cycle cadence, and
+frozen research-readiness gates. No MRV inference run is authorised on that
+corpus until its `researchReady` gate passes.
+
+## 11. Failure is a result
 
 If no hypothesis reaches CANDIDATE, the program's output is the map of
 where price discovery works, the measured size of each cost component,

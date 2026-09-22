@@ -60,3 +60,40 @@ def test_compact_commit_step_targets_only_the_five_growing_entities(steps):
     # Never the corpus this mission deliberately did not touch.
     assert "data/edgelab/snapshots/" not in run
     assert "data/edgelab/observations/" not in run
+
+
+# --------------------------------------------------------------------------
+# PHASE 6: near-close capture health
+# --------------------------------------------------------------------------
+
+def test_capture_health_step_exists_and_runs_always(steps):
+    """A coverage outage must be reported precisely when things are going
+    wrong. Gating it on the report step's success would silence it exactly
+    when the pipeline is unhealthy."""
+    idx = _index_by_name_substring(steps, "Build near-close capture health report")
+    assert steps[idx].get("if") == "always()"
+    assert "build_capture_health_report.py" in steps[idx]["run"]
+
+
+def test_capture_health_step_precedes_its_own_commit_step(steps):
+    build = _index_by_name_substring(steps, "Build near-close capture health report")
+    commit = _index_by_name_substring(steps, "Commit capture health report")
+    assert build < commit
+    assert steps[commit].get("if") == "always()"
+
+
+def test_capture_health_commit_targets_only_its_own_two_artifacts(steps):
+    """It must never be able to commit a ledger, a settlement or a slate."""
+    run = steps[_index_by_name_substring(steps, "Commit capture health report")]["run"]
+    paths = [tok.strip('"') for tok in run.split() if "data/edgelab" in tok]
+    assert sorted(paths) == [
+        "data/edgelab/reports/capture_health.json",
+        "data/edgelab/reports/capture_health.md",
+    ]
+
+
+def test_capture_health_report_is_read_only_over_the_archive(steps):
+    """It reads observations and slates; it writes nothing but its own report."""
+    run = steps[_index_by_name_substring(steps, "Build near-close capture health report")]["run"]
+    assert "--date" in run and "--days" in run
+    assert ">" not in run and "rm " not in run

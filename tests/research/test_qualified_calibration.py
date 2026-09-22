@@ -178,3 +178,88 @@ def test_the_naive_wilson_interval_is_still_reported_so_the_gap_is_visible():
 
 def test_wilson_on_no_data_returns_nothing_rather_than_a_false_interval():
     assert wilson(0, 0) == (None, None)
+
+
+# ── PHASE P: a retracted claim must not sit unqualified ────────────────────
+
+def test_a_superseded_family_claim_is_annotated_not_rewritten(tmp_path):
+    """#233's artifact still asserts game_total and hitter_stolen_bases as
+    'outside their interval'. Rewriting its published numbers would be its
+    own dishonesty; leaving them unqualified is what Phase P forbids. So it
+    is annotated with what is now known, and the numbers stand."""
+    import json
+    from scripts.research.full_universe.run_qualified_calibration import (
+        annotate_superseded_report,
+    )
+
+    report = tmp_path / "old.json"
+    original = {
+        "overall": {"calibrationGap": -0.0004},
+        "byMarketFamily": {
+            "game_total": {"calibrationGap": 0.0376, "n": 1169,
+                           "marketWithinInterval": False},
+            "hitter_hits": {"calibrationGap": 0.0005, "n": 4105,
+                            "marketWithinInterval": True},
+        },
+    }
+    report.write_text(json.dumps(original))
+
+    families = {
+        "game_total": {"calibrationGap": 0.0518, "n": 826, "independentGames": 85,
+                       "clusteredBootstrap95GapCI": {"lo": -0.0103, "hi": 0.1123},
+                       "survivesMultiplicityCorrection": False, "finding": "NO_EVIDENCE"},
+    }
+    notes = annotate_superseded_report(str(report), families, "new.json")
+    after = json.loads(report.read_text())
+
+    assert notes["game_total"]["status"] == "RETRACTED"
+    # The published numbers are untouched.
+    assert after["byMarketFamily"] == original["byMarketFamily"]
+    assert after["overall"] == original["overall"]
+    # And the reader is told.
+    assert after["supersededBy"]["report"] == "new.json"
+    assert after["supersededBy"]["aggregateResultStands"] is True
+
+
+def test_a_family_that_survives_clustering_is_downgraded_not_retracted(tmp_path):
+    import json
+    from scripts.research.full_universe.run_qualified_calibration import (
+        annotate_superseded_report,
+    )
+    report = tmp_path / "old.json"
+    report.write_text(json.dumps({"byMarketFamily": {
+        "hitter_stolen_bases": {"calibrationGap": -0.0217, "n": 1485,
+                                "marketWithinInterval": False}}}))
+    notes = annotate_superseded_report(str(report), {
+        "hitter_stolen_bases": {
+            "calibrationGap": -0.0202, "n": 1228, "independentGames": 113,
+            "clusteredBootstrap95GapCI": {"lo": -0.0361, "hi": -0.0043},
+            "survivesMultiplicityCorrection": False, "finding": "EXPLORATORY"}},
+        "new.json")
+    assert notes["hitter_stolen_bases"]["status"] == "DOWNGRADED_TO_EXPLORATORY"
+
+
+def test_a_claim_that_could_not_be_reassessed_says_so(tmp_path):
+    """Silence about a claim is not the same as clearing it."""
+    import json
+    from scripts.research.full_universe.run_qualified_calibration import (
+        annotate_superseded_report,
+    )
+    report = tmp_path / "old.json"
+    report.write_text(json.dumps({"byMarketFamily": {
+        "pitcher_outs": {"calibrationGap": 0.02, "n": 250,
+                         "marketWithinInterval": False}}}))
+    notes = annotate_superseded_report(str(report), {}, "new.json")
+    assert notes["pitcher_outs"]["status"] == "NOT_REASSESSED"
+
+
+def test_a_family_that_was_never_flagged_is_not_annotated(tmp_path):
+    import json
+    from scripts.research.full_universe.run_qualified_calibration import (
+        annotate_superseded_report,
+    )
+    report = tmp_path / "old.json"
+    report.write_text(json.dumps({"byMarketFamily": {
+        "hitter_hits": {"calibrationGap": 0.0005, "n": 4105,
+                        "marketWithinInterval": True}}}))
+    assert annotate_superseded_report(str(report), {}, "new.json") == {}

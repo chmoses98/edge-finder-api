@@ -65,6 +65,10 @@ from lib.edgelab.capture_completeness import COMPLETE, PARTIAL, UNKNOWN_LEGACY
 
 SCHEMA_VERSION = "full_universe_qualified_calibration_v1"
 AUDIT_ROWS = os.path.join("data", "edgelab", "reports", "market_coverage_audit.jsonl.gz")
+# #233's report. It is ANNOTATED with a supersession pointer, never rewritten:
+# the numbers it published are what it published, and a reader who finds it
+# must be told the family-level claims did not survive.
+SUPERSEDED_REPORT = os.path.join("data", "edgelab", "reports", "full_universe_calibration.json")
 LEDGER = os.path.join("data", "edgelab", "reports", "capture_completeness_ledger.json")
 OUT_DIR = os.path.join("data", "edgelab", "reports")
 
@@ -310,6 +314,60 @@ def family_table(rows, minimum_n=200):
     return out
 
 
+def annotate_superseded_report(path, families, out_path):
+    """
+    PHASE P: a retracted claim must not sit unqualified where a reader finds it.
+
+    #233's artifact still asserts game_total and hitter_stolen_bases as
+    "outside their interval". Those were naive Wilson verdicts over correlated
+    rows. This does NOT rewrite a single published number -- rewriting the
+    record would be its own dishonesty -- it attaches what is now known about
+    each claim, and a pointer to the report that supersedes it.
+    """
+    if not os.path.exists(path):
+        return None
+    with open(path) as fh:
+        report = json.load(fh)
+
+    notes = {}
+    for family, stat in (report.get("byMarketFamily") or {}).items():
+        if not isinstance(stat, dict) or stat.get("marketWithinInterval") is not False:
+            continue
+        now = families.get(family)
+        if now is None:
+            notes[family] = {"status": "NOT_REASSESSED",
+                             "note": "falls below the row floor on qualified evidence"}
+            continue
+        notes[family] = {
+            "status": ("RETRACTED" if now["finding"] == "NO_EVIDENCE"
+                       else "DOWNGRADED_TO_EXPLORATORY"),
+            "originalCalibrationGap": stat.get("calibrationGap"),
+            "originalVerdict": "outside its naive Wilson interval",
+            "qualifiedCalibrationGap": now["calibrationGap"],
+            "qualifiedN": now["n"],
+            "independentGames": now["independentGames"],
+            "clusteredBootstrap95GapCI": now["clusteredBootstrap95GapCI"],
+            "survivesMultiplicityCorrection": now["survivesMultiplicityCorrection"],
+            "finding": now["finding"],
+        }
+
+    report["supersededBy"] = {
+        "report": out_path,
+        "doc": "docs/EDGELAB_QUALIFIED_CALIBRATION.md",
+        "why": (
+            "The family-level verdicts in this report came from Wilson intervals over "
+            "rows that are not independent (~145 per game), computed without regard to "
+            "the completeness of the captures behind the quotes, and without correcting "
+            "for testing eleven families at once. The aggregate result here stands. The "
+            "family-level ones do not."),
+        "aggregateResultStands": True,
+        "familyLevelClaims": notes,
+    }
+    with open(path, "w") as fh:
+        json.dump(report, fh, indent=2, sort_keys=True)
+    return notes
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -372,6 +430,12 @@ def main():
     out = os.path.join(args.out_dir, "full_universe_qualified_calibration.json")
     with open(out, "w") as fh:
         json.dump(report, fh, indent=2, sort_keys=True)
+
+    notes = annotate_superseded_report(SUPERSEDED_REPORT, report["familiesQualified"], out)
+    if notes:
+        print("\nAnnotated %s:" % SUPERSEDED_REPORT)
+        for family, note in sorted(notes.items()):
+            print("  %-26s %s" % (family, note["status"]))
 
     print(json.dumps({"sourceCompleteness": report["sourceCompleteness"],
                       "arms": report["arms"]}, indent=2, sort_keys=True))

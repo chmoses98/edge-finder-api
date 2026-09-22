@@ -118,10 +118,31 @@ def classify_snapshot(snapshot):
             return dict(base, **{"class": UNKNOWN_LEGACY,
                                  "reason": "contract version claims v4 but carries no "
                                            "pagination evidence"})
+        # Pagination completeness is necessary but not sufficient. A capture
+        # can exhaust every series and still have rows the source returned
+        # that it can neither show nor explain -- and a capture whose own
+        # arithmetic does not close has no business backing a research claim
+        # that rests on having the whole price universe.
+        #
+        # This is not hypothetical. The two captures taken before the #241
+        # fix deployed exhausted all 17 series and carried unaccounted rows
+        # of 4 and 29; under the previous rule both were COMPLETE and
+        # research-qualified.
+        recon = reconcile_snapshot(snapshot)
+        if recon.get("reconcilable") and not recon.get("balanced"):
+            return dict(base, **{
+                "class": PARTIAL,
+                "truncationReasons": reasons,
+                "unaccounted": recon.get("unaccounted"),
+                "reason": ("every series paginated to exhaustion, but %d row(s) the "
+                           "source returned are neither archived nor explained"
+                           % recon.get("unaccounted"))})
+
         return dict(base, **{
             "class": COMPLETE,
             "truncationReasons": reasons,   # broad-pass truncation stays visible
-            "reason": "every series paginated to exhaustion"})
+            "unaccounted": recon.get("unaccounted") if recon.get("reconcilable") else None,
+            "reason": "every series paginated to exhaustion and reconciliation balances"})
 
     # ---- legacy ----------------------------------------------------------
     if failures:

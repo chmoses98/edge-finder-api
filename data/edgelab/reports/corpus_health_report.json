@@ -1,20 +1,20 @@
 {
   "candidateReplays": {
-    "attempted": 177,
+    "attempted": 182,
     "completed": 105,
-    "failed": 72
+    "failed": 77
   },
   "clvLinkedMarkets": 139,
   "completenessStatusCounts": {
     "MISSING_REQUIRED_INPUT": 4,
-    "PARTIAL_REPLAY": 44,
+    "PARTIAL_REPLAY": 45,
     "null": 6
   },
   "consecutiveDegradedRuns": 1,
-  "datesCovered": 54,
+  "datesCovered": 55,
   "effectiveConfigHashCoverage": {
-    "known": 48,
-    "total": 54
+    "known": 49,
+    "total": 55
   },
   "enforcement": {
     "activatedAt": "2026-08-04T09:38:45Z",
@@ -24,7 +24,7 @@
   },
   "exitCodeReason": "Forward operational health is otherwise clean -- the only hard-fail-status forward date(s) are acknowledged, permanently-unrecoverable legacy gaps (['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']), which never resolve and therefore never drive this exit code -- see data/edgelab/corpus_acknowledged_forward_gaps.json.",
   "exitShouldFail": false,
-  "expectedPregameSnapshots": 48,
+  "expectedPregameSnapshots": 49,
   "forwardOperationalHealth": {
     "acknowledgedLegacyGapDates": [
       "2026-08-11",
@@ -37,32 +37,32 @@
       "linkedMarkets": 44
     },
     "consecutiveDegradedForwardRuns": 0,
-    "expectedRuns": 49,
+    "expectedRuns": 50,
     "gateStatusCounts": {
       "FORWARD_HEALTHY": 34,
       "FORWARD_MISSING_SNAPSHOT": 5,
       "FORWARD_PENDING_TODAY": 1,
-      "FORWARD_RESEARCH_ONLY_NO_DECISION": 10
+      "FORWARD_RESEARCH_ONLY_NO_DECISION": 11
     },
     "hardFailDates": [],
     "incompleteCaptures": [],
     "pendingTodayDates": [
-      "2026-09-21"
+      "2026-09-22"
     ],
     "populationNote": "expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates. snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.",
     "provenanceCoverage": {
-      "known": 44,
-      "total": 49
+      "known": 45,
+      "total": 50
     },
     "replayCompletion": {
-      "attempted": 173,
+      "attempted": 178,
       "completed": 103,
-      "failed": 70
+      "failed": 75
     },
     "settlementCoverage": {
       "linkedMarkets": 89
     },
-    "snapshotsCaptured": 44,
+    "snapshotsCaptured": 45,
     "snapshotsMissing": [
       "2026-08-11",
       "2026-08-12",
@@ -74,9 +74,9 @@
   "gateStatusCounts": {
     "DEGRADED_CONFIG_PARTIAL": 2,
     "DEGRADED_MISSING_SNAPSHOT": 8,
-    "HEALTHY": 44
+    "HEALTHY": 45
   },
-  "generatedAt": "2026-09-21T13:42:18Z",
+  "generatedAt": "2026-09-22T12:25:20Z",
   "historicalCorpusQuality": {
     "datesCovered": 4,
     "gateStatusCounts": {
@@ -1260,9 +1260,31 @@
     {
       "acknowledgedGapReason": null,
       "acknowledgedLegacyGap": false,
+      "captureMode": "LIVE_CAPTURE",
+      "completenessStatus": "PARTIAL_REPLAY",
+      "date": "2026-09-21",
+      "effectiveCompletenessStatus": "PARTIAL_REPLAY",
+      "effectiveConfigHashKnown": true,
+      "era": "FORWARD",
+      "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardReplayId": "e9109cae27d667df4e8eef6cf1828b0cf2f9b1d8",
+      "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
+      "gateStatus": "HEALTHY",
+      "isResearchOnlyRun": true,
+      "manifestHash": "1c2318c23d977fba8ea7e32046bf375e65b2eb73155a47f1349db8bda0a64117",
+      "productionCommitShaKnown": true,
+      "productionProvenanceStatus": "CAPTURED",
+      "productionRunsCaptured": 3,
+      "recoveredCount": 2,
+      "recoveryAttempted": true,
+      "snapshotId": "104694a3614cd9de422b8cbd7ff3227b32025320"
+    },
+    {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": null,
       "completenessStatus": null,
-      "date": "2026-09-21",
+      "date": "2026-09-22",
       "effectiveCompletenessStatus": null,
       "effectiveConfigHashKnown": false,
       "era": "FORWARD",
@@ -1281,18 +1303,18 @@
     }
   ],
   "productionCommitShaCoverage": {
-    "known": 44,
-    "total": 54
+    "known": 45,
+    "total": 55
   },
-  "productionRuns": 48,
+  "productionRuns": 49,
   "schemaVersion": "2",
   "settlementLinkedMarkets": 89,
-  "snapshotsRecovered": 81,
-  "snapshotsSuccessfullyCaptured": 48,
+  "snapshotsRecovered": 83,
+  "snapshotsSuccessfullyCaptured": 49,
   "storageBytes": {
-    "replayRunsBytes": 23536398,
-    "snapshotsBytes": 313602692,
-    "totalBytes": 337139090
+    "replayRunsBytes": 23543754,
+    "snapshotsBytes": 315528877,
+    "totalBytes": 339072631
   },
   "unresolvedClvReasons": {
     "INCOMPLETE_CLOSING_QUOTE_OR_ENTRY_PRICE": 115,

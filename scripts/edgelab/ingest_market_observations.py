@@ -40,6 +40,7 @@ from lib.edgelab.market_universe import (
     mark_superseded_game_identities,
     new_unclassified_series_warnings,
     select_observations_for_retention,
+    read_snapshot_fetch_completeness,
 )
 from lib.edgelab.mlb_schedule import backfill_missing_game_pks_via_schedule
 
@@ -129,8 +130,18 @@ def main():
 
     all_built = []
     all_excluded = []
+    # PHASE 8: the capture layer already records its own partial fetches into
+    # every snapshot (fetchFailures/fetchFailureCount/priceFetchFailureCount)
+    # and nothing had ever read them, so a tick that fetched three of
+    # seventeen series was ingested and reported status=success, identical to
+    # a complete one. Measured over 21 days: 9 of 106 captures were partial,
+    # every one an HTTP 429, and all 227 ingest runs still said success.
+    incomplete_snapshots = []
 
     for snapshot_path in snapshot_paths:
+        completeness = read_snapshot_fetch_completeness(snapshot_path)
+        if not completeness["isComplete"]:
+            incomplete_snapshots.append(dict(completeness, snapshotPath=snapshot_path))
         try:
             observations, excluded = build_observations_from_snapshot(
                 snapshot_path, run_id, game_context, source_system=args.source_system,
@@ -209,7 +220,23 @@ def main():
     for w in new_series_warnings:
         run_record["warnings"].append(f"NEW_UNCLASSIFIED_MLB_SERIES: {w['seriesTicker']} ({w['title']})")
 
-    run_record["status"] = "success" if not run_record["errors"] else "partial"
+    for snapshot in incomplete_snapshots:
+        run_record["warnings"].append(
+            "INCOMPLETE_SOURCE_CAPTURE: %s fetchFailures=%s priceFetchFailures=%s "
+            "series=%s -- markets in these series are MISSING from this snapshot, "
+            "not absent from the exchange" % (
+                os.path.basename(snapshot["snapshotPath"]),
+                snapshot["fetchFailureCount"], snapshot["priceFetchFailureCount"],
+                ",".join(snapshot["failedSeries"]) or "unknown"))
+
+    # A run over a demonstrably truncated capture is not a success. It wrote
+    # what it was given; what it was given was incomplete, and every
+    # downstream consumer reads this status to decide whether the archive is
+    # authoritative for that tick.
+    if run_record["errors"] or incomplete_snapshots:
+        run_record["status"] = "partial"
+    else:
+        run_record["status"] = "success"
     run_record["completedAt"] = ids.utc_now_iso()
     run_record["outputFiles"] = [obs_path, games_path, markets_path]
     run_record["counts"] = {
@@ -226,6 +253,10 @@ def main():
         "marketsUpserted": len(market_records),
         "marketsExcluded": len(all_excluded),
         "newUnclassifiedSeries": len(new_series_warnings),
+        "snapshotsWithIncompleteFetch": len(incomplete_snapshots),
+        "sourceFetchFailures": sum(s["fetchFailureCount"] or 0 for s in incomplete_snapshots),
+        "seriesTruncatedAtSource": sorted(
+            {s for snap in incomplete_snapshots for s in snap["failedSeries"]}),
     }
     _write_run_record(date, run_record)
 

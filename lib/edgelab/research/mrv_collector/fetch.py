@@ -74,9 +74,11 @@ class Fetcher(object):
         self.sleeper = sleeper or time.sleep
         self.stats = {"requests": 0, "http429": 0, "errors": 0, "bytes": 0, "retries": 0}
 
-    def get(self, url, *, retryable=(429, 500, 502, 503, 504)):
+    def get(self, url, *, retryable=(429, 500, 502, 503, 504), max_attempts=None):
+        """max_attempts overrides the instance retry count (the metered Odds API leg uses 1 so a retry can never spend credits the budget guard did not approve)."""
         r = FetchResult(url)
-        for attempt in range(self.retries):
+        attempts_allowed = max_attempts or self.retries
+        for attempt in range(attempts_allowed):
             r.attempts = attempt + 1
             if attempt:
                 self.stats["retries"] += 1
@@ -90,7 +92,7 @@ class Fetcher(object):
                 r.respondedAt = self.clock()
                 r.error = "transport:%s" % (exc.__class__.__name__)
                 r.elapsedMs = int((time.time() - t0) * 1000)
-                if attempt == self.retries - 1:
+                if attempt == attempts_allowed - 1:
                     self.stats["errors"] += 1
                     return r
                 self.sleeper(0.5 * (attempt + 1))

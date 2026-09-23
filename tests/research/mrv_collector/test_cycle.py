@@ -119,7 +119,7 @@ def test_sportsbook_rows_and_joins(tmp_path):
     odds = list(s.iter_gz("sportsbook_odds", m["gameDate"]))
     assert len(odds) == 4 * 4 * 6
     assert all(o["providerLastUpdate"] and o["requestedAt"] and o["respondedAt"] for o in odds)
-    assert m["odds"]["credits"]["remaining"] == "1000"
+    assert m["odds"]["credits"]["remaining"] == "13997" and m["odds"]["status"] == "OK" and m["odds"]["creditsConsumedThisCycle"] == 3
 
 
 def test_ambiguous_join_is_refused(tmp_path):

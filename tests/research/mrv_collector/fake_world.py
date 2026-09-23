@@ -10,7 +10,8 @@ class FakeWorld(object):
     """Configurable responses keyed by URL pattern; records every URL requested."""
 
     def __init__(self, *, games=None, series=None, markets=None, books=None, trades=None, odds=None, feeds=None,
-                 page_size=2, fail_urls=None, rate_limit_first_n=0, http_date="Tue, 22 Sep 2026 20:00:00 GMT"):
+                 page_size=2, fail_urls=None, rate_limit_first_n=0, http_date="Tue, 22 Sep 2026 20:00:00 GMT",
+                 odds_remaining=14000, odds_cost=3, odds_omit_remaining=False):
         self.games = games or []
         self.series = series or []
         self.markets = markets or {}          # series -> [market dict]
@@ -24,6 +25,10 @@ class FakeWorld(object):
         self.http_date = http_date
         self.requested = []
         self.clock_calls = 0
+        self.odds_remaining = odds_remaining
+        self.odds_cost = odds_cost
+        self.odds_omit_remaining = odds_omit_remaining
+        self.odds_calls = 0
 
     def clock(self):
         self.clock_calls += 1
@@ -39,7 +44,7 @@ class FakeWorld(object):
             return 429, {"date": self.http_date}, b"{}"
         u = urlparse(url)
         q = parse_qs(u.query)
-        hdr = {"date": self.http_date, "x-requests-remaining": "1000", "x-requests-used": "5", "x-requests-last": "3"}
+        hdr = {"date": self.http_date}
         if u.path.endswith("/series"):
             return 200, hdr, json.dumps({"series": [{"ticker": s} for s in self.series]}).encode()
         if u.path.endswith("/markets") and "series_ticker" in q:
@@ -65,12 +70,17 @@ class FakeWorld(object):
         if m:
             return 200, hdr, json.dumps(self.feeds.get(int(m.group(1)), {})).encode()
         if "/sports/baseball_mlb/odds" in u.path:
-            return 200, hdr, json.dumps(self.odds).encode()
+            self.odds_calls += 1
+            self.odds_remaining -= self.odds_cost
+            ohdr = dict(hdr, **{"x-requests-last": str(self.odds_cost), "x-requests-used": str(20000 - self.odds_remaining)})
+            if not self.odds_omit_remaining:
+                ohdr["x-requests-remaining"] = str(self.odds_remaining)
+            return 200, ohdr, json.dumps(self.odds).encode()
         return 404, hdr, b"{}"
 
 
-def sched_game(pk, away, home, iso_start, state="Scheduled", away_pp=101, home_pp=102, official=None, lineups=None):
-    return {"gamePk": pk, "gameDate": iso_start, "officialDate": official or iso_start[:10],
+def sched_game(pk, away, home, iso_start, state="Scheduled", away_pp=101, home_pp=102, official=None, lineups=None, game_type="R"):
+    return {"gamePk": pk, "gameDate": iso_start, "officialDate": official or iso_start[:10], "gameType": game_type, "season": "2026",
             "status": {"detailedState": state, "abstractGameState": "Preview" if state in MS.PREGAME_STATES else "Live"},
             "teams": {"away": {"team": {"id": 1, "abbreviation": away}, "probablePitcher": {"id": away_pp}},
                       "home": {"team": {"id": 2, "abbreviation": home}, "probablePitcher": {"id": home_pp}}},
@@ -88,9 +98,9 @@ def book(yes_levels, no_levels):
                              "no_dollars": [[str(p / 100.0), str(q)] for p, q in no_levels]}}
 
 
-def feed(status="Scheduled", away_pp=101, home_pp=102, away_lu=(), home_lu=(), weather=None, ts="20260922_200000", start="2026-09-22T23:10:00Z"):
+def feed(status="Scheduled", away_pp=101, home_pp=102, away_lu=(), home_lu=(), weather=None, ts="20260922_200000", start="2026-09-22T23:10:00Z", game_type="R"):
     return {"metaData": {"timeStamp": ts},
-            "gameData": {"status": {"detailedState": status}, "probablePitchers": {"away": {"id": away_pp}, "home": {"id": home_pp}},
+            "gameData": {"game": {"type": game_type}, "status": {"detailedState": status}, "probablePitchers": {"away": {"id": away_pp}, "home": {"id": home_pp}},
                          "weather": weather or {"condition": "Clear", "temp": "72", "wind": "5 mph, Out To CF"},
                          "datetime": {"dateTime": start}},
             "liveData": {"boxscore": {"teams": {"away": {"battingOrder": list(away_lu)}, "home": {"battingOrder": list(home_lu)}}}}}

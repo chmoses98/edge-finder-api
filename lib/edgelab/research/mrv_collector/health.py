@@ -10,20 +10,26 @@ is scientifically usable"; they are not to be moved to fit an outcome.
 """
 from datetime import datetime, timedelta, timezone
 
+from lib.edgelab.research.mrv_collector import season_phase as SP
+
 MLB_WINDOW_UTC_HOURS = tuple(list(range(15, 24)) + list(range(0, 5)))   # 15:00-04:59 UTC
 
 GATES = {
-    "gateVersion": "MRV_READINESS_GATES_V1_2026_09_22",
+    "gateVersion": "MRV_READINESS_GATES_V1_1_2026_09_23",
+    "seasonPhaseRule": SP.SEASON_PHASE_RULE_VERSION,
+    "samplePhase": SP.REGULAR_SEASON,
     "cadence": {"medianGapMinutesMax": 10.0, "p90GapMinutesMax": 15.0, "maxInWindowGapMinutesMax": 30.0,
                 "note": "delivered cadence between consecutive persisted cycle starts inside the MLB window (15:00-04:59 UTC)"},
     "completeness": {"completeShareMin": 0.90, "unaccountedRowsMax": 0, "failedShareMax": 0.05},
     "familyCoverage": {"starvedGameCyclesMax": 0, "coreFamiliesPresentShareMin": 0.98},
-    "sportsbook": {"matchedGameShareMin": 0.90, "ambiguousJoinsMax": 0, "booksPerMatchedEventMin": 3},
+    "sportsbook": {"matchedGameShareMin": 0.90, "ambiguousJoinsMax": 0, "booksPerMatchedEventMin": 3,
+                   "budgetDegradedCyclesMax": 0,
+                   "note": "a cycle whose sportsbook leg is DEGRADED_BUDGET_GUARD (or NOT_CONFIGURED / FETCH_FAILED) fails this gate; missing quotes are never zero disagreement"},
     "timestamps": {"perFetchTimestampShareMin": 1.0},
     "informationEvents": {"gamesWithStateShareMin": 0.95, "lineupTransitionsObservedMin": 20},
     "orderBook": {"twoSidedBookShareMin": 0.95, "booksWithDepthShareMin": 0.95},
     "sample": {"uniqueGamesMin": 60, "datesMin": 10, "contractsPerCoreFamilyMin": 80,
-               "note": "the prior program's inferential floor; counted over HEALTHY dates only"},
+               "note": "the prior program's inferential floor; games, dates (MLB official date) and contracts counted from REGULAR_SEASON observations ONLY -- POSTSEASON is a separate regime and OTHER_OR_UNKNOWN never counts"},
 }
 
 
@@ -116,14 +122,26 @@ def build_health(store, *, end_date, days=7):
     for m in manifests:
         for pk in m.get("eligibleGamePks") or []:
             elig_games.add(pk)
-    unique_games = set()
-    contracts_by_family = {}
+    # Sample counts are per season phase; only REGULAR_SEASON feeds the regular-season gate.
+    by_phase = {p: {"games": set(), "dates": set(), "contracts": {}} for p in (SP.REGULAR_SEASON, SP.POSTSEASON, SP.OTHER_OR_UNKNOWN)}
     for d in dates:
         for x in store.iter_gz("kalshi_crosssection", d):
             for t, e in (x.get("tickers") or {}).items():
-                if e.get("gamePk") is not None:
-                    unique_games.add(e["gamePk"])
-                    contracts_by_family.setdefault(e.get("s"), set()).add(t)
+                if e.get("gamePk") is None:
+                    continue
+                ph = e.get("phase") if e.get("phase") in by_phase else SP.OTHER_OR_UNKNOWN
+                b = by_phase[ph]
+                b["games"].add(e["gamePk"])
+                if e.get("gameOfficialDate"):
+                    b["dates"].add(e["gameOfficialDate"])
+                b["contracts"].setdefault(e.get("s"), set()).add(t)
+    reg = by_phase[SP.REGULAR_SEASON]
+    unique_games = reg["games"]
+    contracts_by_family = reg["contracts"]
+    odds_status = {}
+    for m in manifests:
+        k = m.get("oddsStatus") or (m.get("odds") or {}).get("status") or "UNREPORTED"
+        odds_status[k] = odds_status.get(k, 0) + 1
     cad = cadence_stats(starts)
     metrics = {
         "window": {"dates": dates, "days": days},
@@ -134,11 +152,16 @@ def build_health(store, *, end_date, days=7):
         "markets": {"received": tot("marketsReceived"), "archived": tot("marketsArchived"), "referenced": tot("marketsReferenced"),
                     "excluded": tot("marketsExcluded"), "unaccounted": tot("unaccountedRows"),
                     "booksRequested": tot("booksRequested"), "booksReceived": tot("booksReceived"), "booksFailed": tot("booksFailed")},
-        "coverage": {"uniqueGames": len(unique_games), "dates": len({m.get("gameDate") for m in manifests}),
+        "coverage": {"samplePhase": SP.REGULAR_SEASON, "uniqueGames": len(unique_games), "dates": len(reg["dates"]),
+                     "byPhase": {p: {"uniqueGames": len(v["games"]), "dates": len(v["dates"]),
+                                     "contractsPerFamily": {k: len(c) for k, c in v["contracts"].items()}} for p, v in by_phase.items()},
+                     "cycleDates": len({m.get("gameDate") for m in manifests}),
                      "gameCycles": games_cycles, "starvedGameCycles": starved_cycles,
                      "coreFamiliesPresentShare": (core_present / games_cycles) if games_cycles else None,
                      "contractsPerCoreFamily": {k: len(v) for k, v in contracts_by_family.items()}},
         "sportsbook": {**joins, "eligibleGames": len(elig_games), "matchedGames": len(matched_games),
+                       "legStatusByCycle": odds_status,
+                       "degradedCycles": sum(v for k, v in odds_status.items() if k != "OK"),
                        "matchedGameShare": (len(matched_games & elig_games) / len(elig_games)) if elig_games else None,
                        "booksPerEventMedian": _pct(books_per_event, 0.5)},
         "timestamps": {"rowsChecked": ts_rows, "perFetchTimestampShare": (ts_ok / ts_rows) if ts_rows else None},
@@ -174,6 +197,7 @@ def evaluate_gates(metrics):
         "sportsbook.matchedGameShare": _ge(sb["matchedGameShare"], g["sportsbook"]["matchedGameShareMin"]),
         "sportsbook.ambiguousJoins": _le(sb["ambiguous"], g["sportsbook"]["ambiguousJoinsMax"]) and delivered > 0,
         "sportsbook.booksPerEvent": _ge(sb["booksPerEventMedian"], g["sportsbook"]["booksPerMatchedEventMin"]),
+        "sportsbook.notBudgetDegraded": delivered > 0 and _le(sb["degradedCycles"], g["sportsbook"]["budgetDegradedCyclesMax"]),
         "timestamps.perFetchShare": _ge(ts["perFetchTimestampShare"], g["timestamps"]["perFetchTimestampShareMin"]),
         "informationEvents.gamesWithStateShare": _ge(ie["gamesWithStateShare"], g["informationEvents"]["gamesWithStateShareMin"]),
         "informationEvents.lineupTransitions": _ge(ie["lineupTransitionsObserved"], g["informationEvents"]["lineupTransitionsObservedMin"]),

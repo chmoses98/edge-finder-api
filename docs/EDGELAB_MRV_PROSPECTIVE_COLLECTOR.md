@@ -5,7 +5,7 @@ collector. Changes nothing in production (eligibility, recommendations,
 staking, wager routing, settlement, execution) and nothing in the ALPHA-0002
 corpus or its frozen shadows C01-F5REV / C03-BOOKIMB.**
 
-Identity: `COLLECTOR_ID = MRV_PROSPECTIVE_COLLECTOR`, `COLLECTOR_VERSION = v1.0.0`,
+Identity: `COLLECTOR_ID = MRV_PROSPECTIVE_COLLECTOR`, `COLLECTOR_VERSION = v1.1.0`,
 `SCHEMA_VERSION = mrv_prospective_v1` (`lib/edgelab/research/mrv_collector/__init__.py`).
 Every stored row and every manifest carries all three plus its `runId`.
 
@@ -151,7 +151,7 @@ ALPHA-0002 manifests). The collector records `x-requests-remaining` in every
 manifest; the health report surfaces it. Alternate lines are not requested
 (per-event endpoint, multiples of the cost).
 
-## Health and research-readiness gates (`health.py`, frozen `MRV_READINESS_GATES_V1_2026_09_22`)
+## Health and research-readiness gates (`health.py`, frozen `MRV_READINESS_GATES_V1_1_2026_09_23`)
 
 Rolling 7-day window, computed only from the persisted corpus:
 
@@ -173,19 +173,84 @@ Rolling 7-day window, computed only from the persisted corpus:
 | lineup transitions observed | ≥ 20 |
 | two-sided books | ≥ 95 % |
 | books with depth | ≥ 95 % |
-| sample: unique games / dates / contracts per core family | ≥ 60 / ≥ 10 / ≥ 80 |
+| sportsbook leg OK in every cycle (not budget-degraded) | 0 degraded cycles |
+| sample: unique games / dates / contracts per core family — REGULAR_SEASON only | ≥ 60 / ≥ 10 / ≥ 80 |
 
 `infrastructureHealthy` = every non-sample gate passes; `researchReady` =
 all gates pass. **Until `researchReady` is true, no MRV inference run is
 authorised on this corpus.** The thresholds are not to be lowered because
 collecting the data is inconvenient.
 
+## Season phase (frozen rule `MRV_SEASON_PHASE_RULE_V1_2026_09_23`)
+
+The 2026 regular season ends 2026-09-27, so the collector goes live in its
+final days and a ten-date sample could otherwise be reached only by pooling
+regular season with postseason. That is not allowed.
+
+- **Raw provenance**: MLB Stats API `gameType` from the schedule
+  (`gameTypeSchedule`) and the live feed (`gameData.game.type`), stored
+  verbatim (`lib/edgelab/research/mrv_collector/season_phase.py`).
+- **Coarse phase**: `REGULAR_SEASON` = `R`; `POSTSEASON` = `F`, `D`, `L`, `W`,
+  `C`, `P` (MLB's own gameTypes meta); `OTHER_OR_UNKNOWN` = any other code, a
+  missing code, or schedule and feed codes that disagree. Never guessed.
+- **Carried through**: `mlb_state` rows (`gameType`, `seasonPhase`,
+  `officialDate`, `seasonPhaseRule`), every cross-section entry (`gameType`,
+  `phase`, `gameOfficialDate`), sportsbook join rows (`seasonPhase`), and
+  manifests (`eligibleGames`, `eligibleGamesByPhase`, `seasonPhaseRule`).
+- **Rule**: regular-season inferential MRV research requires its minimum
+  game / date / contract sample **entirely** from `REGULAR_SEASON`
+  observations. `POSTSEASON` is a separate regime: collected and preserved,
+  never counted toward the regular-season gate. Regular season and
+  postseason are not pooled in any inferential analysis unless a hypothesis
+  or specification predeclares cross-regime pooling or stratification before
+  the result is examined. `OTHER_OR_UNKNOWN` counts toward neither.
+- **Health**: sample gates read regular-season games, regular-season MLB
+  official dates and regular-season contracts only; `coverage.byPhase`
+  reports every phase separately. Five regular-season dates plus five
+  postseason dates fail the ten-date gate (tested).
+
+## Odds API budget guard (`MRV_ODDS_BUDGET_GUARD_V1_2026_09_23`)
+
+The quota is shared; the owner authorised the MRV leg at ~430 credits/day,
+not unlimited use (`lib/edgelab/research/mrv_collector/odds_budget.py`).
+
+- **Ledger**: `odds_budget/<ET date>.jsonl`, append-only, one row per cycle
+  (request made or refused) with credits charged, provider
+  `x-requests-last` / `x-requests-used` / `x-requests-remaining`, HTTP
+  status, fetch timestamps, spend before the request, ceiling and reserve.
+  The daily spend is summed from this ledger only, so a retry, new runId,
+  new process or deleted state file cannot reset it.
+- **Hard daily ceiling**: spend today + expected cost of the next request
+  must be ≤ **450** credits, else the leg is refused
+  (`DAILY_CEILING_REACHED`). Expected cost = max(last provider
+  `x-requests-last`, design cost 3).
+- **Reserve**: if the freshest provider-reported remaining quota (last
+  response within 7 days) is **< 5,000**, no further MRV odds request is made
+  (`REMAINING_BELOW_RESERVE`); a response that itself shows < 5,000 marks
+  that cycle `REMAINING_BELOW_RESERVE_AFTER_REQUEST`.
+- **Evidence**: a response without a remaining-quota header degrades the leg
+  (`REMAINING_QUOTA_UNKNOWN`) until the owner intervenes; only the very first
+  request with no ledger history runs without evidence, because it produces
+  the evidence.
+- **No retry spend**: the odds request is single-attempt (the fetcher's retry
+  loop is disabled for it). A request that got no usable header is charged
+  the design cost, never zero.
+- **Degradation**: the leg status is `DEGRADED_BUDGET_GUARD` with the
+  reason; the Kalshi and MLB legs of the cycle continue and the cycle's
+  capture class is unaffected. No sportsbook rows are written, so missing
+  quotes are never read as zero disagreement.
+- **Readiness**: new gate `sportsbook.notBudgetDegraded` fails for any cycle
+  in the window whose sportsbook leg is not `OK` (degraded, not configured
+  or fetch-failed); `infrastructureHealthy` and `researchReady` are false
+  while it fails.
+- Other consumers' Odds API usage and credentials are untouched.
+
 ## Owner actions
 
 - Merge the PR so the workflow becomes schedulable (repo-native path).
 - Optionally deploy `external_runner.sh` with `ODDS_API_KEY` and
   `MRV_GIT_TOKEN` for the always-on path.
-- Decide the Odds API budget (3 credits/cycle) against other consumers.
+- Odds API: authorised at the designed rate, capped by the guard above (450/day ceiling, 5,000 reserve).
 
 ## Tests
 

@@ -18,12 +18,14 @@ Timestamp semantics (never conflated):
 """
 from datetime import datetime, timezone
 
+from lib.edgelab.research.mrv_collector import season_phase as SP
+
 MLB = "https://statsapi.mlb.com/api/v1"
 MLB11 = "https://statsapi.mlb.com/api/v1.1"
 
 PREGAME_STATES = ("Scheduled", "Pre-Game", "Warmup", "Delayed Start", "Delayed Start: Rain", "Postponed")
 STATE_FIELDS = ("status", "awayProbableId", "homeProbableId", "awayLineupIds", "homeLineupIds", "awayLineupPosted",
-                "homeLineupPosted", "weather", "scheduledStart", "postponed")
+                "homeLineupPosted", "weather", "scheduledStart", "postponed", "gameType", "seasonPhase")
 
 
 def schedule_url(date):
@@ -42,6 +44,7 @@ def games_from_schedule(payload):
             teams = g.get("teams") or {}
             away, home = teams.get("away") or {}, teams.get("home") or {}
             out.append({"gamePk": g.get("gamePk"), "gameDate": g.get("gameDate"), "officialDate": g.get("officialDate"),
+                        "gameTypeSchedule": g.get("gameType"), "season": g.get("season"),
                         "status": (g.get("status") or {}).get("detailedState"), "abstractState": (g.get("status") or {}).get("abstractGameState"),
                         "awayId": (away.get("team") or {}).get("id"), "homeId": (home.get("team") or {}).get("id"),
                         "awayAbbr": (away.get("team") or {}).get("abbreviation"), "homeAbbr": (home.get("team") or {}).get("abbreviation"),
@@ -79,6 +82,9 @@ def state_from_feed(game, feed):
           "scheduledStart": ((gd.get("datetime") or {}).get("dateTime")) or game.get("gameDate"),
           "postponed": (status or "").startswith("Postponed")}
     source_ts = ((feed or {}).get("metaData") or {}).get("timeStamp")
+    phase = SP.resolve(game.get("gameTypeSchedule"), ((gd.get("game") or {}).get("type")))
+    st["gameType"] = phase["gameType"]
+    st["seasonPhase"] = phase["seasonPhase"]
     return st, source_ts
 
 

@@ -96,18 +96,21 @@ jobs:
           if [ "$B" -gt 340 ]; then B=340; fi
           python3 scripts/research/mrv_collector/run_loop.py --budget-minutes "$B" --cadence-minutes "$C" --branch research/mrv-prospective-v1
 
+      # The step's own console copy goes to $RUNNER_TEMP, never the checkout:
+      # run 35925944608 wrote it to the repo root and the scope check below
+      # then failed every run on that untracked file.
       - name: Health report (from the persisted corpus only)
         if: always()
         run: |
           set -euo pipefail
-          python3 scripts/research/mrv_collector/build_health.py --write | tee health_out.txt
+          python3 scripts/research/mrv_collector/build_health.py --write | tee "$RUNNER_TEMP/health_out.txt"
           python3 scripts/ci/git_data_commit.py \
             --message "MRV prospective health $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             --branch research/mrv-prospective-v1 \
             data/edgelab/research_artifacts/mrv_prospective/v1/health || echo "::warning::health persist failed"
           echo "### MRV prospective capture v1" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          tail -60 health_out.txt >> "$GITHUB_STEP_SUMMARY" || true
+          tail -60 "$RUNNER_TEMP/health_out.txt" >> "$GITHUB_STEP_SUMMARY" || true
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify persistence stayed inside the MRV v1 path

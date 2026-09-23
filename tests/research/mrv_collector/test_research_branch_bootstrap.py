@@ -107,3 +107,17 @@ def test_workflow_fails_when_rows_did_not_reach_the_research_branch():
     assert "uncommitted MRV rows remain in the working tree" in run
     assert "no MRV run manifests present on" in run
     assert _step("Verify the rows reached the research branch").get("if") == "always()"
+
+
+def test_no_step_writes_scratch_files_into_the_checkout():
+    """Run 35925944608: the health step tee'd health_out.txt into the repo root
+    and the scope check then failed the job on that untracked file -- every run
+    would have ended red regardless of capture health.  Every file a step writes
+    via tee/redirect must go to $RUNNER_TEMP, the step summary, or /dev/null."""
+    import re
+    allowed = ('"$RUNNER_TEMP/', "$RUNNER_TEMP/", '"$GITHUB_STEP_SUMMARY"', "$GITHUB_STEP_SUMMARY", "/dev/null", "&2")
+    for s in _steps():
+        for line in (s.get("run") or "").splitlines():
+            code = line.split("#", 1)[0] if line.lstrip().startswith("#") else line
+            for target in re.findall(r"(?:\btee\s+(?:-a\s+)?|>>?\s*)(\S+)", code):
+                assert target.startswith(allowed), (s.get("name"), line.strip())

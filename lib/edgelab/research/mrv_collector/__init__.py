@@ -13,7 +13,7 @@ routing or settlement) and calls only public GET endpoints.
 """
 
 COLLECTOR_ID = "MRV_PROSPECTIVE_COLLECTOR"
-COLLECTOR_VERSION = "v1.1.0"   # v1.1: season-phase provenance + Odds API budget guard
+COLLECTOR_VERSION = "v1.1.1"   # v1.1: season-phase provenance + Odds API budget guard; v1.1.1: first-live-run fixes (inning books, trade-tape page cap, game-keyed coverage)
 SCHEMA_VERSION = "mrv_prospective_v1"
 STORAGE_RELATIVE_ROOT = "data/edgelab/research_artifacts/mrv_prospective/v1"
 DEFAULT_RESEARCH_BRANCH = "research/mrv-prospective-v1"

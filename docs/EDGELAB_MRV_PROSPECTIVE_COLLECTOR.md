@@ -5,7 +5,7 @@ collector. Changes nothing in production (eligibility, recommendations,
 staking, wager routing, settlement, execution) and nothing in the ALPHA-0002
 corpus or its frozen shadows C01-F5REV / C03-BOOKIMB.**
 
-Identity: `COLLECTOR_ID = MRV_PROSPECTIVE_COLLECTOR`, `COLLECTOR_VERSION = v1.1.0`,
+Identity: `COLLECTOR_ID = MRV_PROSPECTIVE_COLLECTOR`, `COLLECTOR_VERSION = v1.1.1`,
 `SCHEMA_VERSION = mrv_prospective_v1` (`lib/edgelab/research/mrv_collector/__init__.py`).
 Every stored row and every manifest carries all three plus its `runId`.
 
@@ -244,6 +244,40 @@ not unlimited use (`lib/edgelab/research/mrv_collector/odds_budget.py`).
   or fetch-failed); `infrastructureHealthy` and `researchReady` are false
   while it fails.
 - Other consumers' Odds API usage and credentials are untouched.
+
+## First live run (2026-09-23) and v1.1.1
+
+The first live dispatches (runs 35925944608 and 35928372851, cycles from
+2026-09-23T22:02Z) confirmed that the live APIs match the assumptions the
+fake world encoded. Kalshi books arrive as `orderbook_fp` with
+`yes_dollars`/`no_dollars`. Quotes use `*_dollars` fields, and all 6,196
+rows were unit `dollars`. Quantities are fractional and are stored as
+floats. Per-game markets tick in whole cents; sub-penny trades appeared
+only on the `KXMLB-26-*` season futures. MLB `gameType` is `R` in both the
+schedule and the feed. The Odds API headers carry
+`x-requests-last/used/remaining`, and team names join exactly (0 ambiguous).
+The run also exposed defects the fake world could not model. All are fixed
+with regression tests, and nothing in collection semantics or the gates
+moved:
+
+| Defect (live evidence) | Fix |
+|---|---|
+| Research branch missing on the remote, so every persist was refused (`couldn't find remote ref`) and rows stayed on the runner | The workflow creates the branch on the remote before capture. A new step fails the job if rows did not persist. |
+| `health_out.txt` written into the checkout made the workflow's own scope check fail every run | The console copy goes to `$RUNNER_TEMP` |
+| 854 inning / extras markets (`KXMLBINNINGWIN-<ev>-<inning>-<side>`, `KXMLBINNINGTOTAL-<ev>-<inning>-<n>`, `KXMLBEXTRAS-<ev>-EXTRAS`) were marked `NOT_ELIGIBLE:UNPARSED`, so no book was requested | Game-only identity from the event-ticker segment (same exact parser). An unresolvable segment is still refused. |
+| The doubleheader suffix differs by series (`...TORBAL` in KXMLBGAME vs `...TORBALG2` elsewhere for one game), so one game split into two "starved" halves | Coverage and starvation are keyed by the resolved `gamePk`. The event suffixes are listed alongside. |
+| The exchange-wide trade tape hit the 50-page cap on about 6 of 15 minutes | `TRADES_PAGE_CAP = 400`. Hitting it is still recorded. |
+
+Rows from before the fix carry `collectorVersion v1.1.0`; rows from after
+carry `v1.1.1`.
+
+**Open gate-design question (not changed here).** Kalshi lists a game's
+families in stages. At 22:30 UTC, 7 of tomorrow's games had only
+`KXMLBGAME` listed. The frozen `familyCoverage.starvedGameCycles <= 0` gate
+counts that as starvation. The cycle includes tomorrow's games, so as
+written this gate fails on almost every evening cycle. Whether coverage
+should be judged only inside a predeclared pre-first-pitch horizon is a
+research-design decision for the owner. It is recorded here, not made.
 
 ## Owner actions
 

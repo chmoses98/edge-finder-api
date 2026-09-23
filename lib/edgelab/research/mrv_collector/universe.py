@@ -15,6 +15,11 @@ import os
 KALSHI = "https://api.elections.kalshi.com/trade-api/v2"
 PAGE_LIMIT = 1000
 SAFETY_PAGE_CAP = 50
+# The trade tape is exchange-wide (no series filter), so it needs far more pages
+# than a series: live run 35928372851 exhausted 50 pages x 1000 trades on ~6 of
+# its 15 minutes (~9 pages/minute on a Wednesday evening).  A cycle window is
+# ~11-14 minutes, so this leaves ~3x headroom; hitting it is still recorded.
+TRADES_PAGE_CAP = 400
 TRUNCATION_NONE = None
 
 DEFAULT_POLICY = {
@@ -118,4 +123,4 @@ def fetch_orderbook(fetcher, ticker):
 
 def fetch_trades_since(fetcher, min_ts):
     url = "%s/markets/trades?min_ts=%d&limit=%d" % (KALSHI, int(min_ts), PAGE_LIMIT)
-    return page_to_exhaustion(fetcher, url, "trades")
+    return page_to_exhaustion(fetcher, url, "trades", page_cap=TRADES_PAGE_CAP)

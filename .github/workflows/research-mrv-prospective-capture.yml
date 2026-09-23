@@ -60,7 +60,20 @@ jobs:
         run: |
           set -euo pipefail
           B=research/mrv-prospective-v1
-          git fetch origin "$B" && git checkout "$B" || git checkout -b "$B"
+          # First live run (35925944608) proved a branch created only locally
+          # can never be persisted: git_data_commit.py begins with
+          # `git fetch origin <branch>`, which fails for a branch the remote
+          # lacks, so every cycle's rows stayed on the ephemeral runner.  A
+          # missing research branch is therefore created ON THE REMOTE, at the
+          # default-branch commit, before any cycle runs; a failed create
+          # fails the job instead of collecting rows that cannot be kept.
+          if git fetch origin "$B"; then
+            git checkout "$B"
+          else
+            git checkout -b "$B"
+            git push origin "HEAD:refs/heads/$B"
+            git fetch origin "$B"
+          fi
           # Collector code always comes from the default branch; only the data path lives on the research branch.
           git checkout origin/${{ github.event.repository.default_branch }} -- lib scripts data/edgelab/research_artifacts/mrv_prospective/mrv_series_policy.json
           git reset -q lib scripts data/edgelab/research_artifacts/mrv_prospective/mrv_series_policy.json
@@ -83,18 +96,21 @@ jobs:
           if [ "$B" -gt 340 ]; then B=340; fi
           python3 scripts/research/mrv_collector/run_loop.py --budget-minutes "$B" --cadence-minutes "$C" --branch research/mrv-prospective-v1
 
+      # The step's own console copy goes to $RUNNER_TEMP, never the checkout:
+      # run 35925944608 wrote it to the repo root and the scope check below
+      # then failed every run on that untracked file.
       - name: Health report (from the persisted corpus only)
         if: always()
         run: |
           set -euo pipefail
-          python3 scripts/research/mrv_collector/build_health.py --write | tee health_out.txt
+          python3 scripts/research/mrv_collector/build_health.py --write | tee "$RUNNER_TEMP/health_out.txt"
           python3 scripts/ci/git_data_commit.py \
             --message "MRV prospective health $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             --branch research/mrv-prospective-v1 \
             data/edgelab/research_artifacts/mrv_prospective/v1/health || echo "::warning::health persist failed"
           echo "### MRV prospective capture v1" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          tail -60 health_out.txt >> "$GITHUB_STEP_SUMMARY" || true
+          tail -60 "$RUNNER_TEMP/health_out.txt" >> "$GITHUB_STEP_SUMMARY" || true
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify persistence stayed inside the MRV v1 path
@@ -114,4 +130,26 @@ jobs:
           if [ -n "$(git status --porcelain -- data/edgelab/research_artifacts/mlb_alpha_0002/ || true)" ]; then
             echo "::error::ALPHA-0002 path modified by the MRV job" >&2; exit 1
           fi
-          echo "ALPHA-0002 path untouched; MRV v1 rows persisted"
+          echo "ALPHA-0002 path untouched"
+
+      # A capture that collects rows and fails to persist them is a FAILED
+      # run, not a green one: prove the rows reached the remote research branch.
+      - name: Verify the rows reached the research branch
+        if: always()
+        run: |
+          set -euo pipefail
+          B=research/mrv-prospective-v1
+          P=data/edgelab/research_artifacts/mrv_prospective/v1
+          if [ -n "$(git status --porcelain -- "$P/")" ]; then
+            echo "::error::uncommitted MRV rows remain in the working tree -- persistence failed" >&2
+            git status --porcelain -- "$P/" | head -20
+            exit 1
+          fi
+          git fetch --no-tags origin "$B" \
+            || { echo "::error::research branch '$B' does not exist on the remote" >&2; exit 1; }
+          N="$(git ls-tree -r --name-only FETCH_HEAD -- "$P/runs" | wc -l)"
+          echo "MRV manifests present on $B: $N"
+          if [ "$N" -eq 0 ]; then
+            echo "::error::no MRV run manifests present on '$B' after this run" >&2
+            exit 1
+          fi

@@ -43,7 +43,8 @@ def test_family_starvation_is_reported_per_game(tmp_path):
     w = standard_world()
     m = _run(w, str(tmp_path))
     st = m["starvation"]
-    assert st["count"] == 1 and st["starved"][0]["game"] == "26SEP221910NYYBOS" and st["starved"][0]["missing"] == ["KXMLBTOTAL"]
+    assert st["count"] == 1 and st["starved"][0]["game"] == 700002 and st["starved"][0]["missing"] == ["KXMLBTOTAL"]
+    assert st["starved"][0]["physicalGameKeys"] == ["26SEP221910NYYBOS"]
     assert m["researchComplete"] is False and m["captureClass"] == "COMPLETE"
 
 

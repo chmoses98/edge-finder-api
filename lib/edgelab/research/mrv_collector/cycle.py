@@ -17,7 +17,8 @@ import random
 import time
 from datetime import datetime, timezone
 
-from lib.edgelab.research.market_structure.identity import parse_ticker
+from lib.edgelab.mlb_alpha_identity import parse_event_ticker, STATUS_RESOLVED
+from lib.edgelab.research.market_structure.identity import parse_ticker, SERIES_MAP
 from lib.edgelab.research.mrv_collector import COLLECTOR_VERSION
 from lib.edgelab.research.mrv_collector import books as BK, mlb_state as MS, reconcile as RC, sportsbook as SB, universe as UV
 from lib.edgelab.research.mrv_collector import odds_budget as OB, season_phase as SP
@@ -32,6 +33,25 @@ def new_run_id(now_dt):
 
 def et_game_date(now_dt):
     return (now_dt.replace(tzinfo=None) - __import__("datetime").timedelta(hours=4)).strftime("%Y-%m-%d")
+
+
+def game_identity(market_ticker):
+    """
+    Game-only identity from the event-ticker segment, for per-game book series
+    whose contract shape the research identity does not model (live: inning
+    markets KXMLBINNINGWIN-<event>-<inning>-<side>, KXMLBINNINGTOTAL-<event>-<inning>-<n>,
+    KXMLBEXTRAS-<event>-EXTRAS).  A book needs only the game, which the event
+    ticker identifies exactly (same parser as every other family); None when
+    that segment does not resolve.
+    """
+    parts = (market_ticker or "").split("-")
+    if len(parts) < 2:
+        return None
+    ev = parse_event_ticker("%s-%s" % (parts[0], parts[1]))
+    if ev.get("status") != STATUS_RESOLVED:
+        return None
+    return {"seriesTicker": parts[0], "physicalGameKey": parts[1], "awayTeam": ev["awayTeam"], "homeTeam": ev["homeTeam"],
+            "scheduledStartUtc": ev["scheduledStartUtc"]}
 
 
 def _sched_ts(iso):
@@ -103,7 +123,9 @@ def run_cycle(fetcher, store, *, now=None, odds_api_key=None, policy=None, trigg
     series_evidence = {}
     received = 0
     per_game_markets = []          # (ticker, ident, game)
-    markets_by_game = {}
+    markets_by_game = {}           # gamePk -> {series: count}; keyed by the resolved game, not the ticker's
+    game_keys = {}                 # event suffix, which Kalshi does not keep consistent across series (live: a
+                                   # doubleheader game 2 was ...TORBAL in KXMLBGAME but ...TORBALG2 elsewhere)
     counts = {"received": 0, "archived": 0, "referenced": 0, "excluded": 0}
     for s in included:
         items, pg = UV.fetch_open_markets(fetcher, s)
@@ -129,15 +151,19 @@ def run_cycle(fetcher, store, *, now=None, odds_api_key=None, policy=None, trigg
             if classified[s] == "PER_GAME_BOOK":
                 ident = parse_ticker(t)
                 if ident.get("status") != "RESOLVED":
-                    entry["book"] = "NOT_ELIGIBLE:UNPARSED"
-                    continue
+                    ident = game_identity(t) if s not in SERIES_MAP else None
+                    if ident is None:
+                        entry["book"] = "NOT_ELIGIBLE:UNPARSED"
+                        continue
+                    entry["identity"] = "EVENT_TICKER_GAME_ONLY"
                 g, why = game_for_ident(ident)
                 if g is None:
                     entry["book"] = "NOT_ELIGIBLE:%s" % (why or "GAME_NOT_PREGAME_OR_UNLISTED")
                     continue
                 per_game_markets.append((t, ident, g))
-                markets_by_game.setdefault(ident["physicalGameKey"], {}).setdefault(s, 0)
-                markets_by_game[ident["physicalGameKey"]][s] += 1
+                markets_by_game.setdefault(g["gamePk"], {}).setdefault(s, 0)
+                markets_by_game[g["gamePk"]][s] += 1
+                game_keys.setdefault(g["gamePk"], set()).add(ident["physicalGameKey"])
                 entry["gamePk"] = g["gamePk"]
                 entry["gameType"] = g.get("gameType")
                 entry["phase"] = g.get("seasonPhase")
@@ -267,6 +293,8 @@ def run_cycle(fetcher, store, *, now=None, odds_api_key=None, policy=None, trigg
     # 8. cross-section, reconciliation, manifest
     listed_games = sorted(markets_by_game.keys())
     starvation = RC.family_starvation(listed_games, markets_by_game, policy["coreFamiliesPerGame"])
+    for x in starvation["starved"]:
+        x["physicalGameKeys"] = sorted(game_keys.get(x["game"], ()))
     listed_pks = {g["gamePk"] for _, _, g in per_game_markets}
     starvation["unlistedEligibleGamePks"] = sorted(g["gamePk"] for g in eligible if g["gamePk"] not in listed_pks)
     books_archived_with_book = sum(1 for b in books_full if b.get("book"))

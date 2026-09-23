@@ -38,7 +38,7 @@ def build(recon):
 
 def family_starvation(eligible_games, markets_by_game, core_families):
     """
-    eligible_games: iterable of physicalGameKey; markets_by_game: {gkey: {series: count}}.
+    eligible_games: iterable of game keys (the collector passes gamePk); markets_by_game: {game: {series: count}}.
     A game is 'starved' of a core family when it has markets in at least one
     core family but zero in another.  (A game Kalshi has not listed at all is
     reported separately as 'unlisted', not as starvation.)

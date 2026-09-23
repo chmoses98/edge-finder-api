@@ -1,0 +1,208 @@
+{
+ "collectorVersion": "v1.1.0",
+ "gateDefinitions": {
+  "cadence": {
+   "maxInWindowGapMinutesMax": 30.0,
+   "medianGapMinutesMax": 10.0,
+   "note": "delivered cadence between consecutive persisted cycle starts inside the MLB window (15:00-04:59 UTC)",
+   "p90GapMinutesMax": 15.0
+  },
+  "completeness": {
+   "completeShareMin": 0.9,
+   "failedShareMax": 0.05,
+   "unaccountedRowsMax": 0
+  },
+  "familyCoverage": {
+   "coreFamiliesPresentShareMin": 0.98,
+   "starvedGameCyclesMax": 0
+  },
+  "gateVersion": "MRV_READINESS_GATES_V1_1_2026_09_23",
+  "informationEvents": {
+   "gamesWithStateShareMin": 0.95,
+   "lineupTransitionsObservedMin": 20
+  },
+  "orderBook": {
+   "booksWithDepthShareMin": 0.95,
+   "twoSidedBookShareMin": 0.95
+  },
+  "sample": {
+   "contractsPerCoreFamilyMin": 80,
+   "datesMin": 10,
+   "note": "the prior program's inferential floor; games, dates (MLB official date) and contracts counted from REGULAR_SEASON observations ONLY -- POSTSEASON is a separate regime and OTHER_OR_UNKNOWN never counts",
+   "uniqueGamesMin": 60
+  },
+  "samplePhase": "REGULAR_SEASON",
+  "seasonPhaseRule": "MRV_SEASON_PHASE_RULE_V1_2026_09_23",
+  "sportsbook": {
+   "ambiguousJoinsMax": 0,
+   "booksPerMatchedEventMin": 3,
+   "budgetDegradedCyclesMax": 0,
+   "matchedGameShareMin": 0.9,
+   "note": "a cycle whose sportsbook leg is DEGRADED_BUDGET_GUARD (or NOT_CONFIGURED / FETCH_FAILED) fails this gate; missing quotes are never zero disagreement"
+  },
+  "timestamps": {
+   "perFetchTimestampShareMin": 1.0
+  }
+ },
+ "gates": {
+  "checks": {
+   "cadence.maxInWindowGap": true,
+   "cadence.medianGap": true,
+   "cadence.p90Gap": true,
+   "completeness.completeShare": true,
+   "completeness.failedShare": true,
+   "completeness.unaccountedRows": true,
+   "familyCoverage.coreFamiliesPresentShare": false,
+   "familyCoverage.starvedGameCycles": false,
+   "informationEvents.gamesWithStateShare": true,
+   "informationEvents.lineupTransitions": false,
+   "orderBook.twoSidedShare": true,
+   "orderBook.withDepthShare": true,
+   "sample.contractsPerCoreFamily": false,
+   "sample.dates": false,
+   "sample.uniqueGames": false,
+   "sportsbook.ambiguousJoins": true,
+   "sportsbook.booksPerEvent": true,
+   "sportsbook.matchedGameShare": false,
+   "sportsbook.notBudgetDegraded": true,
+   "timestamps.perFetchShare": true
+  },
+  "failing": [
+   "familyCoverage.coreFamiliesPresentShare",
+   "familyCoverage.starvedGameCycles",
+   "informationEvents.lineupTransitions",
+   "sample.contractsPerCoreFamily",
+   "sample.dates",
+   "sample.uniqueGames",
+   "sportsbook.matchedGameShare"
+  ],
+  "gateVersion": "MRV_READINESS_GATES_V1_1_2026_09_23",
+  "infrastructureHealthy": false,
+  "researchReady": false
+ },
+ "generatedAt": "2026-09-23T23:01:12Z",
+ "metrics": {
+  "cadence": {
+   "delivered": 4,
+   "gapsAll": 3,
+   "gapsInWindow": 3,
+   "histogram": {
+    "10-15": 0,
+    "15-30": 0,
+    "5-10": 3,
+    "<=5": 0,
+    ">30": 0
+   },
+   "maxGapMin": 10.0,
+   "medianGapMin": 10.0,
+   "p90GapMin": 10.0
+  },
+  "captures": {
+   "attemptsWithoutManifest": 0,
+   "complete": 4,
+   "delivered": 4,
+   "failed": 0,
+   "partial": 0,
+   "requested": 4
+  },
+  "coverage": {
+   "byPhase": {
+    "OTHER_OR_UNKNOWN": {
+     "contractsPerFamily": {},
+     "dates": 0,
+     "uniqueGames": 0
+    },
+    "POSTSEASON": {
+     "contractsPerFamily": {},
+     "dates": 0,
+     "uniqueGames": 0
+    },
+    "REGULAR_SEASON": {
+     "contractsPerFamily": {
+      "KXMLBF3": 54,
+      "KXMLBF5": 54,
+      "KXMLBF5SPREAD": 72,
+      "KXMLBF5TOTAL": 126,
+      "KXMLBF7": 54,
+      "KXMLBGAME": 50,
+      "KXMLBRFI": 25,
+      "KXMLBSPREAD": 108,
+      "KXMLBTEAMTOTAL": 252,
+      "KXMLBTOTAL": 197
+     },
+     "dates": 2,
+     "uniqueGames": 25
+    }
+   },
+   "contractsPerCoreFamily": {
+    "KXMLBF3": 54,
+    "KXMLBF5": 54,
+    "KXMLBF5SPREAD": 72,
+    "KXMLBF5TOTAL": 126,
+    "KXMLBF7": 54,
+    "KXMLBGAME": 50,
+    "KXMLBRFI": 25,
+    "KXMLBSPREAD": 108,
+    "KXMLBTEAMTOTAL": 252,
+    "KXMLBTOTAL": 197
+   },
+   "coreFamiliesPresentShare": 0.6808510638297872,
+   "cycleDates": 1,
+   "dates": 2,
+   "gameCycles": 94,
+   "samplePhase": "REGULAR_SEASON",
+   "starvedGameCycles": 4,
+   "uniqueGames": 25
+  },
+  "informationEvents": {
+   "gamesWithState": 25,
+   "gamesWithStateShare": 1.0,
+   "lineupTransitionsObserved": 4,
+   "pitcherTransitionsObserved": 0
+  },
+  "markets": {
+   "archived": 14371,
+   "booksFailed": 0,
+   "booksReceived": 3590,
+   "booksRequested": 3590,
+   "excluded": 0,
+   "received": 24529,
+   "referenced": 10158,
+   "unaccounted": 0
+  },
+  "orderBook": {
+   "booksArchived": 3426,
+   "twoSidedShare": 0.9868651488616462,
+   "withDepthShare": 1.0
+  },
+  "sportsbook": {
+   "ambiguous": 0,
+   "booksPerEventMedian": 4.0,
+   "degradedCycles": 0,
+   "eligibleGames": 25,
+   "legStatusByCycle": {
+    "OK": 4
+   },
+   "matched": 69,
+   "matchedGameShare": 0.76,
+   "matchedGames": 19,
+   "unmatched": 9
+  },
+  "timestamps": {
+   "perFetchTimestampShare": 1.0,
+   "rowsChecked": 5106
+  },
+  "window": {
+   "dates": [
+    "2026-09-17",
+    "2026-09-18",
+    "2026-09-19",
+    "2026-09-20",
+    "2026-09-21",
+    "2026-09-22",
+    "2026-09-23"
+   ],
+   "days": 7
+  }
+ }
+}

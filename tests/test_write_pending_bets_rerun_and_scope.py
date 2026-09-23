@@ -391,7 +391,15 @@ class TestChangedFileScope:
              # -- never the production risk/execution/bet-logging pipeline
              # this test guards -- excluded, same pattern as every prior
              # addition above.
-             ":!.github/workflows/fetch-single-game.yml"],
+             ":!.github/workflows/fetch-single-game.yml",
+             # MRV prospective collector v1 (docs/EDGELAB_MRV_PROSPECTIVE_COLLECTOR.md):
+             # research-only, read-only capture that writes exclusively under
+             # data/edgelab/research_artifacts/mrv_prospective/v1/ on a research
+             # branch and never main. It computes no probability, edge or
+             # recommendation and imports nothing from the risk/execution/
+             # bet-logging pipeline this test guards -- excluded, same pattern
+             # as every prior addition above.
+             ":!.github/workflows/research-mrv-prospective-capture.yml"],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         assert result.stdout.strip() == "", f"Unexpected workflow changes: {result.stdout}"

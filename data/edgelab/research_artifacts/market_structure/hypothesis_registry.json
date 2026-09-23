@@ -1,0 +1,2094 @@
+{
+  "programId": "MRV",
+  "programTitle": "Kalshi MLB market-structure, relative-value, information and execution inefficiency research",
+  "registryVersion": 1,
+  "frozenAt": "2026-09-22T21:30:00Z",
+  "statusVocabulary": [
+    "PROPOSED",
+    "DATA_BLOCKED",
+    "EXPLORATORY",
+    "REJECTED",
+    "CANDIDATE",
+    "FROZEN_FOR_PROSPECTIVE",
+    "PROSPECTIVE_PASS",
+    "PROSPECTIVE_FAIL"
+  ],
+  "evidenceTiers": {
+    "TIER_A_CONFIRMATORY": "Rows drawn only from snapshots the repository classifies research-qualified COMPLETE (lib.edgelab.capture_completeness). At registry freeze: 2 snapshots, both 2026-09-22 morning, zero settled rows.",
+    "TIER_B_EXPLORATORY": "PARTIAL / UNKNOWN_LEGACY observation rows, the recovered exchange record (1-minute candles + trade tape, ticker universe conditioned on the observation archive), the multi-book slate captures, and the research-branch prospective corpus captured under the ALPHA-0002 collector whose delivered cadence (3-8 runs/day) never met its own health gate. Missing markets are never treated as absent markets.",
+    "TIER_C_PROSPECTIVE": "COMPLETE captures taken after a spec in this registry is frozen with a hash."
+  },
+  "globalRules": {
+    "clusterUnit": "physical MLB game (event-ticker suffix via lib.edgelab.research.night_before_timing.physical_game_key)",
+    "interval": "game-clustered bootstrap CI90 (2000 resamples, seed 20260922); null-centred cluster-bootstrap p-value where a p-value is reported",
+    "multiplicity": "Benjamini-Hochberg q=0.10 applied WITHIN each multiplicityFamily over every test registered in that family (including tests that end up DATA_BLOCKED, which count toward the search space but contribute no p)",
+    "sampleFloor": {
+      "independentGames": 60,
+      "independentDates": 10,
+      "contracts": 80
+    },
+    "executionModel": "BUY YES at yesAsk, BUY NO at noAsk when archived else 100 - yesBid; taker fee lib.edgelab.kalshi_fees.taker_fee (0.07*C*P*(1-P), rounded up to the cent); maker leg reported at 0.0175 (conservative) and 0.0 (optimistic), never pooled; USD 10 whole-contract order; midpoint is never a fill; top-of-book only unless a depth ladder is archived (prospective books)",
+    "candidateBar": "a test becomes CANDIDATE only if (a) BH survivor in its family, (b) post-fee executable effect with CI90 excluding 0 AND point estimate >= +1.0% of cash risked (or >= +1.0 cent for price-move targets), (c) sample floor met, (d) stable sign across the first and second half of dates, (e) plausible mechanism recorded, (f) no reliance on a midpoint fill or an unarchived quote",
+    "productionAuthority": "NONE. Nothing in this registry changes production eligibility, thresholds, staking, bankroll, recommendations or execution.",
+    "rawEvidence": "Raw archives are read-only. All outputs are derived artifacts under data/edgelab/research_artifacts/market_structure/."
+  },
+  "multiplicityFamilies": {
+    "MF-COH": "cross-market coherence / relative value",
+    "MF-LL": "cross-family lead/lag",
+    "MF-XV": "external price discovery (sportsbooks vs Kalshi)",
+    "MF-INFO": "information arrival",
+    "MF-TTP": "time to first pitch",
+    "MF-LIQ": "liquidity / attention",
+    "MF-PB": "price-bucket calibration",
+    "MF-EXEC": "maker vs taker economics",
+    "MF-PORT": "portfolio / correlation (descriptive only)"
+  },
+  "hypotheses": [
+    {
+      "id": "MRV-COH-001",
+      "family": "MF-COH",
+      "status": "REJECTED",
+      "title": "Total-ladder monotonicity at 1-minute resolution",
+      "statement": "Within one KXMLBTOTAL or KXMLBF5TOTAL ladder, P(total >= N) must be non-increasing in N. An executable violation is bid(N+1) > ask(N) (buy YES N, buy NO N+1) after taker fees on both legs.",
+      "data": "recovered 1-minute candles 2026-08-02..08-31 (TIER_B); minute closes of yes_bid/yes_ask; pregame minutes only",
+      "unit": "ladder-minute; games as cluster",
+      "primaryMetric": "count and share of ladder-minutes with a post-fee executable violation; total locked profit in cents per pair",
+      "method": "exhaustive constraint check; no inference needed for existence; RV follow-up in MRV-COH-006",
+      "failureCriterion": "zero post-fee executable violations, or violations that never persist for >= 2 consecutive minutes",
+      "priorWork": "MLB-ALPHA-0001 Family B found 0 executable inversions in 103,409 pairs on the coarse archive (hours cadence). This test asks whether the coarse cadence hid transient inversions.",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "0 pre-fee and 0 post-fee inversions in 1348014 game-total + 248534 F5-total ladder pairs at 1-minute resolution; adjacent rungs sit 6-14c apart",
+          "pairs": 1596548,
+          "preFee": 0,
+          "postFee": 0,
+          "tier": "TIER_B_EXPLORATORY",
+          "games": 391,
+          "dates": 29,
+          "minutesChecked": 94231,
+          "artifact": "coherence_1min.json",
+          "feeTreatment": "taker both legs, 10 contracts",
+          "execution": "same-minute candle closes, YES at ask, NO at 100-bid"
+        }
+      ]
+    },
+    {
+      "id": "MRV-COH-002",
+      "family": "MF-COH",
+      "status": "REJECTED",
+      "title": "Three-way winner sum bounds (F3/F5/F7) at 1-minute resolution",
+      "statement": "For an inning-segment winner market with AWAY, HOME and TIE contracts, sum of asks < 100 (buy all three YES) or sum of bids > 100 (buy all three NO) is an arbitrage after fees.",
+      "data": "recovered candles (inning_result family) 2026-08-02..08-31 (TIER_B)",
+      "unit": "event-minute",
+      "primaryMetric": "count of post-fee executable sum violations",
+      "method": "exhaustive constraint check",
+      "failureCriterion": "zero post-fee violations",
+      "priorWork": "Family B: 0 violations in 719 batches on coarse archive",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "pre-fee sum violations exist (F5 668/16031, F3 2644/10039, F7 938/8032 event-minutes; asks summing 98-99 or bids 101-102) but 0 survive taker fees on three legs",
+          "constraints": {
+            "THREE_WAY_F5": {
+              "pairs": 16031,
+              "postFeeViolations": 0,
+              "preFeeSlackHistogramCents": {},
+              "preFeeViolations": 668
+            },
+            "THREE_WAY_F3": {
+              "pairs": 10039,
+              "postFeeViolations": 0,
+              "preFeeSlackHistogramCents": {},
+              "preFeeViolations": 2644
+            },
+            "THREE_WAY_F7": {
+              "pairs": 8032,
+              "postFeeViolations": 0,
+              "preFeeSlackHistogramCents": {},
+              "preFeeViolations": 938
+            }
+          },
+          "sumHistograms": {
+            "THREE_WAY_F3": {
+              "asks:100": 3083,
+              "asks:101": 2211,
+              "asks:102": 1187,
+              "asks:103": 506,
+              "asks:104": 185,
+              "asks:105": 106,
+              "asks:106": 50,
+              "asks:107": 14,
+              "asks:108": 9,
+              "asks:109": 5,
+              "asks:110": 11,
+              "asks:111": 3,
+              "asks:112": 3,
+              "asks:113": 3,
+              "asks:114": 4,
+              "asks:115": 5,
+              "asks:116": 1,
+              "asks:117": 1,
+              "asks:120": 9,
+              "asks:96": 33,
+              "asks:97": 82,
+              "asks:98": 657,
+              "asks:99": 1871,
+              "bids:100": 60,
+              "bids:101": 1,
+              "bids:80": 38,
+              "bids:81": 9,
+              "bids:82": 13,
+              "bids:83": 9,
+              "bids:84": 8,
+              "bids:85": 17,
+              "bids:86": 15,
+              "bids:87": 26,
+              "bids:88": 38,
+              "bids:89": 57,
+              "bids:90": 67,
+              "bids:91": 97,
+              "bids:92": 207,
+              "bids:93": 491,
+              "bids:94": 1141,
+              "bids:95": 2160,
+              "bids:96": 2779,
+              "bids:97": 2228,
+              "bids:98": 407,
+              "bids:99": 171
+            },
+            "THREE_WAY_F5": {
+              "asks:100": 2742,
+              "asks:101": 5255,
+              "asks:102": 4683,
+              "asks:103": 2411,
+              "asks:104": 440,
+              "asks:105": 50,
+              "asks:106": 2,
+              "asks:108": 1,
+              "asks:111": 1,
+              "asks:114": 1,
+              "asks:98": 14,
+              "asks:99": 431,
+              "bids:100": 1323,
+              "bids:101": 212,
+              "bids:102": 11,
+              "bids:80": 6,
+              "bids:81": 1,
+              "bids:82": 1,
+              "bids:83": 1,
+              "bids:89": 1,
+              "bids:91": 1,
+              "bids:92": 1,
+              "bids:93": 2,
+              "bids:94": 7,
+              "bids:95": 87,
+              "bids:96": 976,
+              "bids:97": 4530,
+              "bids:98": 5487,
+              "bids:99": 3384
+            },
+            "THREE_WAY_F7": {
+              "asks:100": 1811,
+              "asks:101": 1897,
+              "asks:102": 1547,
+              "asks:103": 926,
+              "asks:104": 479,
+              "asks:105": 191,
+              "asks:106": 96,
+              "asks:107": 54,
+              "asks:108": 31,
+              "asks:109": 14,
+              "asks:110": 8,
+              "asks:111": 5,
+              "asks:112": 9,
+              "asks:113": 2,
+              "asks:114": 4,
+              "asks:116": 3,
+              "asks:117": 3,
+              "asks:118": 1,
+              "asks:120": 13,
+              "asks:96": 5,
+              "asks:97": 4,
+              "asks:98": 242,
+              "asks:99": 687,
+              "bids:100": 13,
+              "bids:80": 74,
+              "bids:81": 10,
+              "bids:82": 13,
+              "bids:83": 21,
+              "bids:84": 19,
+              "bids:85": 24,
+              "bids:86": 17,
+              "bids:87": 41,
+              "bids:88": 61,
+              "bids:89": 68,
+              "bids:90": 97,
+              "bids:91": 137,
+              "bids:92": 302,
+              "bids:93": 873,
+              "bids:94": 1577,
+              "bids:95": 1893,
+              "bids:96": 1438,
+              "bids:97": 1108,
+              "bids:98": 199,
+              "bids:99": 47
+            }
+          },
+          "tier": "TIER_B_EXPLORATORY",
+          "games": 391,
+          "dates": 29,
+          "minutesChecked": 94231,
+          "artifact": "coherence_1min.json",
+          "feeTreatment": "taker both legs, 10 contracts",
+          "execution": "same-minute candle closes, YES at ask, NO at 100-bid"
+        }
+      ]
+    },
+    {
+      "id": "MRV-COH-003",
+      "family": "MF-COH",
+      "status": "REJECTED",
+      "title": "Cross-horizon dominance: F5 total >= N implies full-game total >= N",
+      "statement": "P(F5 total >= N) <= P(game total >= N) for every N. Executable violation: bid(KXMLBF5TOTAL-N) > ask(KXMLBTOTAL-N) after fees (buy YES game-total N, buy NO F5-total N).",
+      "data": "recovered candles 2026-08-02..08-31 (TIER_B), matched on physical game and rung",
+      "unit": "game-rung-minute",
+      "primaryMetric": "count of post-fee executable violations; distribution of the pre-fee slack ask(TOTAL-N) - bid(F5TOTAL-N)",
+      "method": "exhaustive constraint check",
+      "failureCriterion": "zero post-fee violations",
+      "priorWork": "not tested by Family B (it compared only within-series ladders, spread-vs-ML, TT-vs-GT, hits-vs-HRR)",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "0 pre-fee and 0 post-fee violations in 182721 F5-total vs game-total rung pairs (first test of this constraint)",
+          "pairs": 182721,
+          "tier": "TIER_B_EXPLORATORY",
+          "games": 391,
+          "dates": 29,
+          "minutesChecked": 94231,
+          "artifact": "coherence_1min.json",
+          "feeTreatment": "taker both legs, 10 contracts",
+          "execution": "same-minute candle closes, YES at ask, NO at 100-bid"
+        }
+      ]
+    },
+    {
+      "id": "MRV-COH-004",
+      "family": "MF-COH",
+      "status": "REJECTED",
+      "title": "YES/NO book parity",
+      "statement": "On Kalshi a NO order at price q is a YES order at 100-q on the same book, so noAsk + yesBid = 100 and noBid + yesAsk = 100 must hold exactly. Any deviation in the archive is a capture artifact, not an opportunity.",
+      "data": "registry snapshots Era B (2026-09-10..09-22) carrying no_bid/no_ask (TIER_B)",
+      "unit": "market-capture",
+      "primaryMetric": "share of rows violating parity",
+      "method": "exact check",
+      "failureCriterion": "any violation is classified as data defect; hypothesis is REJECTED as a source of edge if parity holds",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "by exchange construction a NO order at q is a YES order at 100-q on the same book; the prospective order books carry only YES/NO resting bids and the runners derive the NO ask as 100-yesBid, so parity cannot fail except as a capture artifact; no edge",
+          "tier": "TIER_B_EXPLORATORY",
+          "artifact": "book_depth.json"
+        }
+      ]
+    },
+    {
+      "id": "MRV-COH-005",
+      "family": "MF-COH",
+      "status": "REJECTED",
+      "title": "Team-total vs game-total and run-line vs moneyline dominance on September captures",
+      "statement": "P(team runs >= N) <= P(game total >= N); P(team wins by > k) <= P(team wins). Executable violations after fees. Out-of-sample replication of Family B on 2026-09-01..09-22 captures.",
+      "data": "registry snapshots 2026-09-01..09-22 (TIER_B), 4-6 captures/day",
+      "unit": "game-capture",
+      "primaryMetric": "count of post-fee executable violations",
+      "method": "exhaustive constraint check",
+      "failureCriterion": "zero post-fee violations",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "0 violations in 102092 team-total vs game-total and 72205 spread vs moneyline pairs (exchange record 08-02..08-07 for those families); September registry replication not run because the collector captured <=30 game-total books",
+          "pairs": 174297,
+          "limitation": "team_total/winning_margin candles cover 08-02..08-07 only",
+          "tier": "TIER_B_EXPLORATORY",
+          "games": 391,
+          "dates": 29,
+          "minutesChecked": 94231,
+          "artifact": "coherence_1min.json",
+          "feeTreatment": "taker both legs, 10 contracts",
+          "execution": "same-minute candle closes, YES at ask, NO at 100-bid"
+        }
+      ]
+    },
+    {
+      "id": "MRV-COH-006",
+      "family": "MF-COH",
+      "status": "DATA_BLOCKED",
+      "title": "Near-arbitrage relative value: pre-fee ladder inversions close, and the corrective pair pays",
+      "statement": "When a within-ladder pre-fee inversion bid(N+1) >= ask(N) appears at minute t, (a) the inversion closes within 30 minutes more often than a matched non-inverted control, and (b) buying the corrective pair at executable prices earns post-fee settlement P/L > 0.",
+      "data": "recovered candles + corrected settlements 2026-08-02..08-31 (TIER_B)",
+      "unit": "episode (first minute of inversion per ladder pair); game cluster",
+      "primaryMetric": "post-fee settlement P/L per USD risked on corrective pair, CI90 clustered; secondary: closure rate at +30 min",
+      "method": "episode study, game-clustered bootstrap, BH within MF-COH",
+      "failureCriterion": "P/L CI includes 0 or point estimate < +1%",
+      "priorWork": "Family B: corrective RV trades lost -38.7% (p=0.0005) on coarse archive",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "no pre-fee within-ladder inversion episode occurred in 94,231 pregame game-minutes, so there is nothing to trade or to measure convergence on",
+          "episodes": 0,
+          "tier": "TIER_B_EXPLORATORY",
+          "games": 391,
+          "dates": 29,
+          "minutesChecked": 94231,
+          "artifact": "coherence_1min.json",
+          "feeTreatment": "taker both legs, 10 contracts",
+          "execution": "same-minute candle closes, YES at ask, NO at 100-bid"
+        }
+      ]
+    },
+    {
+      "id": "MRV-LL-001",
+      "family": "MF-LL",
+      "status": "EXPLORATORY",
+      "title": "Full-game moneyline leads F5 moneyline (same team) at 5/15/30-minute horizons",
+      "statement": "Lagged change in KXMLBGAME fair-mid predicts the next-horizon change in the same team's KXMLBF5 fair-mid after controlling for F5's own lagged change (partial correlation). Three horizons predeclared: 5, 15, 30 minutes.",
+      "data": "recovered candles 2026-08-02..08-31, pregame minutes T-240..T-5 (TIER_B)",
+      "unit": "game-minute; game cluster",
+      "primaryMetric": "partial regression coefficient of dB(t,t+h) on dA(t-h,t) controlling dB(t-h,t); clustered CI90; null-centred p",
+      "method": "pooled OLS with game-clustered bootstrap; 3 tests (one per horizon) registered",
+      "failureCriterion": "coefficient CI includes 0 at every horizon, or the implied move is below spread+fee",
+      "priorWork": "ALPHA-0002 Family C tested within-contract features only; cross-family lead/lag untested",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "h15 slope 0.928 CI[0.04,1.87] games 332 BH; h30 slope -0.533 CI[-0.65,0.17] games 322; h5 slope -0.306 CI[-0.69,0.10] games 355",
+          "tier": "TIER_B_EXPLORATORY",
+          "tests": {
+            "ML->F5ML_h15": {
+              "ciHigh": 1.8728756277595215,
+              "ciLow": 0.03562699102017876,
+              "clusters": 332,
+              "dates": 29,
+              "droppedNoCluster": 0,
+              "meanAbsX": 0.14066442388561817,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 2378,
+              "ownLagSlope": -0.19310335554613722,
+              "pPercentile": 0.009,
+              "pTwoSided": 0.07796101949025487,
+              "point": 0.9282001367894332,
+              "resamplesUsed": 2000,
+              "stability": {
+                "cutDate": "2026-08-16",
+                "dates": 29,
+                "firstHalf": 1.6878750324336769,
+                "sameSign": true,
+                "secondHalf": 0.05096148797831925
+              }
+            },
+            "ML->F5ML_h30": {
+              "ciHigh": 0.16929640970319346,
+              "ciLow": -0.6467642150370969,
+              "clusters": 322,
+              "dates": 29,
+              "droppedNoCluster": 0,
+              "meanAbsX": 0.1817503729487817,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 2011,
+              "ownLagSlope": -1.170479435436897,
+              "pPercentile": 0.759,
+              "pTwoSided": 0.0014992503748125937,
+              "point": -0.5326385412218523,
+              "resamplesUsed": 2000,
+              "stability": {
+                "cutDate": "2026-08-16",
+                "dates": 29,
+                "firstHalf": -0.4873002591310188,
+                "sameSign": false,
+                "secondHalf": 0.10382986786792218
+              }
+            },
+            "ML->F5ML_h5": {
+              "ciHigh": 0.098184274814623,
+              "ciLow": -0.6890219300573831,
+              "clusters": 355,
+              "dates": 29,
+              "droppedNoCluster": 0,
+              "meanAbsX": 0.07232267037552156,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 2876,
+              "ownLagSlope": -0.04008816424564854,
+              "pPercentile": 0.691,
+              "pTwoSided": 0.3453273363318341,
+              "point": -0.30563419471124764,
+              "resamplesUsed": 2000,
+              "stability": {
+                "cutDate": "2026-08-16",
+                "dates": 29,
+                "firstHalf": -0.584954094497875,
+                "sameSign": false,
+                "secondHalf": 0.10443897678250788
+              }
+            }
+          },
+          "bhSurvivors": [
+            "ML->F5ML_h15"
+          ],
+          "candidateBarMet": [
+            "ML->F5ML_h15"
+          ],
+          "artifact": "leadlag_1min.json",
+          "execution": "partial slope on fair mids; a positive slope below spread+fee is price discovery, not a trade"
+        }
+      ]
+    },
+    {
+      "id": "MRV-LL-002",
+      "family": "MF-LL",
+      "status": "REJECTED",
+      "title": "F5 moneyline leads full-game moneyline at 5/15/30-minute horizons",
+      "statement": "Reverse direction of MRV-LL-001; 3 tests registered.",
+      "data": "same as MRV-LL-001",
+      "unit": "game-minute",
+      "primaryMetric": "same",
+      "method": "same",
+      "failureCriterion": "same",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "h15 slope -0.237 CI[-0.50,0.05] games 382; h30 slope -0.426 CI[-0.48,0.12] games 366; h5 slope 0.142 CI[0.00,0.34] games 384",
+          "tier": "TIER_B_EXPLORATORY",
+          "tests": {
+            "F5ML->ML_h15": {
+              "ciHigh": 0.046731205760979555,
+              "ciLow": -0.5041077605040719,
+              "clusters": 382,
+              "dates": 29,
+              "droppedNoCluster": 0,
+              "meanAbsX": 0.21658986175115208,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 3689,
+              "ownLagSlope": -0.10929941311861477,
+              "pPercentile": 0.699,
+              "pTwoSided": 0.16391804097951024,
+              "point": -0.23704041074291657,
+              "resamplesUsed": 2000,
+              "stability": {
+                "cutDate": "2026-08-16",
+                "dates": 29,
+                "firstHalf": -0.41090525251627286,
+                "sameSign": false,
+                "secondHalf": 0.03057578761456284
+              }
+            },
+            "F5ML->ML_h30": {
+              "ciHigh": 0.12026675579142776,
+              "ciLow": -0.4765150065210686,
+              "clusters": 366,
+              "dates": 29,
+              "droppedNoCluster": 0,
+              "meanAbsX": 0.2754001960143744,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 3061,
+              "ownLagSlope": -0.9889750616487356,
+              "pPercentile": 0.703,
+              "pTwoSided": 0.0004997501249375312,
+              "point": -0.4261484282324443,
+              "resamplesUsed": 2000,
+              "stability": {
+                "cutDate": "2026-08-16",
+                "dates": 29,
+                "firstHalf": -0.473414006449419,
+                "sameSign": false,
+                "secondHalf": 0.09736681980083448
+              }
+            },
+            "F5ML->ML_h5": {
+              "ciHigh": 0.3395855808693667,
+              "ciLow": 0.002632842299544843,
+              "clusters": 384,
+              "dates": 29,
+              "droppedNoCluster": 0,
+              "meanAbsX": 0.1264645072363887,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 4353,
+              "ownLagSlope": -0.21376920503252378,
+              "pPercentile": 0.062,
+              "pTwoSided": 0.10744627686156921,
+              "point": 0.1424820954984297,
+              "resamplesUsed": 2000,
+              "stability": {
+                "cutDate": "2026-08-16",
+                "dates": 29,
+                "firstHalf": 0.2698024350106718,
+                "sameSign": true,
+                "secondHalf": 0.018864840783960016
+              }
+            }
+          },
+          "bhSurvivors": [],
+          "candidateBarMet": [],
+          "artifact": "leadlag_1min.json",
+          "execution": "partial slope on fair mids; a positive slope below spread+fee is price discovery, not a trade"
+        }
+      ]
+    },
+    {
+      "id": "MRV-LL-003",
+      "family": "MF-LL",
+      "status": "DATA_BLOCKED",
+      "title": "Full-game total ladder leads F5 total ladder at 5/15/30-minute horizons",
+      "statement": "Change in the game-total ladder implied mean leads the F5-total ladder implied mean; 3 tests registered.",
+      "data": "same as MRV-LL-001 (game_total, inning_total families)",
+      "unit": "game-minute",
+      "primaryMetric": "same",
+      "method": "same",
+      "failureCriterion": "same",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "h15 slope 0.070 CI[-0.00,0.19] games 25; h30 slope 0.155 CI[-0.02,0.30] games 20; h5 slope 0.154 CI[0.05,0.34] games 38 BH",
+          "tier": "TIER_B_EXPLORATORY",
+          "tests": {
+            "TOT->F5TOT_h15": {
+              "ciHigh": 0.1856286300879063,
+              "ciLow": -0.0022770173572795754,
+              "clusters": 25,
+              "dates": 13,
+              "droppedNoCluster": 0,
+              "meanAbsX": 0.8688524590163879,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 61,
+              "ownLagSlope": 0.06996699669967019,
+              "pPercentile": 0.118,
+              "pTwoSided": 0.28535732133933034,
+              "point": 0.07033956151090931,
+              "resamplesUsed": 2000,
+              "stability": {
+                "cutDate": "2026-08-20",
+                "dates": 13,
+                "firstHalf": 0.16666666666667704,
+                "sameSign": true,
+                "secondHalf": 0.047936352235097825
+              }
+            },
+            "TOT->F5TOT_h30": {
+              "ciHigh": 0.30447752364980907,
+              "ciLow": -0.024631385560387086,
+              "clusters": 20,
+              "dates": 10,
+              "droppedNoCluster": 0,
+              "meanAbsX": 1.6025641025641142,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 39,
+              "ownLagSlope": 0.2983578845689464,
+              "pPercentile": 0.158,
+              "pTwoSided": 0.12443778110944528,
+              "point": 0.15500129018939973,
+              "resamplesUsed": 2000,
+              "stability": {
+                "cutDate": "2026-08-21",
+                "dates": 10,
+                "firstHalf": 0.5381090703251693,
+                "sameSign": true,
+                "secondHalf": 0.11273632531002646
+              }
+            },
+            "TOT->F5TOT_h5": {
+              "ciHigh": 0.34036495004300005,
+              "ciLow": 0.04663726764036831,
+              "clusters": 38,
+              "dates": 18,
+              "droppedNoCluster": 0,
+              "meanAbsX": 0.44554455445544666,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 101,
+              "ownLagSlope": -0.03355704697986319,
+              "pPercentile": 0.009,
+              "pTwoSided": 0.07796101949025487,
+              "point": 0.15398686698412611,
+              "resamplesUsed": 2000,
+              "stability": {
+                "cutDate": "2026-08-21",
+                "dates": 18,
+                "firstHalf": 0.09853828503442416,
+                "sameSign": true,
+                "secondHalf": 0.1853726509810823
+              }
+            }
+          },
+          "bhSurvivors": [
+            "TOT->F5TOT_h5"
+          ],
+          "candidateBarMet": [],
+          "artifact": "leadlag_1min.json",
+          "execution": "partial slope on fair mids; a positive slope below spread+fee is price discovery, not a trade"
+        }
+      ]
+    },
+    {
+      "id": "MRV-LL-004",
+      "family": "MF-LL",
+      "status": "DATA_BLOCKED",
+      "title": "F5 total ladder leads full-game total ladder at 5/15/30-minute horizons",
+      "statement": "Reverse direction of MRV-LL-003; 3 tests registered.",
+      "data": "same",
+      "unit": "game-minute",
+      "primaryMetric": "same",
+      "method": "same",
+      "failureCriterion": "same",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "h15 slope 0.019 CI[-0.76,0.48] games 29; h30 slope 0.483 CI[-0.27,2.06] games 19; h5 slope 0.596 CI[0.09,0.96] games 38",
+          "tier": "TIER_B_EXPLORATORY",
+          "tests": {
+            "F5TOT->TOT_h15": {
+              "ciHigh": 0.4810158096057227,
+              "ciLow": -0.7588925127029398,
+              "clusters": 29,
+              "dates": 14,
+              "droppedNoCluster": 0,
+              "meanAbsX": 0.19166666666666762,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 60,
+              "ownLagSlope": 0.26254826254825986,
+              "pPercentile": 0.956,
+              "pTwoSided": 0.9590204897551224,
+              "point": 0.019256457345420464,
+              "resamplesUsed": 2000,
+              "stability": {
+                "cutDate": "2026-08-20",
+                "dates": 14,
+                "firstHalf": -1.3161649008706964,
+                "sameSign": false,
+                "secondHalf": 0.3172550589300266
+              }
+            },
+            "F5TOT->TOT_h30": {
+              "ciHigh": 2.0596356310090718,
+              "ciLow": -0.2716942055001286,
+              "clusters": 19,
+              "dates": 10,
+              "droppedNoCluster": 0,
+              "meanAbsX": 0.42857142857142044,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 42,
+              "ownLagSlope": -0.055798004987516296,
+              "pPercentile": 0.524,
+              "pTwoSided": 0.5417291354322838,
+              "point": 0.48333147585741604,
+              "resamplesUsed": 2000,
+              "stability": {
+                "cutDate": "2026-08-21",
+                "dates": 10,
+                "firstHalf": 0.8713217363030301,
+                "sameSign": true,
+                "secondHalf": 0.028890600924484592
+              }
+            },
+            "F5TOT->TOT_h5": {
+              "ciHigh": 0.959082747910069,
+              "ciLow": 0.0890390999906083,
+              "clusters": 38,
+              "dates": 18,
+              "droppedNoCluster": 0,
+              "meanAbsX": 0.2102803738317749,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 107,
+              "ownLagSlope": 0.2946233624454123,
+              "pPercentile": 0.064,
+              "pTwoSided": 0.02798600699650175,
+              "point": 0.5956186121490956,
+              "resamplesUsed": 2000,
+              "stability": {
+                "cutDate": "2026-08-21",
+                "dates": 18,
+                "firstHalf": 0.7312792511701093,
+                "sameSign": true,
+                "secondHalf": 0.5783976116581316
+              }
+            }
+          },
+          "bhSurvivors": [],
+          "candidateBarMet": [],
+          "artifact": "leadlag_1min.json",
+          "execution": "partial slope on fair mids; a positive slope below spread+fee is price discovery, not a trade"
+        }
+      ]
+    },
+    {
+      "id": "MRV-XV-001",
+      "family": "MF-XV",
+      "status": "EXPLORATORY",
+      "title": "Kalshi moneyline converges toward Pinnacle no-vig probability",
+      "statement": "Signed disagreement d = p_pinnacle_novig - kalshi_fair_mid at capture t predicts the change in Kalshi fair-mid to the next capture and to the last pregame capture (slope > 0).",
+      "data": "research-branch prospective corpus 2026-09-02..09-22: odds (Pinnacle h2h decimal, book last_update) + quotes (yesBid/yesAsk) captured in the same run (TIER_B); as-of = capturedAt; pregame only",
+      "unit": "game-capture; game cluster",
+      "primaryMetric": "OLS slope of dMid on d, clustered CI90",
+      "method": "pooled regression; 2 horizons registered (next capture, last pregame)",
+      "failureCriterion": "slope CI includes 0",
+      "priorWork": "ALPHA-0002 D2: slope 0.12-0.28, CIs include 0 at 20 games (INSUFFICIENT); this is the first run at >= 200 games",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "Pinnacle-vs-Kalshi ML: mean |d| 0.42pp, never >=2pp; slope of Kalshi move to next capture 0.21 CI[-0.05,0.44], to last pregame 0.47 CI[-0.02,0.90] (133 games, 20 dates, median 275 min to next capture); price discovery only",
+          "tier": "TIER_B_EXPLORATORY",
+          "tests": {
+            "MRV-XV-001_slopeNext": {
+              "ciHigh": 0.4431377941987588,
+              "ciLow": -0.04665453210326991,
+              "clusters": 133,
+              "droppedNoCluster": 0,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 274,
+              "pPercentile": 0.163,
+              "pTwoSided": 0.1469265367316342,
+              "point": 0.21082088182953798,
+              "resamplesUsed": 2000
+            },
+            "MRV-XV-001_slopeLast": {
+              "ciHigh": 0.9033390869787872,
+              "ciLow": -0.016827693144937414,
+              "clusters": 133,
+              "droppedNoCluster": 0,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 274,
+              "pPercentile": 0.115,
+              "pTwoSided": 0.09245377311344327,
+              "point": 0.4699194071228772,
+              "resamplesUsed": 2000
+            }
+          },
+          "bh": {
+            "MRV-XV-001_slopeNext": false,
+            "MRV-XV-001_slopeLast": false
+          },
+          "breakEven": {
+            "breakEvenAbsDppHold": 5.852067308386168,
+            "breakEvenAbsDppRoundTrip": 11.704134616772336,
+            "holdToSettlementCostCents": 2.75,
+            "roundTripTakerCostCents": 5.5,
+            "slopeLast": 0.4699194071228772
+          },
+          "timingCaveat": "capturedAt is the run start; the Odds API leg is fetched later in the same run (book last_update can be a few minutes NEWER than the Kalshi book), so a small part of any same-run disagreement may already be stale on the Kalshi side; horizons are hours, which bounds the contamination",
+          "artifact": "sharp_vs_kalshi.json"
+        }
+      ]
+    },
+    {
+      "id": "MRV-XV-002",
+      "family": "MF-XV",
+      "status": "REJECTED",
+      "title": "Taking Pinnacle's side on Kalshi at |disagreement| >= 3pp is profitable after fees",
+      "statement": "When |d| >= 3 percentage points (threshold preregistered by ALPHA-0002 D3, not tuned here), a USD 10 taker order on Pinnacle's side at the executable Kalshi price earns post-fee settlement P/L > 0 and positive executable CLV to the last pregame quote.",
+      "data": "same corpus as MRV-XV-001 joined to settlements (TIER_B)",
+      "unit": "game-capture episode (first qualifying capture per game-side); game cluster",
+      "primaryMetric": "post-fee settlement ROI on cash risked, CI90; secondary executable CLV cents",
+      "method": "episode study, clustered bootstrap, BH within MF-XV",
+      "failureCriterion": "ROI CI includes 0 or < +1%",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "0 episodes: |Pinnacle - Kalshi| never reached the preregistered 3pp (max <2pp; break-even |d| for a hold-to-settlement taker is ~5.9pp given the fitted convergence slope)",
+          "episodes": 0,
+          "tier": "TIER_B_EXPLORATORY",
+          "artifact": "sharp_vs_kalshi.json"
+        }
+      ]
+    },
+    {
+      "id": "MRV-XV-003",
+      "family": "MF-XV",
+      "status": "EXPLORATORY",
+      "title": "Four-book consensus version of MRV-XV-001/002",
+      "statement": "Same two tests with d defined against the mean no-vig probability of Pinnacle, DraftKings, FanDuel and BetMGM (books present at that capture).",
+      "data": "same",
+      "unit": "same",
+      "primaryMetric": "same",
+      "method": "same; 3 tests registered (slope next, slope last, ROI)",
+      "failureCriterion": "same",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "4-book consensus: slope next 0.38 CI[0.24,0.53] (BH), last 0.40 CI[0.15,0.66] (BH), 172 games; |d|>=3pp only 2 episodes (floor 60) so no executable test; consensus includes DK/FD/BetMGM which are less sharp than Pinnacle",
+          "tier": "TIER_B_EXPLORATORY",
+          "tests": {
+            "MRV-XV-003_slopeNext": {
+              "ciHigh": 0.5260802462785936,
+              "ciLow": 0.2361307968821818,
+              "clusters": 172,
+              "droppedNoCluster": 0,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 470,
+              "pPercentile": 0.0004997501249375312,
+              "pTwoSided": 0.0004997501249375312,
+              "point": 0.3763041439483158,
+              "resamplesUsed": 2000
+            },
+            "MRV-XV-003_slopeLast": {
+              "ciHigh": 0.6603749655732476,
+              "ciLow": 0.14802300764475088,
+              "clusters": 172,
+              "droppedNoCluster": 0,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 470,
+              "pPercentile": 0.013,
+              "pTwoSided": 0.009995002498750625,
+              "point": 0.40209729976686476,
+              "resamplesUsed": 2000
+            },
+            "MRV-XV-003_roi": {
+              "ciHigh": 1.3421588594704683,
+              "ciLow": 0.6460905349794238,
+              "clusters": 2,
+              "droppedNoCluster": 0,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 2,
+              "pPercentile": 0.0004997501249375312,
+              "pTwoSided": 0.0004997501249375312,
+              "point": 0.9959058341862846,
+              "resamplesUsed": 2000
+            }
+          },
+          "bh": {
+            "MRV-XV-003_slopeNext": true,
+            "MRV-XV-003_slopeLast": true,
+            "MRV-XV-003_roi": true
+          },
+          "breakEven": {
+            "breakEvenAbsDppHold": 6.8391406796177066,
+            "breakEvenAbsDppRoundTrip": 13.678281359235413,
+            "holdToSettlementCostCents": 2.75,
+            "roundTripTakerCostCents": 5.5,
+            "slopeLast": 0.40209729976686476
+          },
+          "timingCaveat": "capturedAt is the run start; the Odds API leg is fetched later in the same run (book last_update can be a few minutes NEWER than the Kalshi book), so a small part of any same-run disagreement may already be stale on the Kalshi side; horizons are hours, which bounds the contamination",
+          "artifact": "sharp_vs_kalshi.json"
+        }
+      ]
+    },
+    {
+      "id": "MRV-XV-004",
+      "family": "MF-XV",
+      "status": "DATA_BLOCKED",
+      "title": "Sportsbook total line vs Kalshi total-ladder implied median",
+      "statement": "When the Pinnacle total point sits above (below) the Kalshi ladder's implied median by >= 0.5 runs, the ladder's implied mean subsequently rises (falls).",
+      "data": "prospective corpus odds totals + KXMLBTOTAL quotes (TIER_B)",
+      "unit": "game-capture",
+      "primaryMetric": "slope of ladder-mean change on line gap; clustered CI90",
+      "method": "pooled regression, 1 test",
+      "failureCriterion": "slope CI includes 0",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "the prospective collector capped books at 400/run and captured only 5 game-total ladders across 21 days; no totals panel",
+          "tier": "TIER_B_EXPLORATORY",
+          "artifact": "sharp_vs_kalshi.json"
+        }
+      ]
+    },
+    {
+      "id": "MRV-INFO-001",
+      "family": "MF-INFO",
+      "status": "DATA_BLOCKED",
+      "title": "Lineup posting repricing lag",
+      "statement": "Kalshi ML/F5 fair-mid moves more in the window after a lineup is first seen posted than in matched control windows, and an executable window exists.",
+      "data": "prospective corpus mlb_state firstSeenChange + quotes (TIER_B). Cadence 3-8 runs/day bounds event time to hours.",
+      "unit": "game event",
+      "primaryMetric": "|dMid| event vs control",
+      "method": "event study",
+      "failureCriterion": "no difference, or event-time resolution coarser than 30 minutes (DATA_BLOCKED)",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "490 first-seen events; event time bounded only to the previous collector run, median 904 minutes; a repricing-lag test needs <=30-minute resolution",
+          "tier": "TIER_B_EXPLORATORY",
+          "resolution": {
+            "LINEUP_AWAY": {
+              "events": 244,
+              "medianBoundMinutes": 860.65,
+              "shareBoundLe30min": 0.0
+            },
+            "LINEUP_HOME": {
+              "events": 246,
+              "medianBoundMinutes": 904.4833333333333,
+              "shareBoundLe30min": 0.0
+            }
+          },
+          "artifact": "info_events.json"
+        }
+      ]
+    },
+    {
+      "id": "MRV-INFO-002",
+      "family": "MF-INFO",
+      "status": "DATA_BLOCKED",
+      "title": "Probable-pitcher change repricing lag",
+      "statement": "Same as MRV-INFO-001 for probable-pitcher id changes.",
+      "data": "same",
+      "unit": "game event",
+      "primaryMetric": "same",
+      "method": "same",
+      "failureCriterion": "same",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "5 first-seen events; event time bounded only to the previous collector run, median 861 minutes; a repricing-lag test needs <=30-minute resolution",
+          "tier": "TIER_B_EXPLORATORY",
+          "resolution": {
+            "PITCHER_AWAY": {
+              "events": 3,
+              "medianBoundMinutes": 856.05,
+              "shareBoundLe30min": 0.0
+            },
+            "PITCHER_HOME": {
+              "events": 2,
+              "medianBoundMinutes": 860.65,
+              "shareBoundLe30min": 0.0
+            }
+          },
+          "artifact": "info_events.json"
+        }
+      ]
+    },
+    {
+      "id": "MRV-TTP-001",
+      "family": "MF-TTP",
+      "status": "EXPLORATORY",
+      "title": "Execution-cost surface by time to first pitch and family",
+      "statement": "Descriptive map: median spread, taker fee at the ask, and share of two-sided minutes by family and lead-time bucket (T-240..-120, -120..-60, -60..-30, -30..-5). Identifies where crossing is cheapest. No inference.",
+      "data": "recovered candles (TIER_B)",
+      "unit": "contract-minute",
+      "primaryMetric": "spread cents",
+      "method": "descriptive",
+      "failureCriterion": "n/a (descriptive)",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "descriptive cost surface written (spread, taker fee at ask, two-sided share by family x lead bucket)",
+          "tier": "TIER_B_EXPLORATORY",
+          "allBuckets": {
+            "all|T-120..60": {
+              "contractMinutes": 323673,
+              "spreadMeanCents": 1.156905271678515,
+              "spreadMedianCents": 1,
+              "takerFeeAtAskMeanCents": 1.4504470771423692,
+              "twoSidedShare": 1.0,
+              "volumePerContractMinuteMean": 180.50214908256157
+            },
+            "all|T-240..120": {
+              "contractMinutes": 563672,
+              "spreadMeanCents": 1.2341100097402424,
+              "spreadMedianCents": 1,
+              "takerFeeAtAskMeanCents": 1.444692208339532,
+              "twoSidedShare": 0.9999450034771995,
+              "volumePerContractMinuteMean": 106.90860014334561
+            },
+            "all|T-30..5": {
+              "contractMinutes": 171896,
+              "spreadMeanCents": 1.1711097009320766,
+              "spreadMedianCents": 1,
+              "takerFeeAtAskMeanCents": 1.440550367067028,
+              "twoSidedShare": 0.9992495462372597,
+              "volumePerContractMinuteMean": 371.82099572413125
+            },
+            "all|T-5..0": {
+              "contractMinutes": 49750,
+              "spreadMeanCents": 1.3727422663823967,
+              "spreadMedianCents": 1,
+              "takerFeeAtAskMeanCents": 1.380272750311706,
+              "twoSidedShare": 0.999356783919598,
+              "volumePerContractMinuteMean": 528.4713517587958
+            },
+            "all|T-60..30": {
+              "contractMinutes": 175868,
+              "spreadMeanCents": 1.1523281684771167,
+              "spreadMedianCents": 1,
+              "takerFeeAtAskMeanCents": 1.4474614650135018,
+              "twoSidedShare": 0.99926649532604,
+              "volumePerContractMinuteMean": 233.80294375863704
+            },
+            "all|T>240": {
+              "contractMinutes": 3282500,
+              "spreadMeanCents": 4.141037706025139,
+              "spreadMedianCents": 1,
+              "takerFeeAtAskMeanCents": 1.4238782521471631,
+              "twoSidedShare": 0.9973900990099009,
+              "volumePerContractMinuteMean": 29.18414077512957
+            }
+          },
+          "artifact": "cost_surface.json"
+        }
+      ]
+    },
+    {
+      "id": "MRV-LIQ-001",
+      "family": "MF-LIQ",
+      "status": "EXPLORATORY",
+      "title": "Settlement calibration of the last pregame executable price by spread and volume bucket",
+      "statement": "Buying YES at the last pregame ask has different post-fee ROI in wide-spread (>= 4c) vs tight (<= 2c) books and in low-volume (bottom tercile) vs high-volume books, within family.",
+      "data": "observation archive 2026-09-01..09-21 + settlements (TIER_B)",
+      "unit": "contract; game cluster",
+      "primaryMetric": "post-fee ROI difference wide-tight and low-high, clustered CI90; 2 tests registered",
+      "method": "clustered bootstrap, BH within MF-LIQ",
+      "failureCriterion": "CI includes 0",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "BUY-YES post-fee ROI wide(>=4c) minus tight(<=2c) spread -0.180 CI[-0.263,-0.088]; low minus high volume tercile -0.029 CI[-0.098,0.034] (274 games, 21 dates); wide books lose MORE, i.e. no inefficiency to harvest, just higher cost",
+          "tier": "TIER_B_EXPLORATORY",
+          "tests": {
+            "wideMinusTight": {
+              "ciHigh": -0.08762190285439501,
+              "ciLow": -0.2631164017136052,
+              "clusters": 274,
+              "droppedNoCluster": 0,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 16483,
+              "pPercentile": 0.003,
+              "pTwoSided": 0.0014992503748125937,
+              "point": -0.17987573469704307,
+              "resamplesUsed": 2000
+            },
+            "lowMinusHighVolume": {
+              "ciHigh": 0.03396420173144754,
+              "ciLow": -0.09750959636395806,
+              "clusters": 274,
+              "droppedNoCluster": 0,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 11673,
+              "pPercentile": 0.469,
+              "pTwoSided": 0.44177911044477763,
+              "point": -0.029460100610201975,
+              "resamplesUsed": 2000
+            }
+          },
+          "bh": {
+            "wideMinusTight": true,
+            "lowMinusHighVolume": false
+          },
+          "artifact": "pricebands_sep.json"
+        }
+      ]
+    },
+    {
+      "id": "MRV-PB-001",
+      "family": "MF-PB",
+      "status": "REJECTED",
+      "title": "MLB-RSCH-0026 preregistered forward score and rerun",
+      "statement": "Score settle-date > 2026-08-28 rows with the frozen beta=0.9833 shrink (never refit) vs raw fair mid on Brier/log loss with game-clustered CI; and, since the archive now exceeds the preregistered 1,000 rows / 60 games rerun threshold, refit beta on a September TRAIN window and validate on the later September window under the original gates.",
+      "data": "observation archive + settlements settle > 2026-08-28 (TIER_B)",
+      "unit": "contract; game cluster",
+      "primaryMetric": "paired Brier delta shrunk - market, CI90; beta CI excludes 1",
+      "method": "as frozen in data/edgelab/analytics/frozen_mlb_rsch_0026_forward_model.json; 1 forward test + 1 rerun registered",
+      "failureCriterion": "beta CI includes 1 or Brier delta CI includes 0",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "frozen beta=0.9833 forward (settle > 08-28, 17540 rows / 274 games): shrunk minus market Brier +0.000053 CI[+0.000009,+0.000097] (shrink hurts or is null); preregistered rerun: beta_train=0.974 CI[0.912,1.045], VAL Brier delta +0.000138 CI[+0.000052,+0.000219], gates beta-CI-excludes-1=False VAL-delta-negative=False -> not both",
+          "tier": "TIER_B_EXPLORATORY",
+          "forward": {
+            "base": 0.430536,
+            "beta": 0.9833,
+            "ciHigh": 9.731672800355057e-05,
+            "ciLow": 8.814270946792824e-06,
+            "clusters": 274,
+            "droppedNoCluster": 0,
+            "marketBrier": 0.18459681870011194,
+            "method": "GAME_CLUSTERED_BOOTSTRAP",
+            "n": 17540,
+            "note": "both forecasts clamped to [0.01,0.99] symmetrically; population = all settled non-prop rows with a two-sided last pregame quote (broader than RSCH-0026's production-evaluated corpus)",
+            "pPercentile": 0.048,
+            "pTwoSided": 0.046476761619190406,
+            "point": 5.3479210164381064e-05,
+            "resamplesUsed": 2000,
+            "shrunkBrier": 0.18465029791027612
+          },
+          "rerun": {
+            "trainRows": 8454,
+            "trainGames": 131,
+            "valRows": 9086,
+            "valGames": 143,
+            "cutDate": "2026-09-11",
+            "baseTrain": 0.46557842441447833,
+            "betaTrain": 0.9743501216567072,
+            "betaCI": {
+              "ciHigh": 1.0451097623057237,
+              "ciLow": 0.9117168411802298,
+              "clusters": 131,
+              "droppedNoCluster": 0,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 8454,
+              "pPercentile": 0.004975124378109453,
+              "pTwoSided": 0.004975124378109453,
+              "point": 0.9743501010626376,
+              "resamplesUsed": 200
+            },
+            "valBrierDelta": {
+              "ciHigh": 0.0002194083298624555,
+              "ciLow": 5.15276019824359e-05,
+              "clusters": 143,
+              "droppedNoCluster": 0,
+              "method": "GAME_CLUSTERED_BOOTSTRAP",
+              "n": 9086,
+              "pPercentile": 0.01,
+              "pTwoSided": 0.008995502248875561,
+              "point": 0.0001379747679470522,
+              "resamplesUsed": 2000
+            },
+            "valBands": {
+              "00-20": {
+                "delta": 0.0002982048349966099,
+                "marketBias": 0.02641906096706373,
+                "n": 1427
+              },
+              "20-40": {
+                "delta": -4.5048095162730784e-05,
+                "marketBias": -0.008149727148703954,
+                "n": 2932
+              },
+              "40-60": {
+                "delta": 3.452124186481553e-05,
+                "marketBias": -0.03887809187279163,
+                "n": 2264
+              },
+              "60-80": {
+                "delta": 0.00047153757601134383,
+                "marketBias": -0.04573624595469257,
+                "n": 1236
+              },
+              "80-100": {
+                "delta": 0.00024385079179886637,
+                "marketBias": -0.01977180114099423,
+                "n": 1227
+              }
+            },
+            "gateBetaCIExcludes1": false,
+            "gateValDeltaNegative": false
+          },
+          "artifact": "pricebands_sep.json"
+        }
+      ]
+    },
+    {
+      "id": "MRV-PB-002",
+      "family": "MF-PB",
+      "status": "REJECTED",
+      "title": "Price-band post-fee ROI of BUY YES and BUY NO at the last pregame quote, September, by family",
+      "statement": "Out-of-sample replication of ALPHA-0001 Family A on 2026-09-01..09-21: five fixed price bands (0-20, 20-40, 40-60, 60-80, 80-100 cents of the executable price) x two sides x nine non-prop families. Reported in full; BH within MF-PB.",
+      "data": "observation archive + settlements September (TIER_B)",
+      "unit": "contract; game cluster",
+      "primaryMetric": "post-fee ROI per band, clustered CI90",
+      "method": "clustered bootstrap, BH q=0.10 over all cells in MF-PB",
+      "failureCriterion": "no cell survives BH with ROI >= +1%",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "73 family x side x band cells on 274 games / 21 dates (median last quote 96 min before start); BH survivors 16, of which 0 positive-ROI cells meet the candidate bar: none",
+          "tier": "TIER_B_EXPLORATORY",
+          "survivors": {
+            "first_inning_run|NO|40-60": {
+              "point": -0.1716293587116789,
+              "ciLow": -0.26693394029169865,
+              "ciHigh": -0.07871018742523508,
+              "n": 269,
+              "clusters": 269,
+              "dates": 21,
+              "stability": {
+                "cutDate": "2026-09-11",
+                "dates": 21,
+                "firstHalf": -0.08025073829391749,
+                "sameSign": true,
+                "secondHalf": -0.2546148112421626
+              }
+            },
+            "first_inning_run|NO|60-80": {
+              "point": 0.596292481977343,
+              "ciLow": 0.5706806282722513,
+              "ciHigh": 0.6210739614994935,
+              "n": 4,
+              "clusters": 4,
+              "dates": 4,
+              "stability": {
+                "cutDate": "2026-09-10",
+                "dates": 4,
+                "firstHalf": 0.5706806282722513,
+                "sameSign": true,
+                "secondHalf": 0.6210739614994935
+              }
+            },
+            "first_inning_run|YES|20-40": {
+              "point": -1.0,
+              "ciLow": -1.0,
+              "ciHigh": -1.0,
+              "n": 2,
+              "clusters": 2,
+              "dates": 2,
+              "stability": {
+                "cutDate": "2026-09-04",
+                "dates": 2,
+                "firstHalf": -1.0,
+                "sameSign": true,
+                "secondHalf": -1.0
+              }
+            },
+            "game_result|YES|20-40": {
+              "point": -0.32252406646226367,
+              "ciLow": -0.5316137268744978,
+              "ciHigh": -0.09429793861292443,
+              "n": 76,
+              "clusters": 76,
+              "dates": 20,
+              "stability": {
+                "cutDate": "2026-09-11",
+                "dates": 20,
+                "firstHalf": -0.10230707082797219,
+                "sameSign": true,
+                "secondHalf": -0.5008480736612552
+              }
+            },
+            "game_result|YES|40-60": {
+              "point": -0.04456001102538939,
+              "ciLow": -0.07319500800711222,
+              "ciHigh": -0.016098753712784443,
+              "n": 366,
+              "clusters": 197,
+              "dates": 21,
+              "stability": {
+                "cutDate": "2026-09-11",
+                "dates": 21,
+                "firstHalf": -0.051344743276283716,
+                "sameSign": true,
+                "secondHalf": -0.03806997655708299
+              }
+            },
+            "game_total|NO|20-40": {
+              "point": -0.3347569133713157,
+              "ciLow": -0.4566105379363748,
+              "ciHigh": -0.20243881984647827,
+              "n": 573,
+              "clusters": 267,
+              "dates": 21,
+              "stability": {
+                "cutDate": "2026-09-11",
+                "dates": 21,
+                "firstHalf": -0.2766509046427984,
+                "sameSign": true,
+                "secondHalf": -0.38954689436716694
+              }
+            },
+            "game_total|NO|40-60": {
+              "point": -0.1793095098395313,
+              "ciLow": -0.2714822096435316,
+              "ciHigh": -0.0825114587770266,
+              "n": 553,
+              "clusters": 267,
+              "dates": 21,
+              "stability": {
+                "cutDate": "2026-09-11",
+                "dates": 21,
+                "firstHalf": -0.13813704404511468,
+                "sameSign": true,
+                "secondHalf": -0.21663044559026173
+              }
+            },
+            "game_total|NO|60-80": {
+              "point": -0.09499886466848284,
+              "ciLow": -0.16441776708569178,
+              "ciHigh": -0.029459598300396836,
+              "n": 732,
+              "clusters": 267,
+              "dates": 21,
+              "stability": {
+                "cutDate": "2026-09-11",
+                "dates": 21,
+                "firstHalf": -0.12696895092860414,
+                "sameSign": true,
+                "secondHalf": -0.06607486538503154
+              }
+            },
+            "inning_total|NO|00-20": {
+              "point": -0.35339956201620754,
+              "ciLow": -0.5577911503270876,
+              "ciHigh": -0.11916996984341238,
+              "n": 542,
+              "clusters": 265,
+              "dates": 21,
+              "stability": {
+                "cutDate": "2026-09-11",
+                "dates": 21,
+                "firstHalf": -0.12859773233840502,
+                "sameSign": true,
+                "secondHalf": -0.5592165268959554
+              }
+            },
+            "inning_total|NO|60-80": {
+              "point": -0.10107124175249362,
+              "ciLow": -0.16988800675150284,
+              "ciHigh": -0.03042294585858511,
+              "n": 471,
+              "clusters": 255,
+              "dates": 21,
+              "stability": {
+                "cutDate": "2026-09-11",
+                "dates": 21,
+                "firstHalf": -0.10439560439560451,
+                "sameSign": true,
+                "secondHalf": -0.09800241772547845
+              }
+            },
+            "inning_total|YES|00-20": {
+              "point": -1.0,
+              "ciLow": -1.0,
+              "ciHigh": -1.0,
+              "n": 12,
+              "clusters": 12,
+              "dates": 11,
+              "stability": {
+                "cutDate": "2026-09-10",
+                "dates": 11,
+                "firstHalf": -1.0,
+                "sameSign": true,
+                "secondHalf": -1.0
+              }
+            },
+            "pitcher_outs|YES|40-60": {
+              "point": -0.14742785024268107,
+              "ciLow": -0.24449799720321824,
+              "ciHigh": -0.04683638390602044,
+              "n": 307,
+              "clusters": 194,
+              "dates": 21,
+              "stability": {
+                "cutDate": "2026-09-11",
+                "dates": 21,
+                "firstHalf": -0.11858917448525193,
+                "sameSign": true,
+                "secondHalf": -0.17326968973747034
+              }
+            },
+            "team_total|NO|00-20": {
+              "point": -0.3706087422901579,
+              "ciLow": -0.5248029612618127,
+              "ciHigh": -0.1955579748491285,
+              "n": 376,
+              "clusters": 250,
+              "dates": 21,
+              "stability": {
+                "cutDate": "2026-09-11",
+                "dates": 21,
+                "firstHalf": -0.2218069423589111,
+                "sameSign": true,
+                "secondHalf": -0.5131967273376536
+              }
+            },
+            "team_total|NO|20-40": {
+              "point": -0.16701705586821067,
+              "ciLow": -0.26871825999212046,
+              "ciHigh": -0.0524566562185489,
+              "n": 753,
+              "clusters": 267,
+              "dates": 21,
+              "stability": {
+                "cutDate": "2026-09-11",
+                "dates": 21,
+                "firstHalf": -0.19001942042263983,
+                "sameSign": true,
+                "secondHalf": -0.14582583546725816
+              }
+            },
+            "team_total|NO|40-60": {
+              "point": -0.1285589922163048,
+              "ciLow": -0.201357226420317,
+              "ciHigh": -0.053365242013743326,
+              "n": 804,
+              "clusters": 267,
+              "dates": 21,
+              "stability": {
+                "cutDate": "2026-09-11",
+                "dates": 21,
+                "firstHalf": -0.17651872546017683,
+                "sameSign": true,
+                "secondHalf": -0.08560778689419679
+              }
+            },
+            "team_total|NO|60-80": {
+              "point": -0.09051187187274067,
+              "ciLow": -0.13663704254725495,
+              "ciHigh": -0.04307746381959276,
+              "n": 1054,
+              "clusters": 266,
+              "dates": 21,
+              "stability": {
+                "cutDate": "2026-09-11",
+                "dates": 21,
+                "firstHalf": -0.1082172622142613,
+                "sameSign": true,
+                "secondHalf": -0.0751387568272783
+              }
+            }
+          },
+          "candidateCells": [],
+          "artifact": "pricebands_sep.json",
+          "reasonsCouldBeFalse": [
+            "12-21 slate dates of one month",
+            "last available pregame quote is a median 1.5-2h before first pitch, not a close",
+            "outcome derived from MLB Stats API, not Kalshi's receipt",
+            "cells near the 60-game floor are dominated by slate composition"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "MRV-EXEC-001",
+      "family": "MF-EXEC",
+      "status": "EXPLORATORY",
+      "title": "Executable depth and slippage at size",
+      "statement": "Descriptive: from archived order books, the fill price and slippage for USD 10 / 50 / 100 / 250 taker orders by family and side, and the share of books where a USD 100 order cannot fill within 2 cents of the top.",
+      "data": "prospective corpus books 2026-09-02..09-22 (TIER_B)",
+      "unit": "book snapshot",
+      "primaryMetric": "slippage cents per order size",
+      "method": "descriptive walk of the ladder",
+      "failureCriterion": "n/a",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "34819 pregame books / 289 games: median top-of-book depth 750 contracts at the ask, USD 100 YES order fills within 2c of top in 82% of books, USD 250 unfilled in 3.7%; depth is not the binding constraint for USD 10-100 orders, spread+fee are",
+          "tier": "TIER_B_EXPLORATORY",
+          "families": {
+            "family|first_inning_run": {
+              "books": 199,
+              "fillWithin2cShare_NO_10": 1.0,
+              "fillWithin2cShare_NO_100": 0.9949748743718593,
+              "fillWithin2cShare_NO_250": 0.964824120603015,
+              "fillWithin2cShare_NO_50": 0.9949748743718593,
+              "fillWithin2cShare_YES_10": 1.0,
+              "fillWithin2cShare_YES_100": 0.8743718592964824,
+              "fillWithin2cShare_YES_250": 0.7889447236180904,
+              "fillWithin2cShare_YES_50": 0.8844221105527639,
+              "slippageMean_NO_10": 0.1589643216080402,
+              "slippageMean_NO_100": 0.35099899497487413,
+              "slippageMean_NO_250": 0.6472527638190958,
+              "slippageMean_NO_50": 0.21631206030150754,
+              "slippageMean_YES_10": 0.13951155778894483,
+              "slippageMean_YES_100": 1.1320914572864318,
+              "slippageMean_YES_250": 1.7912356783919603,
+              "slippageMean_YES_50": 0.7949452261306531,
+              "slippageMedian_NO_10": 0.0,
+              "slippageMedian_NO_100": 0.2161,
+              "slippageMedian_NO_250": 0.7146,
+              "slippageMedian_NO_50": -0.0,
+              "slippageMedian_YES_10": 0.0,
+              "slippageMedian_YES_100": 0.0392,
+              "slippageMedian_YES_250": 0.7678,
+              "slippageMedian_YES_50": 0.0,
+              "spreadMean": 11.557788944723619,
+              "spreadMedian": 10,
+              "topDepthYesAskMedian": 200.0,
+              "topDepthYesBidMedian": 142.0,
+              "twoSidedShare": 1.0,
+              "unfilledShare_NO_10": 0.0,
+              "unfilledShare_NO_100": 0.0,
+              "unfilledShare_NO_250": 0.0,
+              "unfilledShare_NO_50": 0.0,
+              "unfilledShare_YES_10": 0.0,
+              "unfilledShare_YES_100": 0.0,
+              "unfilledShare_YES_250": 0.0,
+              "unfilledShare_YES_50": 0.0
+            },
+            "family|game_result": {
+              "books": 5634,
+              "fillWithin2cShare_NO_10": 0.9787007454739084,
+              "fillWithin2cShare_NO_100": 0.9371671991480298,
+              "fillWithin2cShare_NO_250": 0.8951011714589989,
+              "fillWithin2cShare_NO_50": 0.9595314164004259,
+              "fillWithin2cShare_YES_10": 0.9925452609158679,
+              "fillWithin2cShare_YES_100": 0.9849130280440185,
+              "fillWithin2cShare_YES_250": 0.9802981895633652,
+              "fillWithin2cShare_YES_50": 0.9868654597089102,
+              "slippageMean_NO_10": 0.24453024494142667,
+              "slippageMean_NO_100": 0.5112518991835266,
+              "slippageMean_NO_250": 0.7708206602768896,
+              "slippageMean_NO_50": 0.3954352502662415,
+              "slippageMean_YES_10": 0.0756375754348598,
+              "slippageMean_YES_100": 0.1537992012779555,
+              "slippageMean_YES_250": 0.2028448704295351,
+              "slippageMean_YES_50": 0.12206837060702906,
+              "slippageMedian_NO_10": 0.0,
+              "slippageMedian_NO_100": 0.0,
+              "slippageMedian_NO_250": 0.0,
+              "slippageMedian_NO_50": 0.0,
+              "slippageMedian_YES_10": 0.0,
+              "slippageMedian_YES_100": -0.0,
+              "slippageMedian_YES_250": 0.0,
+              "slippageMedian_YES_50": 0.0,
+              "spreadMean": 2.684948526801562,
+              "spreadMedian": 2,
+              "topDepthYesAskMedian": 1474.0,
+              "topDepthYesBidMedian": 801.0,
+              "twoSidedShare": 1.0,
+              "unfilledShare_NO_10": 0.0,
+              "unfilledShare_NO_100": 0.0,
+              "unfilledShare_NO_250": 0.0,
+              "unfilledShare_NO_50": 0.0,
+              "unfilledShare_YES_10": 0.0,
+              "unfilledShare_YES_100": 0.0,
+              "unfilledShare_YES_250": 0.0,
+              "unfilledShare_YES_50": 0.0
+            },
+            "family|game_total": {
+              "books": 28,
+              "fillWithin2cShare_NO_10": 1.0,
+              "fillWithin2cShare_NO_100": 1.0,
+              "fillWithin2cShare_NO_250": 1.0,
+              "fillWithin2cShare_NO_50": 1.0,
+              "fillWithin2cShare_YES_10": 1.0,
+              "fillWithin2cShare_YES_100": 1.0,
+              "fillWithin2cShare_YES_250": 1.0,
+              "fillWithin2cShare_YES_50": 1.0,
+              "slippageMean_NO_10": 0.13288214285714287,
+              "slippageMean_NO_100": 0.26509285714285713,
+              "slippageMean_NO_250": 0.4117071428571428,
+              "slippageMean_NO_50": 0.23049285714285714,
+              "slippageMean_YES_10": 0.02784285714285714,
+              "slippageMean_YES_100": 0.19927500000000004,
+              "slippageMean_YES_250": 0.2509357142857143,
+              "slippageMean_YES_50": 0.14150357142857145,
+              "slippageMedian_NO_10": 0.0,
+              "slippageMedian_NO_100": 0.0,
+              "slippageMedian_NO_250": 0.0,
+              "slippageMedian_NO_50": 0.0,
+              "slippageMedian_YES_10": 0.0,
+              "slippageMedian_YES_100": 0.0,
+              "slippageMedian_YES_250": 0.0,
+              "slippageMedian_YES_50": 0.0,
+              "spreadMean": 1.5357142857142858,
+              "spreadMedian": 2,
+              "topDepthYesAskMedian": 4920.87,
+              "topDepthYesBidMedian": 1815.32,
+              "twoSidedShare": 1.0,
+              "unfilledShare_NO_10": 0.0,
+              "unfilledShare_NO_100": 0.0,
+              "unfilledShare_NO_250": 0.0,
+              "unfilledShare_NO_50": 0.0,
+              "unfilledShare_YES_10": 0.0,
+              "unfilledShare_YES_100": 0.0,
+              "unfilledShare_YES_250": 0.0,
+              "unfilledShare_YES_50": 0.0
+            },
+            "family|inning_result": {
+              "books": 12599,
+              "fillWithin2cShare_NO_10": 0.8843147039254824,
+              "fillWithin2cShare_NO_100": 0.7683799068529608,
+              "fillWithin2cShare_NO_250": 0.7164005322687957,
+              "fillWithin2cShare_NO_50": 0.7929141716566867,
+              "fillWithin2cShare_YES_10": 0.9471386617985554,
+              "fillWithin2cShare_YES_100": 0.758234780538138,
+              "fillWithin2cShare_YES_250": 0.7027541868402254,
+              "fillWithin2cShare_YES_50": 0.8322882768473688,
+              "slippageMean_NO_10": 0.7925223242640139,
+              "slippageMean_NO_100": 1.4239762371658666,
+              "slippageMean_NO_250": 1.5795381200796665,
+              "slippageMean_NO_50": 1.2335936615215948,
+              "slippageMean_YES_10": 0.4202429354300678,
+              "slippageMean_YES_100": 2.5749611822899734,
+              "slippageMean_YES_250": 4.04538845288681,
+              "slippageMean_YES_50": 1.6272642468384717,
+              "slippageMedian_NO_10": 0.0,
+              "slippageMedian_NO_100": 0.0,
+              "slippageMedian_NO_250": 0.5248,
+              "slippageMedian_NO_50": 0.0,
+              "slippageMedian_YES_10": 0.0,
+              "slippageMedian_YES_100": 0.0,
+              "slippageMedian_YES_250": 0.3846,
+              "slippageMedian_YES_50": 0.0,
+              "spreadMean": 10.166833000665337,
+              "spreadMedian": 3,
+              "topDepthYesAskMedian": 475.0,
+              "topDepthYesBidMedian": 76.93,
+              "twoSidedShare": 0.9543614572585126,
+              "unfilledShare_NO_10": 0.031021290751829675,
+              "unfilledShare_NO_100": 0.10088157019294744,
+              "unfilledShare_NO_250": 0.12317032601463739,
+              "unfilledShare_NO_50": 0.08940452428476381,
+              "unfilledShare_YES_10": 0.0006349710294467815,
+              "unfilledShare_YES_100": 0.02119215810778633,
+              "unfilledShare_YES_250": 0.047305341693785224,
+              "unfilledShare_YES_50": 0.008333994761489006
+            },
+            "family|inning_total": {
+              "books": 9928,
+              "fillWithin2cShare_NO_10": 0.9493008980334204,
+              "fillWithin2cShare_NO_100": 0.7636694327611686,
+              "fillWithin2cShare_NO_250": 0.6432874843696714,
+              "fillWithin2cShare_NO_50": 0.8259633966124815,
+              "fillWithin2cShare_YES_10": 0.9026096033402923,
+              "fillWithin2cShare_YES_100": 0.8343423799582463,
+              "fillWithin2cShare_YES_250": 0.7747390396659708,
+              "fillWithin2cShare_YES_50": 0.8688935281837161,
+              "slippageMean_NO_10": 0.47260150102342496,
+              "slippageMean_NO_100": 2.2471207144487537,
+              "slippageMean_NO_250": 3.68822681500172,
+              "slippageMean_NO_50": 1.4459398610952985,
+              "slippageMean_YES_10": 0.3145157460104894,
+              "slippageMean_YES_100": 0.7904748881431721,
+              "slippageMean_YES_250": 1.3871285714285686,
+              "slippageMean_YES_50": 0.5372976887003063,
+              "slippageMedian_NO_10": 0.0,
+              "slippageMedian_NO_100": 0.4404,
+              "slippageMedian_NO_250": 0.9757,
+              "slippageMedian_NO_50": -0.0,
+              "slippageMedian_YES_10": 0.0,
+              "slippageMedian_YES_100": 0.0,
+              "slippageMedian_YES_250": 0.0988,
+              "slippageMedian_YES_50": 0.0,
+              "spreadMean": 7.555786076532964,
+              "spreadMedian": 2,
+              "topDepthYesAskMedian": 500.0,
+              "topDepthYesBidMedian": 171.0,
+              "twoSidedShare": 0.8738920225624497,
+              "unfilledShare_NO_10": 0.0003410253495509833,
+              "unfilledShare_NO_100": 0.003978629078094805,
+              "unfilledShare_NO_250": 0.008866659088325566,
+              "unfilledShare_NO_50": 0.001591451631237922,
+              "unfilledShare_YES_10": 0.06461377870563674,
+              "unfilledShare_YES_100": 0.06680584551148225,
+              "unfilledShare_YES_250": 0.07129436325678497,
+              "unfilledShare_YES_50": 0.0651356993736952
+            },
+            "family|team_total": {
+              "books": 168,
+              "fillWithin2cShare_NO_10": 0.993421052631579,
+              "fillWithin2cShare_NO_100": 0.881578947368421,
+              "fillWithin2cShare_NO_250": 0.7302631578947368,
+              "fillWithin2cShare_NO_50": 0.9013157894736842,
+              "fillWithin2cShare_YES_10": 0.9761904761904762,
+              "fillWithin2cShare_YES_100": 0.8333333333333334,
+              "fillWithin2cShare_YES_250": 0.8154761904761905,
+              "fillWithin2cShare_YES_50": 0.9226190476190477,
+              "slippageMean_NO_10": 0.38274868421052616,
+              "slippageMean_NO_100": 1.8580513157894742,
+              "slippageMean_NO_250": 3.238272666666669,
+              "slippageMean_NO_50": 1.17052894736842,
+              "slippageMean_YES_10": 0.18208780487804876,
+              "slippageMean_YES_100": 1.3241652439024387,
+              "slippageMean_YES_250": 2.412849693251532,
+              "slippageMean_YES_50": 0.6043969512195119,
+              "slippageMedian_NO_10": 0.0616,
+              "slippageMedian_NO_100": 0.9694,
+              "slippageMedian_NO_250": 1.275,
+              "slippageMedian_NO_50": 0.8624,
+              "slippageMedian_YES_10": 0.0,
+              "slippageMedian_YES_100": 0.0,
+              "slippageMedian_YES_250": 0.6459,
+              "slippageMedian_YES_50": 0.0,
+              "spreadMean": 5.947368421052632,
+              "spreadMedian": 3,
+              "topDepthYesAskMedian": 150.0,
+              "topDepthYesBidMedian": 38.0,
+              "twoSidedShare": 0.9047619047619048,
+              "unfilledShare_NO_10": 0.0,
+              "unfilledShare_NO_100": 0.0,
+              "unfilledShare_NO_250": 0.013157894736842105,
+              "unfilledShare_NO_50": 0.0,
+              "unfilledShare_YES_10": 0.023809523809523808,
+              "unfilledShare_YES_100": 0.023809523809523808,
+              "unfilledShare_YES_250": 0.02976190476190476,
+              "unfilledShare_YES_50": 0.023809523809523808
+            },
+            "family|winning_margin": {
+              "books": 6263,
+              "fillWithin2cShare_NO_10": 0.9357165758255851,
+              "fillWithin2cShare_NO_100": 0.8730362295607567,
+              "fillWithin2cShare_NO_250": 0.7887143315165117,
+              "fillWithin2cShare_NO_50": 0.9153574863738377,
+              "fillWithin2cShare_YES_10": 0.964713396136037,
+              "fillWithin2cShare_YES_100": 0.7850870190004791,
+              "fillWithin2cShare_YES_250": 0.7215391984671883,
+              "fillWithin2cShare_YES_50": 0.8499121826600671,
+              "slippageMean_NO_10": 0.5073437229437251,
+              "slippageMean_NO_100": 0.8424377004489952,
+              "slippageMean_NO_250": 1.423037860808205,
+              "slippageMean_NO_50": 0.6833708994708971,
+              "slippageMean_YES_10": 0.4651592687210601,
+              "slippageMean_YES_100": 2.365492319974452,
+              "slippageMean_YES_250": 3.9088081802204866,
+              "slippageMean_YES_50": 1.3968908350630689,
+              "slippageMedian_NO_10": 0.0,
+              "slippageMedian_NO_100": 0.0,
+              "slippageMedian_NO_250": 0.5153,
+              "slippageMedian_NO_50": 0.0,
+              "slippageMedian_YES_10": 0.0,
+              "slippageMedian_YES_100": 0.0,
+              "slippageMedian_YES_250": 0.4487,
+              "slippageMedian_YES_50": 0.0,
+              "spreadMean": 12.454793202949663,
+              "spreadMedian": 2,
+              "topDepthYesAskMedian": 551.0,
+              "topDepthYesBidMedian": 143.0,
+              "twoSidedShare": 0.9960083027303209,
+              "unfilledShare_NO_10": 0.0001603077909586406,
+              "unfilledShare_NO_100": 0.0003206155819172812,
+              "unfilledShare_NO_250": 0.0003206155819172812,
+              "unfilledShare_NO_50": 0.0001603077909586406,
+              "unfilledShare_YES_10": 0.0,
+              "unfilledShare_YES_100": 0.0,
+              "unfilledShare_YES_250": 0.0006386715631486508,
+              "unfilledShare_YES_50": 0.0
+            }
+          },
+          "caveat": "collector capped at 400 books per run, so KXMLBTOTAL/SPREAD/TEAMTOTAL books are nearly absent; cells reflect the captured families only; sizes are Kalshi fp contracts; slippage excludes fees",
+          "artifact": "book_depth.json"
+        }
+      ]
+    },
+    {
+      "id": "MRV-EXEC-002",
+      "family": "MF-EXEC",
+      "status": "EXPLORATORY",
+      "title": "Where the money leaks: taker mark-to-mid decomposition from the trade tape",
+      "statement": "For every pregame taker print, decompose the taker's expected loss into (i) half-spread at execution, (ii) taker fee, (iii) subsequent fair-mid drift at +5, +30 minutes and last pregame minute (adverse or favourable). Aggregated by family, price band and lead-time bucket. Positive drift toward the taker means informed flow; negative means makers earn beyond the spread.",
+      "data": "recovered trade tape + candles 2026-08-02..08-31 (TIER_B)",
+      "unit": "print, volume-weighted; game cluster",
+      "primaryMetric": "cents per contract of each component; clustered CI90 on drift by family (6 families registered)",
+      "method": "descriptive accounting + clustered CI, BH within MF-EXEC on the drift-to-close test",
+      "failureCriterion": "drift CI includes 0 (then the leak is purely spread + fee)",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "1985438 pregame prints / 391 games: taker pays half-spread 0.58c + fee 1.68c per contract; fair mid then drifts 0.33c TOWARD the taker by last pregame minute (volume-weighted); net taker edge at last pregame -1.93c; drift BH survivors: ['game_result', 'game_total', 'inning_result', 'inning_total', 'team_total', 'winning_margin']",
+          "tier": "TIER_B_EXPLORATORY",
+          "all": {
+            "contracts": 406574070.2,
+            "drift_30": 0.1872,
+            "drift_5": 0.2023,
+            "drift_last": 0.3327,
+            "fee": 1.6827,
+            "halfSpread": 0.5805,
+            "makerNet_30": -0.039,
+            "makerNet_last": -0.1728,
+            "prints": 1985438,
+            "takerNet_30": -2.0711,
+            "takerNet_5": -2.0602,
+            "takerNet_last": -1.9305
+          },
+          "byFamily": {
+            "game_result": {
+              "driftToLast": {
+                "ciHigh": 0.38709119237778983,
+                "ciLow": 0.27500998842184193,
+                "clusters": 391,
+                "droppedNoCluster": 0,
+                "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+                "n": 1407956,
+                "pPercentile": 0.0004997501249375312,
+                "pTwoSided": 0.0004997501249375312,
+                "point": 0.32941229163447994,
+                "resamplesUsed": 2000
+              },
+              "takerNetLast": {
+                "ciHigh": -1.8314635197566658,
+                "ciLow": -1.9414164905082267,
+                "clusters": 391,
+                "droppedNoCluster": 0,
+                "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+                "n": 1407956,
+                "pPercentile": 0.0004997501249375312,
+                "pTwoSided": 0.0004997501249375312,
+                "point": -1.887931915355361,
+                "resamplesUsed": 2000
+              },
+              "games": 391
+            },
+            "game_total": {
+              "driftToLast": {
+                "ciHigh": 0.3880679119775166,
+                "ciLow": 0.2507017048364011,
+                "clusters": 391,
+                "droppedNoCluster": 0,
+                "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+                "n": 369712,
+                "pPercentile": 0.0004997501249375312,
+                "pTwoSided": 0.0004997501249375312,
+                "point": 0.3203860449666938,
+                "resamplesUsed": 2000
+              },
+              "takerNetLast": {
+                "ciHigh": -1.9355478172123777,
+                "ciLow": -2.076610127144185,
+                "clusters": 391,
+                "droppedNoCluster": 0,
+                "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+                "n": 369712,
+                "pPercentile": 0.0004997501249375312,
+                "pTwoSided": 0.0004997501249375312,
+                "point": -2.005379897487632,
+                "resamplesUsed": 2000
+              },
+              "games": 391
+            },
+            "inning_result": {
+              "driftToLast": {
+                "ciHigh": 0.29151447466020086,
+                "ciLow": 0.13576243605489352,
+                "clusters": 391,
+                "droppedNoCluster": 0,
+                "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+                "n": 82661,
+                "pPercentile": 0.0004997501249375312,
+                "pTwoSided": 0.0004997501249375312,
+                "point": 0.21577608272849952,
+                "resamplesUsed": 2000
+              },
+              "takerNetLast": {
+                "ciHigh": -2.1568026064315236,
+                "ciLow": -2.4132489265934898,
+                "clusters": 391,
+                "droppedNoCluster": 0,
+                "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+                "n": 82661,
+                "pPercentile": 0.0004997501249375312,
+                "pTwoSided": 0.0004997501249375312,
+                "point": -2.2651356274245473,
+                "resamplesUsed": 2000
+              },
+              "games": 391
+            },
+            "inning_total": {
+              "driftToLast": {
+                "ciHigh": 0.6554600426557641,
+                "ciLow": 0.4282875125925239,
+                "clusters": 391,
+                "droppedNoCluster": 0,
+                "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+                "n": 50057,
+                "pPercentile": 0.0004997501249375312,
+                "pTwoSided": 0.0004997501249375312,
+                "point": 0.5274181591266539,
+                "resamplesUsed": 2000
+              },
+              "takerNetLast": {
+                "ciHigh": -1.8503870324840244,
+                "ciLow": -2.0675336743794697,
+                "clusters": 391,
+                "droppedNoCluster": 0,
+                "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+                "n": 50057,
+                "pPercentile": 0.0004997501249375312,
+                "pTwoSided": 0.0004997501249375312,
+                "point": -1.9690064644675098,
+                "resamplesUsed": 2000
+              },
+              "games": 391
+            },
+            "team_total": {
+              "driftToLast": {
+                "ciHigh": 0.7280664955475634,
+                "ciLow": 0.4453578128985039,
+                "clusters": 64,
+                "droppedNoCluster": 0,
+                "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+                "n": 11614,
+                "pPercentile": 0.0004997501249375312,
+                "pTwoSided": 0.0004997501249375312,
+                "point": 0.5862113449870145,
+                "resamplesUsed": 2000
+              },
+              "takerNetLast": {
+                "ciHigh": -1.7564270893197116,
+                "ciLow": -2.1112683903873406,
+                "clusters": 64,
+                "droppedNoCluster": 0,
+                "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+                "n": 11614,
+                "pPercentile": 0.0004997501249375312,
+                "pTwoSided": 0.0004997501249375312,
+                "point": -1.9317626331916298,
+                "resamplesUsed": 2000
+              },
+              "games": 64
+            },
+            "winning_margin": {
+              "driftToLast": {
+                "ciHigh": 0.5965220574151887,
+                "ciLow": 0.2319679575410435,
+                "clusters": 75,
+                "droppedNoCluster": 0,
+                "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+                "n": 63438,
+                "pPercentile": 0.0004997501249375312,
+                "pTwoSided": 0.0009995002498750624,
+                "point": 0.4130140502220198,
+                "resamplesUsed": 2000
+              },
+              "takerNetLast": {
+                "ciHigh": -1.6423951556128875,
+                "ciLow": -2.015514716053881,
+                "clusters": 75,
+                "droppedNoCluster": 0,
+                "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+                "n": 63438,
+                "pPercentile": 0.0004997501249375312,
+                "pTwoSided": 0.0004997501249375312,
+                "point": -1.8344833555270312,
+                "resamplesUsed": 2000
+              },
+              "games": 75
+            }
+          },
+          "bh": {
+            "game_result": true,
+            "game_total": true,
+            "inning_result": true,
+            "inning_total": true,
+            "team_total": true,
+            "winning_margin": true
+          },
+          "artifact": "tape_decomposition.json",
+          "conventions": "cents per contract, volume-weighted by count_fp; pregame prints only; pre-trade mid = candle close one minute before the print; drift signed toward the taker; taker fee 0.07*P*(1-P) unrounded; maker fee at 0.0175 (conservative)"
+        }
+      ]
+    },
+    {
+      "id": "MRV-EXEC-003",
+      "family": "MF-EXEC",
+      "status": "EXPLORATORY",
+      "title": "Maker realized spread by family",
+      "statement": "Mirror of MRV-EXEC-002 from the maker's side: half-spread earned minus adverse drift to +30 minutes minus maker fee (0.0175 and 0.0 reported). Identifies families where passive liquidity provision is compensated.",
+      "data": "same as MRV-EXEC-002",
+      "unit": "print; game cluster",
+      "primaryMetric": "maker realized spread cents, clustered CI90 (6 families)",
+      "method": "same",
+      "failureCriterion": "CI includes 0 in every family",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "maker realized spread at +30 min (half-spread earned minus adverse drift minus 0.0175 maker fee), volume-weighted: all -0.04c; BH survivors by family: []",
+          "tier": "TIER_B_EXPLORATORY",
+          "byFamily": {
+            "game_result": {
+              "ciHigh": 0.07680312293898738,
+              "ciLow": -0.25145972703033637,
+              "clusters": 391,
+              "droppedNoCluster": 71062,
+              "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+              "n": 1336894,
+              "pPercentile": 0.353,
+              "pTwoSided": 0.36481759120439783,
+              "point": -0.08876195580092527,
+              "resamplesUsed": 2000
+            },
+            "game_total": {
+              "ciHigh": 0.25038005165886323,
+              "ciLow": -0.2576576702404212,
+              "clusters": 391,
+              "droppedNoCluster": 55414,
+              "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+              "n": 314298,
+              "pPercentile": 0.899,
+              "pTwoSided": 0.9280359820089955,
+              "point": -0.013801327226442171,
+              "resamplesUsed": 2000
+            },
+            "inning_result": {
+              "ciHigh": 1.4870669935875767,
+              "ciLow": 0.21733710771599088,
+              "clusters": 391,
+              "droppedNoCluster": 20037,
+              "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+              "n": 62624,
+              "pPercentile": 0.028,
+              "pTwoSided": 0.02848575712143928,
+              "point": 0.8432746969874373,
+              "resamplesUsed": 2000
+            },
+            "inning_total": {
+              "ciHigh": 0.48527046514613814,
+              "ciLow": -1.4285375740926773,
+              "clusters": 391,
+              "droppedNoCluster": 12712,
+              "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+              "n": 37345,
+              "pPercentile": 0.435,
+              "pTwoSided": 0.44577711144427784,
+              "point": -0.4493625318856653,
+              "resamplesUsed": 2000
+            },
+            "team_total": {
+              "ciHigh": 1.2311620182514476,
+              "ciLow": -1.0058465794145544,
+              "clusters": 64,
+              "droppedNoCluster": 3000,
+              "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+              "n": 8614,
+              "pPercentile": 0.859,
+              "pTwoSided": 0.88055972013993,
+              "point": 0.10257760014406868,
+              "resamplesUsed": 2000
+            },
+            "winning_margin": {
+              "ciHigh": 0.6965991461568735,
+              "ciLow": -0.3760842144733122,
+              "clusters": 75,
+              "droppedNoCluster": 8274,
+              "method": "GAME_CLUSTERED_BOOTSTRAP_RATIO",
+              "n": 55164,
+              "pPercentile": 0.656,
+              "pTwoSided": 0.6121939030484758,
+              "point": 0.1720967033088886,
+              "resamplesUsed": 2000
+            }
+          },
+          "bh": {
+            "game_result": false,
+            "game_total": false,
+            "inning_result": false,
+            "inning_total": false,
+            "team_total": false,
+            "winning_margin": false
+          },
+          "artifact": "tape_decomposition.json"
+        }
+      ]
+    },
+    {
+      "id": "MRV-PORT-001",
+      "family": "MF-PORT",
+      "status": "EXPLORATORY",
+      "title": "Within-game outcome correlation structure",
+      "statement": "Descriptive: pairwise phi correlation of settlement outcomes between families of the same game (ML, F5 ML, RL, totals, F5 totals, team totals) and the effective number of independent bets for a uniform one-contract-per-family position. No inference.",
+      "data": "settlements 2026-08-02..09-21 (TIER_B)",
+      "unit": "game",
+      "primaryMetric": "phi matrix; effective N",
+      "method": "descriptive",
+      "failureCriterion": "n/a",
+      "results": [
+        {
+          "generatedAt": "2026-09-22T20:27:22Z",
+          "summary": "662 games with all six canonical contracts: phi ML~F5ML 0.58, ML~RL2 0.71, TOTAL8~F5TOTAL5 0.53, TOTAL8~TT4 0.46; six one-contract positions behave like ~2.3 independent bets",
+          "tier": "TIER_B_EXPLORATORY",
+          "phi": {
+            "F5ML_HOME~F5TOTAL_5": 0.1093,
+            "F5ML_HOME~RL_HOME_2": 0.5469,
+            "F5ML_HOME~TOTAL_8": 0.0274,
+            "F5ML_HOME~TT_HOME_4": 0.3703,
+            "F5TOTAL_5~TT_HOME_4": 0.431,
+            "ML_HOME~F5ML_HOME": 0.5796,
+            "ML_HOME~F5TOTAL_5": 0.021,
+            "ML_HOME~RL_HOME_2": 0.7074,
+            "ML_HOME~TOTAL_8": -0.0671,
+            "ML_HOME~TT_HOME_4": 0.4671,
+            "RL_HOME_2~F5TOTAL_5": 0.1191,
+            "RL_HOME_2~TOTAL_8": 0.0559,
+            "RL_HOME_2~TT_HOME_4": 0.4655,
+            "TOTAL_8~F5TOTAL_5": 0.5323,
+            "TOTAL_8~TT_HOME_4": 0.4575
+          },
+          "effectiveN": 2.2620453917108603,
+          "artifact": "portfolio_correlation.json"
+        }
+      ]
+    }
+  ]
+}

@@ -44,6 +44,55 @@
    "perFetchTimestampShareMin": 1.0
   }
  },
+ "gateDefinitionsV1_2": {
+  "coreFamilies": [
+   "KXMLBGAME",
+   "KXMLBTOTAL",
+   "KXMLBSPREAD",
+   "KXMLBTEAMTOTAL",
+   "KXMLBF5",
+   "KXMLBF5TOTAL"
+  ],
+  "familyCoverage": {
+   "coreFamiliesPresentShareMin": 0.98,
+   "population": "in-window eligible game-cycles, six core families only",
+   "starvedGameCyclesMax": 0
+  },
+  "gateVersion": "MRV_READINESS_GATES_V1_2_2026_09_24",
+  "orderBook": {
+   "booksWithDepthShareMin": 0.95,
+   "population": "archived core-family books whose own fetch time is inside the window",
+   "twoSidedBookShareMin": 0.95
+  },
+  "sample": {
+   "contractsPerCoreFamilyMin": 80,
+   "datesMin": 10,
+   "phase": "REGULAR_SEASON",
+   "population": "REGULAR_SEASON games/contracts with at least one in-window observation",
+   "uniqueGamesMin": 60
+  },
+  "sportsbook": {
+   "matchedGameShareMin": 0.9,
+   "population": "eligible games observed inside the window"
+  },
+  "supersedesForReadiness": "MRV_READINESS_GATES_V1_1_2026_09_23 (still computed and reported unchanged)",
+  "unchangedFromV1_1": [
+   "cadence.*",
+   "completeness.*",
+   "sportsbook.ambiguousJoins",
+   "sportsbook.booksPerEvent",
+   "sportsbook.notBudgetDegraded",
+   "timestamps.perFetchShare",
+   "informationEvents.gamesWithStateShare",
+   "informationEvents.lineupTransitions"
+  ],
+  "window": {
+   "basis": "MRV lead/lag design grid T-240..T-5 (market_structure/leadlag.py grid_rows; predeclared, not fitted to live data)",
+   "fromMinutesBeforeFirstPitch": 240.0,
+   "inclusive": true,
+   "toMinutesBeforeFirstPitch": 5.0
+  }
+ },
  "gates": {
   "checks": {
    "cadence.maxInWindowGap": true,
@@ -81,16 +130,16 @@
   "infrastructureHealthy": false,
   "researchReady": false
  },
- "generatedAt": "2026-09-24T04:36:03Z",
+ "generatedAt": "2026-09-24T05:01:52Z",
  "metrics": {
   "cadence": {
-   "delivered": 38,
-   "gapsAll": 37,
-   "gapsInWindow": 37,
+   "delivered": 41,
+   "gapsAll": 40,
+   "gapsInWindow": 40,
    "histogram": {
     "10-15": 0,
     "15-30": 0,
-    "5-10": 36,
+    "5-10": 39,
     "<=5": 1,
     ">30": 0
    },
@@ -100,11 +149,11 @@
   },
   "captures": {
    "attemptsWithoutManifest": 0,
-   "complete": 38,
-   "delivered": 38,
+   "complete": 41,
+   "delivered": 41,
    "failed": 0,
    "partial": 0,
-   "requested": 38
+   "requested": 41
   },
   "coverage": {
    "byPhase": {
@@ -153,12 +202,12 @@
     "KXMLBTEAMTOTAL": 336,
     "KXMLBTOTAL": 263
    },
-   "coreFamiliesPresentShare": 0.6121495327102804,
+   "coreFamiliesPresentShare": 0.5916666666666667,
    "cycleDates": 2,
    "dates": 3,
-   "gameCycles": 642,
+   "gameCycles": 720,
    "samplePhase": "REGULAR_SEASON",
-   "starvedGameCycles": 38,
+   "starvedGameCycles": 41,
    "uniqueGames": 39
   },
   "informationEvents": {
@@ -168,19 +217,19 @@
    "pitcherTransitionsObserved": 7
   },
   "markets": {
-   "archived": 95229,
+   "archived": 97323,
    "booksFailed": 0,
-   "booksReceived": 41139,
-   "booksRequested": 41139,
+   "booksReceived": 44715,
+   "booksRequested": 44715,
    "excluded": 0,
-   "received": 181901,
-   "referenced": 86672,
+   "received": 190146,
+   "referenced": 92823,
    "unaccounted": 0
   },
   "orderBook": {
-   "booksArchived": 27659,
-   "twoSidedShare": 0.9455511768321342,
-   "withDepthShare": 0.9994576810441448
+   "booksArchived": 29286,
+   "twoSidedShare": 0.9479614833026019,
+   "withDepthShare": 0.9994878098750256
   },
   "sportsbook": {
    "ambiguous": 0,
@@ -188,16 +237,16 @@
    "degradedCycles": 0,
    "eligibleGames": 41,
    "legStatusByCycle": {
-    "OK": 38
+    "OK": 41
    },
-   "matched": 420,
+   "matched": 453,
    "matchedGameShare": 0.5853658536585366,
    "matchedGames": 24,
-   "unmatched": 221
+   "unmatched": 229
   },
   "timestamps": {
    "perFetchTimestampShare": 1.0,
-   "rowsChecked": 41413
+   "rowsChecked": 43888
   },
   "window": {
    "dates": [
@@ -211,5 +260,171 @@
    ],
    "days": 7
   }
+ },
+ "readinessV1_2": {
+  "checks": {
+   "cadence.maxInWindowGap": true,
+   "cadence.medianGap": true,
+   "cadence.p90Gap": true,
+   "completeness.completeShare": true,
+   "completeness.failedShare": true,
+   "completeness.unaccountedRows": true,
+   "familyCoverage.coreFamiliesPresentShare": true,
+   "familyCoverage.starvedGameCycles": true,
+   "informationEvents.gamesWithStateShare": true,
+   "informationEvents.lineupTransitions": false,
+   "orderBook.twoSidedShare": true,
+   "orderBook.withDepthShare": true,
+   "sample.contractsPerCoreFamily": false,
+   "sample.dates": false,
+   "sample.uniqueGames": false,
+   "sportsbook.ambiguousJoins": true,
+   "sportsbook.booksPerEvent": true,
+   "sportsbook.matchedGameShare": true,
+   "sportsbook.notBudgetDegraded": true,
+   "timestamps.perFetchShare": true
+  },
+  "definition": {
+   "coreFamilies": [
+    "KXMLBGAME",
+    "KXMLBTOTAL",
+    "KXMLBSPREAD",
+    "KXMLBTEAMTOTAL",
+    "KXMLBF5",
+    "KXMLBF5TOTAL"
+   ],
+   "familyCoverage": {
+    "coreFamiliesPresentShareMin": 0.98,
+    "population": "in-window eligible game-cycles, six core families only",
+    "starvedGameCyclesMax": 0
+   },
+   "gateVersion": "MRV_READINESS_GATES_V1_2_2026_09_24",
+   "orderBook": {
+    "booksWithDepthShareMin": 0.95,
+    "population": "archived core-family books whose own fetch time is inside the window",
+    "twoSidedBookShareMin": 0.95
+   },
+   "sample": {
+    "contractsPerCoreFamilyMin": 80,
+    "datesMin": 10,
+    "phase": "REGULAR_SEASON",
+    "population": "REGULAR_SEASON games/contracts with at least one in-window observation",
+    "uniqueGamesMin": 60
+   },
+   "sportsbook": {
+    "matchedGameShareMin": 0.9,
+    "population": "eligible games observed inside the window"
+   },
+   "supersedesForReadiness": "MRV_READINESS_GATES_V1_1_2026_09_23 (still computed and reported unchanged)",
+   "unchangedFromV1_1": [
+    "cadence.*",
+    "completeness.*",
+    "sportsbook.ambiguousJoins",
+    "sportsbook.booksPerEvent",
+    "sportsbook.notBudgetDegraded",
+    "timestamps.perFetchShare",
+    "informationEvents.gamesWithStateShare",
+    "informationEvents.lineupTransitions"
+   ],
+   "window": {
+    "basis": "MRV lead/lag design grid T-240..T-5 (market_structure/leadlag.py grid_rows; predeclared, not fitted to live data)",
+    "fromMinutesBeforeFirstPitch": 240.0,
+    "inclusive": true,
+    "toMinutesBeforeFirstPitch": 5.0
+   }
+  },
+  "failing": [
+   "informationEvents.lineupTransitions",
+   "sample.contractsPerCoreFamily",
+   "sample.dates",
+   "sample.uniqueGames"
+  ],
+  "gateVersion": "MRV_READINESS_GATES_V1_2_2026_09_24",
+  "infrastructureHealthy": false,
+  "metrics": {
+   "familyCoverage": {
+    "coreFamiliesPresentShare": 1.0,
+    "inWindowAllCore": 123,
+    "inWindowGameCycles": 123,
+    "inWindowListed": 123,
+    "inWindowUnlistedGameCycles": 0,
+    "starvedExamples": [],
+    "starvedGameCycles": 0
+   },
+   "gameCycles": {
+    "byStatus": {
+     "IN_READINESS_WINDOW": 123,
+     "OUTSIDE_READINESS_WINDOW_AFTER_T5": 6,
+     "OUTSIDE_READINESS_WINDOW_BEFORE_T240": 604
+    },
+    "total": 733
+   },
+   "orderBook": {
+    "core": {
+     "books": 5053,
+     "twoSidedShare": 0.9982188798733426,
+     "withDepthShare": 1.0
+    },
+    "nonCore": {
+     "books": 3776,
+     "twoSidedShare": 0.925052966101695,
+     "withDepthShare": 1.0
+    },
+    "outsideWindowOrUnknown": {
+     "books": 20457,
+     "twoSidedShare": 0.9397761157549983,
+     "withDepthShare": 0.9992667546561079
+    }
+   },
+   "sample": {
+    "byPhase": {
+     "OTHER_OR_UNKNOWN": {
+      "dates": 0,
+      "uniqueGames": 0
+     },
+     "POSTSEASON": {
+      "dates": 0,
+      "uniqueGames": 0
+     },
+     "REGULAR_SEASON": {
+      "dates": 1,
+      "uniqueGames": 13
+     }
+    },
+    "contractsNonCore": {
+     "KXMLBEXTRAS": 9,
+     "KXMLBF3": 39,
+     "KXMLBF5SPREAD": 52,
+     "KXMLBF7": 39,
+     "KXMLBINNINGTOTAL": 153,
+     "KXMLBINNINGWIN": 243,
+     "KXMLBRFI": 13
+    },
+    "contractsPerCoreFamily": {
+     "KXMLBF5": 39,
+     "KXMLBF5TOTAL": 91,
+     "KXMLBGAME": 26,
+     "KXMLBSPREAD": 78,
+     "KXMLBTEAMTOTAL": 182,
+     "KXMLBTOTAL": 143
+    },
+    "dates": 1,
+    "phase": "REGULAR_SEASON",
+    "uniqueGames": 13
+   },
+   "sportsbook": {
+    "gamesInWindow": 13,
+    "matchedGameShare": 1.0,
+    "matchedInWindow": 13,
+    "unmatchedInWindowGamePks": []
+   },
+   "window": {
+    "basis": "MRV lead/lag design grid T-240..T-5 (market_structure/leadlag.py grid_rows; predeclared, not fitted to live data)",
+    "fromMinutesBeforeFirstPitch": 240.0,
+    "inclusive": true,
+    "toMinutesBeforeFirstPitch": 5.0
+   }
+  },
+  "researchReady": false
  }
 }

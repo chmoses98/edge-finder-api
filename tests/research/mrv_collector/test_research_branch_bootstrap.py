@@ -121,3 +121,53 @@ def test_no_step_writes_scratch_files_into_the_checkout():
             code = line.split("#", 1)[0] if line.lstrip().startswith("#") else line
             for target in re.findall(r"(?:\btee\s+(?:-a\s+)?|>>?\s*)(\S+)", code):
                 assert target.startswith(allowed), (s.get("name"), line.strip())
+
+
+def _overlay_script():
+    run = _step("Check out or create the MRV research data branch")["run"]
+    return "set -euo pipefail\n# Collector code" + run.split("# Collector code", 1)[1].replace("${{ github.event.repository.default_branch }}", "main")
+
+
+def _scope_script():
+    return _step("Verify persistence stayed inside the MRV v1 path")["run"]
+
+
+@pytest.fixture
+def overlay_world(world):
+    """Research branch forked from an older main; main has since added and modified collector files."""
+    remote, work = world
+    policy = work / "data/edgelab/research_artifacts/mrv_prospective/mrv_series_policy.json"
+    policy.parent.mkdir(parents=True)
+    policy.write_text("{}\n")
+    for rel, txt in (("lib/old.py", "a\n"), ("scripts/old.py", "b\n")):
+        (work / rel).parent.mkdir(parents=True, exist_ok=True)
+        (work / rel).write_text(txt)
+    _git(work, "add", "-A")
+    _git(work, "commit", "-q", "-m", "collector v1")
+    _git(work, "push", "-q", "origin", "HEAD:main", "HEAD:refs/heads/" + BRANCH)
+    (work / "lib/old.py").write_text("a2\n")                       # modified on main
+    (work / "lib/new_module.py").write_text("n\n")                 # added on main (the #248 case)
+    (work / "scripts/new_tool.py").write_text("t\n")
+    _git(work, "add", "-A")
+    _git(work, "commit", "-q", "-m", "collector v2")
+    _git(work, "push", "-q", "origin", "HEAD:main")
+    _git(work, "fetch", "-q", "origin")
+    _git(work, "checkout", "-q", "-B", BRANCH, "origin/" + BRANCH)
+    r = subprocess.run(["bash", "-c", _overlay_script()], cwd=work, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    _write_rows(work)
+    return work
+
+
+def test_scope_check_accepts_collector_files_new_on_the_default_branch(overlay_world):
+    """Run 35954988300: files #248 added to main were overlaid UNTRACKED and failed the scope check."""
+    status = _git(overlay_world, "status", "--porcelain").stdout
+    assert "?? lib/new_module.py" in status and " M lib/old.py" in status
+    r = subprocess.run(["bash", "-c", _scope_script()], cwd=overlay_world, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_scope_check_still_rejects_anything_else_outside_the_mrv_path(overlay_world):
+    (overlay_world / "stray.json").write_text("{}\n")
+    r = subprocess.run(["bash", "-c", _scope_script()], cwd=overlay_world, capture_output=True, text=True)
+    assert r.returncode == 1 and "stray.json" in r.stdout

@@ -8,7 +8,7 @@
   "PRODUCTION_MODEL_SUPPORT": "the production model prices it (config/rules.json market_list)"
  },
  "bankroll": {
-  "ageMinutes": 5.048,
+  "ageMinutes": 4.88,
   "consumerSizingVerdict": {
    "mayPresentDollarStakes": false,
    "reason": "bankroll is 0.00, which is not a deployable amount -- refusing to produce stake sizes against a zero or negative bankroll",
@@ -17,8 +17,8 @@
   "currency": "USD",
   "maxAgeMinutes": 30,
   "numericBankrollAvailable": false,
-  "observedAt": "2026-09-24T21:29:57Z",
-  "resolvedAt": "2026-09-24T21:34:59Z",
+  "observedAt": "2026-09-24T23:06:21Z",
+  "resolvedAt": "2026-09-24T23:11:13Z",
   "sizingAllowed": false,
   "source": "kalshi_authenticated_balance",
   "status": "UNAVAILABLE",
@@ -42,24 +42,24 @@
   "Return the betting card."
  ],
  "counts": {
-  "bettingEligibleGames": 4,
-  "eligibleMarketsTotal": 847,
+  "bettingEligibleGames": 3,
+  "eligibleMarketsTotal": 522,
   "gamesTotal": 12,
   "normalizedRegistryValidatedMarkets": 2679,
   "rawUniverseContracts": 2679,
   "registryExcludedMarkets": 0,
   "researchOnlyByReason": {
-   "BLOCKED_GAME_STARTED": 5,
-   "BLOCKED_LINEUPS_UNCONFIRMED": 3
+   "BLOCKED_GAME_STARTED": 8,
+   "BLOCKED_LINEUPS_UNCONFIRMED": 1
   },
-  "researchOnlyGames": 8,
-  "researchOnlyMarketsTotal": 1832,
+  "researchOnlyGames": 9,
+  "researchOnlyMarketsTotal": 2157,
   "runtimeBundleMarketRows": 2679,
   "silentRemainderTotal": 0,
   "unclassifiedRawContracts": 0
  },
  "date": "2026-09-24",
- "eligibilityEvaluatedAt": "2026-09-24T21:34:59Z",
+ "eligibilityEvaluatedAt": "2026-09-24T23:11:13Z",
  "eligibilityPolicy": "Only games that have NOT started and have BOTH official lineups confirmed (lineupConfirmedOfficial on awayTeamStats AND homeTeamStats) are real-money candidates. Probable/projected lineups are never treated as confirmed. Every other game stays archived and researchable and must not produce a real-money recommendation from the normal slate card.",
  "executionConstants": {
   "_note": "Projected verbatim from config/rules.json at build time. RULES.md and MODEL_CORE.md remain authoritative for everything else; this is the subset needed to size and threshold a wager without loading them.",
@@ -187,200 +187,23 @@
  },
  "games": [
   {
-   "accounted": 213,
-   "bettingEligible": true,
-   "bundle": "data/handicap_runtime/2026-09-24/games/823411.json",
-   "bundleBytes": 66991,
-   "bundleGzip": "data/handicap_runtime/2026-09-24/games/823411.json.gz",
-   "bundleGzipBytes": 13018,
-   "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
-   "eligibilityStatus": "BETTING_ELIGIBLE",
-   "excludedOrUnresolved": 0,
-   "gameId": 823411,
-   "gameStatus": "Pre-Game",
-   "invariantHolds": true,
-   "isPostponed": false,
-   "lineups": {
-    "away": {
-     "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
-     "lineupConfirmedOfficial": true,
-     "reason": null,
-     "team": "MIL"
-    },
-    "bothConfirmed": true,
-    "home": {
-     "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
-     "lineupConfirmedOfficial": true,
-     "reason": null,
-     "team": "PHI"
-    },
-    "unconfirmedSides": []
-   },
-   "marketsByFamily": {
-    "first_inning_run": 1,
-    "game_result": 2,
-    "game_total": 11,
-    "hitter_hits": 33,
-    "hitter_hits_runs_rbis": 50,
-    "hitter_rbis": 20,
-    "hitter_stolen_bases": 10,
-    "hitter_total_bases": 38,
-    "inning_result": 9,
-    "inning_total": 7,
-    "pitcher_outs": 1,
-    "pitcher_strikeouts": 7,
-    "team_total": 14,
-    "winning_margin": 10
-   },
-   "marketsToInspect": 213,
-   "matchup": "MIL@PHI",
-   "normalizedMarkets": 213,
-   "rawAttributableContracts": 213,
-   "realMoneyEligible": true,
-   "registryExcluded": 0,
-   "scheduledStart": "2026-09-24T22:05:00Z",
-   "silentRemainderCount": 0,
-   "started": false,
-   "unclassified": 0
-  },
-  {
-   "accounted": 311,
-   "bettingEligible": true,
-   "bundle": "data/handicap_runtime/2026-09-24/games/824707.json",
-   "bundleBytes": 81602,
-   "bundleGzip": "data/handicap_runtime/2026-09-24/games/824707.json.gz",
-   "bundleGzipBytes": 14413,
-   "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
-   "eligibilityStatus": "BETTING_ELIGIBLE",
-   "excludedOrUnresolved": 0,
-   "gameId": 824707,
-   "gameStatus": "Pre-Game",
-   "invariantHolds": true,
-   "isPostponed": false,
-   "lineups": {
-    "away": {
-     "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
-     "lineupConfirmedOfficial": true,
-     "reason": null,
-     "team": "CLE"
-    },
-    "bothConfirmed": true,
-    "home": {
-     "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
-     "lineupConfirmedOfficial": true,
-     "reason": null,
-     "team": "BOS"
-    },
-    "unconfirmedSides": []
-   },
-   "marketsByFamily": {
-    "first_inning_run": 1,
-    "game_result": 2,
-    "game_total": 11,
-    "hitter_hits": 55,
-    "hitter_hits_runs_rbis": 86,
-    "hitter_rbis": 34,
-    "hitter_stolen_bases": 17,
-    "hitter_total_bases": 57,
-    "inning_result": 9,
-    "inning_total": 7,
-    "pitcher_outs": 1,
-    "pitcher_strikeouts": 7,
-    "team_total": 14,
-    "winning_margin": 10
-   },
-   "marketsToInspect": 311,
-   "matchup": "CLE@BOS",
-   "normalizedMarkets": 311,
-   "rawAttributableContracts": 311,
-   "realMoneyEligible": true,
-   "registryExcluded": 0,
-   "scheduledStart": "2026-09-24T22:45:00Z",
-   "silentRemainderCount": 0,
-   "started": false,
-   "unclassified": 0
-  },
-  {
-   "accounted": 144,
-   "bettingEligible": true,
-   "bundle": "data/handicap_runtime/2026-09-24/games/823493.json",
-   "bundleBytes": 56216,
-   "bundleGzip": "data/handicap_runtime/2026-09-24/games/823493.json.gz",
-   "bundleGzipBytes": 11939,
-   "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
-   "eligibilityStatus": "BETTING_ELIGIBLE",
-   "excludedOrUnresolved": 0,
-   "gameId": 823493,
-   "gameStatus": "Pre-Game",
-   "invariantHolds": true,
-   "isPostponed": false,
-   "lineups": {
-    "away": {
-     "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
-     "lineupConfirmedOfficial": true,
-     "reason": null,
-     "team": "TB"
-    },
-    "bothConfirmed": true,
-    "home": {
-     "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
-     "lineupConfirmedOfficial": true,
-     "reason": null,
-     "team": "NYY"
-    },
-    "unconfirmedSides": []
-   },
-   "marketsByFamily": {
-    "first_inning_run": 1,
-    "game_result": 2,
-    "game_total": 10,
-    "hitter_hits": 15,
-    "hitter_hits_runs_rbis": 25,
-    "hitter_rbis": 10,
-    "hitter_stolen_bases": 3,
-    "hitter_total_bases": 20,
-    "inning_result": 9,
-    "inning_total": 7,
-    "pitcher_outs": 2,
-    "pitcher_strikeouts": 16,
-    "team_total": 14,
-    "winning_margin": 10
-   },
-   "marketsToInspect": 144,
-   "matchup": "TB@NYY",
-   "normalizedMarkets": 144,
-   "rawAttributableContracts": 144,
-   "realMoneyEligible": true,
-   "registryExcluded": 0,
-   "scheduledStart": "2026-09-24T23:05:00Z",
-   "silentRemainderCount": 0,
-   "started": false,
-   "unclassified": 0
-  },
-  {
    "accounted": 179,
    "bettingEligible": true,
    "bundle": "data/handicap_runtime/2026-09-24/games/824866.json",
-   "bundleBytes": 60876,
+   "bundleBytes": 60904,
    "bundleGzip": "data/handicap_runtime/2026-09-24/games/824866.json.gz",
-   "bundleGzipBytes": 12495,
+   "bundleGzipBytes": 12449,
    "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
    "eligibilityStatus": "BETTING_ELIGIBLE",
    "excludedOrUnresolved": 0,
    "gameId": 824866,
-   "gameStatus": "Pre-Game",
+   "gameStatus": "Warmup",
    "invariantHolds": true,
    "isPostponed": false,
    "lineups": {
     "away": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "CIN"
@@ -388,7 +211,7 @@
     "bothConfirmed": true,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "ATL"
@@ -423,12 +246,130 @@
    "unclassified": 0
   },
   {
+   "accounted": 164,
+   "bettingEligible": true,
+   "bundle": "data/handicap_runtime/2026-09-24/games/823087.json",
+   "bundleBytes": 58866,
+   "bundleGzip": "data/handicap_runtime/2026-09-24/games/823087.json.gz",
+   "bundleGzipBytes": 12090,
+   "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
+   "eligibilityStatus": "BETTING_ELIGIBLE",
+   "excludedOrUnresolved": 0,
+   "gameId": 823087,
+   "gameStatus": "Pre-Game",
+   "invariantHolds": true,
+   "isPostponed": false,
+   "lineups": {
+    "away": {
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "LAA"
+    },
+    "bothConfirmed": true,
+    "home": {
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "SEA"
+    },
+    "unconfirmedSides": []
+   },
+   "marketsByFamily": {
+    "first_inning_run": 1,
+    "game_result": 2,
+    "game_total": 11,
+    "hitter_hits": 18,
+    "hitter_hits_runs_rbis": 30,
+    "hitter_rbis": 13,
+    "hitter_stolen_bases": 6,
+    "hitter_total_bases": 25,
+    "inning_result": 9,
+    "inning_total": 7,
+    "pitcher_outs": 2,
+    "pitcher_strikeouts": 16,
+    "team_total": 14,
+    "winning_margin": 10
+   },
+   "marketsToInspect": 164,
+   "matchup": "LAA@SEA",
+   "normalizedMarkets": 164,
+   "rawAttributableContracts": 164,
+   "realMoneyEligible": true,
+   "registryExcluded": 0,
+   "scheduledStart": "2026-09-25T01:40:00Z",
+   "silentRemainderCount": 0,
+   "started": false,
+   "unclassified": 0
+  },
+  {
+   "accounted": 179,
+   "bettingEligible": true,
+   "bundle": "data/handicap_runtime/2026-09-24/games/823895.json",
+   "bundleBytes": 63054,
+   "bundleGzip": "data/handicap_runtime/2026-09-24/games/823895.json.gz",
+   "bundleGzipBytes": 12814,
+   "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
+   "eligibilityStatus": "BETTING_ELIGIBLE",
+   "excludedOrUnresolved": 0,
+   "gameId": 823895,
+   "gameStatus": "Pre-Game",
+   "invariantHolds": true,
+   "isPostponed": false,
+   "lineups": {
+    "away": {
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "SD"
+    },
+    "bothConfirmed": true,
+    "home": {
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "LAD"
+    },
+    "unconfirmedSides": []
+   },
+   "marketsByFamily": {
+    "first_inning_run": 1,
+    "game_result": 2,
+    "game_total": 11,
+    "hitter_hits": 21,
+    "hitter_hits_runs_rbis": 35,
+    "hitter_rbis": 14,
+    "hitter_stolen_bases": 7,
+    "hitter_total_bases": 30,
+    "inning_result": 9,
+    "inning_total": 7,
+    "pitcher_outs": 2,
+    "pitcher_strikeouts": 16,
+    "team_total": 14,
+    "winning_margin": 10
+   },
+   "marketsToInspect": 179,
+   "matchup": "SD@LAD",
+   "normalizedMarkets": 179,
+   "rawAttributableContracts": 179,
+   "realMoneyEligible": true,
+   "registryExcluded": 0,
+   "scheduledStart": "2026-09-25T02:10:00Z",
+   "silentRemainderCount": 0,
+   "started": false,
+   "unclassified": 0
+  },
+  {
    "accounted": 0,
    "bettingEligible": false,
    "bundle": "data/handicap_runtime/2026-09-24/games/823326.json",
    "bundleBytes": 25934,
    "bundleGzip": "data/handicap_runtime/2026-09-24/games/823326.json.gz",
-   "bundleGzipBytes": 5518,
+   "bundleGzipBytes": 5520,
    "eligibilityReason": "game has already started -- status is Final",
    "eligibilityStatus": "BLOCKED_GAME_STARTED",
    "excludedOrUnresolved": 0,
@@ -439,7 +380,7 @@
    "lineups": {
     "away": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "STL"
@@ -447,7 +388,7 @@
     "bothConfirmed": true,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "PIT"
@@ -483,7 +424,7 @@
    "lineups": {
     "away": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "CWS"
@@ -491,7 +432,7 @@
     "bothConfirmed": true,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "KC"
@@ -530,7 +471,7 @@
    "bundle": "data/handicap_runtime/2026-09-24/games/824623.json",
    "bundleBytes": 78708,
    "bundleGzip": "data/handicap_runtime/2026-09-24/games/824623.json.gz",
-   "bundleGzipBytes": 13147,
+   "bundleGzipBytes": 13148,
    "eligibilityReason": "game has already started -- status is Final",
    "eligibilityStatus": "BLOCKED_GAME_STARTED",
    "excludedOrUnresolved": 0,
@@ -541,7 +482,7 @@
    "lineups": {
     "away": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "MIA"
@@ -549,7 +490,7 @@
     "bothConfirmed": true,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "CHC"
@@ -599,7 +540,7 @@
    "lineups": {
     "away": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "NYM"
@@ -607,7 +548,7 @@
     "bothConfirmed": true,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "TEX"
@@ -644,20 +585,20 @@
    "accounted": 363,
    "bettingEligible": false,
    "bundle": "data/handicap_runtime/2026-09-24/games/824298.json",
-   "bundleBytes": 82904,
+   "bundleBytes": 82603,
    "bundleGzip": "data/handicap_runtime/2026-09-24/games/824298.json.gz",
-   "bundleGzipBytes": 14099,
-   "eligibilityReason": "game has already started -- status is In Progress",
+   "bundleGzipBytes": 13768,
+   "eligibilityReason": "game has already started -- status is Final",
    "eligibilityStatus": "BLOCKED_GAME_STARTED",
    "excludedOrUnresolved": 0,
    "gameId": 824298,
-   "gameStatus": "In Progress",
+   "gameStatus": "Final",
    "invariantHolds": true,
    "isPostponed": false,
    "lineups": {
     "away": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "AZ"
@@ -665,7 +606,7 @@
     "bothConfirmed": true,
     "home": {
      "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
      "lineupConfirmedOfficial": true,
      "reason": null,
      "team": "COL"
@@ -699,38 +640,214 @@
    "unclassified": 0
   },
   {
+   "accounted": 213,
+   "bettingEligible": false,
+   "bundle": "data/handicap_runtime/2026-09-24/games/823411.json",
+   "bundleBytes": 61857,
+   "bundleGzip": "data/handicap_runtime/2026-09-24/games/823411.json.gz",
+   "bundleGzipBytes": 11519,
+   "eligibilityReason": "game has already started -- status is In Progress",
+   "eligibilityStatus": "BLOCKED_GAME_STARTED",
+   "excludedOrUnresolved": 0,
+   "gameId": 823411,
+   "gameStatus": "In Progress",
+   "invariantHolds": true,
+   "isPostponed": false,
+   "lineups": {
+    "away": {
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "MIL"
+    },
+    "bothConfirmed": true,
+    "home": {
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "PHI"
+    },
+    "unconfirmedSides": []
+   },
+   "marketsByFamily": {
+    "first_inning_run": 1,
+    "game_result": 2,
+    "game_total": 11,
+    "hitter_hits": 33,
+    "hitter_hits_runs_rbis": 50,
+    "hitter_rbis": 20,
+    "hitter_stolen_bases": 10,
+    "hitter_total_bases": 38,
+    "inning_result": 9,
+    "inning_total": 7,
+    "pitcher_outs": 1,
+    "pitcher_strikeouts": 7,
+    "team_total": 14,
+    "winning_margin": 10
+   },
+   "marketsToInspect": 213,
+   "matchup": "MIL@PHI",
+   "normalizedMarkets": 213,
+   "rawAttributableContracts": 213,
+   "realMoneyEligible": false,
+   "registryExcluded": 0,
+   "scheduledStart": "2026-09-24T22:05:00Z",
+   "silentRemainderCount": 0,
+   "started": true,
+   "unclassified": 0
+  },
+  {
+   "accounted": 311,
+   "bettingEligible": false,
+   "bundle": "data/handicap_runtime/2026-09-24/games/824707.json",
+   "bundleBytes": 76865,
+   "bundleGzip": "data/handicap_runtime/2026-09-24/games/824707.json.gz",
+   "bundleGzipBytes": 12932,
+   "eligibilityReason": "game has already started -- status is In Progress",
+   "eligibilityStatus": "BLOCKED_GAME_STARTED",
+   "excludedOrUnresolved": 0,
+   "gameId": 824707,
+   "gameStatus": "In Progress",
+   "invariantHolds": true,
+   "isPostponed": false,
+   "lineups": {
+    "away": {
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "CLE"
+    },
+    "bothConfirmed": true,
+    "home": {
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "BOS"
+    },
+    "unconfirmedSides": []
+   },
+   "marketsByFamily": {
+    "first_inning_run": 1,
+    "game_result": 2,
+    "game_total": 11,
+    "hitter_hits": 55,
+    "hitter_hits_runs_rbis": 86,
+    "hitter_rbis": 34,
+    "hitter_stolen_bases": 17,
+    "hitter_total_bases": 57,
+    "inning_result": 9,
+    "inning_total": 7,
+    "pitcher_outs": 1,
+    "pitcher_strikeouts": 7,
+    "team_total": 14,
+    "winning_margin": 10
+   },
+   "marketsToInspect": 311,
+   "matchup": "CLE@BOS",
+   "normalizedMarkets": 311,
+   "rawAttributableContracts": 311,
+   "realMoneyEligible": false,
+   "registryExcluded": 0,
+   "scheduledStart": "2026-09-24T22:45:00Z",
+   "silentRemainderCount": 0,
+   "started": true,
+   "unclassified": 0
+  },
+  {
+   "accounted": 144,
+   "bettingEligible": false,
+   "bundle": "data/handicap_runtime/2026-09-24/games/823493.json",
+   "bundleBytes": 51998,
+   "bundleGzip": "data/handicap_runtime/2026-09-24/games/823493.json.gz",
+   "bundleGzipBytes": 10803,
+   "eligibilityReason": "game has already started -- status is In Progress",
+   "eligibilityStatus": "BLOCKED_GAME_STARTED",
+   "excludedOrUnresolved": 0,
+   "gameId": 823493,
+   "gameStatus": "In Progress",
+   "invariantHolds": true,
+   "isPostponed": false,
+   "lineups": {
+    "away": {
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "TB"
+    },
+    "bothConfirmed": true,
+    "home": {
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
+     "team": "NYY"
+    },
+    "unconfirmedSides": []
+   },
+   "marketsByFamily": {
+    "first_inning_run": 1,
+    "game_result": 2,
+    "game_total": 10,
+    "hitter_hits": 15,
+    "hitter_hits_runs_rbis": 25,
+    "hitter_rbis": 10,
+    "hitter_stolen_bases": 3,
+    "hitter_total_bases": 20,
+    "inning_result": 9,
+    "inning_total": 7,
+    "pitcher_outs": 2,
+    "pitcher_strikeouts": 16,
+    "team_total": 14,
+    "winning_margin": 10
+   },
+   "marketsToInspect": 144,
+   "matchup": "TB@NYY",
+   "normalizedMarkets": 144,
+   "rawAttributableContracts": 144,
+   "realMoneyEligible": false,
+   "registryExcluded": 0,
+   "scheduledStart": "2026-09-24T23:05:00Z",
+   "silentRemainderCount": 0,
+   "started": true,
+   "unclassified": 0
+  },
+  {
    "accounted": 143,
    "bettingEligible": false,
    "bundle": "data/handicap_runtime/2026-09-24/games/824950.json",
-   "bundleBytes": 51057,
+   "bundleBytes": 53550,
    "bundleGzip": "data/handicap_runtime/2026-09-24/games/824950.json.gz",
-   "bundleGzipBytes": 10702,
-   "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(HOU): official lineup not posted yet, home(ATH): official lineup not posted yet",
+   "bundleGzipBytes": 11447,
+   "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(HOU): official lineup not posted yet",
    "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
    "excludedOrUnresolved": 0,
    "gameId": 824950,
-   "gameStatus": "Scheduled",
+   "gameStatus": "Pre-Game",
    "invariantHolds": true,
    "isPostponed": false,
    "lineups": {
     "away": {
      "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
      "lineupConfirmedOfficial": false,
      "reason": "official lineup not posted yet",
      "team": "HOU"
     },
     "bothConfirmed": false,
     "home": {
-     "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
-     "lineupConfirmedOfficial": false,
-     "reason": "official lineup not posted yet",
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-09-24T23:08:49Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
      "team": "ATH"
     },
     "unconfirmedSides": [
-     "away",
-     "home"
+     "away"
     ]
    },
    "marketsByFamily": {
@@ -759,132 +876,9 @@
    "silentRemainderCount": 0,
    "started": false,
    "unclassified": 0
-  },
-  {
-   "accounted": 164,
-   "bettingEligible": false,
-   "bundle": "data/handicap_runtime/2026-09-24/games/823087.json",
-   "bundleBytes": 56512,
-   "bundleGzip": "data/handicap_runtime/2026-09-24/games/823087.json.gz",
-   "bundleGzipBytes": 11797,
-   "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(LAA): official lineup not posted yet",
-   "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
-   "excludedOrUnresolved": 0,
-   "gameId": 823087,
-   "gameStatus": "Pre-Game",
-   "invariantHolds": true,
-   "isPostponed": false,
-   "lineups": {
-    "away": {
-     "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
-     "lineupConfirmedOfficial": false,
-     "reason": "official lineup not posted yet",
-     "team": "LAA"
-    },
-    "bothConfirmed": false,
-    "home": {
-     "battersResolved": 9,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
-     "lineupConfirmedOfficial": true,
-     "reason": null,
-     "team": "SEA"
-    },
-    "unconfirmedSides": [
-     "away"
-    ]
-   },
-   "marketsByFamily": {
-    "first_inning_run": 1,
-    "game_result": 2,
-    "game_total": 11,
-    "hitter_hits": 18,
-    "hitter_hits_runs_rbis": 30,
-    "hitter_rbis": 13,
-    "hitter_stolen_bases": 6,
-    "hitter_total_bases": 25,
-    "inning_result": 9,
-    "inning_total": 7,
-    "pitcher_outs": 2,
-    "pitcher_strikeouts": 16,
-    "team_total": 14,
-    "winning_margin": 10
-   },
-   "marketsToInspect": 164,
-   "matchup": "LAA@SEA",
-   "normalizedMarkets": 164,
-   "rawAttributableContracts": 164,
-   "realMoneyEligible": false,
-   "registryExcluded": 0,
-   "scheduledStart": "2026-09-25T01:40:00Z",
-   "silentRemainderCount": 0,
-   "started": false,
-   "unclassified": 0
-  },
-  {
-   "accounted": 179,
-   "bettingEligible": false,
-   "bundle": "data/handicap_runtime/2026-09-24/games/823895.json",
-   "bundleBytes": 58303,
-   "bundleGzip": "data/handicap_runtime/2026-09-24/games/823895.json.gz",
-   "bundleGzipBytes": 11882,
-   "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(SD): official lineup not posted yet, home(LAD): official lineup not posted yet",
-   "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
-   "excludedOrUnresolved": 0,
-   "gameId": 823895,
-   "gameStatus": "Scheduled",
-   "invariantHolds": true,
-   "isPostponed": false,
-   "lineups": {
-    "away": {
-     "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
-     "lineupConfirmedOfficial": false,
-     "reason": "official lineup not posted yet",
-     "team": "SD"
-    },
-    "bothConfirmed": false,
-    "home": {
-     "battersResolved": 0,
-     "lineupCheckedAt": "2026-09-24T21:32:33Z",
-     "lineupConfirmedOfficial": false,
-     "reason": "official lineup not posted yet",
-     "team": "LAD"
-    },
-    "unconfirmedSides": [
-     "away",
-     "home"
-    ]
-   },
-   "marketsByFamily": {
-    "first_inning_run": 1,
-    "game_result": 2,
-    "game_total": 11,
-    "hitter_hits": 21,
-    "hitter_hits_runs_rbis": 35,
-    "hitter_rbis": 14,
-    "hitter_stolen_bases": 7,
-    "hitter_total_bases": 30,
-    "inning_result": 9,
-    "inning_total": 7,
-    "pitcher_outs": 2,
-    "pitcher_strikeouts": 16,
-    "team_total": 14,
-    "winning_margin": 10
-   },
-   "marketsToInspect": 179,
-   "matchup": "SD@LAD",
-   "normalizedMarkets": 179,
-   "rawAttributableContracts": 179,
-   "realMoneyEligible": false,
-   "registryExcluded": 0,
-   "scheduledStart": "2026-09-25T02:10:00Z",
-   "silentRemainderCount": 0,
-   "started": false,
-   "unclassified": 0
   }
  ],
- "generatedAt": "2026-09-24T21:34:59Z",
+ "generatedAt": "2026-09-24T23:11:13Z",
  "guarantees": [
   "Only games that have NOT started and have BOTH official lineups confirmed appear under bettingEligibleGames. Everything else is researchOnly and carries realMoneyEligible=false on every market row.",
   "For a betting-eligible game, EVERY raw Kalshi contract attributable to it is accounted for in exactly one visible state: a normalized market, a registry exclusion with its reason, or an unclassified contract with the normalizer's reason. contractAccounting.silentRemainderCount is 0 on every game of a written card -- a violation aborts the build rather than publishing a falsely complete file.",

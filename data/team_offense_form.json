@@ -1,25 +1,25 @@
 {
-  "asOfDate": "2026-09-22",
+  "asOfDate": "2026-09-23",
   "formWindows": [
     5,
     7,
     10
   ],
-  "generatedAt": "2026-09-23T22:52:47Z",
+  "generatedAt": "2026-09-24T00:06:54Z",
   "lookbackDays": 30,
   "marketLineSource": {
     "datesRequested": 31,
     "datesWithArchive": 31,
     "source": "data/edgelab/observations (archived Kalshi team-total ladder)",
     "status": "LOADED",
-    "teamLinesDerived": 482
+    "teamLinesDerived": 452
   },
   "note": "Descriptive handicapping context only. No production model weight reads this file; scripts/enrich_data.py's offense-baseline blend is unchanged. See docs/RESEARCH_OFFENSIVE_FORM.md for what the out-of-sample evidence does and does not support.",
   "runsSource": "mlb_stats_api_schedule",
   "schemaVersion": "1",
   "teams": {
     "ATH": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "2/7 games clearing 4 runs, median 3.0, mean 3.29",
@@ -31,17 +31,6 @@
         "L7": "L7: 3.3 avg | 3.0 med | 1,3,1,3,6,0,9 | 2/7 >=4 | 2/7 >=5 | max 9 (39% of L7 runs) | OUTLIER-DEPENDENT"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 824150,
-          "marginVsTeamTotalLine": 3.462,
-          "opponent": "HOU",
-          "runsAllowed": 6,
-          "runsScored": 7,
-          "side": "away",
-          "teamTotalLine": 3.538
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -329,7 +318,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "ATH",
       "unavailableReason": null,
@@ -512,7 +501,7 @@
       }
     },
     "ATL": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "5/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
@@ -524,17 +513,6 @@
         "L7": "L7: 4.1 avg | 4.0 med | 3,6,4,6,6,4,0 | 5/7 >=4 | 3/7 >=5 | max 6 (21% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 823745,
-          "marginVsTeamTotalLine": 0.293,
-          "opponent": "MIL",
-          "runsAllowed": 2,
-          "runsScored": 4,
-          "side": "away",
-          "teamTotalLine": 3.707
-        },
         {
           "date": "2026-08-25",
           "gameNumber": 1,
@@ -822,7 +800,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "ATL",
       "unavailableReason": null,
@@ -1005,7 +983,7 @@
       }
     },
     "AZ": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 5.0 median -- repeated scoring, not one explosion",
@@ -1017,17 +995,6 @@
         "L7": "L7: 5.0 avg | 5.0 med | 8,2,3,2,5,8,7 | 4/7 >=4 | 4/7 >=5 | max 8 (23% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 825043,
-          "marginVsTeamTotalLine": 0.538,
-          "opponent": "CIN",
-          "runsAllowed": 3,
-          "runsScored": 5,
-          "side": "home",
-          "teamTotalLine": 4.462
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -1315,7 +1282,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "AZ",
       "unavailableReason": null,
@@ -1498,29 +1465,18 @@
       }
     },
     "BAL": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
-        "reason": "4/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
+        "reason": "5/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
         "window": "L7"
       },
       "formLines": {
-        "L10": "L10: 3.6 avg | 3.5 med | 7,3,1,2,7,7,5,0,0,4 | 5/10 >=4 | 4/10 >=5 | max 7 (19% of L10 runs)",
-        "L5": "L5: 3.2 avg | 4.0 med | 7,5,0,0,4 | 3/5 >=4 | 2/5 >=5 | max 7 (44% of L5 runs) | OUTLIER-DEPENDENT",
-        "L7": "L7: 3.6 avg | 4.0 med | 2,7,7,5,0,0,4 | 4/7 >=4 | 3/7 >=5 | max 7 (28% of L7 runs)"
+        "L10": "L10: 3.3 avg | 3.5 med | 3,1,2,7,7,5,0,0,4,4 | 5/10 >=4 | 3/10 >=5 | max 7 (21% of L10 runs)",
+        "L5": "L5: 2.6 avg | 4.0 med | 5,0,0,4,4 | 3/5 >=4 | 1/5 >=5 | max 5 (38% of L5 runs) | OUTLIER-DEPENDENT",
+        "L7": "L7: 3.9 avg | 4.0 med | 7,7,5,0,0,4,4 | 5/7 >=4 | 3/7 >=5 | max 7 (26% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 824799,
-          "marginVsTeamTotalLine": -3.077,
-          "opponent": "TB",
-          "runsAllowed": 3,
-          "runsScored": 1,
-          "side": "home",
-          "teamTotalLine": 4.077
-        },
         {
           "date": "2026-08-25",
           "gameNumber": 1,
@@ -1806,6 +1762,17 @@
           "runsScored": 4,
           "side": "home",
           "teamTotalLine": null
+        },
+        {
+          "date": "2026-09-23",
+          "gameNumber": 1,
+          "gamePk": 824785,
+          "marginVsTeamTotalLine": null,
+          "opponent": "TOR",
+          "runsAllowed": 2,
+          "runsScored": 4,
+          "side": "home",
+          "teamTotalLine": null
         }
       ],
       "gamesAvailable": 27,
@@ -1814,7 +1781,7 @@
       "unavailableReason": null,
       "windows": {
         "L10": {
-          "ewma": 3.29,
+          "ewma": 3.25,
           "games": 10,
           "marketRelative": {
             "lineCoverage": {
@@ -1827,16 +1794,15 @@
             "oversPct": null
           },
           "max": 7,
-          "mean": 3.6,
+          "mean": 3.3,
           "median": 3.5,
           "min": 0,
           "outlierDependence": {
             "isOutlierDependent": false,
-            "meanMinusTrimmedMean": -0.02,
-            "topGameShareOfWindowRuns": 0.194
+            "meanMinusTrimmedMean": 0.05,
+            "topGameShareOfWindowRuns": 0.212
           },
           "scores": [
-            7,
             3,
             1,
             2,
@@ -1845,6 +1811,7 @@
             5,
             0,
             0,
+            4,
             4
           ],
           "thresholdClears": {
@@ -1859,23 +1826,23 @@
               "pct": 0.5
             },
             "ge5": {
-              "games": 4,
-              "of": 10,
-              "pct": 0.4
-            },
-            "ge6": {
               "games": 3,
               "of": 10,
               "pct": 0.3
+            },
+            "ge6": {
+              "games": 2,
+              "of": 10,
+              "pct": 0.2
             }
           },
-          "topGameShareOfWindowRuns": 0.194,
-          "totalRuns": 36,
-          "trimmedMean": 3.62,
+          "topGameShareOfWindowRuns": 0.212,
+          "totalRuns": 33,
+          "trimmedMean": 3.25,
           "window": 10
         },
         "L5": {
-          "ewma": 2.74,
+          "ewma": 2.8,
           "games": 5,
           "marketRelative": {
             "lineCoverage": {
@@ -1887,20 +1854,20 @@
             "overs": 0,
             "oversPct": null
           },
-          "max": 7,
-          "mean": 3.2,
+          "max": 5,
+          "mean": 2.6,
           "median": 4.0,
           "min": 0,
           "outlierDependence": {
             "isOutlierDependent": true,
-            "meanMinusTrimmedMean": 0.2,
-            "topGameShareOfWindowRuns": 0.438
+            "meanMinusTrimmedMean": -0.07,
+            "topGameShareOfWindowRuns": 0.385
           },
           "scores": [
-            7,
             5,
             0,
             0,
+            4,
             4
           ],
           "thresholdClears": {
@@ -1915,23 +1882,23 @@
               "pct": 0.6
             },
             "ge5": {
-              "games": 2,
-              "of": 5,
-              "pct": 0.4
-            },
-            "ge6": {
               "games": 1,
               "of": 5,
               "pct": 0.2
+            },
+            "ge6": {
+              "games": 0,
+              "of": 5,
+              "pct": 0.0
             }
           },
-          "topGameShareOfWindowRuns": 0.438,
-          "totalRuns": 16,
-          "trimmedMean": 3.0,
+          "topGameShareOfWindowRuns": 0.385,
+          "totalRuns": 13,
+          "trimmedMean": 2.67,
           "window": 5
         },
         "L7": {
-          "ewma": 3.15,
+          "ewma": 3.42,
           "games": 7,
           "marketRelative": {
             "lineCoverage": {
@@ -1944,33 +1911,33 @@
             "oversPct": null
           },
           "max": 7,
-          "mean": 3.57,
+          "mean": 3.86,
           "median": 4.0,
           "min": 0,
           "outlierDependence": {
             "isOutlierDependent": false,
-            "meanMinusTrimmedMean": -0.03,
-            "topGameShareOfWindowRuns": 0.28
+            "meanMinusTrimmedMean": -0.14,
+            "topGameShareOfWindowRuns": 0.259
           },
           "scores": [
-            2,
             7,
             7,
             5,
             0,
             0,
+            4,
             4
           ],
           "thresholdClears": {
             "ge3": {
-              "games": 4,
+              "games": 5,
               "of": 7,
-              "pct": 0.571
+              "pct": 0.714
             },
             "ge4": {
-              "games": 4,
+              "games": 5,
               "of": 7,
-              "pct": 0.571
+              "pct": 0.714
             },
             "ge5": {
               "games": 3,
@@ -1983,15 +1950,15 @@
               "pct": 0.286
             }
           },
-          "topGameShareOfWindowRuns": 0.28,
-          "totalRuns": 25,
-          "trimmedMean": 3.6,
+          "topGameShareOfWindowRuns": 0.259,
+          "totalRuns": 27,
+          "trimmedMean": 4.0,
           "window": 7
         }
       }
     },
     "BOS": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "COLD",
         "reason": "median 2.0 and only 2/7 games clearing 4 runs",
@@ -2003,17 +1970,6 @@
         "L7": "L7: 2.4 avg | 2.0 med | 2,3,4,4,1,1,2 | 2/7 >=4 | 0/7 >=5 | max 4 (24% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 824720,
-          "marginVsTeamTotalLine": 0.385,
-          "opponent": "SF",
-          "runsAllowed": 4,
-          "runsScored": 5,
-          "side": "home",
-          "teamTotalLine": 4.615
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -2312,7 +2268,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 28,
+      "gamesAvailable": 27,
       "source": "mlb_stats_api_schedule",
       "team": "BOS",
       "unavailableReason": null,
@@ -2495,7 +2451,7 @@
       }
     },
     "CHC": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "5/7 games cleared 4 runs with a 5.0 median -- repeated scoring, not one explosion",
@@ -2507,17 +2463,6 @@
         "L7": "L7: 5.4 avg | 5.0 med | 7,3,8,4,5,9,2 | 5/7 >=4 | 4/7 >=5 | max 9 (24% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 823099,
-          "marginVsTeamTotalLine": 15.231,
-          "opponent": "SEA",
-          "runsAllowed": 2,
-          "runsScored": 19,
-          "side": "away",
-          "teamTotalLine": 3.769
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -2805,7 +2750,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "CHC",
       "unavailableReason": null,
@@ -2988,7 +2933,7 @@
       }
     },
     "CIN": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "3/7 games clearing 4 runs, median 2.0, mean 3.0",
@@ -3000,17 +2945,6 @@
         "L7": "L7: 3.0 avg | 2.0 med | 0,6,2,6,2,1,4 | 3/7 >=4 | 2/7 >=5 | max 6 (29% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 825043,
-          "marginVsTeamTotalLine": -0.846,
-          "opponent": "AZ",
-          "runsAllowed": 5,
-          "runsScored": 3,
-          "side": "away",
-          "teamTotalLine": 3.846
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -3298,7 +3232,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "CIN",
       "unavailableReason": null,
@@ -3481,7 +3415,7 @@
       }
     },
     "CLE": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 5.0 median -- repeated scoring, not one explosion",
@@ -3493,17 +3427,6 @@
         "L7": "L7: 5.3 avg | 5.0 med | 3,7,6,5,12,1,3 | 4/7 >=4 | 4/7 >=5 | max 12 (32% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 824315,
-          "marginVsTeamTotalLine": 1.091,
-          "opponent": "COL",
-          "runsAllowed": 2,
-          "runsScored": 7,
-          "side": "away",
-          "teamTotalLine": 5.909
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -3791,7 +3714,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "CLE",
       "unavailableReason": null,
@@ -3974,7 +3897,7 @@
       }
     },
     "COL": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "3/7 games clearing 4 runs, median 3.0, mean 3.71",
@@ -3986,17 +3909,6 @@
         "L7": "L7: 3.7 avg | 3.0 med | 9,3,2,4,5,1,2 | 3/7 >=4 | 2/7 >=5 | max 9 (35% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 824315,
-          "marginVsTeamTotalLine": -2.464,
-          "opponent": "CLE",
-          "runsAllowed": 7,
-          "runsScored": 2,
-          "side": "home",
-          "teamTotalLine": 4.464
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -4295,7 +4207,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 28,
+      "gamesAvailable": 27,
       "source": "mlb_stats_api_schedule",
       "team": "COL",
       "unavailableReason": null,
@@ -4478,7 +4390,7 @@
       }
     },
     "CWS": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "OUTLIER_INFLATED",
         "reason": "L7 mean 6.43 is carried by one game (max 14, 31% of window runs; median 6.0) -- not a repeatable hot streak",
@@ -4490,17 +4402,6 @@
         "L7": "L7: 6.4 avg | 6.0 med | 6,3,3,8,3,8,14 | 4/7 >=4 | 4/7 >=5 | max 14 (31% of L7 runs) | OUTLIER-DEPENDENT"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 824558,
-          "marginVsTeamTotalLine": -1.692,
-          "opponent": "NYM",
-          "runsAllowed": 1,
-          "runsScored": 2,
-          "side": "home",
-          "teamTotalLine": 3.692
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -4799,7 +4700,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 28,
+      "gamesAvailable": 27,
       "source": "mlb_stats_api_schedule",
       "team": "CWS",
       "unavailableReason": null,
@@ -4982,29 +4883,18 @@
       }
     },
     "DET": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "COLD",
         "reason": "median 1.0 and only 2/7 games clearing 4 runs",
         "window": "L7"
       },
       "formLines": {
-        "L10": "L10: 4.9 avg | 3.5 med | 8,6,10,1,1,11,1,1,9,1 | 5/10 >=4 | 5/10 >=5 | max 11 (22% of L10 runs)",
-        "L5": "L5: 4.6 avg | 1.0 med | 11,1,1,9,1 | 2/5 >=4 | 2/5 >=5 | max 11 (48% of L5 runs) | OUTLIER-DEPENDENT",
-        "L7": "L7: 3.6 avg | 1.0 med | 1,1,11,1,1,9,1 | 2/7 >=4 | 2/7 >=5 | max 11 (44% of L7 runs) | OUTLIER-DEPENDENT"
+        "L10": "L10: 4.3 avg | 1.5 med | 6,10,1,1,11,1,1,9,1,2 | 4/10 >=4 | 4/10 >=5 | max 11 (26% of L10 runs)",
+        "L5": "L5: 2.8 avg | 1.0 med | 1,1,9,1,2 | 1/5 >=4 | 1/5 >=5 | max 9 (64% of L5 runs) | OUTLIER-DEPENDENT",
+        "L7": "L7: 3.7 avg | 1.0 med | 1,11,1,1,9,1,2 | 2/7 >=4 | 2/7 >=5 | max 11 (42% of L7 runs) | OUTLIER-DEPENDENT"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 824071,
-          "marginVsTeamTotalLine": 2.821,
-          "opponent": "KC",
-          "runsAllowed": 11,
-          "runsScored": 7,
-          "side": "away",
-          "teamTotalLine": 4.179
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -5312,6 +5202,17 @@
           "runsScored": 1,
           "side": "home",
           "teamTotalLine": null
+        },
+        {
+          "date": "2026-09-23",
+          "gameNumber": 1,
+          "gamePk": 824223,
+          "marginVsTeamTotalLine": null,
+          "opponent": "WSH",
+          "runsAllowed": 4,
+          "runsScored": 2,
+          "side": "home",
+          "teamTotalLine": null
         }
       ],
       "gamesAvailable": 29,
@@ -5320,7 +5221,7 @@
       "unavailableReason": null,
       "windows": {
         "L10": {
-          "ewma": 4.41,
+          "ewma": 3.84,
           "games": 10,
           "marketRelative": {
             "lineCoverage": {
@@ -5333,16 +5234,15 @@
             "oversPct": null
           },
           "max": 11,
-          "mean": 4.9,
-          "median": 3.5,
+          "mean": 4.3,
+          "median": 1.5,
           "min": 1,
           "outlierDependence": {
             "isOutlierDependent": false,
-            "meanMinusTrimmedMean": 0.28,
-            "topGameShareOfWindowRuns": 0.224
+            "meanMinusTrimmedMean": 0.42,
+            "topGameShareOfWindowRuns": 0.256
           },
           "scores": [
-            8,
             6,
             10,
             1,
@@ -5351,37 +5251,38 @@
             1,
             1,
             9,
-            1
+            1,
+            2
           ],
           "thresholdClears": {
             "ge3": {
-              "games": 5,
+              "games": 4,
               "of": 10,
-              "pct": 0.5
+              "pct": 0.4
             },
             "ge4": {
-              "games": 5,
+              "games": 4,
               "of": 10,
-              "pct": 0.5
+              "pct": 0.4
             },
             "ge5": {
-              "games": 5,
+              "games": 4,
               "of": 10,
-              "pct": 0.5
+              "pct": 0.4
             },
             "ge6": {
-              "games": 5,
+              "games": 4,
               "of": 10,
-              "pct": 0.5
+              "pct": 0.4
             }
           },
-          "topGameShareOfWindowRuns": 0.224,
-          "totalRuns": 49,
-          "trimmedMean": 4.62,
+          "topGameShareOfWindowRuns": 0.256,
+          "totalRuns": 43,
+          "trimmedMean": 3.88,
           "window": 10
         },
         "L5": {
-          "ewma": 4.02,
+          "ewma": 2.81,
           "games": 5,
           "marketRelative": {
             "lineCoverage": {
@@ -5393,51 +5294,51 @@
             "overs": 0,
             "oversPct": null
           },
-          "max": 11,
-          "mean": 4.6,
+          "max": 9,
+          "mean": 2.8,
           "median": 1.0,
           "min": 1,
           "outlierDependence": {
             "isOutlierDependent": true,
-            "meanMinusTrimmedMean": 0.93,
-            "topGameShareOfWindowRuns": 0.478
+            "meanMinusTrimmedMean": 1.47,
+            "topGameShareOfWindowRuns": 0.643
           },
           "scores": [
-            11,
             1,
             1,
             9,
-            1
+            1,
+            2
           ],
           "thresholdClears": {
             "ge3": {
-              "games": 2,
+              "games": 1,
               "of": 5,
-              "pct": 0.4
+              "pct": 0.2
             },
             "ge4": {
-              "games": 2,
+              "games": 1,
               "of": 5,
-              "pct": 0.4
+              "pct": 0.2
             },
             "ge5": {
-              "games": 2,
+              "games": 1,
               "of": 5,
-              "pct": 0.4
+              "pct": 0.2
             },
             "ge6": {
-              "games": 2,
+              "games": 1,
               "of": 5,
-              "pct": 0.4
+              "pct": 0.2
             }
           },
-          "topGameShareOfWindowRuns": 0.478,
-          "totalRuns": 23,
-          "trimmedMean": 3.67,
+          "topGameShareOfWindowRuns": 0.643,
+          "totalRuns": 14,
+          "trimmedMean": 1.33,
           "window": 5
         },
         "L7": {
-          "ewma": 3.66,
+          "ewma": 3.42,
           "games": 7,
           "marketRelative": {
             "lineCoverage": {
@@ -5450,22 +5351,22 @@
             "oversPct": null
           },
           "max": 11,
-          "mean": 3.57,
+          "mean": 3.71,
           "median": 1.0,
           "min": 1,
           "outlierDependence": {
             "isOutlierDependent": true,
-            "meanMinusTrimmedMean": 0.97,
-            "topGameShareOfWindowRuns": 0.44
+            "meanMinusTrimmedMean": 0.91,
+            "topGameShareOfWindowRuns": 0.423
           },
           "scores": [
-            1,
             1,
             11,
             1,
             1,
             9,
-            1
+            1,
+            2
           ],
           "thresholdClears": {
             "ge3": {
@@ -5489,15 +5390,15 @@
               "pct": 0.286
             }
           },
-          "topGameShareOfWindowRuns": 0.44,
-          "totalRuns": 25,
-          "trimmedMean": 2.6,
+          "topGameShareOfWindowRuns": 0.423,
+          "totalRuns": 26,
+          "trimmedMean": 2.8,
           "window": 7
         }
       }
     },
     "HOU": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "3/7 games clearing 4 runs, median 3.0, mean 3.71",
@@ -5509,17 +5410,6 @@
         "L7": "L7: 3.7 avg | 3.0 med | 4,2,6,2,3,2,7 | 3/7 >=4 | 2/7 >=5 | max 7 (27% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 824150,
-          "marginVsTeamTotalLine": 1.308,
-          "opponent": "ATH",
-          "runsAllowed": 7,
-          "runsScored": 6,
-          "side": "home",
-          "teamTotalLine": 4.692
-        },
         {
           "date": "2026-08-25",
           "gameNumber": 1,
@@ -5807,7 +5697,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "HOU",
       "unavailableReason": null,
@@ -5990,7 +5880,7 @@
       }
     },
     "KC": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 5.0 median -- repeated scoring, not one explosion",
@@ -6002,17 +5892,6 @@
         "L7": "L7: 4.7 avg | 5.0 med | 2,5,2,5,5,3,11 | 4/7 >=4 | 4/7 >=5 | max 11 (33% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 824071,
-          "marginVsTeamTotalLine": 7.107,
-          "opponent": "DET",
-          "runsAllowed": 7,
-          "runsScored": 11,
-          "side": "home",
-          "teamTotalLine": 3.893
-        },
         {
           "date": "2026-08-25",
           "gameNumber": 1,
@@ -6289,7 +6168,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 26,
+      "gamesAvailable": 25,
       "source": "mlb_stats_api_schedule",
       "team": "KC",
       "unavailableReason": null,
@@ -6472,7 +6351,7 @@
       }
     },
     "LAA": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "3/7 games clearing 4 runs, median 2.0, mean 3.14",
@@ -6484,17 +6363,6 @@
         "L7": "L7: 3.1 avg | 2.0 med | 2,2,5,0,6,0,7 | 3/7 >=4 | 3/7 >=5 | max 7 (32% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 822856,
-          "marginVsTeamTotalLine": -0.385,
-          "opponent": "TEX",
-          "runsAllowed": 5,
-          "runsScored": 3,
-          "side": "away",
-          "teamTotalLine": 3.385
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -6782,7 +6650,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "LAA",
       "unavailableReason": null,
@@ -6965,7 +6833,7 @@
       }
     },
     "LAD": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "5/7 games cleared 4 runs with a 7.0 median -- repeated scoring, not one explosion",
@@ -6977,17 +6845,6 @@
         "L7": "L7: 6.0 avg | 7.0 med | 4,2,8,8,10,3,7 | 5/7 >=4 | 4/7 >=5 | max 10 (24% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 823909,
-          "marginVsTeamTotalLine": -0.964,
-          "opponent": "PIT",
-          "runsAllowed": 0,
-          "runsScored": 4,
-          "side": "home",
-          "teamTotalLine": 4.964
-        },
         {
           "date": "2026-08-25",
           "gameNumber": 1,
@@ -7275,7 +7132,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "LAD",
       "unavailableReason": null,
@@ -7458,7 +7315,7 @@
       }
     },
     "MIA": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "5/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
@@ -7470,17 +7327,6 @@
         "L7": "L7: 4.9 avg | 4.0 med | 7,4,4,2,6,3,8 | 5/7 >=4 | 3/7 >=5 | max 8 (24% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 823827,
-          "marginVsTeamTotalLine": 1.781,
-          "opponent": "WSH",
-          "runsAllowed": 2,
-          "runsScored": 6,
-          "side": "home",
-          "teamTotalLine": 4.219
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -7768,7 +7614,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "MIA",
       "unavailableReason": null,
@@ -7951,7 +7797,7 @@
       }
     },
     "MIL": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "5/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
@@ -7963,17 +7809,6 @@
         "L7": "L7: 4.0 avg | 4.0 med | 5,5,4,6,1,3,4 | 5/7 >=4 | 3/7 >=5 | max 6 (21% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 823745,
-          "marginVsTeamTotalLine": -1.733,
-          "opponent": "ATL",
-          "runsAllowed": 4,
-          "runsScored": 2,
-          "side": "home",
-          "teamTotalLine": 3.733
-        },
         {
           "date": "2026-08-25",
           "gameNumber": 1,
@@ -8261,7 +8096,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "MIL",
       "unavailableReason": null,
@@ -8444,29 +8279,18 @@
       }
     },
     "MIN": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
         "window": "L7"
       },
       "formLines": {
-        "L10": "L10: 3.6 avg | 3.0 med | 2,3,1,5,4,3,5,8,2,3 | 4/10 >=4 | 3/10 >=5 | max 8 (22% of L10 runs)",
-        "L5": "L5: 4.2 avg | 3.0 med | 3,5,8,2,3 | 2/5 >=4 | 2/5 >=5 | max 8 (38% of L5 runs) | OUTLIER-DEPENDENT",
-        "L7": "L7: 4.3 avg | 4.0 med | 5,4,3,5,8,2,3 | 4/7 >=4 | 3/7 >=5 | max 8 (27% of L7 runs)"
+        "L10": "L10: 3.8 avg | 3.5 med | 3,1,5,4,3,5,8,2,3,4 | 5/10 >=4 | 3/10 >=5 | max 8 (21% of L10 runs)",
+        "L5": "L5: 4.4 avg | 4.0 med | 5,8,2,3,4 | 3/5 >=4 | 2/5 >=5 | max 8 (36% of L5 runs) | OUTLIER-DEPENDENT",
+        "L7": "L7: 4.1 avg | 4.0 med | 4,3,5,8,2,3,4 | 4/7 >=4 | 2/7 >=5 | max 8 (28% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 823258,
-          "marginVsTeamTotalLine": -2.769,
-          "opponent": "SD",
-          "runsAllowed": 8,
-          "runsScored": 1,
-          "side": "away",
-          "teamTotalLine": 3.769
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -8763,6 +8587,17 @@
           "runsScored": 3,
           "side": "away",
           "teamTotalLine": null
+        },
+        {
+          "date": "2026-09-23",
+          "gameNumber": 1,
+          "gamePk": 823168,
+          "marginVsTeamTotalLine": null,
+          "opponent": "SF",
+          "runsAllowed": 2,
+          "runsScored": 4,
+          "side": "away",
+          "teamTotalLine": null
         }
       ],
       "gamesAvailable": 28,
@@ -8771,7 +8606,7 @@
       "unavailableReason": null,
       "windows": {
         "L10": {
-          "ewma": 3.79,
+          "ewma": 3.9,
           "games": 10,
           "marketRelative": {
             "lineCoverage": {
@@ -8784,16 +8619,15 @@
             "oversPct": null
           },
           "max": 8,
-          "mean": 3.6,
-          "median": 3.0,
+          "mean": 3.8,
+          "median": 3.5,
           "min": 1,
           "outlierDependence": {
             "isOutlierDependent": false,
-            "meanMinusTrimmedMean": 0.22,
-            "topGameShareOfWindowRuns": 0.222
+            "meanMinusTrimmedMean": 0.18,
+            "topGameShareOfWindowRuns": 0.211
           },
           "scores": [
-            2,
             3,
             1,
             5,
@@ -8802,18 +8636,19 @@
             5,
             8,
             2,
-            3
+            3,
+            4
           ],
           "thresholdClears": {
             "ge3": {
-              "games": 7,
+              "games": 8,
               "of": 10,
-              "pct": 0.7
+              "pct": 0.8
             },
             "ge4": {
-              "games": 4,
+              "games": 5,
               "of": 10,
-              "pct": 0.4
+              "pct": 0.5
             },
             "ge5": {
               "games": 3,
@@ -8826,13 +8661,13 @@
               "pct": 0.1
             }
           },
-          "topGameShareOfWindowRuns": 0.222,
-          "totalRuns": 36,
-          "trimmedMean": 3.38,
+          "topGameShareOfWindowRuns": 0.211,
+          "totalRuns": 38,
+          "trimmedMean": 3.62,
           "window": 10
         },
         "L5": {
-          "ewma": 3.96,
+          "ewma": 4.05,
           "games": 5,
           "marketRelative": {
             "lineCoverage": {
@@ -8845,20 +8680,20 @@
             "oversPct": null
           },
           "max": 8,
-          "mean": 4.2,
-          "median": 3.0,
+          "mean": 4.4,
+          "median": 4.0,
           "min": 2,
           "outlierDependence": {
             "isOutlierDependent": true,
-            "meanMinusTrimmedMean": 0.53,
-            "topGameShareOfWindowRuns": 0.381
+            "meanMinusTrimmedMean": 0.4,
+            "topGameShareOfWindowRuns": 0.364
           },
           "scores": [
-            3,
             5,
             8,
             2,
-            3
+            3,
+            4
           ],
           "thresholdClears": {
             "ge3": {
@@ -8867,9 +8702,9 @@
               "pct": 0.8
             },
             "ge4": {
-              "games": 2,
+              "games": 3,
               "of": 5,
-              "pct": 0.4
+              "pct": 0.6
             },
             "ge5": {
               "games": 2,
@@ -8882,13 +8717,13 @@
               "pct": 0.2
             }
           },
-          "topGameShareOfWindowRuns": 0.381,
-          "totalRuns": 21,
-          "trimmedMean": 3.67,
+          "topGameShareOfWindowRuns": 0.364,
+          "totalRuns": 22,
+          "trimmedMean": 4.0,
           "window": 5
         },
         "L7": {
-          "ewma": 4.11,
+          "ewma": 4.03,
           "games": 7,
           "marketRelative": {
             "lineCoverage": {
@@ -8901,22 +8736,22 @@
             "oversPct": null
           },
           "max": 8,
-          "mean": 4.29,
+          "mean": 4.14,
           "median": 4.0,
           "min": 2,
           "outlierDependence": {
             "isOutlierDependent": false,
-            "meanMinusTrimmedMean": 0.29,
-            "topGameShareOfWindowRuns": 0.267
+            "meanMinusTrimmedMean": 0.34,
+            "topGameShareOfWindowRuns": 0.276
           },
           "scores": [
-            5,
             4,
             3,
             5,
             8,
             2,
-            3
+            3,
+            4
           ],
           "thresholdClears": {
             "ge3": {
@@ -8930,9 +8765,9 @@
               "pct": 0.571
             },
             "ge5": {
-              "games": 3,
+              "games": 2,
               "of": 7,
-              "pct": 0.429
+              "pct": 0.286
             },
             "ge6": {
               "games": 1,
@@ -8940,15 +8775,15 @@
               "pct": 0.143
             }
           },
-          "topGameShareOfWindowRuns": 0.267,
-          "totalRuns": 30,
-          "trimmedMean": 4.0,
+          "topGameShareOfWindowRuns": 0.276,
+          "totalRuns": 29,
+          "trimmedMean": 3.8,
           "window": 7
         }
       }
     },
     "NYM": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 5.0 median -- repeated scoring, not one explosion",
@@ -8960,17 +8795,6 @@
         "L7": "L7: 4.3 avg | 5.0 med | 5,1,0,6,10,2,6 | 4/7 >=4 | 4/7 >=5 | max 10 (33% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 824558,
-          "marginVsTeamTotalLine": -2.923,
-          "opponent": "CWS",
-          "runsAllowed": 2,
-          "runsScored": 1,
-          "side": "away",
-          "teamTotalLine": 3.923
-        },
         {
           "date": "2026-08-25",
           "gameNumber": 1,
@@ -9258,7 +9082,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "NYM",
       "unavailableReason": null,
@@ -9441,7 +9265,7 @@
       }
     },
     "NYY": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
@@ -9453,17 +9277,6 @@
         "L7": "L7: 4.4 avg | 4.0 med | 8,4,9,3,4,2,1 | 4/7 >=4 | 2/7 >=5 | max 9 (29% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 823507,
-          "marginVsTeamTotalLine": 4.107,
-          "opponent": "TOR",
-          "runsAllowed": 3,
-          "runsScored": 8,
-          "side": "home",
-          "teamTotalLine": 3.893
-        },
         {
           "date": "2026-08-25",
           "gameNumber": 1,
@@ -9762,7 +9575,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 28,
+      "gamesAvailable": 27,
       "source": "mlb_stats_api_schedule",
       "team": "NYY",
       "unavailableReason": null,
@@ -9945,7 +9758,7 @@
       }
     },
     "PHI": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "2/7 games clearing 4 runs, median 3.0, mean 4.0",
@@ -9957,17 +9770,6 @@
         "L7": "L7: 4.0 avg | 3.0 med | 3,3,3,3,3,7,6 | 2/7 >=4 | 2/7 >=5 | max 7 (25% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 823421,
-          "marginVsTeamTotalLine": 1.467,
-          "opponent": "STL",
-          "runsAllowed": 4,
-          "runsScored": 6,
-          "side": "home",
-          "teamTotalLine": 4.533
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -10255,7 +10057,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "PHI",
       "unavailableReason": null,
@@ -10438,7 +10240,7 @@
       }
     },
     "PIT": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "5/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
@@ -10450,17 +10252,6 @@
         "L7": "L7: 4.6 avg | 4.0 med | 1,4,7,8,6,4,2 | 5/7 >=4 | 3/7 >=5 | max 8 (25% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 823909,
-          "marginVsTeamTotalLine": -2.933,
-          "opponent": "LAD",
-          "runsAllowed": 4,
-          "runsScored": 0,
-          "side": "away",
-          "teamTotalLine": 2.933
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -10737,7 +10528,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 26,
+      "gamesAvailable": 25,
       "source": "mlb_stats_api_schedule",
       "team": "PIT",
       "unavailableReason": null,
@@ -10920,7 +10711,7 @@
       }
     },
     "SD": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "5/7 games cleared 4 runs with a 7.0 median -- repeated scoring, not one explosion",
@@ -10932,17 +10723,6 @@
         "L7": "L7: 6.1 avg | 7.0 med | 3,9,9,8,7,7,0 | 5/7 >=4 | 5/7 >=5 | max 9 (21% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 823258,
-          "marginVsTeamTotalLine": 3.615,
-          "opponent": "MIN",
-          "runsAllowed": 1,
-          "runsScored": 8,
-          "side": "home",
-          "teamTotalLine": 4.385
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -11230,7 +11010,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "SD",
       "unavailableReason": null,
@@ -11413,7 +11193,7 @@
       }
     },
     "SEA": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "3/7 games clearing 4 runs, median 3.0, mean 3.14",
@@ -11425,17 +11205,6 @@
         "L7": "L7: 3.1 avg | 3.0 med | 4,1,7,5,3,2,0 | 3/7 >=4 | 2/7 >=5 | max 7 (32% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 823099,
-          "marginVsTeamTotalLine": -1.344,
-          "opponent": "CHC",
-          "runsAllowed": 19,
-          "runsScored": 2,
-          "side": "home",
-          "teamTotalLine": 3.344
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -11723,7 +11492,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "SEA",
       "unavailableReason": null,
@@ -11906,29 +11675,18 @@
       }
     },
     "SF": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
-        "label": "HOT",
-        "reason": "4/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
+        "label": "NEUTRAL",
+        "reason": "3/7 games clearing 4 runs, median 2.0, mean 3.14",
         "window": "L7"
       },
       "formLines": {
-        "L10": "L10: 4.1 avg | 4.0 med | 6,4,1,10,6,2,4,1,5,2 | 6/10 >=4 | 4/10 >=5 | max 10 (24% of L10 runs)",
-        "L5": "L5: 2.8 avg | 2.0 med | 2,4,1,5,2 | 2/5 >=4 | 1/5 >=5 | max 5 (36% of L5 runs) | OUTLIER-DEPENDENT",
-        "L7": "L7: 4.3 avg | 4.0 med | 10,6,2,4,1,5,2 | 4/7 >=4 | 3/7 >=5 | max 10 (33% of L7 runs)"
+        "L10": "L10: 3.7 avg | 3.0 med | 4,1,10,6,2,4,1,5,2,2 | 5/10 >=4 | 3/10 >=5 | max 10 (27% of L10 runs)",
+        "L5": "L5: 2.8 avg | 2.0 med | 4,1,5,2,2 | 2/5 >=4 | 1/5 >=5 | max 5 (36% of L5 runs) | OUTLIER-DEPENDENT",
+        "L7": "L7: 3.1 avg | 2.0 med | 6,2,4,1,5,2,2 | 3/7 >=4 | 2/7 >=5 | max 6 (27% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 824720,
-          "marginVsTeamTotalLine": 0.8,
-          "opponent": "BOS",
-          "runsAllowed": 5,
-          "runsScored": 4,
-          "side": "away",
-          "teamTotalLine": 3.2
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -12236,6 +11994,17 @@
           "runsScored": 2,
           "side": "home",
           "teamTotalLine": null
+        },
+        {
+          "date": "2026-09-23",
+          "gameNumber": 1,
+          "gamePk": 823168,
+          "marginVsTeamTotalLine": null,
+          "opponent": "MIN",
+          "runsAllowed": 4,
+          "runsScored": 2,
+          "side": "home",
+          "teamTotalLine": null
         }
       ],
       "gamesAvailable": 29,
@@ -12244,7 +12013,7 @@
       "unavailableReason": null,
       "windows": {
         "L10": {
-          "ewma": 3.74,
+          "ewma": 3.34,
           "games": 10,
           "marketRelative": {
             "lineCoverage": {
@@ -12257,16 +12026,15 @@
             "oversPct": null
           },
           "max": 10,
-          "mean": 4.1,
-          "median": 4.0,
+          "mean": 3.7,
+          "median": 3.0,
           "min": 1,
           "outlierDependence": {
             "isOutlierDependent": false,
-            "meanMinusTrimmedMean": 0.35,
-            "topGameShareOfWindowRuns": 0.244
+            "meanMinusTrimmedMean": 0.45,
+            "topGameShareOfWindowRuns": 0.27
           },
           "scores": [
-            6,
             4,
             1,
             10,
@@ -12275,37 +12043,38 @@
             4,
             1,
             5,
+            2,
             2
           ],
           "thresholdClears": {
             "ge3": {
-              "games": 6,
+              "games": 5,
               "of": 10,
-              "pct": 0.6
+              "pct": 0.5
             },
             "ge4": {
-              "games": 6,
+              "games": 5,
               "of": 10,
-              "pct": 0.6
+              "pct": 0.5
             },
             "ge5": {
-              "games": 4,
-              "of": 10,
-              "pct": 0.4
-            },
-            "ge6": {
               "games": 3,
               "of": 10,
               "pct": 0.3
+            },
+            "ge6": {
+              "games": 2,
+              "of": 10,
+              "pct": 0.2
             }
           },
-          "topGameShareOfWindowRuns": 0.244,
-          "totalRuns": 41,
-          "trimmedMean": 3.75,
+          "topGameShareOfWindowRuns": 0.27,
+          "totalRuns": 37,
+          "trimmedMean": 3.25,
           "window": 10
         },
         "L5": {
-          "ewma": 2.83,
+          "ewma": 2.63,
           "games": 5,
           "marketRelative": {
             "lineCoverage": {
@@ -12327,10 +12096,10 @@
             "topGameShareOfWindowRuns": 0.357
           },
           "scores": [
-            2,
             4,
             1,
             5,
+            2,
             2
           ],
           "thresholdClears": {
@@ -12361,7 +12130,7 @@
           "window": 5
         },
         "L7": {
-          "ewma": 3.63,
+          "ewma": 2.86,
           "games": 7,
           "marketRelative": {
             "lineCoverage": {
@@ -12373,55 +12142,55 @@
             "overs": 0,
             "oversPct": null
           },
-          "max": 10,
-          "mean": 4.29,
-          "median": 4.0,
+          "max": 6,
+          "mean": 3.14,
+          "median": 2.0,
           "min": 1,
           "outlierDependence": {
             "isOutlierDependent": false,
-            "meanMinusTrimmedMean": 0.49,
-            "topGameShareOfWindowRuns": 0.333
+            "meanMinusTrimmedMean": 0.14,
+            "topGameShareOfWindowRuns": 0.273
           },
           "scores": [
-            10,
             6,
             2,
             4,
             1,
             5,
+            2,
             2
           ],
           "thresholdClears": {
             "ge3": {
-              "games": 4,
-              "of": 7,
-              "pct": 0.571
-            },
-            "ge4": {
-              "games": 4,
-              "of": 7,
-              "pct": 0.571
-            },
-            "ge5": {
               "games": 3,
               "of": 7,
               "pct": 0.429
             },
-            "ge6": {
+            "ge4": {
+              "games": 3,
+              "of": 7,
+              "pct": 0.429
+            },
+            "ge5": {
               "games": 2,
               "of": 7,
               "pct": 0.286
+            },
+            "ge6": {
+              "games": 1,
+              "of": 7,
+              "pct": 0.143
             }
           },
-          "topGameShareOfWindowRuns": 0.333,
-          "totalRuns": 30,
-          "trimmedMean": 3.8,
+          "topGameShareOfWindowRuns": 0.273,
+          "totalRuns": 22,
+          "trimmedMean": 3.0,
           "window": 7
         }
       }
     },
     "STL": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "3/7 games clearing 4 runs, median 3.0, mean 3.0",
@@ -12433,17 +12202,6 @@
         "L7": "L7: 3.0 avg | 3.0 med | 2,3,5,1,5,5,0 | 3/7 >=4 | 3/7 >=5 | max 5 (24% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 823421,
-          "marginVsTeamTotalLine": 1.031,
-          "opponent": "PHI",
-          "runsAllowed": 6,
-          "runsScored": 4,
-          "side": "away",
-          "teamTotalLine": 2.969
-        },
         {
           "date": "2026-08-25",
           "gameNumber": 1,
@@ -12720,7 +12478,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 26,
+      "gamesAvailable": 25,
       "source": "mlb_stats_api_schedule",
       "team": "STL",
       "unavailableReason": null,
@@ -12903,7 +12661,7 @@
       }
     },
     "TB": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
@@ -12915,17 +12673,6 @@
         "L7": "L7: 4.1 avg | 4.0 med | 4,10,2,2,5,0,6 | 4/7 >=4 | 3/7 >=5 | max 10 (34% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 824799,
-          "marginVsTeamTotalLine": -1.208,
-          "opponent": "BAL",
-          "runsAllowed": 1,
-          "runsScored": 3,
-          "side": "away",
-          "teamTotalLine": 4.208
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -13224,7 +12971,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 28,
+      "gamesAvailable": 27,
       "source": "mlb_stats_api_schedule",
       "team": "TB",
       "unavailableReason": null,
@@ -13407,7 +13154,7 @@
       }
     },
     "TEX": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
@@ -13419,17 +13166,6 @@
         "L7": "L7: 4.6 avg | 4.0 med | 4,7,3,7,6,2,3 | 4/7 >=4 | 3/7 >=5 | max 7 (22% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 822856,
-          "marginVsTeamTotalLine": 0.933,
-          "opponent": "LAA",
-          "runsAllowed": 3,
-          "runsScored": 5,
-          "side": "home",
-          "teamTotalLine": 4.067
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -13717,7 +13453,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "TEX",
       "unavailableReason": null,
@@ -13900,29 +13636,18 @@
       }
     },
     "TOR": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
-        "label": "NEUTRAL",
-        "reason": "3/7 games clearing 4 runs, median 3.0, mean 3.43",
+        "label": "COLD",
+        "reason": "median 2.0 and only 2/7 games clearing 4 runs",
         "window": "L7"
       },
       "formLines": {
-        "L10": "L10: 4.3 avg | 4.5 med | 4,7,8,5,1,5,1,2,7,3 | 6/10 >=4 | 5/10 >=5 | max 8 (19% of L10 runs)",
-        "L5": "L5: 3.6 avg | 3.0 med | 5,1,2,7,3 | 2/5 >=4 | 2/5 >=5 | max 7 (39% of L5 runs) | OUTLIER-DEPENDENT",
-        "L7": "L7: 3.4 avg | 3.0 med | 5,1,5,1,2,7,3 | 3/7 >=4 | 3/7 >=5 | max 7 (29% of L7 runs)"
+        "L10": "L10: 4.1 avg | 4.0 med | 7,8,5,1,5,1,2,7,3,2 | 5/10 >=4 | 5/10 >=5 | max 8 (20% of L10 runs)",
+        "L5": "L5: 3.0 avg | 2.0 med | 1,2,7,3,2 | 1/5 >=4 | 1/5 >=5 | max 7 (47% of L5 runs) | OUTLIER-DEPENDENT",
+        "L7": "L7: 3.0 avg | 2.0 med | 1,5,1,2,7,3,2 | 2/7 >=4 | 2/7 >=5 | max 7 (33% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 823507,
-          "marginVsTeamTotalLine": -0.538,
-          "opponent": "NYY",
-          "runsAllowed": 8,
-          "runsScored": 3,
-          "side": "away",
-          "teamTotalLine": 3.538
-        },
         {
           "date": "2026-08-25",
           "gameNumber": 1,
@@ -14197,6 +13922,17 @@
           "runsScored": 3,
           "side": "away",
           "teamTotalLine": null
+        },
+        {
+          "date": "2026-09-23",
+          "gameNumber": 1,
+          "gamePk": 824785,
+          "marginVsTeamTotalLine": null,
+          "opponent": "BAL",
+          "runsAllowed": 4,
+          "runsScored": 2,
+          "side": "away",
+          "teamTotalLine": null
         }
       ],
       "gamesAvailable": 26,
@@ -14205,7 +13941,7 @@
       "unavailableReason": null,
       "windows": {
         "L10": {
-          "ewma": 4.02,
+          "ewma": 3.67,
           "games": 10,
           "marketRelative": {
             "lineCoverage": {
@@ -14218,16 +13954,15 @@
             "oversPct": null
           },
           "max": 8,
-          "mean": 4.3,
-          "median": 4.5,
+          "mean": 4.1,
+          "median": 4.0,
           "min": 1,
           "outlierDependence": {
             "isOutlierDependent": false,
-            "meanMinusTrimmedMean": 0.05,
-            "topGameShareOfWindowRuns": 0.186
+            "meanMinusTrimmedMean": 0.1,
+            "topGameShareOfWindowRuns": 0.195
           },
           "scores": [
-            4,
             7,
             8,
             5,
@@ -14236,18 +13971,19 @@
             1,
             2,
             7,
-            3
+            3,
+            2
           ],
           "thresholdClears": {
             "ge3": {
-              "games": 7,
-              "of": 10,
-              "pct": 0.7
-            },
-            "ge4": {
               "games": 6,
               "of": 10,
               "pct": 0.6
+            },
+            "ge4": {
+              "games": 5,
+              "of": 10,
+              "pct": 0.5
             },
             "ge5": {
               "games": 5,
@@ -14260,13 +13996,13 @@
               "pct": 0.3
             }
           },
-          "topGameShareOfWindowRuns": 0.186,
-          "totalRuns": 43,
-          "trimmedMean": 4.25,
+          "topGameShareOfWindowRuns": 0.195,
+          "totalRuns": 41,
+          "trimmedMean": 4.0,
           "window": 10
         },
         "L5": {
-          "ewma": 3.73,
+          "ewma": 3.07,
           "games": 5,
           "marketRelative": {
             "lineCoverage": {
@@ -14279,36 +14015,36 @@
             "oversPct": null
           },
           "max": 7,
-          "mean": 3.6,
-          "median": 3.0,
+          "mean": 3.0,
+          "median": 2.0,
           "min": 1,
           "outlierDependence": {
             "isOutlierDependent": true,
-            "meanMinusTrimmedMean": 0.27,
-            "topGameShareOfWindowRuns": 0.389
+            "meanMinusTrimmedMean": 0.67,
+            "topGameShareOfWindowRuns": 0.467
           },
           "scores": [
-            5,
             1,
             2,
             7,
-            3
+            3,
+            2
           ],
           "thresholdClears": {
             "ge3": {
-              "games": 3,
+              "games": 2,
               "of": 5,
-              "pct": 0.6
+              "pct": 0.4
             },
             "ge4": {
-              "games": 2,
+              "games": 1,
               "of": 5,
-              "pct": 0.4
+              "pct": 0.2
             },
             "ge5": {
-              "games": 2,
+              "games": 1,
               "of": 5,
-              "pct": 0.4
+              "pct": 0.2
             },
             "ge6": {
               "games": 1,
@@ -14316,13 +14052,13 @@
               "pct": 0.2
             }
           },
-          "topGameShareOfWindowRuns": 0.389,
-          "totalRuns": 18,
-          "trimmedMean": 3.33,
+          "topGameShareOfWindowRuns": 0.467,
+          "totalRuns": 15,
+          "trimmedMean": 2.33,
           "window": 5
         },
         "L7": {
-          "ewma": 3.55,
+          "ewma": 3.09,
           "games": 7,
           "marketRelative": {
             "lineCoverage": {
@@ -14335,38 +14071,38 @@
             "oversPct": null
           },
           "max": 7,
-          "mean": 3.43,
-          "median": 3.0,
+          "mean": 3.0,
+          "median": 2.0,
           "min": 1,
           "outlierDependence": {
             "isOutlierDependent": false,
-            "meanMinusTrimmedMean": 0.23,
-            "topGameShareOfWindowRuns": 0.292
+            "meanMinusTrimmedMean": 0.4,
+            "topGameShareOfWindowRuns": 0.333
           },
           "scores": [
-            5,
             1,
             5,
             1,
             2,
             7,
-            3
+            3,
+            2
           ],
           "thresholdClears": {
             "ge3": {
-              "games": 4,
+              "games": 3,
               "of": 7,
-              "pct": 0.571
+              "pct": 0.429
             },
             "ge4": {
-              "games": 3,
+              "games": 2,
               "of": 7,
-              "pct": 0.429
+              "pct": 0.286
             },
             "ge5": {
-              "games": 3,
+              "games": 2,
               "of": 7,
-              "pct": 0.429
+              "pct": 0.286
             },
             "ge6": {
               "games": 1,
@@ -14374,37 +14110,26 @@
               "pct": 0.143
             }
           },
-          "topGameShareOfWindowRuns": 0.292,
-          "totalRuns": 24,
-          "trimmedMean": 3.2,
+          "topGameShareOfWindowRuns": 0.333,
+          "totalRuns": 21,
+          "trimmedMean": 2.6,
           "window": 7
         }
       }
     },
     "WSH": {
-      "asOfDate": "2026-09-22",
+      "asOfDate": "2026-09-23",
       "formLabel": {
         "label": "NEUTRAL",
-        "reason": "3/7 games clearing 4 runs, median 3.0, mean 4.43",
+        "reason": "3/7 games clearing 4 runs, median 3.0, mean 4.14",
         "window": "L7"
       },
       "formLines": {
-        "L10": "L10: 4.7 avg | 5.0 med | 4,6,6,6,0,9,8,3,2,3 | 6/10 >=4 | 5/10 >=5 | max 9 (19% of L10 runs)",
-        "L5": "L5: 5.0 avg | 3.0 med | 9,8,3,2,3 | 2/5 >=4 | 2/5 >=5 | max 9 (36% of L5 runs) | OUTLIER-DEPENDENT",
-        "L7": "L7: 4.4 avg | 3.0 med | 6,0,9,8,3,2,3 | 3/7 >=4 | 3/7 >=5 | max 9 (29% of L7 runs)"
+        "L10": "L10: 4.7 avg | 5.0 med | 6,6,6,0,9,8,3,2,3,4 | 6/10 >=4 | 5/10 >=5 | max 9 (19% of L10 runs)",
+        "L5": "L5: 4.0 avg | 3.0 med | 8,3,2,3,4 | 2/5 >=4 | 1/5 >=5 | max 8 (40% of L5 runs) | OUTLIER-DEPENDENT",
+        "L7": "L7: 4.1 avg | 3.0 med | 0,9,8,3,2,3,4 | 3/7 >=4 | 2/7 >=5 | max 9 (31% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-23",
-          "gameNumber": 1,
-          "gamePk": 823827,
-          "marginVsTeamTotalLine": -1.536,
-          "opponent": "MIA",
-          "runsAllowed": 6,
-          "runsScored": 2,
-          "side": "away",
-          "teamTotalLine": 3.536
-        },
         {
           "date": "2026-08-24",
           "gameNumber": 1,
@@ -14690,6 +14415,17 @@
           "runsScored": 3,
           "side": "away",
           "teamTotalLine": null
+        },
+        {
+          "date": "2026-09-23",
+          "gameNumber": 1,
+          "gamePk": 824223,
+          "marginVsTeamTotalLine": null,
+          "opponent": "DET",
+          "runsAllowed": 2,
+          "runsScored": 4,
+          "side": "away",
+          "teamTotalLine": null
         }
       ],
       "gamesAvailable": 27,
@@ -14698,7 +14434,7 @@
       "unavailableReason": null,
       "windows": {
         "L10": {
-          "ewma": 4.4,
+          "ewma": 4.35,
           "games": 10,
           "marketRelative": {
             "lineCoverage": {
@@ -14720,7 +14456,6 @@
             "topGameShareOfWindowRuns": 0.191
           },
           "scores": [
-            4,
             6,
             6,
             6,
@@ -14729,7 +14464,8 @@
             8,
             3,
             2,
-            3
+            3,
+            4
           ],
           "thresholdClears": {
             "ge3": {
@@ -14759,7 +14495,7 @@
           "window": 10
         },
         "L5": {
-          "ewma": 4.1,
+          "ewma": 3.67,
           "games": 5,
           "marketRelative": {
             "lineCoverage": {
@@ -14771,21 +14507,21 @@
             "overs": 0,
             "oversPct": null
           },
-          "max": 9,
-          "mean": 5.0,
+          "max": 8,
+          "mean": 4.0,
           "median": 3.0,
           "min": 2,
           "outlierDependence": {
             "isOutlierDependent": true,
-            "meanMinusTrimmedMean": 0.33,
-            "topGameShareOfWindowRuns": 0.36
+            "meanMinusTrimmedMean": 0.67,
+            "topGameShareOfWindowRuns": 0.4
           },
           "scores": [
-            9,
             8,
             3,
             2,
-            3
+            3,
+            4
           ],
           "thresholdClears": {
             "ge3": {
@@ -14799,23 +14535,23 @@
               "pct": 0.4
             },
             "ge5": {
-              "games": 2,
+              "games": 1,
               "of": 5,
-              "pct": 0.4
+              "pct": 0.2
             },
             "ge6": {
-              "games": 2,
+              "games": 1,
               "of": 5,
-              "pct": 0.4
+              "pct": 0.2
             }
           },
-          "topGameShareOfWindowRuns": 0.36,
-          "totalRuns": 25,
-          "trimmedMean": 4.67,
+          "topGameShareOfWindowRuns": 0.4,
+          "totalRuns": 20,
+          "trimmedMean": 3.33,
           "window": 5
         },
         "L7": {
-          "ewma": 4.07,
+          "ewma": 3.94,
           "games": 7,
           "marketRelative": {
             "lineCoverage": {
@@ -14828,22 +14564,22 @@
             "oversPct": null
           },
           "max": 9,
-          "mean": 4.43,
+          "mean": 4.14,
           "median": 3.0,
           "min": 0,
           "outlierDependence": {
             "isOutlierDependent": false,
-            "meanMinusTrimmedMean": 0.03,
-            "topGameShareOfWindowRuns": 0.29
+            "meanMinusTrimmedMean": 0.14,
+            "topGameShareOfWindowRuns": 0.31
           },
           "scores": [
-            6,
             0,
             9,
             8,
             3,
             2,
-            3
+            3,
+            4
           ],
           "thresholdClears": {
             "ge3": {
@@ -14857,23 +14593,23 @@
               "pct": 0.429
             },
             "ge5": {
-              "games": 3,
+              "games": 2,
               "of": 7,
-              "pct": 0.429
+              "pct": 0.286
             },
             "ge6": {
-              "games": 3,
+              "games": 2,
               "of": 7,
-              "pct": 0.429
+              "pct": 0.286
             }
           },
-          "topGameShareOfWindowRuns": 0.29,
-          "totalRuns": 31,
-          "trimmedMean": 4.4,
+          "topGameShareOfWindowRuns": 0.31,
+          "totalRuns": 29,
+          "trimmedMean": 4.0,
           "window": 7
         }
       }
     }
   },
-  "windowStartDate": "2026-08-23"
+  "windowStartDate": "2026-08-24"
 }

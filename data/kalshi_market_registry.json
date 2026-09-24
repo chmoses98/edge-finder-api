@@ -55341,7 +55341,8 @@
             }
           }
         }
-      ]
+      ],
+      "closing_capture_status": "NO_PRICES"
     },
     "CINATL": {
       "kalshi_key": "CINATL",
@@ -71039,8 +71040,4085 @@
               }
             }
           }
+        },
+        {
+          "snapshot_ts": "2026-09-24T22:43:55Z",
+          "scheduled_start_ts": "2026-09-24T22:45:00Z",
+          "minutes_to_start": 1.08,
+          "capture_timing": "PRE_START",
+          "capture_source": "scheduled_closing_line_workflow",
+          "prices": {
+            "moneyline": {
+              "away": {
+                "ticker": "KXMLBGAME-26SEP241845CLEBOS-CLE",
+                "yes_bid": 0.46,
+                "yes_ask": 0.47,
+                "mid": 0.465,
+                "implied_pct": 46.5,
+                "american": 115,
+                "last_price": 0.47,
+                "volume": null,
+                "status": "active"
+              },
+              "home": {
+                "ticker": "KXMLBGAME-26SEP241845CLEBOS-BOS",
+                "yes_bid": 0.53,
+                "yes_ask": 0.54,
+                "mid": 0.535,
+                "implied_pct": 53.5,
+                "american": -115,
+                "last_price": 0.54,
+                "volume": null,
+                "status": "active"
+              }
+            },
+            "spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-BOS2",
+                  "team": "BOS",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.34,
+                  "yes_ask": 0.35,
+                  "no_bid": 0.64,
+                  "no_ask": 0.65,
+                  "mid": 0.345,
+                  "implied_pct": 34.5,
+                  "american": 190,
+                  "last_price": 0.34,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-BOS3",
+                  "team": "BOS",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.24,
+                  "yes_ask": 0.25,
+                  "no_bid": 0.75,
+                  "no_ask": 0.76,
+                  "mid": 0.245,
+                  "implied_pct": 24.5,
+                  "american": 308,
+                  "last_price": 0.24,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-BOS4",
+                  "team": "BOS",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.16,
+                  "yes_ask": 0.17,
+                  "no_bid": 0.83,
+                  "no_ask": 0.84,
+                  "mid": 0.165,
+                  "implied_pct": 16.5,
+                  "american": 506,
+                  "last_price": 0.17,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-CLE2",
+                  "team": "CLE",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.32,
+                  "yes_ask": 0.33,
+                  "no_bid": 0.67,
+                  "no_ask": 0.68,
+                  "mid": 0.325,
+                  "implied_pct": 32.5,
+                  "american": 208,
+                  "last_price": 0.33,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-CLE3",
+                  "team": "CLE",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.22,
+                  "yes_ask": 0.23,
+                  "no_bid": 0.77,
+                  "no_ask": 0.78,
+                  "mid": 0.225,
+                  "implied_pct": 22.5,
+                  "american": 344,
+                  "last_price": 0.22,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-CLE4",
+                  "team": "CLE",
+                  "run_number": 4,
+                  "win_by_over": 3.5,
+                  "yes_bid": 0.15,
+                  "yes_ask": 0.16,
+                  "no_bid": 0.84,
+                  "no_ask": 0.85,
+                  "mid": 0.155,
+                  "implied_pct": 15.5,
+                  "american": 545,
+                  "last_price": 0.16,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                }
+              ]
+            },
+            "total": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-2",
+                  "total": 2,
+                  "over_threshold": 2,
+                  "yes_bid": 0.95,
+                  "yes_ask": 0.96,
+                  "no_bid": 0.03,
+                  "no_ask": 0.04,
+                  "mid": 0.955,
+                  "implied_pct": 95.5,
+                  "american": -2122,
+                  "last_price": 0.96,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-3",
+                  "total": 3,
+                  "over_threshold": 3,
+                  "yes_bid": 0.92,
+                  "yes_ask": 0.93,
+                  "no_bid": 0.07,
+                  "no_ask": 0.08,
+                  "mid": 0.925,
+                  "implied_pct": 92.5,
+                  "american": -1233,
+                  "last_price": 0.93,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-4",
+                  "total": 4,
+                  "over_threshold": 4,
+                  "yes_bid": 0.81,
+                  "yes_ask": 0.82,
+                  "no_bid": 0.17,
+                  "no_ask": 0.19,
+                  "mid": 0.815,
+                  "implied_pct": 81.5,
+                  "american": -441,
+                  "last_price": 0.82,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-5",
+                  "total": 5,
+                  "over_threshold": 5,
+                  "yes_bid": 0.74,
+                  "yes_ask": 0.75,
+                  "no_bid": 0.25,
+                  "no_ask": 0.26,
+                  "mid": 0.745,
+                  "implied_pct": 74.5,
+                  "american": -292,
+                  "last_price": 0.75,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-6",
+                  "total": 6,
+                  "over_threshold": 6,
+                  "yes_bid": 0.61,
+                  "yes_ask": 0.62,
+                  "no_bid": 0.38,
+                  "no_ask": 0.39,
+                  "mid": 0.615,
+                  "implied_pct": 61.5,
+                  "american": -160,
+                  "last_price": 0.62,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-7",
+                  "total": 7,
+                  "over_threshold": 7,
+                  "yes_bid": 0.51,
+                  "yes_ask": 0.52,
+                  "no_bid": 0.48,
+                  "no_ask": 0.49,
+                  "mid": 0.515,
+                  "implied_pct": 51.5,
+                  "american": -106,
+                  "last_price": 0.51,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-8",
+                  "total": 8,
+                  "over_threshold": 8,
+                  "yes_bid": 0.38,
+                  "yes_ask": 0.39,
+                  "no_bid": 0.61,
+                  "no_ask": 0.62,
+                  "mid": 0.385,
+                  "implied_pct": 38.5,
+                  "american": 160,
+                  "last_price": 0.38,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-9",
+                  "total": 9,
+                  "over_threshold": 9,
+                  "yes_bid": 0.31,
+                  "yes_ask": 0.32,
+                  "no_bid": 0.68,
+                  "no_ask": 0.69,
+                  "mid": 0.315,
+                  "implied_pct": 31.5,
+                  "american": 217,
+                  "last_price": 0.31,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-10",
+                  "total": 10,
+                  "over_threshold": 10,
+                  "yes_bid": 0.22,
+                  "yes_ask": 0.23,
+                  "no_bid": 0.77,
+                  "no_ask": 0.78,
+                  "mid": 0.225,
+                  "implied_pct": 22.5,
+                  "american": 344,
+                  "last_price": 0.23,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-11",
+                  "total": 11,
+                  "over_threshold": 11,
+                  "yes_bid": 0.17,
+                  "yes_ask": 0.18,
+                  "no_bid": 0.81,
+                  "no_ask": 0.82,
+                  "mid": 0.175,
+                  "implied_pct": 17.5,
+                  "american": 471,
+                  "last_price": 0.18,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-12",
+                  "total": 12,
+                  "over_threshold": 12,
+                  "yes_bid": 0.11,
+                  "yes_ask": 0.12,
+                  "no_bid": 0.88,
+                  "no_ask": 0.89,
+                  "mid": 0.115,
+                  "implied_pct": 11.5,
+                  "american": 770,
+                  "last_price": 0.11,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                }
+              ]
+            },
+            "team_total_away": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE2",
+                  "team": "CLE",
+                  "over_n": 2,
+                  "yes_bid": 0.74,
+                  "yes_ask": 0.75,
+                  "no_bid": 0.25,
+                  "no_ask": 0.26,
+                  "mid": 0.745,
+                  "implied_pct": 74.5,
+                  "american": -292,
+                  "last_price": 0.75,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE3",
+                  "team": "CLE",
+                  "over_n": 3,
+                  "yes_bid": 0.58,
+                  "yes_ask": 0.59,
+                  "no_bid": 0.41,
+                  "no_ask": 0.42,
+                  "mid": 0.585,
+                  "implied_pct": 58.5,
+                  "american": -141,
+                  "last_price": 0.59,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE4",
+                  "team": "CLE",
+                  "over_n": 4,
+                  "yes_bid": 0.43,
+                  "yes_ask": 0.45,
+                  "no_bid": 0.56,
+                  "no_ask": 0.57,
+                  "mid": 0.44,
+                  "implied_pct": 44.0,
+                  "american": 127,
+                  "last_price": 0.45,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE5",
+                  "team": "CLE",
+                  "over_n": 5,
+                  "yes_bid": 0.3,
+                  "yes_ask": 0.31,
+                  "no_bid": 0.69,
+                  "no_ask": 0.7,
+                  "mid": 0.305,
+                  "implied_pct": 30.5,
+                  "american": 228,
+                  "last_price": 0.3,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE6",
+                  "team": "CLE",
+                  "over_n": 6,
+                  "yes_bid": 0.2,
+                  "yes_ask": 0.21,
+                  "no_bid": 0.79,
+                  "no_ask": 0.81,
+                  "mid": 0.205,
+                  "implied_pct": 20.5,
+                  "american": 388,
+                  "last_price": 0.0,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE7",
+                  "team": "CLE",
+                  "over_n": 7,
+                  "yes_bid": 0.12,
+                  "yes_ask": 0.14,
+                  "no_bid": 0.87,
+                  "no_ask": 0.88,
+                  "mid": 0.13,
+                  "implied_pct": 13.0,
+                  "american": 669,
+                  "last_price": 0.0,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE8",
+                  "team": "CLE",
+                  "over_n": 8,
+                  "yes_bid": 0.07,
+                  "yes_ask": 0.08,
+                  "no_bid": 0.92,
+                  "no_ask": 0.93,
+                  "mid": 0.075,
+                  "implied_pct": 7.5,
+                  "american": 1233,
+                  "last_price": 0.0,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                }
+              ]
+            },
+            "team_total_home": {
+              "lines": [
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS2",
+                  "team": "BOS",
+                  "over_n": 2,
+                  "yes_bid": 0.78,
+                  "yes_ask": 0.79,
+                  "no_bid": 0.21,
+                  "no_ask": 0.23,
+                  "mid": 0.785,
+                  "implied_pct": 78.5,
+                  "american": -365,
+                  "last_price": 0.79,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS3",
+                  "team": "BOS",
+                  "over_n": 3,
+                  "yes_bid": 0.62,
+                  "yes_ask": 0.63,
+                  "no_bid": 0.37,
+                  "no_ask": 0.39,
+                  "mid": 0.625,
+                  "implied_pct": 62.5,
+                  "american": -167,
+                  "last_price": 0.63,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS4",
+                  "team": "BOS",
+                  "over_n": 4,
+                  "yes_bid": 0.46,
+                  "yes_ask": 0.47,
+                  "no_bid": 0.53,
+                  "no_ask": 0.54,
+                  "mid": 0.465,
+                  "implied_pct": 46.5,
+                  "american": 115,
+                  "last_price": 0.47,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS5",
+                  "team": "BOS",
+                  "over_n": 5,
+                  "yes_bid": 0.33,
+                  "yes_ask": 0.34,
+                  "no_bid": 0.66,
+                  "no_ask": 0.69,
+                  "mid": 0.335,
+                  "implied_pct": 33.5,
+                  "american": 199,
+                  "last_price": 0.33,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS6",
+                  "team": "BOS",
+                  "over_n": 6,
+                  "yes_bid": 0.2,
+                  "yes_ask": 0.21,
+                  "no_bid": 0.78,
+                  "no_ask": 0.79,
+                  "mid": 0.205,
+                  "implied_pct": 20.5,
+                  "american": 388,
+                  "last_price": 0.22,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS7",
+                  "team": "BOS",
+                  "over_n": 7,
+                  "yes_bid": 0.13,
+                  "yes_ask": 0.14,
+                  "no_bid": 0.86,
+                  "no_ask": 0.87,
+                  "mid": 0.135,
+                  "implied_pct": 13.5,
+                  "american": 641,
+                  "last_price": 0.14,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS8",
+                  "team": "BOS",
+                  "over_n": 8,
+                  "yes_bid": 0.08,
+                  "yes_ask": 0.09,
+                  "no_bid": 0.9,
+                  "no_ask": 0.91,
+                  "mid": 0.085,
+                  "implied_pct": 8.5,
+                  "american": 1076,
+                  "last_price": 0.1,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                }
+              ]
+            },
+            "f5_moneyline": {
+              "away": {
+                "ticker": "KXMLBF5-26SEP241845CLEBOS-CLE",
+                "yes_bid": 0.34,
+                "yes_ask": 0.35,
+                "mid": 0.345,
+                "implied_pct": 34.5,
+                "american": 190,
+                "last_price": 0.35,
+                "volume": null,
+                "status": "active"
+              },
+              "home": {
+                "ticker": "KXMLBF5-26SEP241845CLEBOS-BOS",
+                "yes_bid": 0.47,
+                "yes_ask": 0.49,
+                "mid": 0.48,
+                "implied_pct": 48.0,
+                "american": 108,
+                "last_price": 0.49,
+                "volume": null,
+                "status": "active"
+              },
+              "tie": {
+                "ticker": "KXMLBF5-26SEP241845CLEBOS-TIE",
+                "yes_bid": 0.18,
+                "yes_ask": 0.19,
+                "mid": 0.185,
+                "implied_pct": 18.5,
+                "american": 441,
+                "last_price": 0.19,
+                "volume": null,
+                "status": "active"
+              }
+            },
+            "f5_spread": {
+              "lines": [
+                {
+                  "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-BOS2",
+                  "team": "BOS",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.3,
+                  "yes_ask": 0.32,
+                  "no_bid": 0.68,
+                  "no_ask": 0.69,
+                  "mid": 0.31,
+                  "implied_pct": 31.0,
+                  "american": 223,
+                  "last_price": 0.32,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-BOS3",
+                  "team": "BOS",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.19,
+                  "yes_ask": 0.21,
+                  "no_bid": 0.8,
+                  "no_ask": 0.81,
+                  "mid": 0.2,
+                  "implied_pct": 20.0,
+                  "american": 400,
+                  "last_price": 0.0,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-CLE2",
+                  "team": "CLE",
+                  "run_number": 2,
+                  "win_by_over": 1.5,
+                  "yes_bid": 0.2,
+                  "yes_ask": 0.21,
+                  "no_bid": 0.78,
+                  "no_ask": 0.79,
+                  "mid": 0.205,
+                  "implied_pct": 20.5,
+                  "american": 388,
+                  "last_price": 0.21,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-CLE3",
+                  "team": "CLE",
+                  "run_number": 3,
+                  "win_by_over": 2.5,
+                  "yes_bid": 0.11,
+                  "yes_ask": 0.12,
+                  "no_bid": 0.88,
+                  "no_ask": 0.89,
+                  "mid": 0.115,
+                  "implied_pct": 11.5,
+                  "american": 770,
+                  "last_price": 0.11,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                }
+              ]
+            },
+            "f5_total": {
+              "lines": [
+                {
+                  "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-1",
+                  "total": 1,
+                  "yes_bid": 0.92,
+                  "yes_ask": 0.93,
+                  "no_bid": 0.06,
+                  "no_ask": 0.09,
+                  "mid": 0.925,
+                  "implied_pct": 92.5,
+                  "american": -1233,
+                  "last_price": 0.92,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-2",
+                  "total": 2,
+                  "yes_bid": 0.78,
+                  "yes_ask": 0.79,
+                  "no_bid": 0.2,
+                  "no_ask": 0.22,
+                  "mid": 0.785,
+                  "implied_pct": 78.5,
+                  "american": -365,
+                  "last_price": 0.79,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-3",
+                  "total": 3,
+                  "yes_bid": 0.62,
+                  "yes_ask": 0.63,
+                  "no_bid": 0.36,
+                  "no_ask": 0.37,
+                  "mid": 0.625,
+                  "implied_pct": 62.5,
+                  "american": -167,
+                  "last_price": 0.62,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-4",
+                  "total": 4,
+                  "yes_bid": 0.45,
+                  "yes_ask": 0.46,
+                  "no_bid": 0.54,
+                  "no_ask": 0.55,
+                  "mid": 0.455,
+                  "implied_pct": 45.5,
+                  "american": 120,
+                  "last_price": 0.45,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-5",
+                  "total": 5,
+                  "yes_bid": 0.34,
+                  "yes_ask": 0.35,
+                  "no_bid": 0.65,
+                  "no_ask": 0.66,
+                  "mid": 0.345,
+                  "implied_pct": 34.5,
+                  "american": 190,
+                  "last_price": 0.34,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-6",
+                  "total": 6,
+                  "yes_bid": 0.23,
+                  "yes_ask": 0.24,
+                  "no_bid": 0.76,
+                  "no_ask": 0.77,
+                  "mid": 0.235,
+                  "implied_pct": 23.5,
+                  "american": 326,
+                  "last_price": 0.24,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                },
+                {
+                  "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-7",
+                  "total": 7,
+                  "yes_bid": 0.14,
+                  "yes_ask": 0.17,
+                  "no_bid": 0.83,
+                  "no_ask": 0.84,
+                  "mid": 0.155,
+                  "implied_pct": 15.5,
+                  "american": 545,
+                  "last_price": 0.14,
+                  "status": "active",
+                  "book_state": "TWO_SIDED",
+                  "price_source_fields": {
+                    "yes_bid": "yes_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "last_price": "last_price_dollars"
+                  },
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "unit": "dollars",
+                  "captured_at": "2026-09-24T21:32:38Z",
+                  "volume": null
+                }
+              ]
+            },
+            "rfi": {
+              "yrfi": {
+                "ticker": "KXMLBRFI-26SEP241845CLEBOS",
+                "yes_bid": 0.41,
+                "yes_ask": 0.42,
+                "mid": 0.415,
+                "implied_pct": 41.5,
+                "american": 141,
+                "last_price": 0.42,
+                "volume": null,
+                "status": "active",
+                "side": "YES"
+              },
+              "nrfi": {
+                "ticker": "KXMLBRFI-26SEP241845CLEBOS",
+                "yes_bid": 0.58,
+                "yes_ask": 0.59,
+                "mid": 0.585,
+                "implied_pct": 58.5,
+                "american": -141,
+                "last_price": 0.42,
+                "volume": null,
+                "status": "active",
+                "side": "NO",
+                "derived_from": "KXMLBRFI-26SEP241845CLEBOS"
+              }
+            },
+            "by_ticker": {
+              "KXMLBGAME-26SEP241845CLEBOS-CLE": {
+                "ticker": "KXMLBGAME-26SEP241845CLEBOS-CLE",
+                "yes_bid": 0.46,
+                "yes_ask": 0.47,
+                "mid": 0.465,
+                "implied_pct": 46.5,
+                "american": 115,
+                "last_price": 0.47,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBGAME-26SEP241845CLEBOS-BOS": {
+                "ticker": "KXMLBGAME-26SEP241845CLEBOS-BOS",
+                "yes_bid": 0.53,
+                "yes_ask": 0.54,
+                "mid": 0.535,
+                "implied_pct": 53.5,
+                "american": -115,
+                "last_price": 0.54,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26SEP241845CLEBOS-BOS2": {
+                "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-BOS2",
+                "yes_bid": 0.34,
+                "yes_ask": 0.35,
+                "mid": 0.345,
+                "implied_pct": 34.5,
+                "american": 190,
+                "last_price": 0.34,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26SEP241845CLEBOS-BOS3": {
+                "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-BOS3",
+                "yes_bid": 0.24,
+                "yes_ask": 0.25,
+                "mid": 0.245,
+                "implied_pct": 24.5,
+                "american": 308,
+                "last_price": 0.24,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26SEP241845CLEBOS-BOS4": {
+                "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-BOS4",
+                "yes_bid": 0.16,
+                "yes_ask": 0.17,
+                "mid": 0.165,
+                "implied_pct": 16.5,
+                "american": 506,
+                "last_price": 0.17,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26SEP241845CLEBOS-CLE2": {
+                "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-CLE2",
+                "yes_bid": 0.32,
+                "yes_ask": 0.33,
+                "mid": 0.325,
+                "implied_pct": 32.5,
+                "american": 208,
+                "last_price": 0.33,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26SEP241845CLEBOS-CLE3": {
+                "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-CLE3",
+                "yes_bid": 0.22,
+                "yes_ask": 0.23,
+                "mid": 0.225,
+                "implied_pct": 22.5,
+                "american": 344,
+                "last_price": 0.22,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBSPREAD-26SEP241845CLEBOS-CLE4": {
+                "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-CLE4",
+                "yes_bid": 0.15,
+                "yes_ask": 0.16,
+                "mid": 0.155,
+                "implied_pct": 15.5,
+                "american": 545,
+                "last_price": 0.16,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26SEP241845CLEBOS-2": {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-2",
+                "yes_bid": 0.95,
+                "yes_ask": 0.96,
+                "mid": 0.955,
+                "implied_pct": 95.5,
+                "american": -2122,
+                "last_price": 0.96,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26SEP241845CLEBOS-3": {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-3",
+                "yes_bid": 0.92,
+                "yes_ask": 0.93,
+                "mid": 0.925,
+                "implied_pct": 92.5,
+                "american": -1233,
+                "last_price": 0.93,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26SEP241845CLEBOS-4": {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-4",
+                "yes_bid": 0.81,
+                "yes_ask": 0.82,
+                "mid": 0.815,
+                "implied_pct": 81.5,
+                "american": -441,
+                "last_price": 0.82,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26SEP241845CLEBOS-5": {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-5",
+                "yes_bid": 0.74,
+                "yes_ask": 0.75,
+                "mid": 0.745,
+                "implied_pct": 74.5,
+                "american": -292,
+                "last_price": 0.75,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26SEP241845CLEBOS-6": {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-6",
+                "yes_bid": 0.61,
+                "yes_ask": 0.62,
+                "mid": 0.615,
+                "implied_pct": 61.5,
+                "american": -160,
+                "last_price": 0.62,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26SEP241845CLEBOS-7": {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-7",
+                "yes_bid": 0.51,
+                "yes_ask": 0.52,
+                "mid": 0.515,
+                "implied_pct": 51.5,
+                "american": -106,
+                "last_price": 0.51,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26SEP241845CLEBOS-8": {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-8",
+                "yes_bid": 0.38,
+                "yes_ask": 0.39,
+                "mid": 0.385,
+                "implied_pct": 38.5,
+                "american": 160,
+                "last_price": 0.38,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26SEP241845CLEBOS-9": {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-9",
+                "yes_bid": 0.31,
+                "yes_ask": 0.32,
+                "mid": 0.315,
+                "implied_pct": 31.5,
+                "american": 217,
+                "last_price": 0.31,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26SEP241845CLEBOS-10": {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-10",
+                "yes_bid": 0.22,
+                "yes_ask": 0.23,
+                "mid": 0.225,
+                "implied_pct": 22.5,
+                "american": 344,
+                "last_price": 0.23,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26SEP241845CLEBOS-11": {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-11",
+                "yes_bid": 0.17,
+                "yes_ask": 0.18,
+                "mid": 0.175,
+                "implied_pct": 17.5,
+                "american": 471,
+                "last_price": 0.18,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTOTAL-26SEP241845CLEBOS-12": {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-12",
+                "yes_bid": 0.11,
+                "yes_ask": 0.12,
+                "mid": 0.115,
+                "implied_pct": 11.5,
+                "american": 770,
+                "last_price": 0.11,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE2": {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE2",
+                "yes_bid": 0.74,
+                "yes_ask": 0.75,
+                "mid": 0.745,
+                "implied_pct": 74.5,
+                "american": -292,
+                "last_price": 0.75,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE3": {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE3",
+                "yes_bid": 0.58,
+                "yes_ask": 0.59,
+                "mid": 0.585,
+                "implied_pct": 58.5,
+                "american": -141,
+                "last_price": 0.59,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE4": {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE4",
+                "yes_bid": 0.43,
+                "yes_ask": 0.45,
+                "mid": 0.44,
+                "implied_pct": 44.0,
+                "american": 127,
+                "last_price": 0.45,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE5": {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE5",
+                "yes_bid": 0.3,
+                "yes_ask": 0.31,
+                "mid": 0.305,
+                "implied_pct": 30.5,
+                "american": 228,
+                "last_price": 0.3,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE6": {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE6",
+                "yes_bid": 0.2,
+                "yes_ask": 0.21,
+                "mid": 0.205,
+                "implied_pct": 20.5,
+                "american": 388,
+                "last_price": 0.0,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE7": {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE7",
+                "yes_bid": 0.12,
+                "yes_ask": 0.14,
+                "mid": 0.13,
+                "implied_pct": 13.0,
+                "american": 669,
+                "last_price": 0.0,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE8": {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE8",
+                "yes_bid": 0.07,
+                "yes_ask": 0.08,
+                "mid": 0.075,
+                "implied_pct": 7.5,
+                "american": 1233,
+                "last_price": 0.0,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS2": {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS2",
+                "yes_bid": 0.78,
+                "yes_ask": 0.79,
+                "mid": 0.785,
+                "implied_pct": 78.5,
+                "american": -365,
+                "last_price": 0.79,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS3": {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS3",
+                "yes_bid": 0.62,
+                "yes_ask": 0.63,
+                "mid": 0.625,
+                "implied_pct": 62.5,
+                "american": -167,
+                "last_price": 0.63,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS4": {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS4",
+                "yes_bid": 0.46,
+                "yes_ask": 0.47,
+                "mid": 0.465,
+                "implied_pct": 46.5,
+                "american": 115,
+                "last_price": 0.47,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS5": {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS5",
+                "yes_bid": 0.33,
+                "yes_ask": 0.34,
+                "mid": 0.335,
+                "implied_pct": 33.5,
+                "american": 199,
+                "last_price": 0.33,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS6": {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS6",
+                "yes_bid": 0.2,
+                "yes_ask": 0.21,
+                "mid": 0.205,
+                "implied_pct": 20.5,
+                "american": 388,
+                "last_price": 0.22,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS7": {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS7",
+                "yes_bid": 0.13,
+                "yes_ask": 0.14,
+                "mid": 0.135,
+                "implied_pct": 13.5,
+                "american": 641,
+                "last_price": 0.14,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS8": {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS8",
+                "yes_bid": 0.08,
+                "yes_ask": 0.09,
+                "mid": 0.085,
+                "implied_pct": 8.5,
+                "american": 1076,
+                "last_price": 0.1,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5-26SEP241845CLEBOS-CLE": {
+                "ticker": "KXMLBF5-26SEP241845CLEBOS-CLE",
+                "yes_bid": 0.34,
+                "yes_ask": 0.35,
+                "mid": 0.345,
+                "implied_pct": 34.5,
+                "american": 190,
+                "last_price": 0.35,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5-26SEP241845CLEBOS-BOS": {
+                "ticker": "KXMLBF5-26SEP241845CLEBOS-BOS",
+                "yes_bid": 0.47,
+                "yes_ask": 0.49,
+                "mid": 0.48,
+                "implied_pct": 48.0,
+                "american": 108,
+                "last_price": 0.49,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5-26SEP241845CLEBOS-TIE": {
+                "ticker": "KXMLBF5-26SEP241845CLEBOS-TIE",
+                "yes_bid": 0.18,
+                "yes_ask": 0.19,
+                "mid": 0.185,
+                "implied_pct": 18.5,
+                "american": 441,
+                "last_price": 0.19,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5SPREAD-26SEP241845CLEBOS-BOS2": {
+                "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-BOS2",
+                "yes_bid": 0.3,
+                "yes_ask": 0.32,
+                "mid": 0.31,
+                "implied_pct": 31.0,
+                "american": 223,
+                "last_price": 0.32,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5SPREAD-26SEP241845CLEBOS-BOS3": {
+                "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-BOS3",
+                "yes_bid": 0.19,
+                "yes_ask": 0.21,
+                "mid": 0.2,
+                "implied_pct": 20.0,
+                "american": 400,
+                "last_price": 0.0,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5SPREAD-26SEP241845CLEBOS-CLE2": {
+                "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-CLE2",
+                "yes_bid": 0.2,
+                "yes_ask": 0.21,
+                "mid": 0.205,
+                "implied_pct": 20.5,
+                "american": 388,
+                "last_price": 0.21,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5SPREAD-26SEP241845CLEBOS-CLE3": {
+                "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-CLE3",
+                "yes_bid": 0.11,
+                "yes_ask": 0.12,
+                "mid": 0.115,
+                "implied_pct": 11.5,
+                "american": 770,
+                "last_price": 0.11,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26SEP241845CLEBOS-1": {
+                "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-1",
+                "yes_bid": 0.92,
+                "yes_ask": 0.93,
+                "mid": 0.925,
+                "implied_pct": 92.5,
+                "american": -1233,
+                "last_price": 0.92,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26SEP241845CLEBOS-2": {
+                "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-2",
+                "yes_bid": 0.78,
+                "yes_ask": 0.79,
+                "mid": 0.785,
+                "implied_pct": 78.5,
+                "american": -365,
+                "last_price": 0.79,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26SEP241845CLEBOS-3": {
+                "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-3",
+                "yes_bid": 0.62,
+                "yes_ask": 0.63,
+                "mid": 0.625,
+                "implied_pct": 62.5,
+                "american": -167,
+                "last_price": 0.62,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26SEP241845CLEBOS-4": {
+                "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-4",
+                "yes_bid": 0.45,
+                "yes_ask": 0.46,
+                "mid": 0.455,
+                "implied_pct": 45.5,
+                "american": 120,
+                "last_price": 0.45,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26SEP241845CLEBOS-5": {
+                "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-5",
+                "yes_bid": 0.34,
+                "yes_ask": 0.35,
+                "mid": 0.345,
+                "implied_pct": 34.5,
+                "american": 190,
+                "last_price": 0.34,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26SEP241845CLEBOS-6": {
+                "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-6",
+                "yes_bid": 0.23,
+                "yes_ask": 0.24,
+                "mid": 0.235,
+                "implied_pct": 23.5,
+                "american": 326,
+                "last_price": 0.24,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBF5TOTAL-26SEP241845CLEBOS-7": {
+                "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-7",
+                "yes_bid": 0.14,
+                "yes_ask": 0.17,
+                "mid": 0.155,
+                "implied_pct": 15.5,
+                "american": 545,
+                "last_price": 0.14,
+                "volume": null,
+                "status": "active"
+              },
+              "KXMLBRFI-26SEP241845CLEBOS": {
+                "ticker": "KXMLBRFI-26SEP241845CLEBOS",
+                "yes_bid": 0.41,
+                "yes_ask": 0.42,
+                "mid": 0.415,
+                "implied_pct": 41.5,
+                "american": 141,
+                "last_price": 0.42,
+                "volume": null,
+                "status": "active"
+              }
+            }
+          }
         }
-      ]
+      ],
+      "closing_capture_status": "CAPTURED_PRE_START",
+      "official_closing_snapshot": {
+        "snapshot_ts": "2026-09-24T22:43:55Z",
+        "scheduled_start_ts": "2026-09-24T22:45:00Z",
+        "minutes_to_start": 1.08,
+        "capture_timing": "PRE_START",
+        "capture_source": "scheduled_closing_line_workflow",
+        "prices": {
+          "moneyline": {
+            "away": {
+              "ticker": "KXMLBGAME-26SEP241845CLEBOS-CLE",
+              "yes_bid": 0.46,
+              "yes_ask": 0.47,
+              "mid": 0.465,
+              "implied_pct": 46.5,
+              "american": 115,
+              "last_price": 0.47,
+              "volume": null,
+              "status": "active"
+            },
+            "home": {
+              "ticker": "KXMLBGAME-26SEP241845CLEBOS-BOS",
+              "yes_bid": 0.53,
+              "yes_ask": 0.54,
+              "mid": 0.535,
+              "implied_pct": 53.5,
+              "american": -115,
+              "last_price": 0.54,
+              "volume": null,
+              "status": "active"
+            }
+          },
+          "spread": {
+            "lines": [
+              {
+                "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-BOS2",
+                "team": "BOS",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.34,
+                "yes_ask": 0.35,
+                "no_bid": 0.64,
+                "no_ask": 0.65,
+                "mid": 0.345,
+                "implied_pct": 34.5,
+                "american": 190,
+                "last_price": 0.34,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-BOS3",
+                "team": "BOS",
+                "run_number": 3,
+                "win_by_over": 2.5,
+                "yes_bid": 0.24,
+                "yes_ask": 0.25,
+                "no_bid": 0.75,
+                "no_ask": 0.76,
+                "mid": 0.245,
+                "implied_pct": 24.5,
+                "american": 308,
+                "last_price": 0.24,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-BOS4",
+                "team": "BOS",
+                "run_number": 4,
+                "win_by_over": 3.5,
+                "yes_bid": 0.16,
+                "yes_ask": 0.17,
+                "no_bid": 0.83,
+                "no_ask": 0.84,
+                "mid": 0.165,
+                "implied_pct": 16.5,
+                "american": 506,
+                "last_price": 0.17,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-CLE2",
+                "team": "CLE",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.32,
+                "yes_ask": 0.33,
+                "no_bid": 0.67,
+                "no_ask": 0.68,
+                "mid": 0.325,
+                "implied_pct": 32.5,
+                "american": 208,
+                "last_price": 0.33,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-CLE3",
+                "team": "CLE",
+                "run_number": 3,
+                "win_by_over": 2.5,
+                "yes_bid": 0.22,
+                "yes_ask": 0.23,
+                "no_bid": 0.77,
+                "no_ask": 0.78,
+                "mid": 0.225,
+                "implied_pct": 22.5,
+                "american": 344,
+                "last_price": 0.22,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-CLE4",
+                "team": "CLE",
+                "run_number": 4,
+                "win_by_over": 3.5,
+                "yes_bid": 0.15,
+                "yes_ask": 0.16,
+                "no_bid": 0.84,
+                "no_ask": 0.85,
+                "mid": 0.155,
+                "implied_pct": 15.5,
+                "american": 545,
+                "last_price": 0.16,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              }
+            ]
+          },
+          "total": {
+            "lines": [
+              {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-2",
+                "total": 2,
+                "over_threshold": 2,
+                "yes_bid": 0.95,
+                "yes_ask": 0.96,
+                "no_bid": 0.03,
+                "no_ask": 0.04,
+                "mid": 0.955,
+                "implied_pct": 95.5,
+                "american": -2122,
+                "last_price": 0.96,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-3",
+                "total": 3,
+                "over_threshold": 3,
+                "yes_bid": 0.92,
+                "yes_ask": 0.93,
+                "no_bid": 0.07,
+                "no_ask": 0.08,
+                "mid": 0.925,
+                "implied_pct": 92.5,
+                "american": -1233,
+                "last_price": 0.93,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-4",
+                "total": 4,
+                "over_threshold": 4,
+                "yes_bid": 0.81,
+                "yes_ask": 0.82,
+                "no_bid": 0.17,
+                "no_ask": 0.19,
+                "mid": 0.815,
+                "implied_pct": 81.5,
+                "american": -441,
+                "last_price": 0.82,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-5",
+                "total": 5,
+                "over_threshold": 5,
+                "yes_bid": 0.74,
+                "yes_ask": 0.75,
+                "no_bid": 0.25,
+                "no_ask": 0.26,
+                "mid": 0.745,
+                "implied_pct": 74.5,
+                "american": -292,
+                "last_price": 0.75,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-6",
+                "total": 6,
+                "over_threshold": 6,
+                "yes_bid": 0.61,
+                "yes_ask": 0.62,
+                "no_bid": 0.38,
+                "no_ask": 0.39,
+                "mid": 0.615,
+                "implied_pct": 61.5,
+                "american": -160,
+                "last_price": 0.62,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-7",
+                "total": 7,
+                "over_threshold": 7,
+                "yes_bid": 0.51,
+                "yes_ask": 0.52,
+                "no_bid": 0.48,
+                "no_ask": 0.49,
+                "mid": 0.515,
+                "implied_pct": 51.5,
+                "american": -106,
+                "last_price": 0.51,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-8",
+                "total": 8,
+                "over_threshold": 8,
+                "yes_bid": 0.38,
+                "yes_ask": 0.39,
+                "no_bid": 0.61,
+                "no_ask": 0.62,
+                "mid": 0.385,
+                "implied_pct": 38.5,
+                "american": 160,
+                "last_price": 0.38,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-9",
+                "total": 9,
+                "over_threshold": 9,
+                "yes_bid": 0.31,
+                "yes_ask": 0.32,
+                "no_bid": 0.68,
+                "no_ask": 0.69,
+                "mid": 0.315,
+                "implied_pct": 31.5,
+                "american": 217,
+                "last_price": 0.31,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-10",
+                "total": 10,
+                "over_threshold": 10,
+                "yes_bid": 0.22,
+                "yes_ask": 0.23,
+                "no_bid": 0.77,
+                "no_ask": 0.78,
+                "mid": 0.225,
+                "implied_pct": 22.5,
+                "american": 344,
+                "last_price": 0.23,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-11",
+                "total": 11,
+                "over_threshold": 11,
+                "yes_bid": 0.17,
+                "yes_ask": 0.18,
+                "no_bid": 0.81,
+                "no_ask": 0.82,
+                "mid": 0.175,
+                "implied_pct": 17.5,
+                "american": 471,
+                "last_price": 0.18,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-12",
+                "total": 12,
+                "over_threshold": 12,
+                "yes_bid": 0.11,
+                "yes_ask": 0.12,
+                "no_bid": 0.88,
+                "no_ask": 0.89,
+                "mid": 0.115,
+                "implied_pct": 11.5,
+                "american": 770,
+                "last_price": 0.11,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              }
+            ]
+          },
+          "team_total_away": {
+            "lines": [
+              {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE2",
+                "team": "CLE",
+                "over_n": 2,
+                "yes_bid": 0.74,
+                "yes_ask": 0.75,
+                "no_bid": 0.25,
+                "no_ask": 0.26,
+                "mid": 0.745,
+                "implied_pct": 74.5,
+                "american": -292,
+                "last_price": 0.75,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE3",
+                "team": "CLE",
+                "over_n": 3,
+                "yes_bid": 0.58,
+                "yes_ask": 0.59,
+                "no_bid": 0.41,
+                "no_ask": 0.42,
+                "mid": 0.585,
+                "implied_pct": 58.5,
+                "american": -141,
+                "last_price": 0.59,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE4",
+                "team": "CLE",
+                "over_n": 4,
+                "yes_bid": 0.43,
+                "yes_ask": 0.45,
+                "no_bid": 0.56,
+                "no_ask": 0.57,
+                "mid": 0.44,
+                "implied_pct": 44.0,
+                "american": 127,
+                "last_price": 0.45,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE5",
+                "team": "CLE",
+                "over_n": 5,
+                "yes_bid": 0.3,
+                "yes_ask": 0.31,
+                "no_bid": 0.69,
+                "no_ask": 0.7,
+                "mid": 0.305,
+                "implied_pct": 30.5,
+                "american": 228,
+                "last_price": 0.3,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE6",
+                "team": "CLE",
+                "over_n": 6,
+                "yes_bid": 0.2,
+                "yes_ask": 0.21,
+                "no_bid": 0.79,
+                "no_ask": 0.81,
+                "mid": 0.205,
+                "implied_pct": 20.5,
+                "american": 388,
+                "last_price": 0.0,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE7",
+                "team": "CLE",
+                "over_n": 7,
+                "yes_bid": 0.12,
+                "yes_ask": 0.14,
+                "no_bid": 0.87,
+                "no_ask": 0.88,
+                "mid": 0.13,
+                "implied_pct": 13.0,
+                "american": 669,
+                "last_price": 0.0,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE8",
+                "team": "CLE",
+                "over_n": 8,
+                "yes_bid": 0.07,
+                "yes_ask": 0.08,
+                "no_bid": 0.92,
+                "no_ask": 0.93,
+                "mid": 0.075,
+                "implied_pct": 7.5,
+                "american": 1233,
+                "last_price": 0.0,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              }
+            ]
+          },
+          "team_total_home": {
+            "lines": [
+              {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS2",
+                "team": "BOS",
+                "over_n": 2,
+                "yes_bid": 0.78,
+                "yes_ask": 0.79,
+                "no_bid": 0.21,
+                "no_ask": 0.23,
+                "mid": 0.785,
+                "implied_pct": 78.5,
+                "american": -365,
+                "last_price": 0.79,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS3",
+                "team": "BOS",
+                "over_n": 3,
+                "yes_bid": 0.62,
+                "yes_ask": 0.63,
+                "no_bid": 0.37,
+                "no_ask": 0.39,
+                "mid": 0.625,
+                "implied_pct": 62.5,
+                "american": -167,
+                "last_price": 0.63,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS4",
+                "team": "BOS",
+                "over_n": 4,
+                "yes_bid": 0.46,
+                "yes_ask": 0.47,
+                "no_bid": 0.53,
+                "no_ask": 0.54,
+                "mid": 0.465,
+                "implied_pct": 46.5,
+                "american": 115,
+                "last_price": 0.47,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS5",
+                "team": "BOS",
+                "over_n": 5,
+                "yes_bid": 0.33,
+                "yes_ask": 0.34,
+                "no_bid": 0.66,
+                "no_ask": 0.69,
+                "mid": 0.335,
+                "implied_pct": 33.5,
+                "american": 199,
+                "last_price": 0.33,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS6",
+                "team": "BOS",
+                "over_n": 6,
+                "yes_bid": 0.2,
+                "yes_ask": 0.21,
+                "no_bid": 0.78,
+                "no_ask": 0.79,
+                "mid": 0.205,
+                "implied_pct": 20.5,
+                "american": 388,
+                "last_price": 0.22,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS7",
+                "team": "BOS",
+                "over_n": 7,
+                "yes_bid": 0.13,
+                "yes_ask": 0.14,
+                "no_bid": 0.86,
+                "no_ask": 0.87,
+                "mid": 0.135,
+                "implied_pct": 13.5,
+                "american": 641,
+                "last_price": 0.14,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS8",
+                "team": "BOS",
+                "over_n": 8,
+                "yes_bid": 0.08,
+                "yes_ask": 0.09,
+                "no_bid": 0.9,
+                "no_ask": 0.91,
+                "mid": 0.085,
+                "implied_pct": 8.5,
+                "american": 1076,
+                "last_price": 0.1,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              }
+            ]
+          },
+          "f5_moneyline": {
+            "away": {
+              "ticker": "KXMLBF5-26SEP241845CLEBOS-CLE",
+              "yes_bid": 0.34,
+              "yes_ask": 0.35,
+              "mid": 0.345,
+              "implied_pct": 34.5,
+              "american": 190,
+              "last_price": 0.35,
+              "volume": null,
+              "status": "active"
+            },
+            "home": {
+              "ticker": "KXMLBF5-26SEP241845CLEBOS-BOS",
+              "yes_bid": 0.47,
+              "yes_ask": 0.49,
+              "mid": 0.48,
+              "implied_pct": 48.0,
+              "american": 108,
+              "last_price": 0.49,
+              "volume": null,
+              "status": "active"
+            },
+            "tie": {
+              "ticker": "KXMLBF5-26SEP241845CLEBOS-TIE",
+              "yes_bid": 0.18,
+              "yes_ask": 0.19,
+              "mid": 0.185,
+              "implied_pct": 18.5,
+              "american": 441,
+              "last_price": 0.19,
+              "volume": null,
+              "status": "active"
+            }
+          },
+          "f5_spread": {
+            "lines": [
+              {
+                "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-BOS2",
+                "team": "BOS",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.3,
+                "yes_ask": 0.32,
+                "no_bid": 0.68,
+                "no_ask": 0.69,
+                "mid": 0.31,
+                "implied_pct": 31.0,
+                "american": 223,
+                "last_price": 0.32,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-BOS3",
+                "team": "BOS",
+                "run_number": 3,
+                "win_by_over": 2.5,
+                "yes_bid": 0.19,
+                "yes_ask": 0.21,
+                "no_bid": 0.8,
+                "no_ask": 0.81,
+                "mid": 0.2,
+                "implied_pct": 20.0,
+                "american": 400,
+                "last_price": 0.0,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-CLE2",
+                "team": "CLE",
+                "run_number": 2,
+                "win_by_over": 1.5,
+                "yes_bid": 0.2,
+                "yes_ask": 0.21,
+                "no_bid": 0.78,
+                "no_ask": 0.79,
+                "mid": 0.205,
+                "implied_pct": 20.5,
+                "american": 388,
+                "last_price": 0.21,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-CLE3",
+                "team": "CLE",
+                "run_number": 3,
+                "win_by_over": 2.5,
+                "yes_bid": 0.11,
+                "yes_ask": 0.12,
+                "no_bid": 0.88,
+                "no_ask": 0.89,
+                "mid": 0.115,
+                "implied_pct": 11.5,
+                "american": 770,
+                "last_price": 0.11,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              }
+            ]
+          },
+          "f5_total": {
+            "lines": [
+              {
+                "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-1",
+                "total": 1,
+                "yes_bid": 0.92,
+                "yes_ask": 0.93,
+                "no_bid": 0.06,
+                "no_ask": 0.09,
+                "mid": 0.925,
+                "implied_pct": 92.5,
+                "american": -1233,
+                "last_price": 0.92,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-2",
+                "total": 2,
+                "yes_bid": 0.78,
+                "yes_ask": 0.79,
+                "no_bid": 0.2,
+                "no_ask": 0.22,
+                "mid": 0.785,
+                "implied_pct": 78.5,
+                "american": -365,
+                "last_price": 0.79,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-3",
+                "total": 3,
+                "yes_bid": 0.62,
+                "yes_ask": 0.63,
+                "no_bid": 0.36,
+                "no_ask": 0.37,
+                "mid": 0.625,
+                "implied_pct": 62.5,
+                "american": -167,
+                "last_price": 0.62,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-4",
+                "total": 4,
+                "yes_bid": 0.45,
+                "yes_ask": 0.46,
+                "no_bid": 0.54,
+                "no_ask": 0.55,
+                "mid": 0.455,
+                "implied_pct": 45.5,
+                "american": 120,
+                "last_price": 0.45,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-5",
+                "total": 5,
+                "yes_bid": 0.34,
+                "yes_ask": 0.35,
+                "no_bid": 0.65,
+                "no_ask": 0.66,
+                "mid": 0.345,
+                "implied_pct": 34.5,
+                "american": 190,
+                "last_price": 0.34,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-6",
+                "total": 6,
+                "yes_bid": 0.23,
+                "yes_ask": 0.24,
+                "no_bid": 0.76,
+                "no_ask": 0.77,
+                "mid": 0.235,
+                "implied_pct": 23.5,
+                "american": 326,
+                "last_price": 0.24,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              },
+              {
+                "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-7",
+                "total": 7,
+                "yes_bid": 0.14,
+                "yes_ask": 0.17,
+                "no_bid": 0.83,
+                "no_ask": 0.84,
+                "mid": 0.155,
+                "implied_pct": 15.5,
+                "american": 545,
+                "last_price": 0.14,
+                "status": "active",
+                "book_state": "TWO_SIDED",
+                "price_source_fields": {
+                  "yes_bid": "yes_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "last_price": "last_price_dollars"
+                },
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "unit": "dollars",
+                "captured_at": "2026-09-24T21:32:38Z",
+                "volume": null
+              }
+            ]
+          },
+          "rfi": {
+            "yrfi": {
+              "ticker": "KXMLBRFI-26SEP241845CLEBOS",
+              "yes_bid": 0.41,
+              "yes_ask": 0.42,
+              "mid": 0.415,
+              "implied_pct": 41.5,
+              "american": 141,
+              "last_price": 0.42,
+              "volume": null,
+              "status": "active",
+              "side": "YES"
+            },
+            "nrfi": {
+              "ticker": "KXMLBRFI-26SEP241845CLEBOS",
+              "yes_bid": 0.58,
+              "yes_ask": 0.59,
+              "mid": 0.585,
+              "implied_pct": 58.5,
+              "american": -141,
+              "last_price": 0.42,
+              "volume": null,
+              "status": "active",
+              "side": "NO",
+              "derived_from": "KXMLBRFI-26SEP241845CLEBOS"
+            }
+          },
+          "by_ticker": {
+            "KXMLBGAME-26SEP241845CLEBOS-CLE": {
+              "ticker": "KXMLBGAME-26SEP241845CLEBOS-CLE",
+              "yes_bid": 0.46,
+              "yes_ask": 0.47,
+              "mid": 0.465,
+              "implied_pct": 46.5,
+              "american": 115,
+              "last_price": 0.47,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBGAME-26SEP241845CLEBOS-BOS": {
+              "ticker": "KXMLBGAME-26SEP241845CLEBOS-BOS",
+              "yes_bid": 0.53,
+              "yes_ask": 0.54,
+              "mid": 0.535,
+              "implied_pct": 53.5,
+              "american": -115,
+              "last_price": 0.54,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBSPREAD-26SEP241845CLEBOS-BOS2": {
+              "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-BOS2",
+              "yes_bid": 0.34,
+              "yes_ask": 0.35,
+              "mid": 0.345,
+              "implied_pct": 34.5,
+              "american": 190,
+              "last_price": 0.34,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBSPREAD-26SEP241845CLEBOS-BOS3": {
+              "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-BOS3",
+              "yes_bid": 0.24,
+              "yes_ask": 0.25,
+              "mid": 0.245,
+              "implied_pct": 24.5,
+              "american": 308,
+              "last_price": 0.24,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBSPREAD-26SEP241845CLEBOS-BOS4": {
+              "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-BOS4",
+              "yes_bid": 0.16,
+              "yes_ask": 0.17,
+              "mid": 0.165,
+              "implied_pct": 16.5,
+              "american": 506,
+              "last_price": 0.17,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBSPREAD-26SEP241845CLEBOS-CLE2": {
+              "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-CLE2",
+              "yes_bid": 0.32,
+              "yes_ask": 0.33,
+              "mid": 0.325,
+              "implied_pct": 32.5,
+              "american": 208,
+              "last_price": 0.33,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBSPREAD-26SEP241845CLEBOS-CLE3": {
+              "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-CLE3",
+              "yes_bid": 0.22,
+              "yes_ask": 0.23,
+              "mid": 0.225,
+              "implied_pct": 22.5,
+              "american": 344,
+              "last_price": 0.22,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBSPREAD-26SEP241845CLEBOS-CLE4": {
+              "ticker": "KXMLBSPREAD-26SEP241845CLEBOS-CLE4",
+              "yes_bid": 0.15,
+              "yes_ask": 0.16,
+              "mid": 0.155,
+              "implied_pct": 15.5,
+              "american": 545,
+              "last_price": 0.16,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26SEP241845CLEBOS-2": {
+              "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-2",
+              "yes_bid": 0.95,
+              "yes_ask": 0.96,
+              "mid": 0.955,
+              "implied_pct": 95.5,
+              "american": -2122,
+              "last_price": 0.96,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26SEP241845CLEBOS-3": {
+              "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-3",
+              "yes_bid": 0.92,
+              "yes_ask": 0.93,
+              "mid": 0.925,
+              "implied_pct": 92.5,
+              "american": -1233,
+              "last_price": 0.93,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26SEP241845CLEBOS-4": {
+              "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-4",
+              "yes_bid": 0.81,
+              "yes_ask": 0.82,
+              "mid": 0.815,
+              "implied_pct": 81.5,
+              "american": -441,
+              "last_price": 0.82,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26SEP241845CLEBOS-5": {
+              "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-5",
+              "yes_bid": 0.74,
+              "yes_ask": 0.75,
+              "mid": 0.745,
+              "implied_pct": 74.5,
+              "american": -292,
+              "last_price": 0.75,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26SEP241845CLEBOS-6": {
+              "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-6",
+              "yes_bid": 0.61,
+              "yes_ask": 0.62,
+              "mid": 0.615,
+              "implied_pct": 61.5,
+              "american": -160,
+              "last_price": 0.62,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26SEP241845CLEBOS-7": {
+              "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-7",
+              "yes_bid": 0.51,
+              "yes_ask": 0.52,
+              "mid": 0.515,
+              "implied_pct": 51.5,
+              "american": -106,
+              "last_price": 0.51,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26SEP241845CLEBOS-8": {
+              "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-8",
+              "yes_bid": 0.38,
+              "yes_ask": 0.39,
+              "mid": 0.385,
+              "implied_pct": 38.5,
+              "american": 160,
+              "last_price": 0.38,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26SEP241845CLEBOS-9": {
+              "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-9",
+              "yes_bid": 0.31,
+              "yes_ask": 0.32,
+              "mid": 0.315,
+              "implied_pct": 31.5,
+              "american": 217,
+              "last_price": 0.31,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26SEP241845CLEBOS-10": {
+              "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-10",
+              "yes_bid": 0.22,
+              "yes_ask": 0.23,
+              "mid": 0.225,
+              "implied_pct": 22.5,
+              "american": 344,
+              "last_price": 0.23,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26SEP241845CLEBOS-11": {
+              "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-11",
+              "yes_bid": 0.17,
+              "yes_ask": 0.18,
+              "mid": 0.175,
+              "implied_pct": 17.5,
+              "american": 471,
+              "last_price": 0.18,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTOTAL-26SEP241845CLEBOS-12": {
+              "ticker": "KXMLBTOTAL-26SEP241845CLEBOS-12",
+              "yes_bid": 0.11,
+              "yes_ask": 0.12,
+              "mid": 0.115,
+              "implied_pct": 11.5,
+              "american": 770,
+              "last_price": 0.11,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE2": {
+              "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE2",
+              "yes_bid": 0.74,
+              "yes_ask": 0.75,
+              "mid": 0.745,
+              "implied_pct": 74.5,
+              "american": -292,
+              "last_price": 0.75,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE3": {
+              "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE3",
+              "yes_bid": 0.58,
+              "yes_ask": 0.59,
+              "mid": 0.585,
+              "implied_pct": 58.5,
+              "american": -141,
+              "last_price": 0.59,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE4": {
+              "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE4",
+              "yes_bid": 0.43,
+              "yes_ask": 0.45,
+              "mid": 0.44,
+              "implied_pct": 44.0,
+              "american": 127,
+              "last_price": 0.45,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE5": {
+              "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE5",
+              "yes_bid": 0.3,
+              "yes_ask": 0.31,
+              "mid": 0.305,
+              "implied_pct": 30.5,
+              "american": 228,
+              "last_price": 0.3,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE6": {
+              "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE6",
+              "yes_bid": 0.2,
+              "yes_ask": 0.21,
+              "mid": 0.205,
+              "implied_pct": 20.5,
+              "american": 388,
+              "last_price": 0.0,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE7": {
+              "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE7",
+              "yes_bid": 0.12,
+              "yes_ask": 0.14,
+              "mid": 0.13,
+              "implied_pct": 13.0,
+              "american": 669,
+              "last_price": 0.0,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE8": {
+              "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-CLE8",
+              "yes_bid": 0.07,
+              "yes_ask": 0.08,
+              "mid": 0.075,
+              "implied_pct": 7.5,
+              "american": 1233,
+              "last_price": 0.0,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS2": {
+              "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS2",
+              "yes_bid": 0.78,
+              "yes_ask": 0.79,
+              "mid": 0.785,
+              "implied_pct": 78.5,
+              "american": -365,
+              "last_price": 0.79,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS3": {
+              "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS3",
+              "yes_bid": 0.62,
+              "yes_ask": 0.63,
+              "mid": 0.625,
+              "implied_pct": 62.5,
+              "american": -167,
+              "last_price": 0.63,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS4": {
+              "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS4",
+              "yes_bid": 0.46,
+              "yes_ask": 0.47,
+              "mid": 0.465,
+              "implied_pct": 46.5,
+              "american": 115,
+              "last_price": 0.47,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS5": {
+              "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS5",
+              "yes_bid": 0.33,
+              "yes_ask": 0.34,
+              "mid": 0.335,
+              "implied_pct": 33.5,
+              "american": 199,
+              "last_price": 0.33,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS6": {
+              "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS6",
+              "yes_bid": 0.2,
+              "yes_ask": 0.21,
+              "mid": 0.205,
+              "implied_pct": 20.5,
+              "american": 388,
+              "last_price": 0.22,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS7": {
+              "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS7",
+              "yes_bid": 0.13,
+              "yes_ask": 0.14,
+              "mid": 0.135,
+              "implied_pct": 13.5,
+              "american": 641,
+              "last_price": 0.14,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS8": {
+              "ticker": "KXMLBTEAMTOTAL-26SEP241845CLEBOS-BOS8",
+              "yes_bid": 0.08,
+              "yes_ask": 0.09,
+              "mid": 0.085,
+              "implied_pct": 8.5,
+              "american": 1076,
+              "last_price": 0.1,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5-26SEP241845CLEBOS-CLE": {
+              "ticker": "KXMLBF5-26SEP241845CLEBOS-CLE",
+              "yes_bid": 0.34,
+              "yes_ask": 0.35,
+              "mid": 0.345,
+              "implied_pct": 34.5,
+              "american": 190,
+              "last_price": 0.35,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5-26SEP241845CLEBOS-BOS": {
+              "ticker": "KXMLBF5-26SEP241845CLEBOS-BOS",
+              "yes_bid": 0.47,
+              "yes_ask": 0.49,
+              "mid": 0.48,
+              "implied_pct": 48.0,
+              "american": 108,
+              "last_price": 0.49,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5-26SEP241845CLEBOS-TIE": {
+              "ticker": "KXMLBF5-26SEP241845CLEBOS-TIE",
+              "yes_bid": 0.18,
+              "yes_ask": 0.19,
+              "mid": 0.185,
+              "implied_pct": 18.5,
+              "american": 441,
+              "last_price": 0.19,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5SPREAD-26SEP241845CLEBOS-BOS2": {
+              "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-BOS2",
+              "yes_bid": 0.3,
+              "yes_ask": 0.32,
+              "mid": 0.31,
+              "implied_pct": 31.0,
+              "american": 223,
+              "last_price": 0.32,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5SPREAD-26SEP241845CLEBOS-BOS3": {
+              "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-BOS3",
+              "yes_bid": 0.19,
+              "yes_ask": 0.21,
+              "mid": 0.2,
+              "implied_pct": 20.0,
+              "american": 400,
+              "last_price": 0.0,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5SPREAD-26SEP241845CLEBOS-CLE2": {
+              "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-CLE2",
+              "yes_bid": 0.2,
+              "yes_ask": 0.21,
+              "mid": 0.205,
+              "implied_pct": 20.5,
+              "american": 388,
+              "last_price": 0.21,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5SPREAD-26SEP241845CLEBOS-CLE3": {
+              "ticker": "KXMLBF5SPREAD-26SEP241845CLEBOS-CLE3",
+              "yes_bid": 0.11,
+              "yes_ask": 0.12,
+              "mid": 0.115,
+              "implied_pct": 11.5,
+              "american": 770,
+              "last_price": 0.11,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5TOTAL-26SEP241845CLEBOS-1": {
+              "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-1",
+              "yes_bid": 0.92,
+              "yes_ask": 0.93,
+              "mid": 0.925,
+              "implied_pct": 92.5,
+              "american": -1233,
+              "last_price": 0.92,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5TOTAL-26SEP241845CLEBOS-2": {
+              "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-2",
+              "yes_bid": 0.78,
+              "yes_ask": 0.79,
+              "mid": 0.785,
+              "implied_pct": 78.5,
+              "american": -365,
+              "last_price": 0.79,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5TOTAL-26SEP241845CLEBOS-3": {
+              "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-3",
+              "yes_bid": 0.62,
+              "yes_ask": 0.63,
+              "mid": 0.625,
+              "implied_pct": 62.5,
+              "american": -167,
+              "last_price": 0.62,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5TOTAL-26SEP241845CLEBOS-4": {
+              "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-4",
+              "yes_bid": 0.45,
+              "yes_ask": 0.46,
+              "mid": 0.455,
+              "implied_pct": 45.5,
+              "american": 120,
+              "last_price": 0.45,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5TOTAL-26SEP241845CLEBOS-5": {
+              "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-5",
+              "yes_bid": 0.34,
+              "yes_ask": 0.35,
+              "mid": 0.345,
+              "implied_pct": 34.5,
+              "american": 190,
+              "last_price": 0.34,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5TOTAL-26SEP241845CLEBOS-6": {
+              "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-6",
+              "yes_bid": 0.23,
+              "yes_ask": 0.24,
+              "mid": 0.235,
+              "implied_pct": 23.5,
+              "american": 326,
+              "last_price": 0.24,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBF5TOTAL-26SEP241845CLEBOS-7": {
+              "ticker": "KXMLBF5TOTAL-26SEP241845CLEBOS-7",
+              "yes_bid": 0.14,
+              "yes_ask": 0.17,
+              "mid": 0.155,
+              "implied_pct": 15.5,
+              "american": 545,
+              "last_price": 0.14,
+              "volume": null,
+              "status": "active"
+            },
+            "KXMLBRFI-26SEP241845CLEBOS": {
+              "ticker": "KXMLBRFI-26SEP241845CLEBOS",
+              "yes_bid": 0.41,
+              "yes_ask": 0.42,
+              "mid": 0.415,
+              "implied_pct": 41.5,
+              "american": 141,
+              "last_price": 0.42,
+              "volume": null,
+              "status": "active"
+            }
+          }
+        }
+      }
     },
     "HOUATH": {
       "kalshi_key": "HOUATH",
@@ -89504,7 +93582,8 @@
             }
           }
         }
-      ]
+      ],
+      "closing_capture_status": "NO_PRICES"
     },
     "NYMTEX": {
       "kalshi_key": "NYMTEX",
@@ -93966,7 +98045,8 @@
           "note": "Per-player N+ threshold ladder. RESEARCH-ONLY \u2014 not read by merge_odds.py/build_market_ledger.py."
         }
       },
-      "closing_snapshots": []
+      "closing_snapshots": [],
+      "closing_capture_status": "MISSED"
     },
     "SDLAD": {
       "kalshi_key": "SDLAD",
@@ -107573,5 +111653,6 @@
   },
   "discoveredUnknownSeries": [],
   "discoveredUnknownSeriesCount": 0,
-  "last_snapshot_ts": "2026-09-24T21:33:22Z"
+  "last_snapshot_ts": "2026-09-24T21:33:22Z",
+  "last_pregame_closing_capture_ts": "2026-09-24T22:43:55Z"
 }

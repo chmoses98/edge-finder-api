@@ -131,6 +131,33 @@ Two paths write the same corpus, distinguished by `trigger`:
    nothing until the running loop's budget ends. Free for a public repo.
    Inert until this workflow file is on the default branch (GitHub cannot
    dispatch or schedule a workflow from a feature branch).
+   **Continuity (self-dispatch, owner-approved 2026-09-24).** Live, GitHub
+   delivered only 1 of this workflow's first 5 hourly cron slots, so waiting for
+   a scheduled event left multi-hour gaps. The last workflow step
+   (`scripts/research/mrv_collector/chain_successor.py`) therefore requests at
+   most ONE successor (`budget_minutes=340`, `cadence_minutes=10`) through the
+   existing `workflow_dispatch` entry point. It runs only when every earlier step
+   succeeded on the default branch:
+   - the capture step succeeded, and `run_loop.py` now fails it when any cycle
+     is FAILED or crashes;
+   - rows were verified on the research branch;
+   - the isolation checks passed.
+
+   It requests nothing if another run of this workflow is already
+   queued/pending/in progress, because that run is the successor. A failed or
+   cancelled job requests nothing, so the chain stops visibly instead of looping.
+   Permissions are `contents: write` plus `actions: write` (needed only to
+   dispatch). The non-cancelling concurrency group admits one running and one
+   pending job, so collectors never overlap. The hourly cron stays as the
+   fallback that restarts a stopped chain.
+
+   **Kill switch:** the repository variable `MRV_CONTINUOUS_CAPTURE_ENABLED`
+   (Settings → Secrets and variables → Actions → Variables).
+   - Unset (the default) or any other value means continuous capture is on.
+   - Set it to `false` (also `0`/`no`/`off`/`disabled`) to stop. The running job
+     finishes its bounded budget and requests no successor, and cron-triggered
+     runs are skipped. A manual dispatch still runs one bounded job.
+   - Disabling the workflow in the Actions tab stops everything.
 2. **External always-on runner (primary once deployed)**:
    `scripts/research/mrv_collector/external_runner.sh` — same loop forever on
    any Linux host with python3 and git; needs `ODDS_API_KEY` and a
@@ -180,6 +207,54 @@ Rolling 7-day window, computed only from the persisted corpus:
 all gates pass. **Until `researchReady` is true, no MRV inference run is
 authorised on this corpus.** The thresholds are not to be lowered because
 collecting the data is inconvenient.
+
+## Readiness gates V1.2 (`readiness_v12.py`, `MRV_READINESS_GATES_V1_2_2026_09_24`)
+
+**Why V1.2 exists.** The first live window (29 COMPLETE cycles, 0 unaccounted
+rows, 0 failed books) left V1.1 `infrastructureHealthy = false` for three
+reasons that are measurement-definition problems, not collector failures:
+- tomorrow's games whose Kalshi families are only partly listed (Kalshi lists
+  `KXMLBGAME` first);
+- tomorrow's games whose sportsbooks have not posted lines;
+- thin inning families inside the global two-sided-book share.
+
+V1.2 fixes the readiness **population** before any prospective inference is
+authorised. V1.1 is not edited. It is still computed and reported
+(`gates`), and V1.2 is reported next to it (`readinessV1_2`).
+
+**Window.** T-240 through T-5 minutes before scheduled first pitch, with both
+ends included. This is the grid the MRV lead/lag design already used
+(`market_structure/leadlag.py grid_rows(first_before=240, last_before=5,
+step=5)`); it was predeclared and not fitted to live pass/fail results.
+- A game-cycle's distance to first pitch uses the cycle start.
+- A book's distance uses that book's own fetch time.
+- The scheduled start is the latest persisted MLB state value by the end of
+  that cycle.
+- A game with no known start is `UNKNOWN_START`: excluded and counted.
+- Capture outside the window is unchanged, and those game-cycles are reported as
+  `OUTSIDE_READINESS_WINDOW_BEFORE_T240` / `_AFTER_T5`.
+
+**Core families** (exactly the V1.1 sample-gate set): `KXMLBGAME`,
+`KXMLBTOTAL`, `KXMLBSPREAD`, `KXMLBTEAMTOTAL`, `KXMLBF5`, `KXMLBF5TOTAL`.
+Inning, RFI, F3/F7, extras and props remain captured and reported (non-core
+book quality separately) but cannot make the core layer unhealthy.
+
+**Populations changed (thresholds unchanged):**
+- `familyCoverage.starvedGameCycles` (≤ 0) and `coreFamiliesPresentShare`
+  (≥ 0.98) use in-window game-cycles and the six core families.
+- `sportsbook.matchedGameShare` (≥ 0.90) uses eligible games observed inside
+  the window. A game counts as matched only if it was MATCHED during an
+  in-window cycle. Ambiguous joins still fail via the unchanged global gate.
+- `orderBook.twoSidedShare` / `withDepthShare` (≥ 0.95) use archived
+  core-family books fetched inside the window.
+- Sample floors (≥ 60 games, ≥ 10 official dates, ≥ 80 contracts in each core
+  family) count only REGULAR_SEASON games/contracts with at least one in-window
+  observation. POSTSEASON is its own stratum, and OTHER_OR_UNKNOWN counts
+  toward neither.
+
+Unchanged from V1.1: cadence, COMPLETE share, unaccounted rows, FAILED share,
+ambiguous joins, books/event, budget degradation, timestamp coverage,
+information-state coverage, and lineup transitions ≥ 20.
 
 ## Season phase (frozen rule `MRV_SEASON_PHASE_RULE_V1_2026_09_23`)
 

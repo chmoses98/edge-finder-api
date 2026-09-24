@@ -42,11 +42,14 @@ def main(argv=None):
     t_end = time.time() + args.budget_minutes * 60.0
     n = 0
     overruns = 0
+    failed_cycles = 0
     while time.time() < t_end and (not args.max_cycles or n < args.max_cycles):
         t0 = time.time()
         n += 1
         rc = subprocess.call([sys.executable, os.path.join(REPO, "scripts", "research", "mrv_collector", "run_cycle.py"),
                               "--trigger", os.environ.get("GITHUB_EVENT_NAME") or "loop", "--attempt", "1"], cwd=REPO)
+        if rc != 0:
+            failed_cycles += 1
         if not args.no_git:
             prc = persist(args.branch, STORAGE_RELATIVE_ROOT)
             if prc != 0:
@@ -60,8 +63,10 @@ def main(argv=None):
             break
         if wait > 0:
             time.sleep(wait)
-    print("[mrv-loop] done cycles=%d overruns=%d" % (n, overruns))
-    return 0
+    print("[mrv-loop] done cycles=%d overruns=%d failedCycles=%d" % (n, overruns, failed_cycles))
+    # A FAILED or crashed cycle fails the step, so the workflow's success-only
+    # successor dispatch stops visibly instead of chaining a broken collector.
+    return 1 if failed_cycles else 0
 
 
 if __name__ == "__main__":

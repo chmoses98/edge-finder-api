@@ -15,6 +15,7 @@ sys.path.insert(0, REPO)
 
 from lib.edgelab.research.mrv_collector import STORAGE_RELATIVE_ROOT, COLLECTOR_VERSION  # noqa: E402
 from lib.edgelab.research.mrv_collector.health import build_health, GATES  # noqa: E402
+from lib.edgelab.research.mrv_collector.readiness_v12 import GATES_V1_2  # noqa: E402
 from lib.edgelab.research.mrv_collector.storage import Store  # noqa: E402
 
 
@@ -28,6 +29,7 @@ def main(argv=None):
     rep = build_health(Store(args.root), end_date=args.end_date, days=args.days)
     rep["collectorVersion"] = COLLECTOR_VERSION
     rep["gateDefinitions"] = GATES
+    rep["gateDefinitionsV1_2"] = GATES_V1_2
     if args.write:
         d = os.path.join(args.root, "health")
         os.makedirs(d, exist_ok=True)
@@ -35,7 +37,10 @@ def main(argv=None):
             with open(os.path.join(d, name), "w") as f:
                 json.dump(rep, f, indent=1, sort_keys=True, default=str)
                 f.write("\n")
-    print(json.dumps({"captures": rep["metrics"]["captures"], "cadence": rep["metrics"]["cadence"], "gates": rep["gates"]}, indent=1, sort_keys=True, default=str))
+    v12 = rep["readinessV1_2"]
+    print(json.dumps({"captures": rep["metrics"]["captures"], "cadence": rep["metrics"]["cadence"], "gatesV1_1": rep["gates"],
+                      "readinessV1_2": {k: v12[k] for k in ("gateVersion", "checks", "infrastructureHealthy", "researchReady", "failing")},
+                      "readinessV1_2GameCycles": v12["metrics"]["gameCycles"]}, indent=1, sort_keys=True, default=str))
     return 0
 
 

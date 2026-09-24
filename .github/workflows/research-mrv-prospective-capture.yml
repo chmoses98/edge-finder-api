@@ -42,13 +42,20 @@ on:
 
 permissions:
   contents: write
+  actions: write        # only so a completed job can dispatch its one successor (last step)
 
 concurrency:
   group: mrv-prospective-capture-v1
   cancel-in-progress: false
 
+# KILL SWITCH: repository variable MRV_CONTINUOUS_CAPTURE_ENABLED.  Unset (the
+# default) or any value other than false/0/no/off/disabled = continuous capture
+# ON.  Set it to `false` to stop: the running job finishes its bounded budget,
+# requests no successor, and cron-triggered runs are skipped.  A manual
+# workflow_dispatch still runs one bounded job (without chaining).
 jobs:
   capture:
+    if: github.event_name != 'schedule' || !contains(fromJSON('["false","0","no","off","disabled"]'), vars.MRV_CONTINUOUS_CAPTURE_ENABLED)
     runs-on: ubuntu-latest
     timeout-minutes: 355
     steps:
@@ -153,3 +160,25 @@ jobs:
             echo "::error::no MRV run manifests present on '$B' after this run" >&2
             exit 1
           fi
+
+      # CONTINUITY. GitHub delivered 1 of this workflow's first 5 hourly cron slots,
+      # so a chain that waits for a scheduled event leaves multi-hour gaps. A job
+      # whose every step succeeded (capture with no failed cycle, rows verified on
+      # the research branch, isolation checks) on the default branch requests at
+      # most ONE successor with the normal budget_minutes=340 / cadence_minutes=10.
+      # No successor after a failed or cancelled job (success() is false), when
+      # the kill switch is off, or when another run of this workflow is already
+      # queued (for example a cron run). The non-cancelling concurrency group above
+      # admits one running + one pending job, so collectors never overlap. The
+      # hourly cron stays as the fallback that restarts a stopped chain.
+      - name: Request the successor capture job
+        if: success() && github.ref_name == github.event.repository.default_branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MRV_CONTINUOUS_CAPTURE_ENABLED: ${{ vars.MRV_CONTINUOUS_CAPTURE_ENABLED }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python3 scripts/research/mrv_collector/chain_successor.py \
+            --workflow research-mrv-prospective-capture.yml \
+            --ref "${{ github.event.repository.default_branch }}" | tee -a "$GITHUB_STEP_SUMMARY"

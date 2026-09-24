@@ -170,7 +170,11 @@ def build_health(store, *, end_date, days=7):
         "orderBook": {"booksArchived": books_seen, "twoSidedShare": (two_sided / books_seen) if books_seen else None,
                       "withDepthShare": (with_depth / books_seen) if books_seen else None},
     }
-    return {"generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "metrics": metrics, "gates": evaluate_gates(metrics)}
+    gates = evaluate_gates(metrics)
+    # V1.2 readiness (maturity window + core families) is reported ALONGSIDE the unchanged V1.1 gates.
+    from lib.edgelab.research.mrv_collector.readiness_v12 import build_readiness_v12
+    return {"generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "metrics": metrics, "gates": gates,
+            "readinessV1_2": build_readiness_v12(store, dates, metrics, gates["checks"])}
 
 
 def _ge(v, m):

@@ -105,7 +105,7 @@
    "familyCoverage.starvedGameCycles": false,
    "informationEvents.gamesWithStateShare": true,
    "informationEvents.lineupTransitions": false,
-   "orderBook.twoSidedShare": false,
+   "orderBook.twoSidedShare": true,
    "orderBook.withDepthShare": true,
    "sample.contractsPerCoreFamily": false,
    "sample.dates": false,
@@ -120,7 +120,6 @@
    "familyCoverage.coreFamiliesPresentShare",
    "familyCoverage.starvedGameCycles",
    "informationEvents.lineupTransitions",
-   "orderBook.twoSidedShare",
    "sample.contractsPerCoreFamily",
    "sample.dates",
    "sample.uniqueGames",
@@ -130,11 +129,11 @@
   "infrastructureHealthy": false,
   "researchReady": false
  },
- "generatedAt": "2026-09-24T05:56:03Z",
+ "generatedAt": "2026-09-24T11:31:51Z",
  "metrics": {
   "cadence": {
-   "delivered": 44,
-   "gapsAll": 43,
+   "delivered": 78,
+   "gapsAll": 77,
    "gapsInWindow": 40,
    "histogram": {
     "10-15": 0,
@@ -149,11 +148,11 @@
   },
   "captures": {
    "attemptsWithoutManifest": 0,
-   "complete": 44,
-   "delivered": 44,
+   "complete": 78,
+   "delivered": 78,
    "failed": 0,
    "partial": 0,
-   "requested": 44
+   "requested": 78
   },
   "coverage": {
    "byPhase": {
@@ -170,18 +169,18 @@
     "REGULAR_SEASON": {
      "contractsPerFamily": {
       "KXMLBEXTRAS": 36,
-      "KXMLBF3": 72,
-      "KXMLBF5": 72,
-      "KXMLBF5SPREAD": 96,
-      "KXMLBF5TOTAL": 168,
-      "KXMLBF7": 72,
+      "KXMLBF3": 75,
+      "KXMLBF5": 75,
+      "KXMLBF5SPREAD": 100,
+      "KXMLBF5TOTAL": 175,
+      "KXMLBF7": 75,
       "KXMLBGAME": 78,
       "KXMLBINNINGTOTAL": 374,
       "KXMLBINNINGWIN": 594,
       "KXMLBRFI": 39,
-      "KXMLBSPREAD": 144,
-      "KXMLBTEAMTOTAL": 336,
-      "KXMLBTOTAL": 263
+      "KXMLBSPREAD": 150,
+      "KXMLBTEAMTOTAL": 350,
+      "KXMLBTOTAL": 274
      },
      "dates": 3,
      "uniqueGames": 39
@@ -189,47 +188,47 @@
    },
    "contractsPerCoreFamily": {
     "KXMLBEXTRAS": 36,
-    "KXMLBF3": 72,
-    "KXMLBF5": 72,
-    "KXMLBF5SPREAD": 96,
-    "KXMLBF5TOTAL": 168,
-    "KXMLBF7": 72,
+    "KXMLBF3": 75,
+    "KXMLBF5": 75,
+    "KXMLBF5SPREAD": 100,
+    "KXMLBF5TOTAL": 175,
+    "KXMLBF7": 75,
     "KXMLBGAME": 78,
     "KXMLBINNINGTOTAL": 374,
     "KXMLBINNINGWIN": 594,
     "KXMLBRFI": 39,
-    "KXMLBSPREAD": 144,
-    "KXMLBTEAMTOTAL": 336,
-    "KXMLBTOTAL": 263
+    "KXMLBSPREAD": 150,
+    "KXMLBTEAMTOTAL": 350,
+    "KXMLBTOTAL": 274
    },
-   "coreFamiliesPresentShare": 0.575187969924812,
+   "coreFamiliesPresentShare": 0.5112960760998811,
    "cycleDates": 2,
    "dates": 3,
-   "gameCycles": 798,
+   "gameCycles": 1682,
    "samplePhase": "REGULAR_SEASON",
-   "starvedGameCycles": 44,
+   "starvedGameCycles": 78,
    "uniqueGames": 39
   },
   "informationEvents": {
    "gamesWithState": 41,
    "gamesWithStateShare": 1.0,
    "lineupTransitionsObserved": 6,
-   "pitcherTransitionsObserved": 7
+   "pitcherTransitionsObserved": 8
   },
   "markets": {
-   "archived": 98969,
+   "archived": 113568,
    "booksFailed": 0,
-   "booksReceived": 48291,
-   "booksRequested": 48291,
+   "booksReceived": 90196,
+   "booksRequested": 90196,
    "excluded": 0,
-   "received": 196666,
-   "referenced": 97697,
+   "received": 282242,
+   "referenced": 168674,
    "unaccounted": 0
   },
   "orderBook": {
-   "booksArchived": 31389,
-   "twoSidedShare": 0.948389563222785,
-   "withDepthShare": 0.9995221255853961
+   "booksArchived": 52889,
+   "twoSidedShare": 0.9505568265612887,
+   "withDepthShare": 0.9992626065911626
   },
   "sportsbook": {
    "ambiguous": 0,
@@ -237,16 +236,16 @@
    "degradedCycles": 0,
    "eligibleGames": 41,
    "legStatusByCycle": {
-    "OK": 44
+    "OK": 78
    },
-   "matched": 486,
-   "matchedGameShare": 0.5853658536585366,
-   "matchedGames": 24,
+   "matched": 893,
+   "matchedGameShare": 0.6097560975609756,
+   "matchedGames": 25,
    "unmatched": 230
   },
   "timestamps": {
    "perFetchTimestampShare": 1.0,
-   "rowsChecked": 46703
+   "rowsChecked": 76479
   },
   "window": {
    "dates": [
@@ -355,9 +354,9 @@
     "byStatus": {
      "IN_READINESS_WINDOW": 123,
      "OUTSIDE_READINESS_WINDOW_AFTER_T5": 6,
-     "OUTSIDE_READINESS_WINDOW_BEFORE_T240": 688
+     "OUTSIDE_READINESS_WINDOW_BEFORE_T240": 1640
     },
-    "total": 817
+    "total": 1769
    },
    "orderBook": {
     "core": {
@@ -371,9 +370,9 @@
      "withDepthShare": 1.0
     },
     "outsideWindowOrUnknown": {
-     "books": 22560,
-     "twoSidedShare": 0.9411347517730496,
-     "withDepthShare": 0.9993351063829787
+     "books": 44060,
+     "twoSidedShare": 0.9472764412165229,
+     "withDepthShare": 0.9991148433953699
     }
    },
    "sample": {

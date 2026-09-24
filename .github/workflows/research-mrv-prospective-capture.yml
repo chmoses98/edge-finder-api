@@ -129,7 +129,7 @@ jobs:
           # committed changes. Anything else dirty is a defect.
           # The overlay leaves a file that exists on the default branch but not yet on the
           # research branch UNTRACKED ('??'), not modified (' M'): run 35954988300 failed here
-          # on readiness_v12.py / chain_successor.py right after #248 added them. Both
+          # on the two collector files #248 had just added to main. Both
           # states are the overlay itself; anything else outside the MRV v1 path is a defect.
           DIRTY="$(git status --porcelain | grep -v 'data/edgelab/research_artifacts/mrv_prospective/v1/' | grep -Ev '^( M|\?\?) (lib|scripts)/' | grep -v 'mrv_series_policy.json' || true)"
           if [ -n "$DIRTY" ]; then

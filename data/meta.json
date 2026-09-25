@@ -1,1 +1,41 @@
-{"fetchedAt":"2026-09-25T21:54:01Z","date":"2026-09-25","status":"ok","oddsSource":"the-odds-api-via-vercel"}
+{
+  "fetchedAt": "2026-09-25T21:54:01Z",
+  "date": "2026-09-25",
+  "status": "ok",
+  "oddsSource": "the-odds-api-via-vercel",
+  "risk_gate": {
+    "runAt": "2026-09-25T21:54:33.382958+00:00",
+    "decision": "PAPER_ONLY",
+    "correlation": {
+      "warnings": [
+        "GAME_CONCENTRATION_CAP: COL@CWS has 3 real-money bets (max 2 per game) -- F5_ML_Home downgraded"
+      ],
+      "downgrades": [
+        {
+          "game": "COL@CWS",
+          "market": "F5_ML_Home",
+          "reason": "GAME_CONCENTRATION_CAP: COL@CWS has 3 real-money bets (max 2 per game) -- F5_ML_Home downgraded"
+        }
+      ],
+      "clusters": [],
+      "total_stake_basis": 16.5
+    },
+    "by_family": {
+      "TT": {
+        "bets": 3,
+        "stake": 12.0
+      }
+    },
+    "total_real_stake": 12.0,
+    "total_bets": 3,
+    "tt_stake": 12.0,
+    "tt_bets": 3,
+    "ml_f5_stake": 0.0,
+    "ml_f5_bets": 0,
+    "concentration_warnings": [
+      "TT_DOMINANCE: TT is 100% of stake (max 40%)"
+    ],
+    "downgrades_applied": [],
+    "decision_reason": "ALL_TT_NO_ML_F5"
+  }
+}

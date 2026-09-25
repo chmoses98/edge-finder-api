@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-09-24T17:45:25Z",
+  "checkedAt": "2026-09-25T17:41:53Z",
   "summary": {
     "overall": "CRITICAL",
     "criticalFailureCount": 1,
@@ -14,9 +14,9 @@
       "id": "PROD-1",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Slate pipeline active: last slate 2026-09-23 (1 day(s) old)",
+      "summary": "Slate pipeline active: last slate 2026-09-24 (1 day(s) old)",
       "detail": {
-        "slateDate": "2026-09-23",
+        "slateDate": "2026-09-24",
         "lagDays": 1
       }
     },
@@ -24,9 +24,9 @@
       "id": "PROD-2",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Settlement corpus current: latest partition 2026-09-23 (1 day(s) old)",
+      "summary": "Settlement corpus current: latest partition 2026-09-24 (1 day(s) old)",
       "detail": {
-        "latestPartition": "2026-09-23",
+        "latestPartition": "2026-09-24",
         "lagDays": 1,
         "maxLagDays": 2
       }
@@ -35,9 +35,9 @@
       "id": "PROD-3",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Recommendation ledger current: latest partition 2026-09-23 (1 day(s) old)",
+      "summary": "Recommendation ledger current: latest partition 2026-09-24 (1 day(s) old)",
       "detail": {
-        "latestPartition": "2026-09-23",
+        "latestPartition": "2026-09-24",
         "lagDays": 1,
         "maxLagDays": 2
       }
@@ -46,7 +46,7 @@
       "id": "PROD-4",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Prediction and settlement partitions are in step (evaluations 2026-09-23, settlements 2026-09-23)",
+      "summary": "Prediction and settlement partitions are in step (evaluations 2026-09-24, settlements 2026-09-24)",
       "detail": {
         "divergenceDays": 0
       }
@@ -55,19 +55,19 @@
       "id": "PROD-5",
       "severity": "CRITICAL_PRODUCTION",
       "status": "FAIL",
-      "summary": "Canonical ledger bets.json has not been committed for 6 days (limit 3, last commit 2026-09-18) while the slate pipeline is active -- settlement output is being computed and discarded rather than persisted",
+      "summary": "Canonical ledger bets.json has not been committed for 7 days (limit 3, last commit 2026-09-18) while the slate pipeline is active -- settlement output is being computed and discarded rather than persisted",
       "detail": {
         "betsLedgerCommitDate": "2026-09-18",
-        "lagDays": 6
+        "lagDays": 7
       }
     },
     {
       "id": "PROD-6",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Model-evaluation corpus current: latest partition 2026-09-23 (1 day(s) old)",
+      "summary": "Model-evaluation corpus current: latest partition 2026-09-24 (1 day(s) old)",
       "detail": {
-        "latestPartition": "2026-09-23",
+        "latestPartition": "2026-09-24",
         "lagDays": 1,
         "maxLagDays": 2
       }
@@ -93,7 +93,7 @@
       "id": "RSCH-1",
       "severity": "RESEARCH_DEGRADATION",
       "status": "PASS",
-      "summary": "Research heartbeat current (latest 2026-09-23)",
+      "summary": "Research heartbeat current (latest 2026-09-24)",
       "detail": {}
     }
   ],

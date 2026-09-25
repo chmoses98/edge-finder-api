@@ -5,7 +5,7 @@ Regenerate with `python3 scripts/edgelab/run_frozen_forward_scorer.py` (idempote
 
 - **Forward window:** settlement date strictly after 2026-08-28
 - **Status:** `STRONGER_CONFIRMATION`
-- **Checkpoint:** `CHECKPOINT_4` (STRONGER_CONFIRMATION) — 13072 rows / 546 games / 26 dates
+- **Checkpoint:** `CHECKPOINT_4` (STRONGER_CONFIRMATION) — 13508 rows / 565 games / 27 dates
 
 ## Frozen artifacts under test (parameters read-only, never re-estimated)
 
@@ -24,29 +24,29 @@ Regenerate with `python3 scripts/edgelab/run_frozen_forward_scorer.py` (idempote
 
 ## Coverage
 
-- settled forward tickers: 111321
-- joined rows: 13072 (excluded: 96971 without a pregame evaluation, 1278 without a pregame fair price)
+- settled forward tickers: 115144
+- joined rows: 13508 (excluded: 100353 without a pregame evaluation, 1283 without a pregame fair price)
 - families: first_inning_run, game_result, game_total, inning_result, inning_total, pitcher_outs, pitcher_strikeouts, team_total, winning_margin
-- dates: 2026-08-29, 2026-08-30, 2026-08-31, 2026-09-01, 2026-09-02, 2026-09-03, 2026-09-04, 2026-09-05, 2026-09-06, 2026-09-07, 2026-09-08, 2026-09-09, 2026-09-10, 2026-09-11, 2026-09-12, 2026-09-13, 2026-09-14, 2026-09-15, 2026-09-16, 2026-09-17, 2026-09-18, 2026-09-19, 2026-09-20, 2026-09-21, 2026-09-22, 2026-09-23
+- dates: 2026-08-29, 2026-08-30, 2026-08-31, 2026-09-01, 2026-09-02, 2026-09-03, 2026-09-04, 2026-09-05, 2026-09-06, 2026-09-07, 2026-09-08, 2026-09-09, 2026-09-10, 2026-09-11, 2026-09-12, 2026-09-13, 2026-09-14, 2026-09-15, 2026-09-16, 2026-09-17, 2026-09-18, 2026-09-19, 2026-09-20, 2026-09-21, 2026-09-22, 2026-09-23, 2026-09-24
 
 ## MLB-RSCH-0022
 
 - **status:** `FORWARD_CONTRADICTS_FROZEN_FINDING`
-  - worse on Brier (0.016927) and log loss (0.064198)
-- **production − market:** Brier Δ 0.016927, log-loss Δ 0.064198, CI {'low': 0.0131, 'high': 0.021, 'method': 'GAME_CLUSTERED_BOOTSTRAP'}
+  - worse on Brier (0.016494) and log loss (0.063298)
+- **production − market:** Brier Δ 0.016494, log-loss Δ 0.063298, CI {'low': 0.0126, 'high': 0.0204, 'method': 'GAME_CLUSTERED_BOOTSTRAP'}
 
 ## MLB-RSCH-0024
 
 - **status:** `INTERMEDIATE_UNCONFIRMED`
   - mixed evidence: brierDelta=-0.0 logLossDelta=-1e-06
-  - datesFavourable=12/26
+  - datesFavourable=13/27
 - **M2 (frozen α) − M0:** Brier Δ -0.0, log-loss Δ -1e-06, CI {'low': -0.0, 'high': 0.0, 'method': 'GAME_CLUSTERED_BOOTSTRAP'}
 
 ## MLB-RSCH-0026
 
 - **status:** `FORWARD_CONTRADICTS_FROZEN_FINDING`
-  - worse on Brier (3.1e-05) and log loss (0.000118)
-- **frozen β shrink − market:** Brier Δ 3.1e-05, log-loss Δ 0.000118, CI {'low': -0.0, 'high': 0.0001, 'method': 'GAME_CLUSTERED_BOOTSTRAP'}
+  - worse on Brier (2.5e-05) and log loss (9.1e-05)
+- **frozen β shrink − market:** Brier Δ 2.5e-05, log-loss Δ 9.1e-05, CI {'low': -0.0, 'high': 0.0001, 'method': 'GAME_CLUSTERED_BOOTSTRAP'}
 
 ## Governance
 

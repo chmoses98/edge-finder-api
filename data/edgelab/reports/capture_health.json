@@ -1,6 +1,43 @@
 {
   "byDate": [
     {
+      "date": "2026-09-25",
+      "delivery": {
+        "capturesArchived": 7,
+        "schedulerDelaySeconds": {
+          "median": 240.0,
+          "p90": 1140.0
+        }
+      },
+      "evidence": {
+        "marketsArchived": 5179,
+        "marketsSeenOnlyAfterFirstPitch": 1386,
+        "marketsSeenPrestartWithNoUsablePrice": 0,
+        "marketsWithNoPrestartEvidence": 1386,
+        "preCloseOnlyMarkets": 1693,
+        "secondsBeforeStart": {
+          "median": 1273.8,
+          "p90": 10451.8
+        },
+        "startUnresolvedMarkets": 18,
+        "trueCloseMarkets": 2082
+      },
+      "replayedAt": "2026-09-26T02:16:00Z",
+      "slate": {
+        "games": 17,
+        "gamesWithStartTime": 17,
+        "gamesWithoutStartTime": 0
+      },
+      "windows": {
+        "delivered": 17,
+        "deliveredPct": 33.3,
+        "missedLate": 34,
+        "skippedNoStartTime": 0,
+        "targeted": 51,
+        "unresolvedAtReplay": 0
+      }
+    },
+    {
       "date": "2026-09-24",
       "delivery": {
         "capturesArchived": 5,
@@ -221,82 +258,45 @@
         "targeted": 45,
         "unresolvedAtReplay": 0
       }
-    },
-    {
-      "date": "2026-09-18",
-      "delivery": {
-        "capturesArchived": 5,
-        "schedulerDelaySeconds": {
-          "median": null,
-          "p90": null
-        }
-      },
-      "evidence": {
-        "marketsArchived": 5179,
-        "marketsSeenOnlyAfterFirstPitch": 107,
-        "marketsSeenPrestartWithNoUsablePrice": 0,
-        "marketsWithNoPrestartEvidence": 107,
-        "preCloseOnlyMarkets": 4047,
-        "secondsBeforeStart": {
-          "median": 5570.9,
-          "p90": 7670.9
-        },
-        "startUnresolvedMarkets": 1,
-        "trueCloseMarkets": 1024
-      },
-      "replayedAt": "2026-09-19T02:16:00Z",
-      "slate": {
-        "games": 15,
-        "gamesWithStartTime": 15,
-        "gamesWithoutStartTime": 0
-      },
-      "windows": {
-        "delivered": 0,
-        "deliveredPct": 0.0,
-        "missedLate": 45,
-        "skippedNoStartTime": 0,
-        "targeted": 45,
-        "unresolvedAtReplay": 0
-      }
     }
   ],
-  "generatedAt": "2026-09-25T13:28:06Z",
+  "generatedAt": "2026-09-26T11:15:31Z",
   "note": "windowsTargeted is what the schedule ASKED for; windowsDelivered is what the ARCHIVE proves arrived. They are reported separately on purpose: cron configuration is not coverage, and for 13 consecutive days the two differed by an order of magnitude without anything surfacing it.",
   "schemaVersion": "capture_health_v1",
   "today": {
-    "date": "2026-09-24",
+    "date": "2026-09-25",
     "delivery": {
-      "capturesArchived": 5,
+      "capturesArchived": 7,
       "schedulerDelaySeconds": {
-        "median": 600.0,
-        "p90": 1500.0
+        "median": 240.0,
+        "p90": 1140.0
       }
     },
     "evidence": {
-      "marketsArchived": 4038,
-      "marketsSeenOnlyAfterFirstPitch": 1887,
+      "marketsArchived": 5179,
+      "marketsSeenOnlyAfterFirstPitch": 1386,
       "marketsSeenPrestartWithNoUsablePrice": 0,
-      "marketsWithNoPrestartEvidence": 1887,
-      "preCloseOnlyMarkets": 1143,
+      "marketsWithNoPrestartEvidence": 1386,
+      "preCloseOnlyMarkets": 1693,
       "secondsBeforeStart": {
-        "median": 8978.6,
-        "p90": 11283.2
+        "median": 1273.8,
+        "p90": 10451.8
       },
-      "startUnresolvedMarkets": 330,
-      "trueCloseMarkets": 678
+      "startUnresolvedMarkets": 18,
+      "trueCloseMarkets": 2082
     },
-    "replayedAt": "2026-09-25T02:11:00Z",
+    "replayedAt": "2026-09-26T02:16:00Z",
     "slate": {
-      "games": 12,
-      "gamesWithStartTime": 12,
+      "games": 17,
+      "gamesWithStartTime": 17,
       "gamesWithoutStartTime": 0
     },
     "windows": {
-      "delivered": 3,
-      "deliveredPct": 8.3,
-      "missedLate": 33,
+      "delivered": 17,
+      "deliveredPct": 33.3,
+      "missedLate": 34,
       "skippedNoStartTime": 0,
-      "targeted": 36,
+      "targeted": 51,
       "unresolvedAtReplay": 0
     }
   },
@@ -304,13 +304,13 @@
     "datesWithASlate": 7,
     "days": 7,
     "marketsArchived": 30824,
-    "preCloseOnlyMarkets": 14061,
-    "trueCloseMarkets": 4447,
-    "trueClosePct": 14.4,
-    "windowDeliveryPct": 10.9,
-    "windowsDelivered": 30,
-    "windowsMissedLate": 246,
-    "windowsTargeted": 276,
+    "preCloseOnlyMarkets": 11707,
+    "trueCloseMarkets": 5505,
+    "trueClosePct": 17.9,
+    "windowDeliveryPct": 16.7,
+    "windowsDelivered": 47,
+    "windowsMissedLate": 235,
+    "windowsTargeted": 282,
     "windowsUnresolvedAtReplay": 0
   }
 }

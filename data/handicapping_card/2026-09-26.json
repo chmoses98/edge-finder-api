@@ -8,7 +8,7 @@
     "PRODUCTION_MODEL_SUPPORT": "the production model prices it (config/rules.json market_list)"
   },
   "bankroll": {
-    "ageMinutes": 4.94,
+    "ageMinutes": 5.112,
     "bankroll": null,
     "bankrollRedacted": true,
     "bankrollRedactionReason": "This repository is PUBLIC. The numeric balance is delivered to the card build as an encrypted Actions secret and is used for sizing, but is never committed. Everything needed to judge whether that sizing is trustworthy is above -- but NOT the amount, so a reader of this file cannot compute dollar stakes. See consumerSizingVerdict.",
@@ -20,8 +20,8 @@
     "currency": "USD",
     "maxAgeMinutes": 30,
     "numericBankrollAvailable": false,
-    "observedAt": "2026-09-26T22:29:42Z",
-    "resolvedAt": "2026-09-26T22:34:38Z",
+    "observedAt": "2026-09-26T22:35:40Z",
+    "resolvedAt": "2026-09-26T22:40:46Z",
     "schemaVersion": "3",
     "sizingAllowed": true,
     "sizingAuthoritativeSource": true,
@@ -90,7 +90,7 @@
         "away": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -100,7 +100,7 @@
         "home": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -18237,7 +18237,7 @@
         "away": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -18247,7 +18247,7 @@
         "home": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -36020,7 +36020,7 @@
         "away": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -36030,7 +36030,7 @@
         "home": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -53491,7 +53491,7 @@
         "away": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -53501,7 +53501,7 @@
         "home": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -70702,7 +70702,7 @@
         "away": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -70712,7 +70712,7 @@
         "home": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -88138,9 +88138,9 @@
     "unclassifiedRawContracts": "the normalizer could not parse them -- retained with reasons"
   },
   "date": "2026-09-26",
-  "eligibilityEvaluatedAt": "2026-09-26T22:34:38Z",
+  "eligibilityEvaluatedAt": "2026-09-26T22:40:46Z",
   "eligibilityPolicy": "Only games that have NOT started and have BOTH official lineups confirmed (lineupConfirmedOfficial on awayTeamStats AND homeTeamStats) are real-money candidates. Probable/projected lineups are never treated as confirmed. Every other game stays archived and researchable and must not produce a real-money recommendation from the normal slate card.",
-  "generatedAt": "2026-09-26T22:34:38Z",
+  "generatedAt": "2026-09-26T22:40:46Z",
   "guarantees": [
     "Only games that have NOT started and have BOTH official lineups confirmed appear under bettingEligibleGames. Everything else is researchOnly and carries realMoneyEligible=false on every market row.",
     "For a betting-eligible game, EVERY raw Kalshi contract attributable to it is accounted for in exactly one visible state: a normalized market, a registry exclusion with its reason, or an unclassified contract with the normalizer's reason. contractAccounting.silentRemainderCount is 0 on every game of a written card -- a violation aborts the build rather than publishing a falsely complete file.",
@@ -88193,7 +88193,7 @@
         "away": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -88203,7 +88203,7 @@
         "home": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -88364,7 +88364,7 @@
         "away": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -88374,7 +88374,7 @@
         "home": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -88539,7 +88539,7 @@
         "away": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -88549,7 +88549,7 @@
         "home": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -90704,7 +90704,7 @@
         "away": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -90714,7 +90714,7 @@
         "home": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -107029,7 +107029,7 @@
         "away": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -107039,7 +107039,7 @@
         "home": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -125065,7 +125065,7 @@
         "away": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -125075,7 +125075,7 @@
         "home": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -141544,7 +141544,7 @@
         "away": {
           "battersResolved": 0,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": false,
           "looseLineupConfirmed": false,
           "reason": "official lineup not posted yet",
@@ -141554,7 +141554,7 @@
         "home": {
           "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": true,
           "looseLineupConfirmed": true,
           "reason": null,
@@ -149738,20 +149738,20 @@
         "silentRemainderTickers": [],
         "unclassifiedCount": 0
       },
-      "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(LAA): official lineup not posted yet, home(SEA): official lineup not posted yet",
+      "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: home(SEA): official lineup not posted yet",
       "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
       "familiesWithoutAutomaticSettlement": [],
       "gameId": 823083,
       "gameStatus": {
         "gamePk": 823083,
-        "gameStatus": "Scheduled",
+        "gameStatus": "Pre-Game",
         "isFinal": false,
         "isInPlay": false,
         "isPostponed": false,
         "isPregame": true,
         "liveGameBlocked": false,
         "matchup": "LAA@SEA",
-        "message": "LAA@SEA status: Scheduled",
+        "message": "LAA@SEA status: Pre-Game",
         "shouldSkip": false,
         "skipReason": null,
         "timestampBlocked": false,
@@ -149759,26 +149759,25 @@
       },
       "lineups": {
         "away": {
-          "battersResolved": 0,
+          "battersResolved": 9,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
-          "lineupConfirmedOfficial": false,
-          "looseLineupConfirmed": false,
-          "reason": "official lineup not posted yet",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
+          "lineupConfirmedOfficial": true,
+          "looseLineupConfirmed": true,
+          "reason": null,
           "team": "LAA"
         },
         "bothConfirmed": false,
         "home": {
           "battersResolved": 0,
           "fieldPresent": true,
-          "lineupCheckedAt": "2026-09-26T22:32:12Z",
+          "lineupCheckedAt": "2026-09-26T22:38:06Z",
           "lineupConfirmedOfficial": false,
           "looseLineupConfirmed": false,
           "reason": "official lineup not posted yet",
           "team": "SEA"
         },
         "unconfirmedSides": [
-          "away",
           "home"
         ]
       },

@@ -185,7 +185,10 @@ def test_the_correction_changes_the_linkage_and_nothing_else(tmp_path, monkeypat
     fresh = repair.rederive(stored, storage_module=STARTED)
     candidate = dict(stored)
     candidate["marketObservationLinkage"] = fresh
-    receipt = bets_lib.write_placed_bet(candidate, on_conflict="overwrite")
+    # Exactly the call the script makes: derived context is inherited from
+    # the stored row on every write UNLESS the caller re-settles it on
+    # purpose (see lib.edgelab.bets._DERIVED_CONTEXT_FIELDS).
+    receipt = bets_lib.write_placed_bet(candidate, on_conflict="overwrite", resettle_derived_context=True)
     assert receipt["success"], receipt
     assert receipt["duplicateStatus"] == "CORRECTED"
 

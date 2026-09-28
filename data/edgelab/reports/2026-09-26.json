@@ -4,7 +4,7 @@
   "clvSummary": {
     "avgClvCents": null,
     "avgClvCentsAllCoverageIncludingStale": null,
-    "betsTotal": 0,
+    "betsTotal": 5,
     "betsWithClv": 0,
     "clvEligibleCount": 0,
     "coverageClassCounts": {},
@@ -51,11 +51,12 @@
     "data/bets.json#88: placed_bet: missing required field 'entryPrice'",
     "data/bets.json#89: placed_bet: missing required field 'entryPrice'",
     "505 legacy bet record(s) have no marketTicker and were not carried into the EdgeLab ledger \u2014 a known gap in the pre-EdgeLab ledgers (see docs/EDGELAB_PHASE1.md limitations), never fabricated here.",
+    "no MLB gamePk resolved for gameId=2026-09-26_CHC_BOS_1915; settlement will be unresolved",
     "no MLB gamePk resolved for gameId=2026-09-26_CHC_BOS_1915; settlement will be unresolved"
   ],
   "date": "2026-09-26",
   "gamesObserved": 14,
-  "generatedAt": "2026-09-27T13:43:43Z",
+  "generatedAt": "2026-09-28T16:04:54Z",
   "insufficientModelSupportCount": 3971,
   "marketFamilyCounts": {
     "first_inning_run": 52,
@@ -84,10 +85,12 @@
     "PASS_DATA_QUALITY": 44,
     "PASS_NO_EDGE": 92
   },
-  "placedBets": 0,
-  "placedBetsByTrackingType": {},
+  "placedBets": 5,
+  "placedBetsByTrackingType": {
+    "REAL": 5
+  },
   "quotesCaptured": 16157,
-  "realWagerCount": 0,
+  "realWagerCount": 5,
   "recommendedBets": 7,
   "schemaVersion": "1",
   "settlementCompletion": {

@@ -168,6 +168,37 @@ jobs:
       # had their chance to be written. Never fails the workflow -- same
       # continue-on-error convention as every other step in this file, and
       # the same non-fatal-by-design rationale as fetch-slate.yml's snapshot step.
+      # RE-SETTLE DERIVED OBSERVATION LINKAGE, once the input is frozen.
+      #
+      # `marketObservationLinkage` is derived at write time from the market
+      # corpus, and the corpus keeps gaining valid pregame captures (or
+      # ingesting them late) after a row is written. The canonical write path
+      # no longer lets a replay move it (lib.edgelab.bets._DERIVED_CONTEXT_FIELDS),
+      # so kalshi-bet-router's re-imports stay DUPLICATE_NOOP -- but the
+      # stored derivation is then the answer AT THE WRITE, not the final one.
+      # This step is the explicit path that re-settles it, and it is the only
+      # thing that does: scripts/edgelab/repair_stale_observation_linkage.py
+      # refuses a game that has not started (the answer may still move), a
+      # ticker whose observations were compacted away (the evidence is gone,
+      # not superseded), and any candidate whose correction would change
+      # anything but the linkage itself. Exit 1 means a candidate was refused
+      # for one of those reasons, which is the normal state during a slate and
+      # is not a failure of this job; exit 2 (a write failed) is.
+      #
+      # Runs after settlement so today's finished games are eligible, and
+      # before the commit step so the corrected rows ride the same commit.
+      - name: Re-settle stale observation linkage (frozen games only)
+        id: resettle_linkage
+        run: |
+          status=0
+          python3 scripts/edgelab/repair_stale_observation_linkage.py --apply || status=$?
+          if [ "${status}" -eq 2 ]; then
+            echo "::error::a linkage correction could not be written (exit 2); see above."
+            exit 2
+          fi
+          echo "repair_stale_observation_linkage exit ${status} (1 = candidates refused, which is normal while games are pending)"
+        continue-on-error: true
+
       - name: Create immutable POST_GAME_SETTLEMENT snapshot
         run: python3 scripts/create_snapshot.py POST_GAME_SETTLEMENT "${{ env.DATE }}" --workflow-run-id "${{ github.run_id }}"
         continue-on-error: true

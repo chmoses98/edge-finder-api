@@ -223,7 +223,11 @@ def main(argv=None):
             print("  DRY RUN: not written")
             continue
 
-        receipt = write_placed_bet(candidate, on_conflict="overwrite")
+        # The ONE caller that re-settles derived context on purpose. Without
+        # resettle_derived_context the write path carries the stored linkage
+        # onto the candidate (a replay must never move it) and this would be
+        # a DUPLICATE_NOOP that repaired nothing.
+        receipt = write_placed_bet(candidate, on_conflict="overwrite", resettle_derived_context=True)
         receipts.append(receipt)
         if not receipt.get("success"):
             print(f"  REFUSED by the canonical write path: "

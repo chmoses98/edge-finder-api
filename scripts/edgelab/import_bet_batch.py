@@ -490,7 +490,29 @@ def process_row(row, index, import_batch_id):
         # other row still gets written (partial-success preservation).
         return _unresolved_receipt(row, index, str(exc))
 
-    receipt = write_placed_bet(record, on_conflict=row.get("onConflict", "reject"))
+    # WHAT THIS ROW REPORTED versus WHAT THIS IMPORTER DERIVED. The four
+    # classification fields fall back to the archived market record when the
+    # row does not carry them, and gameId/scheduledStart always come from the
+    # archived game record. Those derivations move as the corpus fills in
+    # (11 router rows written 2026-09-24..27 stored null/null/""/null because
+    # their markets were not yet captured, then CONFLICTed on every replay once
+    # they were -- deliver run 36447265721). A value the row itself supplied is
+    # reported content and stays in the conflict comparison; a value this
+    # importer derived is context, inherited from the stored row on a replay
+    # (see lib.edgelab.bets._DERIVED_CONTEXT_FIELDS).
+    derived_context = tuple(
+        name for name, supplied in (
+            ("marketFamily", row.get("marketFamily") is not None),
+            ("marketHorizon", row.get("marketHorizon") is not None),
+            ("threshold", row.get("threshold") is not None),
+            ("selection", bool(row.get("selection"))),
+            ("gameId", False),
+            ("scheduledStart", False),
+        ) if not supplied
+    )
+    receipt = write_placed_bet(
+        record, on_conflict=row.get("onConflict", "reject"), derived_context_fields=derived_context,
+    )
     receipt["sourceRow"] = index
     receipt["sourceBetKey"] = source_bet_key
     receipt["ambiguityCandidates"] = []

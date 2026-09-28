@@ -1191,6 +1191,27 @@ _PRESERVE_IF_NOT_SUPPLIED_FIELDS = (
 # unmerged on edge-finder-api #247 behind it.
 _DERIVED_CONTEXT_FIELDS = ("marketObservationLinkage",)
 
+# THE SAME CLASS, ONE HOUR LATER. The moment #247 merged (2026-09-28 15:54Z)
+# and the router re-seeded from main, 11 of its rows came back CONFLICT on
+# `marketFamily, marketHorizon, selection, threshold` (deliver run
+# 36447265721). Those rows were written on 2026-09-24..27 when the markets
+# partition for their dates did not yet hold their tickers, so
+# import_bet_batch.process_row stored what it could derive: null, null, "",
+# null. The corpus has since captured those markets, and the same
+# derivation now yields team_total / FULL_GAME / 3.5. Nobody REPORTED either
+# value; the router's payload never carries these fields at all.
+#
+# Which fields are derived is the IMPORTER's knowledge, per row: a row may
+# supply its own marketFamily or threshold (a manual correction), and then
+# that value is reported content and a difference is a CONFLICT. So the
+# write path takes the per-write set from the caller
+# (`derived_context_fields`) and treats it exactly like the fixed set above:
+# inherited from the stored row on a replay, replaceable only on purpose.
+# Enriching a stored null once the corpus can answer is a destination-owned
+# job (repair_game_identity.py does it nightly for gameId), never a side
+# effect of the router replaying its batch -- and it could not be: the
+# router's gate refuses any diff that is not append-only.
+
 # The fields a LEGACY SOURCE LEDGER (bets.json / data/bets.json) is
 # legitimately authoritative for -- i.e. everything the two normalizers
 # above actually derive from the legacy record's own columns, plus the
@@ -1268,7 +1289,8 @@ _LEGACY_SOURCE_AUTHORED_FIELDS = frozenset({
 }) | frozenset(_PRESERVE_IF_NOT_SUPPLIED_FIELDS)
 
 
-def _inherit_lifecycle_fields(record, existing, *, resettle_derived_context=False):
+def _inherit_lifecycle_fields(record, existing, *, resettle_derived_context=False,
+                              derived_context_fields=()):
     """
     Carry the EXISTING row's pipeline-owned fields onto a freshly-built
     candidate record before comparing or overwriting, so an entry-time
@@ -1285,7 +1307,7 @@ def _inherit_lifecycle_fields(record, existing, *, resettle_derived_context=Fals
         return record
     merged = dict(record)
     if not resettle_derived_context:
-        for field in _DERIVED_CONTEXT_FIELDS:
+        for field in tuple(_DERIVED_CONTEXT_FIELDS) + tuple(derived_context_fields):
             # Mirror key presence, as below: a stored row written before the
             # field existed must not gain a key from the candidate.
             if field in existing:
@@ -1463,7 +1485,7 @@ def build_receipt(record, *, success, duplicate_status, errors=None, conflicting
 
 
 def write_placed_bet(record, *, path=None, on_conflict="reject", near_duplicate_window_seconds=180,
-                     resettle_derived_context=False):
+                     resettle_derived_context=False, derived_context_fields=()):
     """
     THE canonical write function for the placed-bet ledger. Validates,
     detects duplicates/conflicts, writes atomically under a same-host
@@ -1501,13 +1523,15 @@ def write_placed_bet(record, *, path=None, on_conflict="reject", near_duplicate_
         a spurious CONFLICT against fields the retry was never trying to
         change in the first place.
 
-    Derived context (_DERIVED_CONTEXT_FIELDS -- marketObservationLinkage)
-    is inherited from the existing row the same way, so a replay whose
-    freshly-derived linkage differs from the stored one is a
-    DUPLICATE_NOOP, not a CONFLICT: nobody reported that value, and the
-    stored derivation is canonical until the explicit repair path
-    (scripts/edgelab/repair_stale_observation_linkage.py) passes
-    `resettle_derived_context=True` to replace it on purpose.
+    Derived context (_DERIVED_CONTEXT_FIELDS -- marketObservationLinkage --
+    plus whatever the caller names in `derived_context_fields` for THIS
+    write, e.g. the classification fields import_bet_batch resolved from
+    the corpus because the row did not supply them) is inherited from the
+    existing row the same way, so a replay whose fresh derivation differs
+    from the stored one is a DUPLICATE_NOOP, not a CONFLICT: nobody
+    reported that value, and the stored derivation is canonical until an
+    explicit repair path passes `resettle_derived_context=True` to replace
+    it on purpose (scripts/edgelab/repair_stale_observation_linkage.py).
 
     Never raises on a routine validation/duplicate/conflict outcome --
     callers must check receipt["success"] rather than assume a write
@@ -1541,7 +1565,8 @@ def write_placed_bet(record, *, path=None, on_conflict="reject", near_duplicate_
         # retry or a correction of an unrelated field never resets an
         # already-settled bet back to pending (see _inherit_lifecycle_fields).
         candidate = _inherit_lifecycle_fields(
-            record, existing, resettle_derived_context=resettle_derived_context)
+            record, existing, resettle_derived_context=resettle_derived_context,
+            derived_context_fields=tuple(derived_context_fields))
 
         if _content_fingerprint(existing) == _content_fingerprint(candidate):
             return build_receipt(existing, success=True, duplicate_status="DUPLICATE_NOOP", near_duplicates=near_dupes)

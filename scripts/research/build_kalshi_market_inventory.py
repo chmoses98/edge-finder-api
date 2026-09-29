@@ -98,8 +98,21 @@ def _walk_for_market_records(obj):
     return records
 
 
-def build_inventory():
-    latest_path = _latest_snapshot_path()
+def build_inventory(snapshot_path=None):
+    """
+    Inventory one Kalshi registry snapshot -- by default the latest committed
+    one, which is what main() publishes.
+
+    `snapshot_path` names a specific snapshot instead. It exists because the
+    CLASSIFICATION behaviour this builds (game_result is never three-way, F5
+    Tie is a dead data path, ...) must be testable on a fixed game-day
+    snapshot: "the latest committed snapshot" is legitimately EMPTY on an MLB
+    off-day (every 2026-09-28 snapshot held 0 markets), and a test that reads
+    it goes red or green with the calendar. The default is unchanged, so an
+    off-day still publishes an honest zero-market inventory rather than a
+    silently substituted older one.
+    """
+    latest_path = snapshot_path or _latest_snapshot_path()
     if latest_path is None:
         raise FileNotFoundError(f"no snapshot files found matching {SNAPSHOT_GLOB}")
 

@@ -88,6 +88,7 @@ from datetime import datetime, timezone, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lib.atomic_json import write_json_atomic
+from lib.edgelab import slate_day_contract as day_contract
 
 ET = timezone(timedelta(hours=-4))
 
@@ -396,7 +397,7 @@ def apply_post_fetch_gate_immutable(slate):
 
 
 def write_fetch_status(status, requested_date, actual_date, quarantined_games, reason=None,
-                        path='data/fetch_status.json'):
+                        path='data/fetch_status.json', schedule_evidence=None):
     """
     Write `path` (default data/fetch_status.json) with the current gate
     result. Atomic (Phase 6 review, Section F): this file is committed
@@ -428,8 +429,58 @@ def write_fetch_status(status, requested_date, actual_date, quarantined_games, r
             "reason": reason or "Gate check failed",
             "quarantinedGames": quarantined_games,
         }
+    if schedule_evidence is not None:
+        # Only on the empty-slate path (see resolve_empty_slate). Absent
+        # everywhere else, so every other status file is byte-identical.
+        payload["scheduleEvidence"] = schedule_evidence
     os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
     write_json_atomic(payload, path, indent=2)
+
+
+#: Test/replay seam for the schedule lookup. Unset in production, where the
+#: live MLB schedule is fetched. When set to a path, that file holds the raw
+#: schedule response (JSON ``null`` = the fetch failed). When set to the
+#: literal ``offline``, the lookup is treated as failed -- so tests never make
+#: a network call and never read "no network" as "no games".
+SCHEDULE_EVIDENCE_ENV = "EDGEFINDER_SCHEDULE_EVIDENCE"
+
+
+def load_schedule_response(date):
+    """Adapter: the raw MLB schedule response for `date`, or None."""
+    override = os.environ.get(SCHEDULE_EVIDENCE_ENV)
+    if override == "offline":
+        return None
+    if override:
+        with open(override) as f:
+            return json.load(f)
+    from lib.edgelab.mlb_schedule import fetch_schedule_all_game_types
+    return fetch_schedule_all_game_types(date)
+
+
+def resolve_empty_slate(slate, requested_date, schedule_response, fetched_at=None):
+    """
+    Pure: what an EMPTY slate means, decided by the MLB schedule rather than
+    assumed. Returns (fetch_status, reason, evidence, day_verdict).
+
+    Before this, every empty slate was FAILED_STALE_DATE -- so the 2026-09-28
+    off-day between the regular season and the Wild Card round was recorded
+    exactly like a dead schedule fetch. Now:
+
+      schedule says no playable games     -> NO_GAMES_SCHEDULED
+      schedule says games, slate has none -> FAILED_STALE_DATE (collection failed)
+      schedule unknown                    -> FAILED_STALE_DATE (fail closed; an
+                                             outage is never read as an off-day)
+
+    NO_GAMES_SCHEDULED is still not "OK": stale_date_guard.py and
+    validate_current_slate_date.py refuse anything but OK, and main() still
+    exits non-zero, so no downstream stage runs on an empty slate. What
+    changes is the RECORD: an off-day now says it is one, with its evidence.
+    """
+    evidence = day_contract.schedule_evidence(requested_date, schedule_response, fetched_at)
+    day = day_contract.classify_slate_day(slate, evidence)
+    if day["verdict"] == day_contract.OFF_DAY:
+        return "NO_GAMES_SCHEDULED", day["reason"], evidence, day
+    return "FAILED_STALE_DATE", "slate.json has no games -- %s" % day["reason"], evidence, day
 
 
 def main():
@@ -449,6 +500,23 @@ def main():
 
     # ── 1b/1c. STALE DATE GUARD (slate-level + per-game startTime) ────────
     issue = find_stale_slate_issue(slate, requested_date)
+    if issue is not None and issue['actual'] == 'no-games':
+        status, reason, evidence, day = resolve_empty_slate(
+            slate, requested_date, load_schedule_response(requested_date),
+            datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'))
+        if status == "NO_GAMES_SCHEDULED":
+            print(f"NO GAMES SCHEDULED: {requested_date} -- {reason}. "
+                  f"Downstream stages are intentionally not run.", file=sys.stderr)
+        else:
+            print(issue['gate_fail_prefix'], file=sys.stderr)
+            print(
+                f"STALE SLATE ABORT: requested={requested_date} actual={issue['actual']} "
+                f"source={issue['source']}{issue['log_suffix']} ({day['verdict']})",
+                file=sys.stderr
+            )
+        write_fetch_status(status, requested_date, issue['actual'], [], reason,
+                           schedule_evidence=evidence)
+        sys.exit(1)
     if issue is not None:
         if issue['gate_fail_prefix']:
             print(issue['gate_fail_prefix'], file=sys.stderr)

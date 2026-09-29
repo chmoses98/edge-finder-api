@@ -332,6 +332,10 @@ def test_capture_writes_a_form_profile_per_team(tmp_path, monkeypatch):
 
 # ── the addition must be strictly additive ──────────────────────────────
 
+GAME_DAY_FIXTURE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "fixtures", "offense_form_game_day")
+
+
 def _slate_team_abbrs(slate_path):
     """Every team abbreviation on a slate file, in stable order.
 
@@ -362,9 +366,15 @@ def test_enrich_data_offense_baseline_is_identical_with_and_without_form_context
     import subprocess
 
     required = ["slate.json", "teamstats.json", "bullpen.json", "oppquality.json", "savant_team.json"]
-    source = os.path.join(ROOT, "data")
-    if not all(os.path.exists(os.path.join(source, name)) for name in required):
-        pytest.skip("this checkout does not carry a full committed slate fixture")
+    # A CHECKED-IN game-day fixture, not the live committed data/ files.
+    # This test protects a code invariant; it used to borrow data/slate.json,
+    # which rolls forward daily -- and on an MLB off-day (2026-09-28, between
+    # the regular season and the Wild Card round) that slate legitimately
+    # holds zero games, so the invariant had nothing to act on and the final
+    # "attached" assertion failed for a reason unrelated to enrich_data.py.
+    # Whether an empty LIVE slate is a valid off-day is a different question,
+    # answered by lib/edgelab/slate_day_contract.py against the MLB schedule.
+    source = GAME_DAY_FIXTURE
 
     def _run(with_form):
         work = tmp_path / ("with_form" if with_form else "without_form")

@@ -115,6 +115,30 @@ def fetch_schedule(date, timeout=15):
         return None
 
 
+def fetch_schedule_all_game_types(date, timeout=15):
+    """
+    Network adapter for the off-day contract (lib.edgelab.slate_day_contract):
+    the schedule for `date` across the regular season AND every postseason
+    round. fetch_schedule() above is regular-season only, so on a Wild Card
+    or World Series date it would report "no games" -- the one answer the
+    off-day contract must never get wrong. Same never-raise contract: the
+    parsed JSON, or None on any failure (which the contract reads as
+    SCHEDULE_UNKNOWN, never as an off-day).
+    """
+    from lib.edgelab.slate_day_contract import SCHEDULE_GAME_TYPES
+    url = (f"{MLB_STATS_API}/schedule?sportId=1&date={date}"
+           f"&gameType={','.join(SCHEDULE_GAME_TYPES)}")
+    try:
+        req = urllib.request.Request(url, headers={
+            "User-Agent": "edge-finder-edgelab/1.0",
+            "Accept": "application/json",
+        })
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode())
+    except Exception:
+        return None
+
+
 def fetch_schedule_range(start_date, end_date, timeout=30):
     """
     Network adapter: the MLB Stats API schedule for an inclusive DATE

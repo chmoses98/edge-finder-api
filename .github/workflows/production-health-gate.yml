@@ -38,6 +38,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: production-health-gate
@@ -62,6 +63,17 @@ jobs:
         with:
           python-version: '3.11'
 
+      # PROD-9's evidence: what kalshi-bet-router -- the only holder of
+      # authenticated Kalshi fills -- says about MLB in its own public
+      # delivery runs. Collection never fails the job; a fetch failure is
+      # recorded in the evidence and judged by the gate like anything else.
+      - name: Collect router divergence evidence
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/ci/router_divergence_probe.py --out /tmp/router_evidence.json \
+            || echo '{"fetchError": "probe crashed"}' > /tmp/router_evidence.json
+
       # Evaluate first, commit the artifact second, THEN fail. Ordering
       # matters: the artifact must be persisted even (especially) on a red
       # run, so the history of when the loop broke survives -- this is the
@@ -69,8 +81,18 @@ jobs:
       - name: Evaluate production health
         id: gate
         continue-on-error: true
+        # `shell: bash` is load-bearing. GitHub's DEFAULT shell for `run` is
+        # `bash -e {0}` WITHOUT pipefail, so the exit status of this pipeline
+        # was tee's, always 0: the gate step "succeeded", `steps.gate.outcome`
+        # was 'success', and the final fail step never ran. Every scheduled
+        # run of this gate from 2026-09-18 to 2026-09-28 concluded SUCCESS
+        # while its own committed artifact said CRITICAL (PROD-5). An explicit
+        # `shell: bash` runs `bash --noprofile --norc -eo pipefail {0}`.
+        shell: bash
         run: |
+          set -o pipefail
           python3 scripts/ci/production_health_gate.py --write-artifact \
+            --router-evidence /tmp/router_evidence.json \
             | tee /tmp/health.txt
 
       - name: Publish health artifact

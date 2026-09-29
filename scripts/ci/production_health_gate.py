@@ -78,6 +78,9 @@ if ROOT_DIR not in sys.path:
 
 from lib.bet_backlog_classifier import is_non_terminal  # noqa: E402
 
+#: The canonical placed-bet ledger every settlement and CLV pass writes.
+CANONICAL_LEDGER_PATH = "data/edgelab/bets/bets.jsonl"
+
 # ── Severities ───────────────────────────────────────────────────────────────
 CRITICAL_PRODUCTION = "CRITICAL_PRODUCTION"
 RESEARCH_DEGRADATION = "RESEARCH_DEGRADATION"
@@ -107,6 +110,13 @@ BACKLOG_GRACE_DAYS = 3
 # How far the production pipeline can be idle before freshness assertions are
 # suspended as offseason//paused rather than reported as failures.
 INACTIVE_PIPELINE_DAYS = 10
+
+# PROD-9. The router is dispatched every ~20 minutes by its own conductor; a
+# day without a completed delivery run means the capture half of the system
+# has stopped, however healthy everything downstream of it looks.
+MAX_ROUTER_SILENCE_HOURS = 24
+#: The importBatchId every router-delivered MLB row carries.
+ROUTER_IMPORT_BATCH_ID = "kalshi-router-v1"
 
 _DATE_PARTITION_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})\.jsonl(\.gz)?$")
 _DATE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})")
@@ -153,7 +163,41 @@ def _git_last_commit_date(root, path):
     return value if _DATE_RE.match(value) else None
 
 
-def collect_state(root=None, now=None):
+def _canonical_router_rows(root):
+    """(count, newest gameDate) of router-delivered rows on the canonical ledger."""
+    path = os.path.join(root, CANONICAL_LEDGER_PATH)
+    count, newest = 0, None
+    if not os.path.exists(path):
+        return 0, None
+    with open(path) as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except ValueError:
+                continue
+            if row.get("importBatchId") != ROUTER_IMPORT_BATCH_ID:
+                continue
+            count += 1
+            date = row.get("gameDate")
+            if isinstance(date, str) and _DATE_RE.match(date):
+                newest = max(newest or date, date[:10])
+    return count, newest
+
+
+def _load_router_evidence(path):
+    if not path:
+        return None
+    try:
+        with open(path) as handle:
+            return json.load(handle)
+    except (OSError, ValueError) as exc:
+        return {"fetchError": "router evidence unreadable: %s" % exc}
+
+
+def collect_state(root=None, now=None, router_evidence_path=None):
     """
     Gather every durable fact the assertions need. Pure-ish: reads the
     filesystem and git, never writes, never hits the network.
@@ -202,6 +246,8 @@ def collect_state(root=None, now=None):
         except (ValueError, OSError):
             acknowledged = set()
 
+    router_rows, router_newest = _canonical_router_rows(root)
+
     slate_date = None
     meta_path = os.path.join(root, "data", "meta.json")
     if os.path.exists(meta_path):
@@ -219,10 +265,20 @@ def collect_state(root=None, now=None):
         "modelEvaluationLatest": _latest_partition_date(os.path.join(edgelab, "model_evaluations")),
         "researchHeartbeatLatest": _latest_dated_json(os.path.join(edgelab, "health")),
         "slateDate": slate_date,
-        "betsLedgerCommitDate": _git_last_commit_date(root, "bets.json"),
+        # The CANONICAL ledger. `bets.json` at the repo root is the legacy
+        # model-bet ledger (docs/CANONICAL_BET_LEDGER.md): since 2026-09-18 it
+        # only changes when write_pending_bets.py adds a model row, so its
+        # commit date measured that script's output, not whether settlement
+        # persisted -- and held PROD-5 red for ten days while every settlement
+        # and CLV pass was landing on data/edgelab/bets/bets.jsonl.
+        "betsLedgerCommitDate": _git_last_commit_date(root, CANONICAL_LEDGER_PATH),
+        "legacyBetsJsonCommitDate": _git_last_commit_date(root, "bets.json"),
         "settlementsCommitDate": _git_last_commit_date(root, "data/edgelab/settlements"),
         "bets": bets,
         "acknowledgedUnresolvableBetIds": acknowledged,
+        "canonicalRouterRowCount": router_rows,
+        "canonicalRouterNewestGameDate": router_newest,
+        "routerEvidence": _load_router_evidence(router_evidence_path),
     }
 
 
@@ -373,23 +429,27 @@ def evaluate_health(state):
     elif commit_lag is None:
         results.append(_result(
             "PROD-5", CRITICAL_PRODUCTION, FAIL,
-            "Cannot determine when bets.json was last committed (no git history?)",
+            "Cannot determine when the canonical ledger %s was last committed (no git history?)"
+            % CANONICAL_LEDGER_PATH,
             {"betsLedgerCommitDate": state.get("betsLedgerCommitDate")}))
     elif commit_lag > MAX_LEDGER_COMMIT_LAG_DAYS:
         results.append(_result(
             "PROD-5", CRITICAL_PRODUCTION, FAIL,
-            "Canonical ledger bets.json has not been committed for %d days (limit %d, "
+            "Canonical ledger %s has not been committed for %d days (limit %d, "
             "last commit %s) while the slate pipeline is active -- settlement output is "
             "being computed and discarded rather than persisted"
-            % (commit_lag, MAX_LEDGER_COMMIT_LAG_DAYS, state.get("betsLedgerCommitDate")),
+            % (CANONICAL_LEDGER_PATH, commit_lag, MAX_LEDGER_COMMIT_LAG_DAYS,
+               state.get("betsLedgerCommitDate")),
             {"betsLedgerCommitDate": state.get("betsLedgerCommitDate"),
+             "legacyBetsJsonCommitDate": state.get("legacyBetsJsonCommitDate"),
              "lagDays": commit_lag}))
     else:
         results.append(_result(
             "PROD-5", CRITICAL_PRODUCTION, PASS,
-            "Ledger persisted recently: bets.json last committed %s (%d day(s) ago)"
-            % (state.get("betsLedgerCommitDate"), commit_lag),
-            {"lagDays": commit_lag}))
+            "Ledger persisted recently: %s last committed %s (%d day(s) ago)"
+            % (CANONICAL_LEDGER_PATH, state.get("betsLedgerCommitDate"), commit_lag),
+            {"lagDays": commit_lag,
+             "legacyBetsJsonCommitDate": state.get("legacyBetsJsonCommitDate")}))
 
     # PROD-6 -- model-evaluation partitions advancing. Distinct from PROD-4:
     # PROD-4 compares the two sides, PROD-6 catches BOTH stopping together
@@ -457,6 +517,8 @@ def evaluate_health(state):
                 "PROD-8", CRITICAL_PRODUCTION, PASS,
                 "Production and feedback halves of the loop are both live"))
 
+    results.append(_router_divergence(state, now))
+
     # RSCH-1 -- research heartbeat. Reported, never fatal: research degradation
     # must not be able to page the operator (see design principle 2).
     heartbeat_lag = _lag_days(now, state.get("researchHeartbeatLatest"))
@@ -475,6 +537,99 @@ def evaluate_health(state):
             "Research heartbeat current (latest %s)" % state.get("researchHeartbeatLatest")))
 
     return results
+
+
+def _router_divergence(state, now):
+    """PROD-9 -- the router holds MLB wagers the canonical ledger does not.
+
+    WHY: 2026-09-24..28, twelve real MLB wagers sat on the router's proposal
+    branch for up to 4.7 days while every assertion above passed -- each of
+    them can only see the ledger this repository HAS. The router is the only
+    party holding authenticated fills, so its own delivery runs are the
+    evidence (scripts/ci/router_divergence_probe.py collects them).
+
+    Judged on the SETTLED run -- the newest one at least a few hours older than
+    the latest -- because a fill normally reaches main two router runs after it
+    is captured, and a divergence that young is latency, not a defect. The
+    LATEST run is used only to prove the router is still running.
+
+    Not conditioned on the slate pipeline: the router records what was PLACED,
+    and a wager placed during a slate outage is exactly the one to not lose.
+    """
+    evidence = state.get("routerEvidence")
+    canonical = state.get("canonicalRouterNewestGameDate")
+    if evidence is None:
+        return _result("PROD-9", CRITICAL_PRODUCTION, NOT_APPLICABLE,
+                       "Router divergence not evaluated: no router evidence supplied "
+                       "(the workflow collects it; a local run does not)")
+    if evidence.get("fetchError"):
+        return _result("PROD-9", CRITICAL_PRODUCTION, FAIL,
+                       "Cannot observe kalshi-bet-router's delivery runs, so wagers the "
+                       "account placed cannot be proven to be on this ledger: %s"
+                       % evidence["fetchError"], {"evidence": evidence})
+
+    problems = []
+    latest = evidence.get("latest") or {}
+    latest_at = _parse_utc(latest.get("createdAt"))
+    if latest_at is None:
+        problems.append("the router's newest delivery run has no timestamp")
+    else:
+        silent_hours = (now - latest_at).total_seconds() / 3600.0
+        if silent_hours > MAX_ROUTER_SILENCE_HOURS:
+            problems.append("the router's newest completed delivery run is %.0f hours old "
+                            "(limit %d) -- capture has stopped"
+                            % (silent_hours, MAX_ROUTER_SILENCE_HOURS))
+
+    judged = evidence.get("settled")
+    if judged is None:
+        problems.append("no router delivery run old enough to judge (history shorter than "
+                        "%s hours)" % evidence.get("settleHours"))
+        judged = {}
+    coverage = judged.get("coverage")
+    reconciliation = judged.get("reconciliation")
+    if coverage is None:
+        problems.append("router run %s printed no MLB coverage line" % judged.get("runId"))
+    else:
+        if coverage.get("refusedProvably"):
+            problems.append("%d order(s) whose every leg is MLB were REFUSED by the router "
+                            "and are not on this ledger" % coverage["refusedProvably"])
+        router_newest = coverage.get("newestGameDate")
+        if router_newest and (canonical is None or router_newest > canonical):
+            problems.append("router has authenticated MLB fills for game date %s, newer than "
+                            "the newest canonical router-delivered MLB wager (%s)"
+                            % (router_newest, canonical))
+    if reconciliation is None:
+        problems.append("router run %s printed no MLB reconciliation line -- the MLB "
+                        "delivery did not complete" % judged.get("runId"))
+    else:
+        stuck = (reconciliation.get("proposed_not_merged", 0) + reconciliation.get("refused", 0)
+                 + reconciliation.get("unaccounted", 0))
+        if stuck:
+            problems.append("%d router-eligible MLB wager(s) not on main (proposed not merged "
+                            "%d, refused %d, unaccounted %d)"
+                            % (stuck, reconciliation.get("proposed_not_merged", 0),
+                               reconciliation.get("refused", 0),
+                               reconciliation.get("unaccounted", 0)))
+
+    detail = {"latestRun": latest.get("url"), "judgedRun": judged.get("url"),
+              "routerCoverage": coverage, "routerReconciliation": reconciliation,
+              "canonicalRouterNewestGameDate": canonical,
+              "canonicalRouterRowCount": state.get("canonicalRouterRowCount")}
+    if problems:
+        return _result("PROD-9", CRITICAL_PRODUCTION, FAIL,
+                       "ROUTER/LEDGER DIVERGENCE: " + "; ".join(problems), detail)
+    return _result("PROD-9", CRITICAL_PRODUCTION, PASS,
+                   "Every authenticated MLB wager the router holds is on the canonical "
+                   "ledger (router newest game date %s, canonical %s, %s eligible)"
+                   % ((coverage or {}).get("newestGameDate"), canonical,
+                      (reconciliation or {}).get("eligible")), detail)
+
+
+def _parse_utc(value):
+    try:
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return None
 
 
 def summarize(results):
@@ -525,9 +680,11 @@ def main(argv=None):
     parser.add_argument("--warn-only", action="store_true",
                         help="always exit 0 (for local inspection; never use in CI)")
     parser.add_argument("--root", default=ROOT_DIR)
+    parser.add_argument("--router-evidence", default=None,
+                        help="JSON written by scripts/ci/router_divergence_probe.py (PROD-9)")
     args = parser.parse_args(argv)
 
-    state = collect_state(root=args.root)
+    state = collect_state(root=args.root, router_evidence_path=args.router_evidence)
     results = evaluate_health(state)
     summary = summarize(results)
 
@@ -544,6 +701,7 @@ def main(argv=None):
             "maxUnexplainedBacklog": MAX_UNEXPLAINED_BACKLOG,
             "backlogGraceDays": BACKLOG_GRACE_DAYS,
             "inactivePipelineDays": INACTIVE_PIPELINE_DAYS,
+            "maxRouterSilenceHours": MAX_ROUTER_SILENCE_HOURS,
         },
     }
 

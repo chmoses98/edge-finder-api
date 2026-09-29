@@ -170,6 +170,34 @@ def test_health_gate_workflow_can_actually_fail():
     assert "steps.gate.outcome != 'success'" in condition
 
 
+def test_health_gate_step_does_not_swallow_the_gates_exit_code_in_a_pipe():
+    """
+    REGRESSION (2026-09-18 .. 2026-09-28). The gate step pipes into `tee`, and
+    GitHub's default `run` shell is `bash -e {0}` -- no pipefail -- so the
+    step's status was tee's, always 0. `steps.gate.outcome` was 'success', the
+    final fail step above never ran, and ten scheduled runs concluded SUCCESS
+    while the artifact they committed said CRITICAL (PROD-5).
+
+    Executed, not just parsed: the step's own script is run with the gate
+    replaced by a command that fails, under exactly the shell GitHub would use
+    for it, and the step must fail.
+    """
+    import subprocess
+
+    steps = _steps(_load("production-health-gate.yml"))
+    gate = _step_by_id(steps, "gate")
+    script = gate["run"].replace(
+        "python3 scripts/ci/production_health_gate.py --write-artifact", "false")
+    assert script != gate["run"], "the gate command moved; update this test"
+    script = script.replace("/tmp/health.txt", "/dev/null")
+    if gate.get("shell") == "bash":
+        argv = ["bash", "--noprofile", "--norc", "-eo", "pipefail", "-c", script]
+    else:
+        argv = ["bash", "-e", "-c", script]  # GitHub's default for `run`
+    assert subprocess.run(argv, capture_output=True).returncode != 0, (
+        "a failing gate must fail its step; otherwise the job can never go red")
+
+
 def test_health_gate_publishes_its_artifact_even_on_a_red_run():
     """
     The history of WHEN the loop broke is exactly what was missing during the
@@ -182,7 +210,7 @@ def test_health_gate_publishes_its_artifact_even_on_a_red_run():
 
 def test_health_gate_checks_out_full_history():
     """
-    PROD-5 asks when bets.json was last COMMITTED. A shallow clone would answer
+    PROD-5 asks when the canonical ledger was last COMMITTED. A shallow clone would answer
     from a truncated log and silently under-report a persistence failure.
     """
     steps = _steps(_load("production-health-gate.yml"))

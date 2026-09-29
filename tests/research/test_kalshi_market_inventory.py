@@ -18,20 +18,34 @@ sys.path.insert(0, SCRIPTS_RESEARCH_DIR)
 
 import build_kalshi_market_inventory as inv
 
+# These tests pin CLASSIFICATION behaviour on real Kalshi market data, so they
+# read a fixed, checked-in game-day snapshot -- never "the latest committed
+# snapshot". That one rolls forward daily and is legitimately EMPTY on an MLB
+# off-day: every 2026-09-28 snapshot held 0 markets, and
+# test_full_game_never_marked_three_way / test_f5_tie_marked_as_dead_data_path
+# went red for a reason that had nothing to do with the classifier.
+FIXTURES = os.path.join(ROOT, "tests", "fixtures", "kalshi_snapshots")
+GAME_DAY_SNAPSHOT = os.path.join(FIXTURES, "kalshi_search_2026-09-26_game_day.json")
+OFF_DAY_SNAPSHOT = os.path.join(FIXTURES, "kalshi_search_2026-09-28_off_day.json")
+
+
+def _game_day_inventory():
+    return inv.build_inventory(GAME_DAY_SNAPSHOT)
+
 
 class TestInventoryBuild:
 
     def test_build_inventory_returns_one_entry_per_input_market(self):
-        result = inv.build_inventory()
+        result = _game_day_inventory()
         assert result["totalMarketsInLatestSnapshot"] == len(result["entries"])
 
     def test_no_entry_has_null_classification_status(self):
-        result = inv.build_inventory()
+        result = _game_day_inventory()
         for entry in result["entries"]:
             assert entry["classificationStatus"] is not None
 
     def test_no_entry_silently_missing_market_ticker(self):
-        result = inv.build_inventory()
+        result = _game_day_inventory()
         for entry in result["entries"]:
             assert entry["marketTicker"], "every entry must retain its raw market ticker"
 
@@ -46,7 +60,7 @@ class TestInventoryBuild:
         and (as of the spread/F3-F7-correction mission) reflects the
         real confirmed structure rather than "unverified."
         """
-        result = inv.build_inventory()
+        result = _game_day_inventory()
         assert "confirmedAbsentSeries" not in result, (
             "the retracted 'confirmedAbsentSeries' claim must not reappear"
         )
@@ -59,7 +73,7 @@ class TestInventoryBuild:
             assert "does not exist" not in json.dumps(status)
 
     def test_discovery_limitation_warning_present(self):
-        result = inv.build_inventory()
+        result = _game_day_inventory()
         warning = result["discoveryLimitationWarning"]
         assert "NOT evidence" in warning or "not evidence" in warning.lower()
 
@@ -78,7 +92,7 @@ class TestInventoryBuild:
         data path." An unscoped filter here would incorrectly assert
         every F3/F7 Tie row too.
         """
-        result = inv.build_inventory()
+        result = _game_day_inventory()
         tie_rows = [e for e in result["entries"] if e["family"] == "inning_result" and e["scope"] == "F5" and e["outcome"] == "Tie"]
         assert len(tie_rows) > 0, "expected at least one F5 Tie market in the real snapshot"
         for row in tie_rows:
@@ -91,7 +105,7 @@ class TestInventoryBuild:
             assert row["modelSupportStatus"] == "not_supported"
 
     def test_full_game_never_marked_three_way(self):
-        result = inv.build_inventory()
+        result = _game_day_inventory()
         game_rows = [e for e in result["entries"] if e["family"] == "game_result"]
         assert len(game_rows) > 0
         for row in game_rows:
@@ -103,25 +117,25 @@ class TestInventoryBuild:
         pricing -- the inventory must record noBid/noAsk as None
         (unknown), never guess or derive a fabricated value.
         """
-        result = inv.build_inventory()
+        result = _game_day_inventory()
         for entry in result["entries"][:20]:
             assert entry["noBid"] is None
             assert entry["noAsk"] is None
 
     def test_settlement_rules_text_documented_as_unavailable(self):
-        result = inv.build_inventory()
+        result = _game_day_inventory()
         for entry in result["entries"][:20]:
             assert entry["settlementRulesText"] is None
             assert entry["settlementRulesSource"] == "inferred_from_ticker_structure_not_kalshi_rules_field"
 
     def test_deterministic_given_same_snapshot(self):
-        r1 = inv.build_inventory()
-        r2 = inv.build_inventory()
+        r1 = _game_day_inventory()
+        r2 = _game_day_inventory()
         assert r1["entries"] == r2["entries"]
         assert r1["totalMarketsInLatestSnapshot"] == r2["totalMarketsInLatestSnapshot"]
 
     def test_note_field_documents_research_only_status(self):
-        result = inv.build_inventory()
+        result = _game_day_inventory()
         assert "RESEARCH-ONLY" in result["note"]
         assert "no live Kalshi API call" in result["note"]
 
@@ -144,7 +158,7 @@ class TestNoProductionMutation:
         if os.path.exists(inv.OUTPUT_PATH):
             before = _hash_file(inv.OUTPUT_PATH)
 
-        inv.build_inventory()
+        _game_day_inventory()
 
         after = None
         if os.path.exists(inv.OUTPUT_PATH):
@@ -168,7 +182,29 @@ class TestNoProductionMutation:
         slate_path = os.path.join(ROOT, "data", "slate.json")
         bets_path = os.path.join(ROOT, "bets.json")
         before_slate, before_bets = _hash(slate_path), _hash(bets_path)
-        inv.build_inventory()
+        _game_day_inventory()
         after_slate, after_bets = _hash(slate_path), _hash(bets_path)
         assert before_slate == after_slate
         assert before_bets == after_bets
+
+
+class TestInventorySnapshotSelection:
+    """The fixture pinning above must not change what production publishes."""
+
+    def test_default_is_still_the_latest_committed_snapshot(self):
+        result = inv.build_inventory()
+        assert result["discoverySource"] == os.path.relpath(inv._latest_snapshot_path(), ROOT)
+
+    def test_an_off_day_snapshot_is_an_honest_empty_inventory(self):
+        """The 2026-09-28 shape: zero markets is a valid state, reported as
+        zero -- never replaced by an older snapshot's markets."""
+        result = inv.build_inventory(OFF_DAY_SNAPSHOT)
+        assert result["totalMarketsInLatestSnapshot"] == 0
+        assert result["entries"] == []
+        assert result["discoverySnapshotDate"] == "2026-09-28"
+
+    def test_the_game_day_fixture_carries_the_markets_the_classifier_tests_need(self):
+        entries = _game_day_inventory()["entries"]
+        assert any(e["family"] == "game_result" for e in entries)
+        assert any(e["family"] == "inning_result" and e["scope"] == "F5" and e["outcome"] == "Tie"
+                   for e in entries)

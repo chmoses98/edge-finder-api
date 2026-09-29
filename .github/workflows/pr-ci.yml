@@ -109,7 +109,6 @@ jobs:
         id: main_suite
         run: |
           python3 -m pytest tests/ -q \
-            --deselect "tests/research/test_kalshi_market_inventory.py::TestInventoryBuild::test_f5_tie_marked_as_dead_data_path_not_consumed" \
             --deselect "tests/test_risk_gate_review_parts_v_to_y.py::TestFinalScopeReVerification::test_only_risk_gate_py_changed_outside_tests_and_docs_across_the_whole_pr" \
             --deselect "tests/test_validate_slate_final_pr9_changed_file_scope.py::TestPR9ChangedFileScope::test_only_expected_production_file_changed" \
             --deselect "tests/test_validate_slate_final_pr9_changed_file_scope.py::TestPR9ChangedFileScope::test_no_data_or_ledger_files_touched" \
@@ -120,7 +119,7 @@ jobs:
         if: always()
         continue-on-error: true
         run: |
-          # These 5 tests diff against specific historical commit SHAs
+          # These 4 tests diff against specific historical commit SHAs
           # (fe0a19c.. / b006c39.. etc.) that this milestone's own
           # investigation confirmed are unreachable ONLY in a shallow or
           # otherwise history-limited clone -- never a real code
@@ -132,7 +131,6 @@ jobs:
           # able to block every future PR on an infrastructure quirk
           # nobody here controls.
           python3 -m pytest tests/ -q \
-            "tests/research/test_kalshi_market_inventory.py::TestInventoryBuild::test_f5_tie_marked_as_dead_data_path_not_consumed" \
             "tests/test_risk_gate_review_parts_v_to_y.py::TestFinalScopeReVerification::test_only_risk_gate_py_changed_outside_tests_and_docs_across_the_whole_pr" \
             "tests/test_validate_slate_final_pr9_changed_file_scope.py::TestPR9ChangedFileScope::test_only_expected_production_file_changed" \
             "tests/test_validate_slate_final_pr9_changed_file_scope.py::TestPR9ChangedFileScope::test_no_data_or_ledger_files_touched" \
@@ -150,9 +148,9 @@ jobs:
               echo "- Deterministic suite: **FAIL** -- see \"Run deterministic test suite\" step above for the failing test(s). This blocks merge."
             fi
             if [ "${{ steps.env_only.outcome }}" = "success" ]; then
-              echo "- Known environment-only checks (5 tests, history-dependent): PASS"
+              echo "- Known environment-only checks (4 tests, history-dependent): PASS"
             else
-              echo "- Known environment-only checks (5 tests, history-dependent): FAILED -- informational only, does not block merge. If this surprises you, re-read this workflow's \"Run known environment-only checks\" step comment before assuming it's safe to ignore."
+              echo "- Known environment-only checks (4 tests, history-dependent): FAILED -- informational only, does not block merge. If this surprises you, re-read this workflow's \"Run known environment-only checks\" step comment before assuming it's safe to ignore."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 

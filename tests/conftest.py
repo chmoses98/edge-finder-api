@@ -32,6 +32,15 @@ catches a write-then-restore just as well as a write that is left behind, and
 it works in a checkout that has unrelated local modifications.
 """
 
+# The off-day contract (lib/edgelab/slate_day_contract.py) consults the live
+# MLB schedule when a slate is empty. No test may reach the network, and no
+# test may read "no network" as "no games": "offline" makes the lookup a
+# failed fetch -> SCHEDULE_UNKNOWN. Tests that need a specific schedule set
+# EDGEFINDER_SCHEDULE_EVIDENCE to a fixture file themselves.
+import os as _os
+_os.environ.setdefault("EDGEFINDER_SCHEDULE_EVIDENCE", "offline")
+
+
 import hashlib
 import os
 import subprocess

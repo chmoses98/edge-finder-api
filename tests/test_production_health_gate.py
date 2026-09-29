@@ -147,6 +147,49 @@ def test_ledger_persistence_failure_is_detected():
     assert _by_id(G.evaluate_health(_state()))["PROD-5"]["status"] == G.PASS
 
 
+def test_prod5_measures_the_canonical_ledger_not_the_legacy_bets_json(tmp_path):
+    """
+    REGRESSION (2026-09-28 artifact: "Canonical ledger bets.json has not been
+    committed for 10 days"). Root bets.json is the LEGACY model-bet ledger; it
+    stopped changing on 2026-09-18 because write_pending_bets.py stopped adding
+    rows, while every settlement and CLV pass kept landing on the canonical
+    data/edgelab/bets/bets.jsonl. The gate must read the canonical file's
+    history -- measured here against a real git repository.
+    """
+    import subprocess
+
+    def git(*args, date=None):
+        env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@t",
+                   GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@t")
+        if date:
+            env.update(GIT_AUTHOR_DATE=date, GIT_COMMITTER_DATE=date)
+        subprocess.run(["git", *args], cwd=tmp_path, env=env, check=True,
+                       capture_output=True)
+
+    git("init", "-q")
+    (tmp_path / "bets.json").write_text("[]")
+    git("add", "bets.json")
+    git("commit", "-qm", "legacy", date="2026-09-18T12:00:00Z")
+    canonical = tmp_path / "data" / "edgelab" / "bets" / "bets.jsonl"
+    canonical.parent.mkdir(parents=True)
+    canonical.write_text("{}\n")
+    git("add", "-A")
+    git("commit", "-qm", "settlement", date="2026-09-28T16:05:03Z")
+
+    assert G._git_last_commit_date(str(tmp_path), G.CANONICAL_LEDGER_PATH) == "2026-09-28"
+    now = datetime(2026, 9, 28, 20, 9, 12, tzinfo=timezone.utc)
+    state = G.collect_state(str(tmp_path), now)
+    assert state["betsLedgerCommitDate"] == "2026-09-28"
+    assert state["legacyBetsJsonCommitDate"] == "2026-09-18"
+    result = _by_id(G.evaluate_health(_state(
+        now=now, slateDate="2026-09-27", settlementLatest="2026-09-27",
+        recommendationLatest="2026-09-27", modelEvaluationLatest="2026-09-27",
+        betsLedgerCommitDate="2026-09-28", legacyBetsJsonCommitDate="2026-09-18",
+    )))["PROD-5"]
+    assert result["status"] == G.PASS, result
+    assert G.CANONICAL_LEDGER_PATH in result["summary"]
+
+
 # ── the backlog assertion must not be permanently red ────────────────────────
 
 def test_backlog_ignores_rows_acknowledged_as_legitimately_unresolvable():

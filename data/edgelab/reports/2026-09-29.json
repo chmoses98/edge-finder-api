@@ -1,23 +1,26 @@
 {
   "apiErrors": [],
-  "closingQuotesCaptured": 0,
+  "closingQuotesCaptured": 817,
   "clvSummary": {
-    "avgClvCents": null,
-    "avgClvCentsAllCoverageIncludingStale": null,
-    "betsTotal": 7,
-    "betsWithClv": 0,
-    "clvEligibleCount": 0,
-    "coverageClassCounts": {},
+    "avgClvCents": -1.0,
+    "avgClvCentsAllCoverageIncludingStale": -0.14,
+    "betsTotal": 9,
+    "betsWithClv": 7,
+    "clvEligibleCount": 3,
+    "coverageClassCounts": {
+      "PRE_CLOSE": 4,
+      "TRUE_CLOSE": 3
+    },
     "headlineCoverageClasses": [
       "TRUE_CLOSE"
     ],
-    "medianSecondsBeforeStart": null,
-    "negativeClvCount": 0,
+    "medianSecondsBeforeStart": 11768.6,
+    "negativeClvCount": 3,
     "noValidPrestartQuoteCount": 0,
-    "p90SecondsBeforeStart": null,
+    "p90SecondsBeforeStart": 27643.9,
     "positiveClvCount": 0,
-    "preCloseOnlyCount": 0,
-    "trueCloseCount": 0,
+    "preCloseOnlyCount": 4,
+    "trueCloseCount": 3,
     "unclassifiedCount": 0
   },
   "dataQualityWarnings": [
@@ -54,52 +57,57 @@
   ],
   "date": "2026-09-29",
   "gamesObserved": 4,
-  "generatedAt": "2026-09-29T22:16:05Z",
+  "generatedAt": "2026-09-30T01:52:09Z",
   "insufficientModelSupportCount": 0,
   "marketFamilyCounts": {
-    "first_inning_run": 6,
-    "game_result": 14,
-    "game_total": 78,
-    "hitter_hits": 251,
-    "hitter_hits_runs_rbis": 390,
-    "hitter_rbis": 168,
-    "hitter_stolen_bases": 67,
-    "hitter_total_bases": 318,
-    "inning_result": 62,
-    "inning_total": 47,
-    "pitcher_outs": 10,
-    "pitcher_strikeouts": 98,
-    "team_total": 112,
-    "winning_margin": 72
+    "first_inning_run": 8,
+    "game_result": 19,
+    "game_total": 100,
+    "hitter_hits": 410,
+    "hitter_hits_runs_rbis": 636,
+    "hitter_rbis": 275,
+    "hitter_stolen_bases": 114,
+    "hitter_total_bases": 508,
+    "inning_result": 76,
+    "inning_total": 60,
+    "pitcher_outs": 14,
+    "pitcher_strikeouts": 129,
+    "team_total": 149,
+    "unknown": 2,
+    "winning_margin": 99
   },
-  "marketsObserved": 1011,
-  "newUnclassifiedSeriesWarnings": [],
+  "marketsObserved": 1297,
+  "newUnclassifiedSeriesWarnings": [
+    "NEW_UNCLASSIFIED_MLB_SERIES: KXMLBHR (George Lombard: 2+ home runs?)",
+    "NEW_UNCLASSIFIED_MLB_SERIES: KXMLBHR (George Lombard: 2+ home runs?)",
+    "NEW_UNCLASSIFIED_MLB_SERIES: KXMLBHR (George Lombard: 2+ home runs?)"
+  ],
   "notEvaluatedCount": 0,
   "passCountsByReason": {},
-  "placedBets": 7,
+  "placedBets": 9,
   "placedBetsByTrackingType": {
-    "REAL": 7
+    "REAL": 9
   },
-  "quotesCaptured": 1693,
-  "realWagerCount": 7,
+  "quotesCaptured": 2599,
+  "realWagerCount": 9,
   "recommendedBets": 0,
   "schemaVersion": "1",
   "settlementCompletion": {
-    "marketsObserved": 1011,
+    "marketsObserved": 1297,
     "notYetAttempted": 0,
-    "settled": 312,
-    "unresolved": 743,
+    "settled": 639,
+    "unresolved": 702,
     "void": 0
   },
   "settlementUnresolvedReasons": {
     "fewer_than_5_complete_innings": 3,
-    "game_not_final": 552,
-    "game_status_In Progress_not_settleable": 6,
-    "missing_final_score": 105,
-    "missing_first_inning_score": 1,
-    "missing_period_score_F3": 6,
-    "missing_period_score_F5": 42,
-    "missing_period_score_F7": 12,
-    "player_not_resolved_zero_candidates": 16
+    "game_not_final": 574,
+    "game_status_In Progress_not_settleable": 9,
+    "missing_final_score": 72,
+    "missing_period_score_F3": 3,
+    "missing_period_score_F5": 14,
+    "missing_period_score_F7": 9,
+    "player_not_resolved_zero_candidates": 16,
+    "unrecognized_market_family": 2
   }
 }

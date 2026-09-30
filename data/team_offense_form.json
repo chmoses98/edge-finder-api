@@ -1,25 +1,25 @@
 {
-  "asOfDate": "2026-09-28",
+  "asOfDate": "2026-09-29",
   "formWindows": [
     5,
     7,
     10
   ],
-  "generatedAt": "2026-09-29T23:36:20Z",
+  "generatedAt": "2026-09-30T00:52:52Z",
   "lookbackDays": 30,
   "marketLineSource": {
-    "datesRequested": 30,
-    "datesWithArchive": 30,
+    "datesRequested": 29,
+    "datesWithArchive": 29,
     "source": "data/edgelab/observations (archived Kalshi team-total ladder)",
     "status": "LOADED",
-    "teamLinesDerived": 329
+    "teamLinesDerived": 301
   },
   "note": "Descriptive handicapping context only. No production model weight reads this file; scripts/enrich_data.py's offense-baseline blend is unchanged. See docs/RESEARCH_OFFENSIVE_FORM.md for what the out-of-sample evidence does and does not support.",
   "runsSource": "mlb_stats_api_schedule",
   "schemaVersion": "1",
   "teams": {
     "ATH": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 5.0 median -- repeated scoring, not one explosion",
@@ -31,17 +31,6 @@
         "L7": "L7: 4.1 avg | 5.0 med | 0,9,7,5,6,2,0 | 4/7 >=4 | 4/7 >=5 | max 9 (31% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 824961,
-          "marginVsTeamTotalLine": -1.179,
-          "opponent": "BAL",
-          "runsAllowed": 5,
-          "runsScored": 3,
-          "side": "home",
-          "teamTotalLine": 4.179
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -329,7 +318,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "ATH",
       "unavailableReason": null,
@@ -512,7 +501,7 @@
       }
     },
     "ATL": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "3/7 games clearing 4 runs, median 3.0, mean 3.43",
@@ -524,17 +513,6 @@
         "L7": "L7: 3.4 avg | 3.0 med | 4,0,3,6,0,8,3 | 3/7 >=4 | 2/7 >=5 | max 8 (33% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 824874,
-          "marginVsTeamTotalLine": -2.923,
-          "opponent": "COL",
-          "runsAllowed": 1,
-          "runsScored": 2,
-          "side": "home",
-          "teamTotalLine": 4.923
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -822,7 +800,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "ATL",
       "unavailableReason": null,
@@ -1005,7 +983,7 @@
       }
     },
     "AZ": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "HOT",
         "reason": "7/7 games cleared 4 runs with a 7.0 median -- repeated scoring, not one explosion",
@@ -1017,28 +995,6 @@
         "L7": "L7: 7.7 avg | 7.0 med | 8,7,5,12,11,7,4 | 7/7 >=4 | 6/7 >=5 | max 12 (22% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 823177,
-          "marginVsTeamTotalLine": 3.0,
-          "opponent": "SF",
-          "runsAllowed": 1,
-          "runsScored": 7,
-          "side": "away",
-          "teamTotalLine": 4.0
-        },
-        {
-          "date": "2026-08-29",
-          "gameNumber": 2,
-          "gamePk": 823176,
-          "marginVsTeamTotalLine": -2.0,
-          "opponent": "SF",
-          "runsAllowed": 7,
-          "runsScored": 2,
-          "side": "away",
-          "teamTotalLine": 4.0
-        },
         {
           "date": "2026-08-31",
           "gameNumber": 1,
@@ -1304,7 +1260,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 26,
+      "gamesAvailable": 24,
       "source": "mlb_stats_api_schedule",
       "team": "AZ",
       "unavailableReason": null,
@@ -1487,7 +1443,7 @@
       }
     },
     "BAL": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "4/7 games clearing 4 runs, median 4.0, mean 3.57",
@@ -1499,17 +1455,6 @@
         "L7": "L7: 3.6 avg | 4.0 med | 0,0,4,4,4,10,3 | 4/7 >=4 | 1/7 >=5 | max 10 (40% of L7 runs) | OUTLIER-DEPENDENT"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 824961,
-          "marginVsTeamTotalLine": -0.182,
-          "opponent": "ATH",
-          "runsAllowed": 3,
-          "runsScored": 5,
-          "side": "away",
-          "teamTotalLine": 5.182
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -1786,7 +1731,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 26,
+      "gamesAvailable": 25,
       "source": "mlb_stats_api_schedule",
       "team": "BAL",
       "unavailableReason": null,
@@ -1969,7 +1914,7 @@
       }
     },
     "BOS": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "COLD",
         "reason": "median 2.0 and only 1/7 games clearing 4 runs",
@@ -1981,28 +1926,6 @@
         "L7": "L7: 1.7 avg | 2.0 med | 1,2,1,0,4,2,2 | 1/7 >=4 | 0/7 >=5 | max 4 (33% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 823539,
-          "marginVsTeamTotalLine": null,
-          "opponent": "NYY",
-          "runsAllowed": 0,
-          "runsScored": 6,
-          "side": "away",
-          "teamTotalLine": null
-        },
-        {
-          "date": "2026-08-29",
-          "gameNumber": 2,
-          "gamePk": 823501,
-          "marginVsTeamTotalLine": null,
-          "opponent": "NYY",
-          "runsAllowed": 9,
-          "runsScored": 2,
-          "side": "away",
-          "teamTotalLine": null
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -2290,7 +2213,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 28,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "BOS",
       "unavailableReason": null,
@@ -2473,7 +2396,7 @@
       }
     },
     "CHC": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "COLD",
         "reason": "median 2.0 and only 2/7 games clearing 4 runs",
@@ -2485,17 +2408,6 @@
         "L7": "L7: 3.4 avg | 2.0 med | 9,2,2,2,3,0,6 | 2/7 >=4 | 2/7 >=5 | max 9 (38% of L7 runs) | OUTLIER-DEPENDENT"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 824637,
-          "marginVsTeamTotalLine": 12.208,
-          "opponent": "CIN",
-          "runsAllowed": 5,
-          "runsScored": 17,
-          "side": "home",
-          "teamTotalLine": 4.792
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -2783,7 +2695,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "CHC",
       "unavailableReason": null,
@@ -2966,7 +2878,7 @@
       }
     },
     "CIN": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
@@ -2978,17 +2890,6 @@
         "L7": "L7: 3.6 avg | 4.0 med | 1,4,2,7,5,5,1 | 4/7 >=4 | 3/7 >=5 | max 7 (28% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 824637,
-          "marginVsTeamTotalLine": 1.565,
-          "opponent": "CHC",
-          "runsAllowed": 17,
-          "runsScored": 5,
-          "side": "away",
-          "teamTotalLine": 3.435
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -3276,7 +3177,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "CIN",
       "unavailableReason": null,
@@ -3459,7 +3360,7 @@
       }
     },
     "CLE": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "COLD",
         "reason": "median 2.0 and only 2/7 games clearing 4 runs",
@@ -3471,17 +3372,6 @@
         "L7": "L7: 4.3 avg | 2.0 med | 1,3,0,1,12,11,2 | 2/7 >=4 | 2/7 >=5 | max 12 (40% of L7 runs) | OUTLIER-DEPENDENT"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 824392,
-          "marginVsTeamTotalLine": -1.107,
-          "opponent": "KC",
-          "runsAllowed": 8,
-          "runsScored": 3,
-          "side": "home",
-          "teamTotalLine": 4.107
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -3769,7 +3659,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "CLE",
       "unavailableReason": null,
@@ -3952,7 +3842,7 @@
       }
     },
     "COL": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "COLD",
         "reason": "median 2.0 and only 2/7 games clearing 4 runs",
@@ -3964,17 +3854,6 @@
         "L7": "L7: 3.7 avg | 2.0 med | 1,2,3,8,1,9,2 | 2/7 >=4 | 2/7 >=5 | max 9 (35% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 824874,
-          "marginVsTeamTotalLine": -2.333,
-          "opponent": "ATL",
-          "runsAllowed": 2,
-          "runsScored": 1,
-          "side": "away",
-          "teamTotalLine": 3.333
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -4262,7 +4141,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "COL",
       "unavailableReason": null,
@@ -4445,7 +4324,7 @@
       }
     },
     "CWS": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "HOT",
         "reason": "7/7 games cleared 4 runs with a 6.0 median -- repeated scoring, not one explosion",
@@ -4457,17 +4336,6 @@
         "L7": "L7: 7.3 avg | 6.0 med | 8,14,4,9,6,6,4 | 7/7 >=4 | 5/7 >=5 | max 14 (28% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 823665,
-          "marginVsTeamTotalLine": -1.385,
-          "opponent": "MIN",
-          "runsAllowed": 2,
-          "runsScored": 3,
-          "side": "away",
-          "teamTotalLine": 4.385
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -4766,7 +4634,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 28,
+      "gamesAvailable": 27,
       "source": "mlb_stats_api_schedule",
       "team": "CWS",
       "unavailableReason": null,
@@ -4949,7 +4817,7 @@
       }
     },
     "DET": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "3/7 games clearing 4 runs, median 2.0, mean 3.86",
@@ -4961,17 +4829,6 @@
         "L7": "L7: 3.9 avg | 2.0 med | 1,9,1,2,8,4,2 | 3/7 >=4 | 2/7 >=5 | max 9 (33% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 824230,
-          "marginVsTeamTotalLine": -0.594,
-          "opponent": "LAD",
-          "runsAllowed": 1,
-          "runsScored": 2,
-          "side": "home",
-          "teamTotalLine": 2.594
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -5270,7 +5127,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 28,
+      "gamesAvailable": 27,
       "source": "mlb_stats_api_schedule",
       "team": "DET",
       "unavailableReason": null,
@@ -5453,7 +5310,7 @@
       }
     },
     "HOU": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "HOT",
         "reason": "6/7 games cleared 4 runs with a 7.0 median -- repeated scoring, not one explosion",
@@ -5465,17 +5322,6 @@
         "L7": "L7: 6.9 avg | 7.0 med | 2,7,5,7,5,13,9 | 6/7 >=4 | 6/7 >=5 | max 13 (27% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 823582,
-          "marginVsTeamTotalLine": -1.467,
-          "opponent": "NYM",
-          "runsAllowed": 6,
-          "runsScored": 2,
-          "side": "away",
-          "teamTotalLine": 3.467
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -5763,7 +5609,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "HOU",
       "unavailableReason": null,
@@ -5946,7 +5792,7 @@
       }
     },
     "KC": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 5.0 median -- repeated scoring, not one explosion",
@@ -5958,17 +5804,6 @@
         "L7": "L7: 5.3 avg | 5.0 med | 3,11,5,1,9,5,3 | 4/7 >=4 | 4/7 >=5 | max 11 (30% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 824392,
-          "marginVsTeamTotalLine": 4.625,
-          "opponent": "CLE",
-          "runsAllowed": 3,
-          "runsScored": 8,
-          "side": "away",
-          "teamTotalLine": 3.375
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -6245,7 +6080,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 26,
+      "gamesAvailable": 25,
       "source": "mlb_stats_api_schedule",
       "team": "KC",
       "unavailableReason": null,
@@ -6428,7 +6263,7 @@
       }
     },
     "LAA": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
@@ -6440,17 +6275,6 @@
         "L7": "L7: 4.3 avg | 4.0 med | 0,7,3,6,7,4,3 | 4/7 >=4 | 3/7 >=5 | max 7 (23% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 823986,
-          "marginVsTeamTotalLine": -0.803,
-          "opponent": "PHI",
-          "runsAllowed": 4,
-          "runsScored": 2,
-          "side": "home",
-          "teamTotalLine": 2.803
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -6738,7 +6562,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "LAA",
       "unavailableReason": null,
@@ -6921,7 +6745,7 @@
       }
     },
     "LAD": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "3/7 games clearing 4 runs, median 3.0, mean 3.43",
@@ -6933,17 +6757,6 @@
         "L7": "L7: 3.4 avg | 3.0 med | 3,7,1,2,2,4,5 | 3/7 >=4 | 2/7 >=5 | max 7 (29% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 824230,
-          "marginVsTeamTotalLine": -2.875,
-          "opponent": "DET",
-          "runsAllowed": 2,
-          "runsScored": 1,
-          "side": "away",
-          "teamTotalLine": 3.875
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -7231,7 +7044,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "LAD",
       "unavailableReason": null,
@@ -7414,7 +7227,7 @@
       }
     },
     "MIA": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "2/7 games clearing 4 runs, median 3.0, mean 3.71",
@@ -7426,17 +7239,6 @@
         "L7": "L7: 3.7 avg | 3.0 med | 3,8,3,1,3,3,5 | 2/7 >=4 | 2/7 >=5 | max 8 (31% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 822690,
-          "marginVsTeamTotalLine": 0.154,
-          "opponent": "WSH",
-          "runsAllowed": 5,
-          "runsScored": 4,
-          "side": "away",
-          "teamTotalLine": 3.846
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -7724,7 +7526,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "MIA",
       "unavailableReason": null,
@@ -7907,7 +7709,7 @@
       }
     },
     "MIL": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "HOT",
         "reason": "5/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
@@ -7919,17 +7721,6 @@
         "L7": "L7: 4.7 avg | 4.0 med | 3,4,4,5,8,3,6 | 5/7 >=4 | 3/7 >=5 | max 8 (24% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 823741,
-          "marginVsTeamTotalLine": 0.821,
-          "opponent": "TEX",
-          "runsAllowed": 3,
-          "runsScored": 5,
-          "side": "home",
-          "teamTotalLine": 4.179
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -8217,7 +8008,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "MIL",
       "unavailableReason": null,
@@ -8400,7 +8191,7 @@
       }
     },
     "MIN": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
@@ -8412,17 +8203,6 @@
         "L7": "L7: 5.0 avg | 4.0 med | 8,2,3,4,10,2,6 | 4/7 >=4 | 3/7 >=5 | max 10 (29% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 823665,
-          "marginVsTeamTotalLine": -2.463,
-          "opponent": "CWS",
-          "runsAllowed": 3,
-          "runsScored": 2,
-          "side": "home",
-          "teamTotalLine": 4.463
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -8710,7 +8490,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "MIN",
       "unavailableReason": null,
@@ -8893,7 +8673,7 @@
       }
     },
     "NYM": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "HOT",
         "reason": "5/7 games cleared 4 runs with a 6.0 median -- repeated scoring, not one explosion",
@@ -8905,17 +8685,6 @@
         "L7": "L7: 4.7 avg | 6.0 med | 2,6,7,1,6,7,4 | 5/7 >=4 | 4/7 >=5 | max 7 (21% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 823582,
-          "marginVsTeamTotalLine": 1.969,
-          "opponent": "HOU",
-          "runsAllowed": 2,
-          "runsScored": 6,
-          "side": "home",
-          "teamTotalLine": 4.031
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -9203,7 +8972,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "NYM",
       "unavailableReason": null,
@@ -9386,7 +9155,7 @@
       }
     },
     "NYY": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
@@ -9398,28 +9167,6 @@
         "L7": "L7: 4.3 avg | 4.0 med | 4,2,1,9,6,2,6 | 4/7 >=4 | 3/7 >=5 | max 9 (30% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 823539,
-          "marginVsTeamTotalLine": null,
-          "opponent": "BOS",
-          "runsAllowed": 6,
-          "runsScored": 0,
-          "side": "home",
-          "teamTotalLine": null
-        },
-        {
-          "date": "2026-08-29",
-          "gameNumber": 2,
-          "gamePk": 823501,
-          "marginVsTeamTotalLine": null,
-          "opponent": "BOS",
-          "runsAllowed": 2,
-          "runsScored": 9,
-          "side": "home",
-          "teamTotalLine": null
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -9696,7 +9443,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 25,
       "source": "mlb_stats_api_schedule",
       "team": "NYY",
       "unavailableReason": null,
@@ -9879,7 +9626,7 @@
       }
     },
     "PHI": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "3/7 games clearing 4 runs, median 1.0, mean 3.29",
@@ -9891,17 +9638,6 @@
         "L7": "L7: 3.3 avg | 1.0 med | 7,6,1,1,0,1,7 | 3/7 >=4 | 3/7 >=5 | max 7 (30% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 823986,
-          "marginVsTeamTotalLine": -0.875,
-          "opponent": "LAA",
-          "runsAllowed": 2,
-          "runsScored": 4,
-          "side": "away",
-          "teamTotalLine": 4.875
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -10189,7 +9925,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "PHI",
       "unavailableReason": null,
@@ -10372,7 +10108,7 @@
       }
     },
     "PIT": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "3/7 games clearing 4 runs, median 3.0, mean 3.29",
@@ -10384,17 +10120,6 @@
         "L7": "L7: 3.3 avg | 3.0 med | 4,2,1,2,7,3,4 | 3/7 >=4 | 1/7 >=5 | max 7 (30% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 823011,
-          "marginVsTeamTotalLine": 2.208,
-          "opponent": "STL",
-          "runsAllowed": 2,
-          "runsScored": 6,
-          "side": "away",
-          "teamTotalLine": 3.792
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -10671,7 +10396,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 26,
+      "gamesAvailable": 25,
       "source": "mlb_stats_api_schedule",
       "team": "PIT",
       "unavailableReason": null,
@@ -10854,7 +10579,7 @@
       }
     },
     "SD": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "HOT",
         "reason": "6/7 games cleared 4 runs with a 5.0 median -- repeated scoring, not one explosion",
@@ -10866,17 +10591,6 @@
         "L7": "L7: 5.6 avg | 5.0 med | 7,0,5,4,4,10,9 | 6/7 >=4 | 4/7 >=5 | max 10 (26% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 822936,
-          "marginVsTeamTotalLine": 2.462,
-          "opponent": "TB",
-          "runsAllowed": 7,
-          "runsScored": 6,
-          "side": "away",
-          "teamTotalLine": 3.538
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -11164,7 +10878,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "SD",
       "unavailableReason": null,
@@ -11347,7 +11061,7 @@
       }
     },
     "SEA": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "HOT",
         "reason": "5/7 games cleared 4 runs with a 5.0 median -- repeated scoring, not one explosion",
@@ -11359,17 +11073,6 @@
         "L7": "L7: 4.6 avg | 5.0 med | 2,0,6,4,5,8,7 | 5/7 >=4 | 4/7 >=5 | max 8 (25% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 822770,
-          "marginVsTeamTotalLine": -0.435,
-          "opponent": "TOR",
-          "runsAllowed": 4,
-          "runsScored": 3,
-          "side": "away",
-          "teamTotalLine": 3.435
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -11657,7 +11360,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "SEA",
       "unavailableReason": null,
@@ -11840,7 +11543,7 @@
       }
     },
     "SF": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "COLD",
         "reason": "median 2.0 and only 1/7 games clearing 4 runs",
@@ -11852,28 +11555,6 @@
         "L7": "L7: 2.0 avg | 2.0 med | 1,5,2,2,0,3,1 | 1/7 >=4 | 1/7 >=5 | max 5 (36% of L7 runs) | OUTLIER-DEPENDENT"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 823177,
-          "marginVsTeamTotalLine": -2.513,
-          "opponent": "AZ",
-          "runsAllowed": 7,
-          "runsScored": 1,
-          "side": "home",
-          "teamTotalLine": 3.513
-        },
-        {
-          "date": "2026-08-29",
-          "gameNumber": 2,
-          "gamePk": 823176,
-          "marginVsTeamTotalLine": 3.487,
-          "opponent": "AZ",
-          "runsAllowed": 2,
-          "runsScored": 7,
-          "side": "home",
-          "teamTotalLine": 3.513
-        },
         {
           "date": "2026-08-31",
           "gameNumber": 1,
@@ -12150,7 +11831,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 25,
       "source": "mlb_stats_api_schedule",
       "team": "SF",
       "unavailableReason": null,
@@ -12333,7 +12014,7 @@
       }
     },
     "STL": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "HOT",
         "reason": "4/7 games cleared 4 runs with a 4.0 median -- repeated scoring, not one explosion",
@@ -12345,17 +12026,6 @@
         "L7": "L7: 3.0 avg | 4.0 med | 5,0,5,1,4,2,4 | 4/7 >=4 | 2/7 >=5 | max 5 (24% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 823011,
-          "marginVsTeamTotalLine": -1.98,
-          "opponent": "PIT",
-          "runsAllowed": 6,
-          "runsScored": 2,
-          "side": "home",
-          "teamTotalLine": 3.98
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -12632,7 +12302,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 26,
+      "gamesAvailable": 25,
       "source": "mlb_stats_api_schedule",
       "team": "STL",
       "unavailableReason": null,
@@ -12815,7 +12485,7 @@
       }
     },
     "TB": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "3/7 games clearing 4 runs, median 3.0, mean 4.14",
@@ -12827,17 +12497,6 @@
         "L7": "L7: 4.1 avg | 3.0 med | 0,6,2,4,2,12,3 | 3/7 >=4 | 2/7 >=5 | max 12 (41% of L7 runs) | OUTLIER-DEPENDENT"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 822936,
-          "marginVsTeamTotalLine": 3.167,
-          "opponent": "SD",
-          "runsAllowed": 6,
-          "runsScored": 7,
-          "side": "home",
-          "teamTotalLine": 3.833
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -13136,7 +12795,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 28,
+      "gamesAvailable": 27,
       "source": "mlb_stats_api_schedule",
       "team": "TB",
       "unavailableReason": null,
@@ -13319,7 +12978,7 @@
       }
     },
     "TEX": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "2/7 games clearing 4 runs, median 3.0, mean 3.14",
@@ -13331,17 +12990,6 @@
         "L7": "L7: 3.1 avg | 3.0 med | 2,3,2,3,2,6,4 | 2/7 >=4 | 1/7 >=5 | max 6 (27% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 823741,
-          "marginVsTeamTotalLine": -0.333,
-          "opponent": "MIL",
-          "runsAllowed": 5,
-          "runsScored": 3,
-          "side": "away",
-          "teamTotalLine": 3.333
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -13629,7 +13277,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 27,
+      "gamesAvailable": 26,
       "source": "mlb_stats_api_schedule",
       "team": "TEX",
       "unavailableReason": null,
@@ -13812,7 +13460,7 @@
       }
     },
     "TOR": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "3/7 games clearing 4 runs, median 3.0, mean 3.71",
@@ -13824,17 +13472,6 @@
         "L7": "L7: 3.7 avg | 3.0 med | 7,3,2,2,6,1,5 | 3/7 >=4 | 3/7 >=5 | max 7 (27% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 822770,
-          "marginVsTeamTotalLine": 0.286,
-          "opponent": "SEA",
-          "runsAllowed": 3,
-          "runsScored": 4,
-          "side": "home",
-          "teamTotalLine": 3.714
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -14111,7 +13748,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 26,
+      "gamesAvailable": 25,
       "source": "mlb_stats_api_schedule",
       "team": "TOR",
       "unavailableReason": null,
@@ -14294,7 +13931,7 @@
       }
     },
     "WSH": {
-      "asOfDate": "2026-09-28",
+      "asOfDate": "2026-09-29",
       "formLabel": {
         "label": "NEUTRAL",
         "reason": "3/7 games clearing 4 runs, median 3.0, mean 3.71",
@@ -14306,17 +13943,6 @@
         "L7": "L7: 3.7 avg | 3.0 med | 3,2,3,4,7,1,6 | 3/7 >=4 | 2/7 >=5 | max 7 (27% of L7 runs)"
       },
       "gameLog": [
-        {
-          "date": "2026-08-29",
-          "gameNumber": 1,
-          "gamePk": 822690,
-          "marginVsTeamTotalLine": 1.333,
-          "opponent": "MIA",
-          "runsAllowed": 4,
-          "runsScored": 5,
-          "side": "home",
-          "teamTotalLine": 3.667
-        },
         {
           "date": "2026-08-30",
           "gameNumber": 1,
@@ -14582,7 +14208,7 @@
           "teamTotalLine": null
         }
       ],
-      "gamesAvailable": 25,
+      "gamesAvailable": 24,
       "source": "mlb_stats_api_schedule",
       "team": "WSH",
       "unavailableReason": null,
@@ -14765,5 +14391,5 @@
       }
     }
   },
-  "windowStartDate": "2026-08-29"
+  "windowStartDate": "2026-08-30"
 }

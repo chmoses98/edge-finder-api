@@ -8,7 +8,7 @@
     "PRODUCTION_MODEL_SUPPORT": "the production model prices it (config/rules.json market_list)"
   },
   "bankroll": {
-    "ageMinutes": 5.244,
+    "ageMinutes": 5.293,
     "bankroll": null,
     "bankrollRedacted": true,
     "bankrollRedactionReason": "This repository is PUBLIC. The numeric balance is delivered to the card build as an encrypted Actions secret and is used for sizing, but is never committed. Everything needed to judge whether that sizing is trustworthy is above -- but NOT the amount, so a reader of this file cannot compute dollar stakes. See consumerSizingVerdict.",
@@ -20,8 +20,8 @@
     "currency": "USD",
     "maxAgeMinutes": 30,
     "numericBankrollAvailable": false,
-    "observedAt": "2026-09-29T23:33:27Z",
-    "resolvedAt": "2026-09-29T23:38:41Z",
+    "observedAt": "2026-09-30T00:49:59Z",
+    "resolvedAt": "2026-09-30T00:55:16Z",
     "schemaVersion": "3",
     "sizingAllowed": true,
     "sizingAuthoritativeSource": true,
@@ -39,8 +39,8 @@
     "rawUniverseContracts": 967,
     "registryExcludedMarkets": 0,
     "researchOnlyByReason": {
-      "BLOCKED_GAME_STARTED": 2,
-      "BLOCKED_LINEUPS_UNCONFIRMED": 2
+      "BLOCKED_GAME_STARTED": 3,
+      "BLOCKED_LINEUPS_UNCONFIRMED": 1
     },
     "researchOnlyGames": 4,
     "researchOnlyMarketsTotal": 967,
@@ -54,9 +54,9 @@
     "unclassifiedRawContracts": "the normalizer could not parse them -- retained with reasons"
   },
   "date": "2026-09-29",
-  "eligibilityEvaluatedAt": "2026-09-29T23:38:41Z",
+  "eligibilityEvaluatedAt": "2026-09-30T00:55:16Z",
   "eligibilityPolicy": "Only games that have NOT started and have BOTH official lineups confirmed (lineupConfirmedOfficial on awayTeamStats AND homeTeamStats) are real-money candidates. Probable/projected lineups are never treated as confirmed. Every other game stays archived and researchable and must not produce a real-money recommendation from the normal slate card.",
-  "generatedAt": "2026-09-29T23:38:41Z",
+  "generatedAt": "2026-09-30T00:55:16Z",
   "guarantees": [
     "Only games that have NOT started and have BOTH official lineups confirmed appear under bettingEligibleGames. Everything else is researchOnly and carries realMoneyEligible=false on every market row.",
     "For a betting-eligible game, EVERY raw Kalshi contract attributable to it is accounted for in exactly one visible state: a normalized market, a registry exclusion with its reason, or an unclassified contract with the normalizer's reason. contractAccounting.silentRemainderCount is 0 on every game of a written card -- a violation aborts the build rather than publishing a falsely complete file.",
@@ -31605,8 +31605,8 @@
         "silentRemainderTickers": [],
         "unclassifiedCount": 0
       },
-      "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(BOS): official lineup not posted yet, home(NYY): official lineup not posted yet",
-      "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
+      "eligibilityReason": "game has already started -- first-pitch timestamp has passed",
+      "eligibilityStatus": "BLOCKED_GAME_STARTED",
       "familiesWithoutAutomaticSettlement": [],
       "gameId": 849851,
       "gameStatus": {
@@ -31615,13 +31615,14 @@
         "isFinal": false,
         "isInPlay": false,
         "isPostponed": false,
-        "isPregame": true,
-        "liveGameBlocked": false,
+        "isPregame": false,
+        "liveGameBlocked": true,
         "matchup": "BOS@NYY",
-        "message": "BOS@NYY status: Scheduled",
-        "shouldSkip": false,
-        "skipReason": null,
-        "timestampBlocked": false,
+        "message": "BOS@NYY scheduled start '2026-09-30T00:00:00Z' has passed (status='Scheduled') \u2014 first-pitch timestamp fallback blocks real-money bets. Use LIVE_BET mode if the game is in progress.",
+        "scheduledStartTime": "2026-09-30T00:00:00Z",
+        "shouldSkip": true,
+        "skipReason": "PREGAME_ONLY_STARTED_GAME",
+        "timestampBlocked": true,
         "voidExisting": false
       },
       "lineups": {

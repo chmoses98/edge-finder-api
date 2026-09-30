@@ -1,23 +1,23 @@
 {
-  "asOf": "2026-09-30T09:13:31Z",
+  "asOf": "2026-09-30T19:11:10Z",
   "lastRun": {
-    "completedAt": "2026-09-30T09:13:31Z",
+    "completedAt": "2026-09-30T19:11:10Z",
     "counts": {
-      "betsSettled": 4,
+      "betsSettled": 0,
       "datesChanged": 1,
       "datesConsidered": 1,
       "reportsRegenerated": 1,
-      "settlementsMeaningfullyChanged": 1307,
-      "wagersStillPending": 0
+      "settlementsMeaningfullyChanged": 771,
+      "wagersStillPending": 3
     },
     "datesConsidered": [
-      "2026-09-29"
+      "2026-09-30"
     ],
-    "githubRunId": "36694599521",
+    "githubRunId": "36763251347",
     "refusalReason": null,
-    "trigger": "SCHEDULED_SWEEP"
+    "trigger": "PUSH_CANONICAL_LEDGER"
   },
-  "newestPendingDate": "2026-09-17",
+  "newestPendingDate": "2026-09-30",
   "oldestPendingDate": "2026-06-12",
   "pendingByDate": {
     "2026-06-12": 5,
@@ -37,9 +37,10 @@
     "2026-08-30": 2,
     "2026-09-03": 1,
     "2026-09-07": 2,
-    "2026-09-17": 3
+    "2026-09-17": 3,
+    "2026-09-30": 3
   },
-  "pendingTotal": 47,
+  "pendingTotal": 50,
   "pendingWagers": [
     {
       "betId": "0ebaacd152b07b0be3df6e22a766c193ade1de23",
@@ -463,6 +464,33 @@
       "settlementRefusalClass": "CONTRADICTION",
       "settlementRefusalReason": "SETTLEMENT_CONTRADICTED_SETTLEMENT_GAME_IS_NOT_THE_WAGERS_GAME",
       "trackingType": null
+    },
+    {
+      "betId": "06734204dcfc43f33f004214b4822e2b8d7d5212",
+      "gameDate": "2026-09-30",
+      "marketFamily": "pitcher_strikeouts",
+      "marketTicker": "KXMLBKS-26SEP301400PHIATL-PHICSANCHEZ61-7",
+      "settlementRefusalClass": null,
+      "settlementRefusalReason": null,
+      "trackingType": "REAL"
+    },
+    {
+      "betId": "1a18378ca017f054ecad69f58cd39c451a0b0def",
+      "gameDate": "2026-09-30",
+      "marketFamily": "pitcher_strikeouts",
+      "marketTicker": "KXMLBKS-26SEP301400PHIATL-PHICSANCHEZ61-6",
+      "settlementRefusalClass": null,
+      "settlementRefusalReason": null,
+      "trackingType": "REAL"
+    },
+    {
+      "betId": "99a514017d42ddf8d02ae01ea439e0fa3d622de1",
+      "gameDate": "2026-09-30",
+      "marketFamily": "hitter_hits",
+      "marketTicker": "KXMLBHIT-26SEP301400PHIATL-ATLRACUNA13-1",
+      "settlementRefusalClass": null,
+      "settlementRefusalReason": null,
+      "trackingType": "REAL"
     }
   ],
   "refusalClassCounts": {

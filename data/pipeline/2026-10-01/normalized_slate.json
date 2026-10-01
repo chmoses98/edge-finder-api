@@ -1,0 +1,1966 @@
+{
+  "data": {
+    "_containsSentinels": true,
+    "_sentinelCheckRan": true,
+    "_sentinelViolationCount": 4,
+    "_sentinelViolations": [
+      {
+        "path": "games[0].gameId",
+        "value": 849844
+      },
+      {
+        "path": "games[0].kalshi.markets[0].volume",
+        "value": 876220.68
+      },
+      {
+        "path": "games[0].kalshi.markets[1].volume",
+        "value": 1080814.01
+      },
+      {
+        "path": "games[0].kalshi.ml.volume",
+        "value": 876220.68
+      }
+    ],
+    "bullpensLoaded": 30,
+    "dataSources": {
+      "schedule": "statsapi",
+      "standings": "statsapi",
+      "teamStats": "teamstats_endpoint"
+    },
+    "date": "2026-10-01",
+    "games": [
+      {
+        "allEdges": [
+          {
+            "actionable": true,
+            "awayEdgePct": -2.88,
+            "awayProjRuns": 3.6,
+            "betEdgePct": 2.88,
+            "betModelPct": 61.5,
+            "betPinVF": 50.2,
+            "betSide": "HOME",
+            "betSize": 4.5,
+            "betTeam": "Atlanta Braves",
+            "confidence": "MEDIUM",
+            "homeEdgePct": 2.88,
+            "homeProjRuns": 4.4,
+            "kalshiAway": 49.5,
+            "logForCLV": true,
+            "market": "ML",
+            "modelAwayPct": 38.5,
+            "modelHomePct": 61.5,
+            "pinGap": 0.3,
+            "pinVfAway": 49.8,
+            "pinVfHome": 50.2,
+            "totalProj": 8
+          },
+          {
+            "actionable": false,
+            "betSize": 4.5,
+            "confidence": "MEDIUM",
+            "edgePct": -4.17,
+            "logForCLV": true,
+            "market": "RUN LINE",
+            "modelCoverPct": 20.4,
+            "pinVFpct": 36.8,
+            "price": 164,
+            "rlLine": -1.5,
+            "side": "AWAY"
+          },
+          {
+            "actionable": false,
+            "bestEdge": 1.8,
+            "bestSide": "OVER",
+            "diff": 0.5,
+            "logForCLV": true,
+            "market": "TOTAL",
+            "overEdgePct": 1.8,
+            "pOver": 54.7,
+            "pUnder": 31.3,
+            "paperOnly": true,
+            "paperReason": "Game Total WR 41% \u2014 paper only per Rule 71 until WR\u226552% over N\u226530",
+            "pinVFover": 47.6,
+            "pinVFunder": 52.4,
+            "sizeOver": 1,
+            "sizeUnder": 1,
+            "totalProj": 8,
+            "underEdgePct": -5.36,
+            "vegasLine": 7.5
+          }
+        ],
+        "away": {
+          "abbr": "PHI",
+          "bullpen": {
+            "bbPer9": 3.03,
+            "elite": false,
+            "era": 4.04,
+            "fatigued": false,
+            "hlAvailable": true,
+            "hlDivergence": -0.4,
+            "hlGrade": "ABOVE_AVERAGE",
+            "hlSamplePA": 6184,
+            "hlXFIP": 3.64,
+            "hr9": 1.2,
+            "ip": 1438.1109999999999,
+            "kPer9": 9.87,
+            "last3DaysIP": null,
+            "recentUsage": {
+              "asOfDate": null,
+              "backToBackRelievers": [],
+              "dataAvailable": false,
+              "gamesConsidered": 0,
+              "handednessMix": {
+                "L": 0,
+                "R": 0,
+                "unknown": 0
+              },
+              "highLeverageRecentUsage": [],
+              "recentPitchCounts": [],
+              "relieversUsedLastGame": [],
+              "teamPitchCountLastGame": null,
+              "teamPitchCountWindow": null,
+              "unavailableReason": "no_completed_games_in_window"
+            },
+            "vulnerable": false,
+            "whip": 1.29,
+            "xFIP": 3.79,
+            "xFIPMethod": "real_xFIP"
+          },
+          "pitcher": {
+            "id": "605400",
+            "name": "Aaron Nola",
+            "note": "",
+            "pitchHand": null
+          },
+          "pitcherSavant": {
+            "avgIPperStart": 5.6,
+            "barrelPct": 9.3,
+            "bbPct": 7.9,
+            "eliteStarter": false,
+            "exitVeloAvg": 88.5,
+            "fbPct": 52.6,
+            "firstInningSplit": {
+              "appearances": 493,
+              "available": true,
+              "firstInningERA": null,
+              "firstInningXERA": null,
+              "ip": 0,
+              "openerQualified": false,
+              "strongOpener": false
+            },
+            "hardHitPct": 40.3,
+            "highWalkRisk": false,
+            "kPct": 23.8,
+            "name": "Nola, Aaron",
+            "recentFIP": 3.46,
+            "seasonFIP": 4.84,
+            "seasonIP": 175.1,
+            "seasonStarts": 33,
+            "startsSampled": 5,
+            "tto1": {
+              "fip": 5.02,
+              "gamesUsed": 1
+            },
+            "tto3": {
+              "fip": 5.1,
+              "gamesUsed": 8
+            },
+            "ttoAvailable": true,
+            "ttoRisk": false,
+            "ttoSplit": 0.08,
+            "velocityRecent": null,
+            "velocitySeason": null,
+            "velocityStartsN": null,
+            "vsLHH": null,
+            "vsRHH": null,
+            "whiffPct": 27.1,
+            "xERA": 4.18,
+            "xFIP": 4.84,
+            "xFIPvsXERA": 0.66
+          },
+          "record": "1-1",
+          "team": "Philadelphia Phillies"
+        },
+        "awayTeamStats": {
+          "abbr": "PHI",
+          "avg": null,
+          "confirmedLineup": [
+            {
+              "batSide": null,
+              "name": "Trea Turner",
+              "order": 1,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 6.9,
+                  "iso": 0.136,
+                  "kPct": 21,
+                  "pa": 700,
+                  "slg": 0.378,
+                  "woba": 0.297
+                },
+                "vsRHP": {
+                  "bbPct": 6.9,
+                  "iso": 0.136,
+                  "kPct": 21,
+                  "pa": 700,
+                  "slg": 0.378,
+                  "woba": 0.297
+                }
+              },
+              "playerId": "607208",
+              "position": "SS",
+              "seasonWOBA": 0.293
+            },
+            {
+              "batSide": null,
+              "name": "Kyle Schwarber",
+              "order": 2,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 15,
+                  "iso": 0.271,
+                  "kPct": 31.4,
+                  "pa": 701,
+                  "slg": 0.503,
+                  "woba": 0.369
+                },
+                "vsRHP": {
+                  "bbPct": 15,
+                  "iso": 0.271,
+                  "kPct": 31.4,
+                  "pa": 701,
+                  "slg": 0.503,
+                  "woba": 0.369
+                }
+              },
+              "playerId": "656941",
+              "position": "DH",
+              "seasonWOBA": 0.364
+            },
+            {
+              "batSide": null,
+              "name": "Bryce Harper",
+              "order": 3,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 15.4,
+                  "iso": 0.216,
+                  "kPct": 21.4,
+                  "pa": 693,
+                  "slg": 0.485,
+                  "woba": 0.377
+                },
+                "vsRHP": {
+                  "bbPct": 15.4,
+                  "iso": 0.216,
+                  "kPct": 21.4,
+                  "pa": 693,
+                  "slg": 0.485,
+                  "woba": 0.377
+                }
+              },
+              "playerId": "547180",
+              "position": "RF",
+              "seasonWOBA": 0.379
+            },
+            {
+              "batSide": null,
+              "name": "Alec Bohm",
+              "order": 4,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 7.6,
+                  "iso": 0.134,
+                  "kPct": 14,
+                  "pa": 629,
+                  "slg": 0.383,
+                  "woba": 0.304
+                },
+                "vsRHP": {
+                  "bbPct": 7.6,
+                  "iso": 0.134,
+                  "kPct": 14,
+                  "pa": 629,
+                  "slg": 0.383,
+                  "woba": 0.304
+                }
+              },
+              "playerId": "664761",
+              "position": "1B",
+              "seasonWOBA": 0.327
+            },
+            {
+              "batSide": null,
+              "name": "Bryson Stott",
+              "order": 5,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 10.2,
+                  "iso": 0.145,
+                  "kPct": 16.4,
+                  "pa": 608,
+                  "slg": 0.401,
+                  "woba": 0.324
+                },
+                "vsRHP": {
+                  "bbPct": 10.2,
+                  "iso": 0.145,
+                  "kPct": 16.4,
+                  "pa": 608,
+                  "slg": 0.401,
+                  "woba": 0.324
+                }
+              },
+              "playerId": "681082",
+              "position": "2B",
+              "seasonWOBA": 0.33
+            },
+            {
+              "batSide": null,
+              "name": "Bryan De La Cruz",
+              "order": 6,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 8.1,
+                  "iso": 0.133,
+                  "kPct": 20.9,
+                  "pa": 86,
+                  "slg": 0.413,
+                  "woba": 0.327
+                },
+                "vsRHP": {
+                  "bbPct": 8.1,
+                  "iso": 0.133,
+                  "kPct": 20.9,
+                  "pa": 86,
+                  "slg": 0.413,
+                  "woba": 0.327
+                }
+              },
+              "playerId": "650559",
+              "position": "LF",
+              "seasonWOBA": 0.299
+            },
+            {
+              "batSide": null,
+              "name": "Edmundo Sosa",
+              "order": 7,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 2.8,
+                  "iso": 0.182,
+                  "kPct": 21.6,
+                  "pa": 250,
+                  "slg": 0.429,
+                  "woba": 0.299
+                },
+                "vsRHP": {
+                  "bbPct": 2.8,
+                  "iso": 0.182,
+                  "kPct": 21.6,
+                  "pa": 250,
+                  "slg": 0.429,
+                  "woba": 0.299
+                }
+              },
+              "playerId": "624641",
+              "position": "3B",
+              "seasonWOBA": 0.328
+            },
+            {
+              "batSide": null,
+              "name": "J.T. Realmuto",
+              "order": 8,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 7.9,
+                  "iso": 0.126,
+                  "kPct": 21.4,
+                  "pa": 467,
+                  "slg": 0.331,
+                  "woba": 0.266
+                },
+                "vsRHP": {
+                  "bbPct": 7.9,
+                  "iso": 0.126,
+                  "kPct": 21.4,
+                  "pa": 467,
+                  "slg": 0.331,
+                  "woba": 0.266
+                }
+              },
+              "playerId": "592663",
+              "position": "C",
+              "seasonWOBA": 0.317
+            },
+            {
+              "batSide": null,
+              "name": "Justin Crawford",
+              "order": 9,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 5.8,
+                  "iso": 0.089,
+                  "kPct": 17.6,
+                  "pa": 465,
+                  "slg": 0.353,
+                  "woba": 0.291
+                },
+                "vsRHP": {
+                  "bbPct": 5.8,
+                  "iso": 0.089,
+                  "kPct": 17.6,
+                  "pa": 465,
+                  "slg": 0.353,
+                  "woba": 0.291
+                }
+              },
+              "playerId": "702222",
+              "position": "CF",
+              "seasonWOBA": 0.284
+            }
+          ],
+          "gamesPlayed": 162,
+          "last15RpG": 3.23,
+          "last7RpG": 2.67,
+          "lineupAdj": 0.07,
+          "lineupAdjApplied": true,
+          "lineupAdjAvailable": true,
+          "lineupAvgWOBA": 0.325,
+          "lineupBattersExpected": 9,
+          "lineupBattersFallback": 0,
+          "lineupBattersFound": 9,
+          "lineupBattersResolved": 9,
+          "lineupConfirmed": true,
+          "lineupConfirmedOfficial": true,
+          "lineupDataQuality": "full",
+          "lineupHandedness": {
+            "countL": 0,
+            "countR": 0,
+            "countS": 0,
+            "countUnknown": 9,
+            "lineupSize": 9,
+            "top3Handedness": "???",
+            "top3Resolved": 3
+          },
+          "lineupPosted": true,
+          "lineupSource": "mlb_stats_api",
+          "lineupStatus": "confirmed",
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "lineupWOBADelta": 0.0156,
+          "obp": null,
+          "offenseBaselineAdj": 4.177,
+          "offenseBaselineBayes": 4.084,
+          "offenseBaselineOppAdj": 4.107,
+          "offenseBaselineRaw": 3.53,
+          "offenseForm": {
+            "asOfDate": "2026-09-30",
+            "formLabel": {
+              "label": "NEUTRAL",
+              "reason": "3/7 games clearing 4 runs, median 1.0, mean 3.29",
+              "window": "L7"
+            },
+            "formLines": {
+              "L10": "L10: 3.2 avg | 3.0 med | 3,3,3,7,6,1,1,0,1,7 | 3/10 >=4 | 3/10 >=5 | max 7 (22% of L10 runs)",
+              "L5": "L5: 2.0 avg | 1.0 med | 1,1,0,1,7 | 1/5 >=4 | 1/5 >=5 | max 7 (70% of L5 runs) | OUTLIER-DEPENDENT",
+              "L7": "L7: 3.3 avg | 1.0 med | 7,6,1,1,0,1,7 | 3/7 >=4 | 3/7 >=5 | max 7 (30% of L7 runs)"
+            },
+            "gamesAvailable": 25,
+            "source": "mlb_stats_api_schedule",
+            "team": "PHI",
+            "unavailableReason": null,
+            "windows": {
+              "L10": {
+                "ewma": 3.13,
+                "games": 10,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 10,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 7,
+                "mean": 3.2,
+                "median": 3.0,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": false,
+                  "meanMinusTrimmedMean": 0.08,
+                  "topGameShareOfWindowRuns": 0.219
+                },
+                "scores": [
+                  3,
+                  3,
+                  3,
+                  7,
+                  6,
+                  1,
+                  1,
+                  0,
+                  1,
+                  7
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 6,
+                    "of": 10,
+                    "pct": 0.6
+                  },
+                  "ge4": {
+                    "games": 3,
+                    "of": 10,
+                    "pct": 0.3
+                  },
+                  "ge5": {
+                    "games": 3,
+                    "of": 10,
+                    "pct": 0.3
+                  },
+                  "ge6": {
+                    "games": 3,
+                    "of": 10,
+                    "pct": 0.3
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.219,
+                "totalRuns": 32,
+                "trimmedMean": 3.12,
+                "window": 10
+              },
+              "L5": {
+                "ewma": 2.75,
+                "games": 5,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 5,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 7,
+                "mean": 2.0,
+                "median": 1.0,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": true,
+                  "meanMinusTrimmedMean": 1.0,
+                  "topGameShareOfWindowRuns": 0.7
+                },
+                "scores": [
+                  1,
+                  1,
+                  0,
+                  1,
+                  7
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 1,
+                    "of": 5,
+                    "pct": 0.2
+                  },
+                  "ge4": {
+                    "games": 1,
+                    "of": 5,
+                    "pct": 0.2
+                  },
+                  "ge5": {
+                    "games": 1,
+                    "of": 5,
+                    "pct": 0.2
+                  },
+                  "ge6": {
+                    "games": 1,
+                    "of": 5,
+                    "pct": 0.2
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.7,
+                "totalRuns": 10,
+                "trimmedMean": 1.0,
+                "window": 5
+              },
+              "L7": {
+                "ewma": 3.16,
+                "games": 7,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 7,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 7,
+                "mean": 3.29,
+                "median": 1.0,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": false,
+                  "meanMinusTrimmedMean": 0.09,
+                  "topGameShareOfWindowRuns": 0.304
+                },
+                "scores": [
+                  7,
+                  6,
+                  1,
+                  1,
+                  0,
+                  1,
+                  7
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 3,
+                    "of": 7,
+                    "pct": 0.429
+                  },
+                  "ge4": {
+                    "games": 3,
+                    "of": 7,
+                    "pct": 0.429
+                  },
+                  "ge5": {
+                    "games": 3,
+                    "of": 7,
+                    "pct": 0.429
+                  },
+                  "ge6": {
+                    "games": 3,
+                    "of": 7,
+                    "pct": 0.429
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.304,
+                "totalRuns": 23,
+                "trimmedMean": 3.2,
+                "window": 7
+              }
+            }
+          },
+          "offenseFormAsOf": "2026-09-30",
+          "offenseFormLabel": "NEUTRAL",
+          "offenseFormLine": "L7: 3.3 avg | 1.0 med | 7,6,1,1,0,1,7 | 3/7 >=4 | 3/7 >=5 | max 7 (30% of L7 runs)",
+          "offenseFormReason": "3/7 games clearing 4 runs, median 1.0, mean 3.29",
+          "oppQualityAdj": 0.023,
+          "oppQualityConf": "full",
+          "oppQualityGames": 15,
+          "oppQualityNote": "rolling_15_game",
+          "oppXFIPavg": 4.29,
+          "ops": null,
+          "record": {
+            "divisionRank": "2",
+            "leagueRank": "6",
+            "losses": 74,
+            "pct": ".543",
+            "runDiff": 15,
+            "runsAllowed": 698,
+            "runsScored": 713,
+            "streak": "W1",
+            "wins": 88
+          },
+          "rpgIndex": 98,
+          "runs": 713,
+          "runsPerGame": 4.4,
+          "seasonRpG": 4.4,
+          "slg": null,
+          "teamBBPct": null,
+          "teamBarrel": null,
+          "teamFBPct": 0.355,
+          "teamHardHit": null,
+          "teamId": 143,
+          "teamKPct": null,
+          "teamSeasonWOBA": 0.309,
+          "teamWOBA": 0.309,
+          "wrcPlus": 98
+        },
+        "f5": {
+          "awayF5Pct": 18.4,
+          "awayF5Proj": 1.2,
+          "bookF5": null,
+          "f5Amplified": false,
+          "f5PriceNote": "F5 market not offered on any book today",
+          "favoredSide": "HOME",
+          "homeF5Pct": 81.6,
+          "homeF5Proj": 2.63,
+          "pinF5VigFree": null,
+          "tieProb": 16.7,
+          "xERAGap": 1.19
+        },
+        "gameId": 849844,
+        "home": {
+          "abbr": "ATL",
+          "bullpen": {
+            "bbPer9": 3.31,
+            "elite": false,
+            "era": 3.63,
+            "fatigued": false,
+            "hlAvailable": true,
+            "hlDivergence": 0.32,
+            "hlGrade": "AVERAGE",
+            "hlSamplePA": 6183,
+            "hlXFIP": 4,
+            "hr9": 1.16,
+            "ip": 1438,
+            "kPer9": 8.45,
+            "last3DaysIP": null,
+            "recentUsage": {
+              "asOfDate": null,
+              "backToBackRelievers": [],
+              "dataAvailable": false,
+              "gamesConsidered": 0,
+              "handednessMix": {
+                "L": 0,
+                "R": 0,
+                "unknown": 0
+              },
+              "highLeverageRecentUsage": [],
+              "recentPitchCounts": [],
+              "relieversUsedLastGame": [],
+              "teamPitchCountLastGame": null,
+              "teamPitchCountWindow": null,
+              "unavailableReason": "no_completed_games_in_window"
+            },
+            "vulnerable": false,
+            "whip": 1.24,
+            "xFIP": 4.13,
+            "xFIPMethod": "real_xFIP"
+          },
+          "pitcher": {
+            "id": "678061",
+            "name": "Ray Kerr",
+            "note": "",
+            "pitchHand": null
+          },
+          "pitcherSavant": {
+            "avgIPperStart": 3,
+            "barrelPct": 5.9,
+            "bbPct": 3,
+            "eliteStarter": false,
+            "exitVeloAvg": 88,
+            "fbPct": 50,
+            "firstInningSplit": {
+              "appearances": 11,
+              "available": true,
+              "firstInningERA": null,
+              "firstInningXERA": null,
+              "ip": 0,
+              "openerQualified": false,
+              "strongOpener": false
+            },
+            "hardHitPct": 31.4,
+            "highWalkRisk": false,
+            "kPct": 16.7,
+            "name": "Kerr, Ray",
+            "recentFIP": null,
+            "recentFIPCleared": true,
+            "recentFIPClearedReason": "startsSampled=1 < 3 \u2014 xFIP used for regression",
+            "seasonFIP": 3.65,
+            "seasonIP": 18.1,
+            "seasonStarts": 1,
+            "startsSampled": 1,
+            "tto1": null,
+            "tto3": null,
+            "ttoAvailable": false,
+            "ttoRisk": false,
+            "ttoSplit": null,
+            "velocityRecent": null,
+            "velocitySeason": null,
+            "velocityStartsN": null,
+            "vsLHH": null,
+            "vsRHH": null,
+            "whiffPct": 23.4,
+            "xERA": 3.3,
+            "xFIP": 3.65,
+            "xFIPvsXERA": 0.35
+          },
+          "record": "1-1",
+          "team": "Atlanta Braves"
+        },
+        "homeTeamStats": {
+          "abbr": "ATL",
+          "avg": null,
+          "confirmedLineup": [
+            {
+              "batSide": null,
+              "name": "Drake Baldwin",
+              "order": 1,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 8.9,
+                  "iso": 0.175,
+                  "kPct": 21.5,
+                  "pa": 615,
+                  "slg": 0.459,
+                  "woba": 0.355
+                },
+                "vsRHP": {
+                  "bbPct": 8.9,
+                  "iso": 0.175,
+                  "kPct": 21.5,
+                  "pa": 615,
+                  "slg": 0.459,
+                  "woba": 0.355
+                }
+              },
+              "playerId": "686948",
+              "position": "C",
+              "seasonWOBA": 0.37
+            },
+            {
+              "batSide": null,
+              "name": "Ronald Acu\u00f1a Jr.",
+              "order": 2,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 11.3,
+                  "iso": 0.196,
+                  "kPct": 22,
+                  "pa": 469,
+                  "slg": 0.451,
+                  "woba": 0.347
+                },
+                "vsRHP": {
+                  "bbPct": 11.3,
+                  "iso": 0.196,
+                  "kPct": 22,
+                  "pa": 469,
+                  "slg": 0.451,
+                  "woba": 0.347
+                }
+              },
+              "playerId": "660670",
+              "position": "RF",
+              "seasonWOBA": 0.366
+            },
+            {
+              "batSide": null,
+              "name": "Matt Olson",
+              "order": 3,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 9.2,
+                  "iso": 0.251,
+                  "kPct": 24.5,
+                  "pa": 698,
+                  "slg": 0.502,
+                  "woba": 0.355
+                },
+                "vsRHP": {
+                  "bbPct": 9.2,
+                  "iso": 0.251,
+                  "kPct": 24.5,
+                  "pa": 698,
+                  "slg": 0.502,
+                  "woba": 0.355
+                }
+              },
+              "playerId": "621566",
+              "position": "1B",
+              "seasonWOBA": 0.351
+            },
+            {
+              "batSide": null,
+              "name": "Michael Harris II",
+              "order": 4,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 3.7,
+                  "iso": 0.197,
+                  "kPct": 19.2,
+                  "pa": 621,
+                  "slg": 0.491,
+                  "woba": 0.351
+                },
+                "vsRHP": {
+                  "bbPct": 3.7,
+                  "iso": 0.197,
+                  "kPct": 19.2,
+                  "pa": 621,
+                  "slg": 0.491,
+                  "woba": 0.351
+                }
+              },
+              "playerId": "671739",
+              "position": "CF",
+              "seasonWOBA": 0.342
+            },
+            {
+              "batSide": null,
+              "name": "Mauricio Dub\u00f3n",
+              "order": 5,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 5.7,
+                  "iso": 0.123,
+                  "kPct": 11.8,
+                  "pa": 619,
+                  "slg": 0.399,
+                  "woba": 0.315
+                },
+                "vsRHP": {
+                  "bbPct": 5.7,
+                  "iso": 0.123,
+                  "kPct": 11.8,
+                  "pa": 619,
+                  "slg": 0.399,
+                  "woba": 0.315
+                }
+              },
+              "playerId": "643289",
+              "position": "SS",
+              "seasonWOBA": 0.304
+            },
+            {
+              "batSide": null,
+              "name": "Mike Yastrzemski",
+              "order": 6,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 10,
+                  "iso": 0.156,
+                  "kPct": 24,
+                  "pa": 408,
+                  "slg": 0.38,
+                  "woba": 0.303
+                },
+                "vsRHP": {
+                  "bbPct": 10,
+                  "iso": 0.156,
+                  "kPct": 24,
+                  "pa": 408,
+                  "slg": 0.38,
+                  "woba": 0.303
+                }
+              },
+              "playerId": "573262",
+              "position": "LF",
+              "seasonWOBA": 0.309
+            },
+            {
+              "batSide": null,
+              "name": "Austin Riley",
+              "order": 7,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 7.6,
+                  "iso": 0.145,
+                  "kPct": 31.9,
+                  "pa": 630,
+                  "slg": 0.364,
+                  "woba": 0.284
+                },
+                "vsRHP": {
+                  "bbPct": 7.6,
+                  "iso": 0.145,
+                  "kPct": 31.9,
+                  "pa": 630,
+                  "slg": 0.364,
+                  "woba": 0.284
+                }
+              },
+              "playerId": "663586",
+              "position": "3B",
+              "seasonWOBA": 0.299
+            },
+            {
+              "batSide": null,
+              "name": "Ozzie Albies",
+              "order": 8,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 6.7,
+                  "iso": 0.155,
+                  "kPct": 15.4,
+                  "pa": 683,
+                  "slg": 0.392,
+                  "woba": 0.295
+                },
+                "vsRHP": {
+                  "bbPct": 6.7,
+                  "iso": 0.155,
+                  "kPct": 15.4,
+                  "pa": 683,
+                  "slg": 0.392,
+                  "woba": 0.295
+                }
+              },
+              "playerId": "645277",
+              "position": "2B",
+              "seasonWOBA": 0.273
+            },
+            {
+              "batSide": null,
+              "name": "Dominic Smith",
+              "order": 9,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 7.7,
+                  "iso": 0.13,
+                  "kPct": 16,
+                  "pa": 300,
+                  "slg": 0.383,
+                  "woba": 0.304
+                },
+                "vsRHP": {
+                  "bbPct": 7.7,
+                  "iso": 0.13,
+                  "kPct": 16,
+                  "pa": 300,
+                  "slg": 0.383,
+                  "woba": 0.304
+                }
+              },
+              "playerId": "642086",
+              "position": "DH",
+              "seasonWOBA": 0.301
+            }
+          ],
+          "gamesPlayed": 162,
+          "last15RpG": 4,
+          "last7RpG": 4.17,
+          "lineupAdj": 0.049,
+          "lineupAdjApplied": true,
+          "lineupAdjAvailable": true,
+          "lineupAvgWOBA": 0.324,
+          "lineupBattersExpected": 9,
+          "lineupBattersFallback": 0,
+          "lineupBattersFound": 9,
+          "lineupBattersResolved": 9,
+          "lineupConfirmed": true,
+          "lineupConfirmedOfficial": true,
+          "lineupDataQuality": "full",
+          "lineupHandedness": {
+            "countL": 0,
+            "countR": 0,
+            "countS": 0,
+            "countUnknown": 9,
+            "lineupSize": 9,
+            "top3Handedness": "???",
+            "top3Resolved": 3
+          },
+          "lineupPosted": true,
+          "lineupSource": "mlb_stats_api",
+          "lineupStatus": "confirmed",
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "lineupWOBADelta": 0.0109,
+          "obp": null,
+          "offenseBaselineAdj": 4.484,
+          "offenseBaselineBayes": 4.407,
+          "offenseBaselineOppAdj": 4.435,
+          "offenseBaselineRaw": 4.283,
+          "offenseForm": {
+            "asOfDate": "2026-09-30",
+            "formLabel": {
+              "label": "NEUTRAL",
+              "reason": "3/7 games clearing 4 runs, median 3.0, mean 3.43",
+              "window": "L7"
+            },
+            "formLines": {
+              "L10": "L10: 4.0 avg | 4.0 med | 4,6,6,4,0,3,6,0,8,3 | 6/10 >=4 | 4/10 >=5 | max 8 (20% of L10 runs)",
+              "L5": "L5: 4.0 avg | 3.0 med | 3,6,0,8,3 | 2/5 >=4 | 2/5 >=5 | max 8 (40% of L5 runs) | OUTLIER-DEPENDENT",
+              "L7": "L7: 3.4 avg | 3.0 med | 4,0,3,6,0,8,3 | 3/7 >=4 | 2/7 >=5 | max 8 (33% of L7 runs)"
+            },
+            "gamesAvailable": 25,
+            "source": "mlb_stats_api_schedule",
+            "team": "ATL",
+            "unavailableReason": null,
+            "windows": {
+              "L10": {
+                "ewma": 3.93,
+                "games": 10,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 10,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 8,
+                "mean": 4.0,
+                "median": 4.0,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": false,
+                  "meanMinusTrimmedMean": 0.0,
+                  "topGameShareOfWindowRuns": 0.2
+                },
+                "scores": [
+                  4,
+                  6,
+                  6,
+                  4,
+                  0,
+                  3,
+                  6,
+                  0,
+                  8,
+                  3
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 8,
+                    "of": 10,
+                    "pct": 0.8
+                  },
+                  "ge4": {
+                    "games": 6,
+                    "of": 10,
+                    "pct": 0.6
+                  },
+                  "ge5": {
+                    "games": 4,
+                    "of": 10,
+                    "pct": 0.4
+                  },
+                  "ge6": {
+                    "games": 4,
+                    "of": 10,
+                    "pct": 0.4
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.2,
+                "totalRuns": 40,
+                "trimmedMean": 4.0,
+                "window": 10
+              },
+              "L5": {
+                "ewma": 4.09,
+                "games": 5,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 5,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 8,
+                "mean": 4.0,
+                "median": 3.0,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": true,
+                  "meanMinusTrimmedMean": 0.0,
+                  "topGameShareOfWindowRuns": 0.4
+                },
+                "scores": [
+                  3,
+                  6,
+                  0,
+                  8,
+                  3
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 4,
+                    "of": 5,
+                    "pct": 0.8
+                  },
+                  "ge4": {
+                    "games": 2,
+                    "of": 5,
+                    "pct": 0.4
+                  },
+                  "ge5": {
+                    "games": 2,
+                    "of": 5,
+                    "pct": 0.4
+                  },
+                  "ge6": {
+                    "games": 2,
+                    "of": 5,
+                    "pct": 0.4
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.4,
+                "totalRuns": 20,
+                "trimmedMean": 4.0,
+                "window": 5
+              },
+              "L7": {
+                "ewma": 3.7,
+                "games": 7,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 7,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 8,
+                "mean": 3.43,
+                "median": 3.0,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": false,
+                  "meanMinusTrimmedMean": 0.23,
+                  "topGameShareOfWindowRuns": 0.333
+                },
+                "scores": [
+                  4,
+                  0,
+                  3,
+                  6,
+                  0,
+                  8,
+                  3
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 5,
+                    "of": 7,
+                    "pct": 0.714
+                  },
+                  "ge4": {
+                    "games": 3,
+                    "of": 7,
+                    "pct": 0.429
+                  },
+                  "ge5": {
+                    "games": 2,
+                    "of": 7,
+                    "pct": 0.286
+                  },
+                  "ge6": {
+                    "games": 2,
+                    "of": 7,
+                    "pct": 0.286
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.333,
+                "totalRuns": 24,
+                "trimmedMean": 3.2,
+                "window": 7
+              }
+            }
+          },
+          "offenseFormAsOf": "2026-09-30",
+          "offenseFormLabel": "NEUTRAL",
+          "offenseFormLine": "L7: 3.4 avg | 3.0 med | 4,0,3,6,0,8,3 | 3/7 >=4 | 2/7 >=5 | max 8 (33% of L7 runs)",
+          "offenseFormReason": "3/7 games clearing 4 runs, median 3.0, mean 3.43",
+          "oppQualityAdj": 0.028,
+          "oppQualityConf": "full",
+          "oppQualityGames": 15,
+          "oppQualityNote": "rolling_15_game",
+          "oppXFIPavg": 4.35,
+          "ops": null,
+          "record": {
+            "divisionRank": "1",
+            "leagueRank": "3",
+            "losses": 68,
+            "pct": ".580",
+            "runDiff": 116,
+            "runsAllowed": 626,
+            "runsScored": 742,
+            "streak": "L1",
+            "wins": 94
+          },
+          "rpgIndex": 102,
+          "runs": 742,
+          "runsPerGame": 4.58,
+          "seasonRpG": 4.58,
+          "slg": null,
+          "teamBBPct": null,
+          "teamBarrel": null,
+          "teamFBPct": 0.355,
+          "teamHardHit": null,
+          "teamId": 144,
+          "teamKPct": null,
+          "teamSeasonWOBA": 0.313,
+          "teamWOBA": 0.313,
+          "wrcPlus": 102
+        },
+        "kalshi": {
+          "markets": [
+            {
+              "awayAbbr": "PHI",
+              "closeTime": "2026-10-04T18:00:00Z",
+              "eventTicker": "KXMLBGAME-26OCT011400PHIATL",
+              "homeAbbr": "ATL",
+              "impliedPct": 49.5,
+              "mid": 50,
+              "ticker": "KXMLBGAME-26OCT011400PHIATL-PHI",
+              "timeStr": "1400",
+              "title": "Philadelphia wins",
+              "volume": 876220.68,
+              "yesAsk": 50,
+              "yesBid": 49
+            },
+            {
+              "awayAbbr": "PHI",
+              "closeTime": "2026-10-04T18:00:00Z",
+              "eventTicker": "KXMLBGAME-26OCT011400PHIATL",
+              "homeAbbr": "ATL",
+              "impliedPct": 50.5,
+              "mid": 51,
+              "ticker": "KXMLBGAME-26OCT011400PHIATL-ATL",
+              "timeStr": "1400",
+              "title": "Atlanta wins",
+              "volume": 1080814.01,
+              "yesAsk": 51,
+              "yesBid": 50
+            }
+          ],
+          "ml": {
+            "awayAbbr": "PHI",
+            "closeTime": "2026-10-04T18:00:00Z",
+            "eventTicker": "KXMLBGAME-26OCT011400PHIATL",
+            "homeAbbr": "ATL",
+            "impliedPct": 49.5,
+            "mid": 50,
+            "ticker": "KXMLBGAME-26OCT011400PHIATL-PHI",
+            "timeStr": "1400",
+            "title": "Philadelphia wins",
+            "volume": 876220.68,
+            "yesAsk": 50,
+            "yesBid": 49
+          }
+        },
+        "kalshiEventTickerSuffix": "26OCT012000PHIATL",
+        "kalshiGameTime": "8:00 PM ET",
+        "kalshiKey": "PHIATL",
+        "kalshiSnapshotTs": "2026-10-01T20:52:06Z",
+        "lineupAuditUsed": true,
+        "lineupCheckedAt": "2026-10-01T20:51:59Z",
+        "lineupConfirmed": true,
+        "lineupSource": "lineup_audit+rotowire",
+        "lineupStatus": "confirmed",
+        "mlEdge": {
+          "actionable": true,
+          "awayEdgePct": -2.88,
+          "awayProjRuns": 3.6,
+          "betEdgePct": 2.88,
+          "betModelPct": 61.5,
+          "betPinVF": 50.2,
+          "betSide": "HOME",
+          "betSize": 4.5,
+          "betTeam": "Atlanta Braves",
+          "confidence": "MEDIUM",
+          "homeEdgePct": 2.88,
+          "homeProjRuns": 4.4,
+          "kalshiAway": 49.5,
+          "logForCLV": true,
+          "market": "ML",
+          "modelAwayPct": 38.5,
+          "modelHomePct": 61.5,
+          "pinGap": 0.3,
+          "pinVfAway": 49.8,
+          "pinVfHome": 50.2,
+          "totalProj": 8
+        },
+        "modelProb": {
+          "away": 38.5,
+          "awayProjDetail": {
+            "bullpenIP": 6,
+            "offMatchup": 0.91,
+            "offenseBaseline": 4.08,
+            "projRuns": 3.6,
+            "rolling15": 3.23,
+            "seasonRpG": 4.4,
+            "starterIP": 3,
+            "trueXFIP": 3.65,
+            "wrcPlus": 98,
+            "xfipSource": "xFIP"
+          },
+          "awayProjRuns": 3.6,
+          "confidence": "MEDIUM",
+          "factors": {
+            "awayOffBaseline": 4.08,
+            "awayTrueXFIP": 3.65,
+            "awayXfipSource": "xFIP",
+            "homeOffBaseline": 4.41,
+            "homeTrueXFIP": 4.84,
+            "homeXfipSource": "xFIP",
+            "parkRunAdj": 0
+          },
+          "home": 61.5,
+          "homeProjDetail": {
+            "bullpenIP": 3.4,
+            "offMatchup": 0.98,
+            "offenseBaseline": 4.41,
+            "projRuns": 4.4,
+            "rolling15": 4,
+            "seasonRpG": 4.58,
+            "starterIP": 5.6,
+            "trueXFIP": 4.84,
+            "wrcPlus": 102,
+            "xfipSource": "xFIP"
+          },
+          "homeProjRuns": 4.4,
+          "push": 13.8,
+          "totalProj": 8,
+          "vsKalshi": -11,
+          "vsPin": -11.3
+        },
+        "nrfi": {
+          "lean": "NRFI",
+          "leanStrength": "LEAN",
+          "nrfiPct": 100,
+          "nrfiScore": 2,
+          "reasons": [
+            "Home BB% low: 3%"
+          ],
+          "yrfiMeta": {
+            "formulaUsed": "poisson_independence",
+            "lambdaDerivedFromFullGame": false,
+            "lambdaFormula": "proxy_kpct_bbpct",
+            "lambdaIsFirstInningSpecific": false,
+            "lambdaUsed": 0.476,
+            "parkFirstInningRateIncluded": false,
+            "poissonCheckFirstInningValid": false,
+            "teamFirstInningRatesIncluded": false
+          },
+          "yrfiPct": 0,
+          "yrfiScore": 0
+        },
+        "odds": {
+          "betmgm": {
+            "f5ml": {
+              "away": -135,
+              "home": 105,
+              "updated": "2026-10-01T20:51:27Z"
+            },
+            "f5rl": {
+              "away": 105,
+              "awayPoint": -0.5,
+              "home": -140,
+              "homePoint": 0.5
+            },
+            "ml": {
+              "away": -115,
+              "home": -105,
+              "updated": "2026-10-01T20:51:25Z"
+            },
+            "teamTotals": {
+              "away": {
+                "line": 3.5,
+                "over": -125,
+                "under": -105
+              },
+              "home": {
+                "line": 3.5,
+                "over": -110,
+                "under": -118
+              }
+            },
+            "total": {
+              "line": 7.5,
+              "over": 100,
+              "under": -120
+            }
+          },
+          "draftkings": {
+            "f5ml": {
+              "away": -130,
+              "home": 100,
+              "updated": "2026-10-01T20:50:02Z"
+            },
+            "ml": {
+              "away": -110,
+              "home": -109,
+              "updated": "2026-10-01T20:51:25Z"
+            },
+            "rl": {
+              "away": 158,
+              "awayPoint": -1.5,
+              "home": -192,
+              "homePoint": 1.5
+            },
+            "teamTotals": {
+              "away": {
+                "line": 3.5,
+                "over": -125,
+                "under": -105
+              },
+              "home": {
+                "line": 3.5,
+                "over": -115,
+                "under": -115
+              }
+            },
+            "total": {
+              "line": 7.5,
+              "over": -102,
+              "under": -118
+            }
+          },
+          "fanduel": {
+            "f5ml": {
+              "away": -132,
+              "home": 106,
+              "updated": "2026-10-01T20:50:57Z"
+            },
+            "f5rl": {
+              "away": 108,
+              "awayPoint": -0.5,
+              "home": -140,
+              "homePoint": 0.5
+            },
+            "ml": {
+              "away": -110,
+              "home": -106,
+              "updated": "2026-10-01T20:51:26Z"
+            },
+            "rl": {
+              "away": 158,
+              "awayPoint": -1.5,
+              "home": -192,
+              "homePoint": 1.5
+            },
+            "teamTotals": {
+              "away": {
+                "line": 3.5,
+                "over": -122,
+                "under": -104
+              },
+              "home": {
+                "line": 3.5,
+                "over": -104,
+                "under": -122
+              }
+            },
+            "total": {
+              "line": 7.5,
+              "over": -104,
+              "under": -118
+            }
+          },
+          "kalshi": {
+            "ml": {
+              "away": 100,
+              "home": -104,
+              "updated": "2026-10-01T20:51:25Z"
+            },
+            "nrfi_yrfi": {
+              "captured_at": "2026-10-01T20:51:38.556Z",
+              "note": "Fallback: registry rfi block absent; prices from kalshi_search.json. YES=YRFI, NO=NRFI.",
+              "nrfi_american": -115,
+              "nrfi_ask": 0.54,
+              "nrfi_bid": 0.53,
+              "nrfi_implied": 53.5,
+              "source": "kalshi_search_fallback",
+              "ticker": "KXMLBRFI-26OCT011400PHIATL",
+              "unit": "dollars",
+              "yrfi_american": 115,
+              "yrfi_ask": 0.47,
+              "yrfi_bid": 0.46,
+              "yrfi_implied": 46.5
+            },
+            "pitcher_strikeouts": {
+              "family": "pitcher_strikeouts",
+              "note": "Per-player N+ threshold ladder. RESEARCH-ONLY \u2014 not part of marketLedger.",
+              "players": {
+                "PHI:Aaron Nola": {
+                  "displayName": "Aaron Nola",
+                  "team": "PHI",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": -506,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 83.5,
+                      "last_price": 0.86,
+                      "mid": 0.835,
+                      "no_ask": 0.19,
+                      "no_bid": 0.14,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 2,
+                      "ticker": "KXMLBKS-26OCT012000PHIATL-PHIANOLA27-2",
+                      "unit": "dollars",
+                      "yes_ask": 0.86,
+                      "yes_bid": 0.81
+                    },
+                    {
+                      "american": -251,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 71.5,
+                      "last_price": 0.72,
+                      "mid": 0.715,
+                      "no_ask": 0.29,
+                      "no_bid": 0.28,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBKS-26OCT012000PHIATL-PHIANOLA27-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.72,
+                      "yes_bid": 0.71
+                    },
+                    {
+                      "american": -104,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 51.0,
+                      "last_price": 0.52,
+                      "mid": 0.51,
+                      "no_ask": 0.5,
+                      "no_bid": 0.48,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 4,
+                      "ticker": "KXMLBKS-26OCT012000PHIATL-PHIANOLA27-4",
+                      "unit": "dollars",
+                      "yes_ask": 0.52,
+                      "yes_bid": 0.5
+                    },
+                    {
+                      "american": 203,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 33.0,
+                      "last_price": 0.34,
+                      "mid": 0.33,
+                      "no_ask": 0.68,
+                      "no_bid": 0.66,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 5,
+                      "ticker": "KXMLBKS-26OCT012000PHIATL-PHIANOLA27-5",
+                      "unit": "dollars",
+                      "yes_ask": 0.34,
+                      "yes_bid": 0.32
+                    },
+                    {
+                      "american": 400,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 20.0,
+                      "last_price": 0.21,
+                      "mid": 0.2,
+                      "no_ask": 0.81,
+                      "no_bid": 0.79,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 6,
+                      "ticker": "KXMLBKS-26OCT012000PHIATL-PHIANOLA27-6",
+                      "unit": "dollars",
+                      "yes_ask": 0.21,
+                      "yes_bid": 0.19
+                    },
+                    {
+                      "american": 1076,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 8.5,
+                      "last_price": 0.1,
+                      "mid": 0.085,
+                      "no_ask": 0.93,
+                      "no_bid": 0.9,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 7,
+                      "ticker": "KXMLBKS-26OCT012000PHIATL-PHIANOLA27-7",
+                      "unit": "dollars",
+                      "yes_ask": 0.1,
+                      "yes_bid": 0.07
+                    },
+                    {
+                      "american": 1567,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 6.0,
+                      "last_price": 0.07,
+                      "mid": 0.06,
+                      "no_ask": 0.95,
+                      "no_bid": 0.93,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 8,
+                      "ticker": "KXMLBKS-26OCT012000PHIATL-PHIANOLA27-8",
+                      "unit": "dollars",
+                      "yes_ask": 0.07,
+                      "yes_bid": 0.05
+                    }
+                  ]
+                }
+              },
+              "researchOnly": true,
+              "source": "kalshi_registry",
+              "unparseableCount": 0
+            },
+            "rl": {
+              "away": 170,
+              "awayPoint": -1.5,
+              "home": -178,
+              "homePoint": 1.5
+            },
+            "total": {
+              "line": 7.5,
+              "over": 104,
+              "under": -108
+            }
+          },
+          "pinnacle": {
+            "f5rl": {
+              "away": -128,
+              "awayPoint": 0,
+              "home": 111,
+              "homePoint": 0
+            },
+            "ml": {
+              "away": -104,
+              "home": -104,
+              "updated": "2026-10-01T20:51:07Z"
+            },
+            "rl": {
+              "away": 163,
+              "awayPoint": -1.5,
+              "home": -182,
+              "homePoint": 1.5
+            },
+            "teamTotals": {
+              "away": {
+                "line": 3.5,
+                "over": -117,
+                "under": 100
+              },
+              "home": {
+                "line": 3.5,
+                "over": -107,
+                "under": -109
+              }
+            },
+            "total": {
+              "line": 7.5,
+              "over": -103,
+              "under": -109
+            }
+          }
+        },
+        "oddsApiCommenceTime": "2026-10-02T00:11:00Z",
+        "oddsApiEventId": "5524c44b05e28aa899909c9e001184ec",
+        "park": {
+          "dome": false,
+          "name": "Truist Park",
+          "parkFactor": 101
+        },
+        "pinnacleF5VF": {
+          "away": 53.96,
+          "home": 46.04,
+          "source": "fanduel"
+        },
+        "pinnacleVF": {
+          "available": true,
+          "away": 50,
+          "home": 50,
+          "source": "pinnacle"
+        },
+        "runLineEval": {
+          "best": {
+            "actionable": false,
+            "betSize": 4.5,
+            "confidence": "MEDIUM",
+            "edgePct": -4.17,
+            "logForCLV": true,
+            "modelCoverPct": 20.4,
+            "pinVFpct": 36.8,
+            "price": 164,
+            "rlLine": -1.5,
+            "side": "AWAY"
+          },
+          "both": [
+            {
+              "actionable": false,
+              "betSize": 4.5,
+              "confidence": "MEDIUM",
+              "edgePct": -4.17,
+              "logForCLV": true,
+              "modelCoverPct": 20.4,
+              "pinVFpct": 36.8,
+              "price": 164,
+              "rlLine": -1.5,
+              "side": "AWAY"
+            },
+            {
+              "actionable": false,
+              "betSize": 4.5,
+              "confidence": "MEDIUM",
+              "edgePct": -5.98,
+              "logForCLV": true,
+              "modelCoverPct": 39.8,
+              "pinVFpct": 63.2,
+              "price": -187,
+              "rlLine": 1.5,
+              "side": "HOME"
+            }
+          ]
+        },
+        "scheduleSource": "statsapi",
+        "startTime": "2026-10-02T00:00:00Z",
+        "status": "Pre-Game",
+        "teamTotals": {
+          "awayActionable": false,
+          "awayEdgePct": -0.9,
+          "awayPover": 48.5,
+          "awaySize": 5.5,
+          "awayTTLean": "NEUTRAL",
+          "awayTTLine": 3.5,
+          "awayTTReason": null,
+          "homeActionable": false,
+          "homeEdgePct": 3.07,
+          "homePover": 64.1,
+          "homeSize": 5.5,
+          "homeTTLean": "NEUTRAL",
+          "homeTTLine": 3.5,
+          "homeTTReason": null,
+          "lineNote": "TT line estimated from game total \u2014 confirm actual DK/FD line before logging Medium/High (Rule 44)",
+          "projectedAwayRuns": 3.6,
+          "projectedHomeRuns": 4.4
+        },
+        "totalEval": {
+          "actionable": false,
+          "bestEdge": 1.8,
+          "bestSide": "OVER",
+          "diff": 0.5,
+          "logForCLV": true,
+          "overEdgePct": 1.8,
+          "pOver": 54.7,
+          "pUnder": 31.3,
+          "paperOnly": true,
+          "paperReason": "Game Total WR 41% \u2014 paper only per Rule 71 until WR\u226552% over N\u226530",
+          "pinVFover": 47.6,
+          "pinVFunder": 52.4,
+          "sizeOver": 1,
+          "sizeUnder": 1,
+          "totalProj": 8,
+          "underEdgePct": -5.36,
+          "vegasLine": 7.5
+        },
+        "venue": "Truist Park"
+      }
+    ],
+    "kalshiDate": "26OCT01",
+    "kalshiMarketsFound": 2,
+    "requestsRemaining": "19974",
+    "savantPitchersLoaded": 814,
+    "scheduleSource": "statsapi"
+  },
+  "meta": {
+    "createdAt": "2026-10-01T20:52:20Z",
+    "producedBy": "scripts/enrich_data.py",
+    "schemaVersion": "1.0",
+    "slateDate": "2026-10-01",
+    "sourceStage": null,
+    "stage": "normalized_slate",
+    "status": "canonical"
+  }
+}

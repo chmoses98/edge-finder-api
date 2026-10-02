@@ -1,5 +1,5 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-10-01T14:18:01Z
+Generated: 2026-10-02T13:40:13Z
 
 ## Enforcement
 - Status: **ACTIVE**
@@ -15,13 +15,13 @@ Generated: 2026-10-01T14:18:01Z
 
 ## Forward operational health (drives pass/fail)
 - Population note: expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates. snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.
-- Expected forward runs: 59
-- Forward snapshots captured: 54
+- Expected forward runs: 60
+- Forward snapshots captured: 55
 - Forward snapshots missing (no manifest at all): 5 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
 - Forward incomplete captures (manifest exists, missing a required component): 0 []
-- Forward dates pending today (not yet due): 1 ['2026-10-01']
-- Forward provenance coverage: 53/59
-- Forward replay: attempted 213, completed 124, failed 89
+- Forward dates pending today (not yet due): 1 ['2026-10-02']
+- Forward provenance coverage: 54/60
+- Forward replay: attempted 217, completed 125, failed 92
 - Forward CLV-linked markets: 44
 - Forward settlement-linked markets: 89
 - Consecutive degraded forward runs: 0
@@ -31,12 +31,12 @@ Generated: 2026-10-01T14:18:01Z
 - FORWARD_MISSING_SNAPSHOT: 5
 - FORWARD_PENDING_TODAY: 1
 - FORWARD_PROVENANCE_AMBIGUOUS: 1
-- FORWARD_RESEARCH_ONLY_NO_DECISION: 14
+- FORWARD_RESEARCH_ONLY_NO_DECISION: 15
 
 ## Storage
-- Snapshots: 360,188,222 bytes
-- Replay runs: 27,419,845 bytes
-- Total: 387,608,067 bytes
+- Snapshots: 360,873,317 bytes
+- Replay runs: 27,441,910 bytes
+- Total: 388,315,227 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Stored Completeness | Effective Completeness | Research-Only | Commit SHA Known | Replay | Runs | Acknowledged Gap |
@@ -104,4 +104,5 @@ Generated: 2026-10-01T14:18:01Z
 | 2026-09-28 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PROVENANCE_AMBIGUOUS | MISSING_REQUIRED_INPUT | MISSING_REQUIRED_INPUT | False | False | REJECTED_INELIGIBLE | 1 |  |
 | 2026-09-29 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 4 |  |
 | 2026-09-30 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 4 |  |
-| 2026-10-01 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |
+| 2026-10-01 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 4 |  |
+| 2026-10-02 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |

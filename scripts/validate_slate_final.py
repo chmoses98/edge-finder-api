@@ -30,7 +30,32 @@ from zoneinfo import ZoneInfo
 
 # Pregame-only gate — live/final games must not appear in realMoney[] of execution slip
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'lib'))
-from postponed_guard import check_game_status
+from postponed_guard import (check_game_status, POSTPONED_STATUSES,
+                             IN_PLAY_STATUSES, FINAL_STATUSES)
+
+# A pinnacleVF line is only meaningful for a game that is still going to
+# start. Once a game is in play, final, or will not be played as scheduled
+# (postponed, CANCELLED, suspended), its odds are pulled and a missing
+# pinnacleVF is expected -- a warning, not a pipeline failure. Before this,
+# only ('Final', 'In Progress', 'Postponed') were recognised, so a single
+# `Cancelled` game (BAL@NYY, 2026-09-27; runs 36356749630/36360663154)
+# failed the whole slate. 'Delayed' / 'Delayed Start' stay errors: those
+# games are still expected to be played and still need a pregame price.
+_PREGAME_PRICE_STILL_REQUIRED = frozenset({'Delayed', 'Delayed Start'})
+NO_PREGAME_PRICE_STATUSES = frozenset(
+    (POSTPONED_STATUSES | IN_PLAY_STATUSES | FINAL_STATUSES) - _PREGAME_PRICE_STILL_REQUIRED)
+
+# Games that will NOT be played as scheduled (postponed / cancelled /
+# suspended before completion). lib/postponed_guard routes these through
+# its "postponed" branch (liveGameBlocked=False), which write_pending_bets'
+# own pregame gate does NOT block (documented in
+# tests/test_write_pending_bets_differential.py::test_postponed_game). Such
+# a game must never carry a real-money Accepted row into a published
+# slate, so that combination is a hard error here.
+NOT_PLAYED_STATUSES = frozenset(
+    POSTPONED_STATUSES - IN_PLAY_STATUSES - FINAL_STATUSES - _PREGAME_PRICE_STILL_REQUIRED)
+# Mirrors scripts/write_pending_bets.py REAL_MONEY_TIERS.
+_REAL_MONEY_TIERS = frozenset({'HIGH', 'MEDIUM'})
 
 
 REQUIRED_MARKETS = [
@@ -133,11 +158,20 @@ def _validate_games_pure(games):
         pvf = g.get('pinnacleVF', {})
         game_status = g.get('status', '')
         if not pvf or pvf.get('away') is None:
-            if game_status in ('Final', 'In Progress', 'Postponed'):
+            if game_status in NO_PREGAME_PRICE_STATUSES:
                 warnings.append(f'{name}: pinnacleVF.away missing for {game_status} game '
                                  '(expected — odds removed post-game)')
             else:
                 errors.append(f'{name}: pinnacleVF.away missing — Rule 71 gap check impossible')
+
+        # ── A game that will not be played must carry no real-money bet ──────
+        if game_status in NOT_PLAYED_STATUSES:
+            for row in (g.get('marketLedger') or []):
+                tier = (row.get('confidenceTier') or row.get('confidence') or '').upper()
+                if row.get('status') == 'Accepted' and tier in _REAL_MONEY_TIERS:
+                    errors.append(f'{name}/{row.get("market", "UNKNOWN")}: Accepted real-money '
+                                  f'row on a {game_status} game -- a game that will not be '
+                                  'played must never be bet')
 
         # ── Lineup + offense baseline ─────────────────────────────────────────
         for side_key in ['awayTeamStats', 'homeTeamStats']:

@@ -276,9 +276,19 @@ def test_the_runtime_manifest_field_set_cannot_grow_to_include_an_amount():
 
 # ── 7/8. both slate entry points get the protection ───────────────────
 
+def _needs(job):
+    needs = job.get("needs")
+    return [needs] if isinstance(needs, str) else list(needs or [])
+
+
+#: The ONLY gate the slate-day job adds (see fetch-slate.yml's `slate_day`
+#: job): nothing to build (verified off-day / deferred non-final attempt).
+SLATE_DAY_PROCEED = "needs.slate_day.outputs.proceed == 'true'"
+
+
 def test_the_fetch_job_cannot_run_before_the_refresh_job():
     spec = workflow()
-    assert spec["jobs"]["fetch"]["needs"] == "refresh_bankroll"
+    assert "refresh_bankroll" in _needs(spec["jobs"]["fetch"])
 
 
 @pytest.mark.parametrize("trigger", ["workflow_dispatch", "schedule", "push"])
@@ -290,9 +300,12 @@ def test_every_slate_entry_point_is_covered(trigger):
     spec = workflow()
     assert trigger in (spec.get(True) or spec.get("on"))
     refresh_job = spec["jobs"]["refresh_bankroll"]
-    assert "if" not in refresh_job, (
+    # The only allowed job condition is "the slate-day gate says there is a
+    # slate to build" -- never the triggering event.
+    assert refresh_job.get("if", SLATE_DAY_PROCEED).strip() == SLATE_DAY_PROCEED, (
         "the refresh job is event-gated, so some slate runs would build against a "
         "reading nobody refreshed")
+    assert "github.event_name" not in json.dumps(refresh_job.get("if", ""))
     for step in refresh_job["steps"]:
         assert "if" not in step, f"step {step.get('name')!r} is conditional"
 
@@ -301,7 +314,7 @@ def test_a_refresh_failure_never_skips_the_slate_fetch():
     """`needs:` alone would SKIP `fetch` if the refresh job failed. The
     slate is the more important of the two and must survive."""
     spec = workflow()
-    assert spec["jobs"]["fetch"]["if"].strip() == "${{ !cancelled() }}"
+    assert spec["jobs"]["fetch"]["if"].strip() == "${{ !cancelled() && %s }}" % SLATE_DAY_PROCEED
 
 
 # ── 9. the dispatch cannot loop or storm ──────────────────────────────
@@ -427,7 +440,7 @@ def test_the_publisher_cron_is_no_longer_the_only_correctness_mechanism():
     build no longer DEPENDS on it having fired recently."""
     spec = workflow()
     assert "refresh_bankroll" in spec["jobs"]
-    assert spec["jobs"]["fetch"]["needs"] == "refresh_bankroll"
+    assert "refresh_bankroll" in _needs(spec["jobs"]["fetch"])
 
 
 # ── THE 2026-09-20 SNAPSHOT DEFECT, AND WHAT NOW PREVENTS IT ──────────

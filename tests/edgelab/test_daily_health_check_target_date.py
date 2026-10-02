@@ -39,7 +39,7 @@ DELAYED_START = "2026-08-27T05:06:16Z"
 
 @pytest.fixture(autouse=True)
 def _no_network(monkeypatch):
-    monkeypatch.setattr(mlb_schedule, "fetch_schedule", lambda date, timeout=15: {"dates": [{"games": [{"gamePk": i} for i in range(15)]}]})
+    monkeypatch.setattr(mlb_schedule, "fetch_schedule_all_game_types", lambda date, timeout=15: {"dates": [{"games": [{"gamePk": i} for i in range(15)]}]})
 
 
 def _resolution_file(tmp_path, target_date=TARGET_DATE, anchor=DELAYED_START):
@@ -286,7 +286,7 @@ class TestLegitimateNoSlateDay:
 
     def test_no_scheduled_games_is_never_unhealthy_for_missing_mlb_artifacts(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(mlb_schedule, "fetch_schedule", lambda date, timeout=15: {"dates": []})
+        monkeypatch.setattr(mlb_schedule, "fetch_schedule_all_game_types", lambda date, timeout=15: {"dates": []})
         exit_code = main(["--date", TARGET_DATE, "--resolution-file", _resolution_file(tmp_path)])
         assert exit_code == 0
         with open(os.path.join("data", "edgelab", "health", f"{TARGET_DATE}.json")) as f:
@@ -294,7 +294,7 @@ class TestLegitimateNoSlateDay:
 
     def test_an_unavailable_live_schedule_check_still_fails_toward_checking_too_much(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(mlb_schedule, "fetch_schedule", lambda date, timeout=15: None)
+        monkeypatch.setattr(mlb_schedule, "fetch_schedule_all_game_types", lambda date, timeout=15: None)
         assert main(["--date", TARGET_DATE, "--resolution-file", _resolution_file(tmp_path)]) == 1
 
 

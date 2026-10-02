@@ -769,3 +769,92 @@ class TestPushRetryRace:
         records = _records(content)
         assert records == [{"a": 1}, {"racer": True}, {"local": True}]
         assert "<<<<<<<" not in content
+
+
+class TestPushRetryWithUnrelatedDirtyFiles:
+    """Regression for Fetch Slate Data run 35476751338 (2026-09-19).
+
+    fetch-slate.yml commits ONLY data/fetch_status.json while data/slate.json
+    (and many other data/ files) are still modified in the working tree. A
+    concurrent push landed between the local commit and the push, and the
+    push-retry rebase was a plain `git rebase origin/main`, which refuses
+    with "cannot rebase: You have unstaged changes". The abort path then
+    reset --hard the tree: the run failed AND lost every file it had
+    produced. The retry rebase now autostashes, exactly like the first one.
+    """
+
+    def _race_hook(self, work, racer):
+        hooks_dir = work / ".git" / "hooks"
+        hooks_dir.mkdir(parents=True, exist_ok=True)
+        marker = work / ".git" / ".race_fired"
+        hook = hooks_dir / "pre-push"
+        hook.write_text(
+            "#!/bin/sh\n"
+            f'if [ -f "{marker}" ]; then exit 0; fi\n'
+            f'touch "{marker}"\n'
+            f'git -C "{racer}" push -q origin main\n'
+            "exit 1\n"
+        )
+        hook.chmod(0o755)
+        return marker
+
+    def _repo(self, tmp_path):
+        origin = _init_bare_origin(tmp_path, seed_content='{"status": "OK"}\n',
+                                   seed_name="data/fetch_status.json")
+        seed = tmp_path / "seed"
+        (seed / "data" / "slate.json").write_text('{"games": ["old"]}\n')
+        (seed / "data" / "other.json").write_text('{"v": 0}\n')
+        _git(["add", "data"], cwd=seed)
+        _git(["commit", "-qm", "more data"], cwd=seed)
+        _git(["push", "-q", "origin", "main"], cwd=seed)
+        return origin
+
+    def test_unrelated_dirty_files_survive_a_push_race(self, tmp_path):
+        origin = self._repo(tmp_path)
+        work = _clone(tmp_path, origin, "work")
+        racer = _clone(tmp_path, origin, "racer")
+        (racer / "data" / "other.json").write_text('{"v": 1}\n')
+        _git(["commit", "-aqm", "racer changes a different file"], cwd=racer)
+        marker = self._race_hook(work, racer)
+
+        (work / "data" / "slate.json").write_text('{"games": ["new, unvalidated"]}\n')  # NOT committed
+        (work / "data" / "fetch_status.json").write_text('{"status": "FAILED_GATE"}\n')
+        result = _run_script(work, "fetch_status: gate result", ["data/fetch_status.json"])
+
+        assert marker.exists(), "the race must actually have fired"
+        assert result.returncode == 0, f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        assert "cannot rebase" not in result.stderr
+        assert "Push succeeded (attempt 2)" in result.stdout
+        # The run's other, uncommitted output is still in its working tree.
+        assert (work / "data" / "slate.json").read_text() == '{"games": ["new, unvalidated"]}\n'
+
+        check = tmp_path / "check"
+        _git(["clone", "-q", str(origin), str(check)], cwd=tmp_path)
+        assert (check / "data" / "fetch_status.json").read_text() == '{"status": "FAILED_GATE"}\n'
+        assert (check / "data" / "other.json").read_text() == '{"v": 1}\n'
+        assert (check / "data" / "slate.json").read_text() == '{"games": ["old"]}\n', (
+            "only the requested path may be committed")
+
+    def test_autostash_pop_conflict_on_an_unrelated_file_still_fails_closed(self, tmp_path):
+        """Refusal semantics unchanged: if the racer touched the SAME file the
+        run left dirty, the stash cannot be re-applied cleanly. Nothing is
+        pushed, main keeps only the racer's commit, and the run's changes are
+        preserved in `git stash list`, never force-dropped."""
+        origin = self._repo(tmp_path)
+        work = _clone(tmp_path, origin, "work")
+        racer = _clone(tmp_path, origin, "racer")
+        (racer / "data" / "slate.json").write_text('{"games": ["racer"]}\n')
+        _git(["commit", "-aqm", "racer changes the dirty file"], cwd=racer)
+        racer_head = _git(["rev-parse", "HEAD"], cwd=racer).stdout.strip()
+        marker = self._race_hook(work, racer)
+
+        (work / "data" / "slate.json").write_text('{"games": ["local"]}\n')
+        (work / "data" / "fetch_status.json").write_text('{"status": "FAILED_GATE"}\n')
+        result = _run_script(work, "fetch_status: gate result", ["data/fetch_status.json"])
+
+        assert marker.exists()
+        assert result.returncode == 1
+        assert _origin_head(origin) == racer_head, "nothing of this run may reach main"
+        stash = _git(["stash", "list"], cwd=work).stdout
+        assert stash.strip(), "the run's local changes must be preserved in the stash"
+        assert "<<<<<<<" not in (work / "data" / "fetch_status.json").read_text()

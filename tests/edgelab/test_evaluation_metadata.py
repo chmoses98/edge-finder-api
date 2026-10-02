@@ -604,8 +604,17 @@ def test_repeated_builds_produce_identical_metadata(monkeypatch, tmp_path):
     )
     _write_recommendations(monkeypatch, tmp_path, [game])
     monkeypatch.setenv("GITHUB_SHA", "fixed-sha-for-determinism-test")
+    # Freeze the ingestion clock. createdAt / provenance.ingestedAt are
+    # ids.utc_now_iso() at second resolution, so two builds straddling a
+    # second boundary differed (PR CI run 36795898810: ...:42Z vs ...:43Z)
+    # although every derived field was identical. Pinning the clock keeps
+    # the full-equality assertion below exactly as strict.
+    from lib.edgelab import ids as _ids
+    monkeypatch.setattr(_ids, "utc_now_iso", lambda: "2026-07-31T23:59:59Z")
     first, _ = build_model_evaluations_from_pipeline(DATE, "run1", [])
     second, _ = build_model_evaluations_from_pipeline(DATE, "run1", [])
     assert first == second
+    # The frozen clock must be the one actually used, or this test is flaky again.
+    assert first[0]["createdAt"] == first[0]["provenance"]["ingestedAt"] == "2026-07-31T23:59:59Z"
     # F5_OVER_FULL_GAME also fires: market starts with "F5_" and f5Amplified=True.
     assert sorted(first[0]["thesisTags"]) == sorted(["STARTER_EDGE", "BULLPEN_EDGE", "PRICE_DISLOCATION", "LINEUP_EDGE", "F5_OVER_FULL_GAME"])

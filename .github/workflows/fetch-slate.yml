@@ -89,6 +89,103 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # SLATE-DAY GATE -- decides whether this run has anything to do.
+  #
+  # 2026-09-28 was an MLB off-day. The empty slate fell all the way through
+  # the pipeline and the post-fetch gate failed three scheduled runs
+  # (36486867929, 36502136929, 36507307766) for a day with nothing to do;
+  # the offseason would repeat that three times a day. This job fetches
+  # ONLY /api/slate for the date, runs scripts/validate_slate_pre.py on it
+  # (which applies the existing off-day contract --
+  # post_fetch_gate.resolve_empty_slate / lib/edgelab/slate_day_contract.py
+  # -- to an empty, correctly dated slate) and hands the verdict to
+  # scripts/ci/slate_day_gate.py:
+  #
+  #   verified off-day (MLB schedule evidence) -> refresh_bankroll + fetch
+  #       are SKIPPED and the run concludes SUCCESS; data/fetch_status.json
+  #       records NO_GAMES_SCHEDULED with the schedule evidence.
+  #   game day (incl. TBD starters)            -> run as before.
+  #   not verifiable / slate fetch failed      -> on a non-final scheduled
+  #       attempt: DEGRADED (::warning:: + summary), deferred to the next
+  #       cron; on the final 22:00 UTC cron or any dispatch/push: the full
+  #       fetch job runs and fails closed (one red).
+  #
+  # An off-day is never inferred from an empty file alone: an unreachable or
+  # malformed schedule is SCHEDULE_UNKNOWN and is treated as not verifiable.
+  # A malformed dispatch date is rejected here, before anything is fetched
+  # or committed.
+  slate_day:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # commits data/fetch_status.json when the run stops here
+    timeout-minutes: 10
+    outputs:
+      date: ${{ steps.date.outputs.date }}
+      verdict: ${{ steps.gate.outputs.verdict }}
+      proceed: ${{ steps.gate.outputs.proceed }}
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
+        ref: main
+
+    - name: Resolve and validate the slate date
+      id: date
+      env:
+        INPUT_DATE: ${{ github.event.inputs.date }}
+        REF_NAME: ${{ github.ref_name }}
+      run: |
+        DATE="$INPUT_DATE"
+        if [ -z "$DATE" ]; then
+          if [[ "$REF_NAME" =~ ^run/fetch-([0-9]{4}-[0-9]{2}-[0-9]{2})$ ]]; then
+            DATE="${BASH_REMATCH[1]}"
+            echo "Date extracted from branch name: $DATE"
+          else
+            DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+          fi
+        fi
+        if ! [[ "$DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || [ "$(date -d "$DATE" +%Y-%m-%d 2>/dev/null)" != "$DATE" ]; then
+          echo "::error title=Invalid slate date::'$DATE' is not a valid YYYY-MM-DD date -- nothing was fetched or committed"
+          exit 1
+        fi
+        echo "date=$DATE" >> "$GITHUB_OUTPUT"
+        echo "Slate date: $DATE"
+
+    - name: Fetch the slate and classify the slate day
+      id: gate
+      env:
+        DATE: ${{ steps.date.outputs.date }}
+        EVENT_NAME: ${{ github.event_name }}
+        CRON: ${{ github.event.schedule }}
+      run: |
+        set +e
+        mkdir -p data
+        HTTP=$(curl -s -o data/slate.json -w "%{http_code}" \
+          "https://edge-finder-api.vercel.app/api/slate?date=${DATE}&_cb=$(date +%s)" \
+          -H "Accept: application/json" -H "Cache-Control: no-cache" \
+          --retry 3 --retry-delay 5)
+        CURL_EXIT=$?
+        echo "slate fetch: curl exit $CURL_EXIT, HTTP ${HTTP:-none}"
+        if [ "$CURL_EXIT" -eq 0 ] && [ "${HTTP:-0}" -ge 200 ] && [ "${HTTP:-0}" -lt 300 ]; then
+          python3 scripts/validate_slate_pre.py "$DATE"
+          PRE_EXIT=$?
+          echo "validate_slate_pre exit: $PRE_EXIT"
+          python3 scripts/ci/slate_day_gate.py --date "$DATE" --event "$EVENT_NAME" \
+            --cron "$CRON" --slate-http-ok true --pre-exit "$PRE_EXIT"
+        else
+          python3 scripts/ci/slate_day_gate.py --date "$DATE" --event "$EVENT_NAME" \
+            --cron "$CRON" --slate-http-ok false
+        fi
+
+    - name: Record the slate-day verdict (data/fetch_status.json)
+      if: steps.gate.outputs.proceed == 'false'
+      run: |
+        git config user.name  "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        python3 scripts/ci/git_data_commit.py \
+          --message "fetch_status: ${{ steps.date.outputs.date }} ${{ steps.gate.outputs.verdict }}" \
+          data/fetch_status.json
+
   # JUST-IN-TIME BANKROLL FRESHNESS -- a SEPARATE JOB, deliberately.
   #
   # `lib/bankroll_context.py` only sizes in dollars from a reading less
@@ -113,6 +210,11 @@ jobs:
   # `contents` write. The router stays the only component that reads an
   # authenticated balance, and the amount is never visible here.
   refresh_bankroll:
+    # Not event-gated: every trigger that has a slate to build gets a fresh
+    # reading. Skipped only when the slate-day gate says there is nothing to
+    # build (verified off-day, or a deferred non-final attempt).
+    needs: slate_day
+    if: needs.slate_day.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     # `contents: read` is what actions/checkout needs and nothing more.
     # This job may not write to this repository, and the GITHUB_TOKEN it
@@ -149,8 +251,12 @@ jobs:
     # bankroll could not be refreshed. The refresh job already exits 0 on
     # every outcome; this is the second belt, so that even an
     # infrastructure failure in that job leaves the slate chain running.
-    needs: refresh_bankroll
-    if: ${{ !cancelled() }}
+    #
+    # `needs: slate_day` + `proceed == 'true'`: a verified off-day (or a
+    # deferred non-final attempt) skips this job, and a run whose jobs are
+    # all skipped concludes SUCCESS.
+    needs: [slate_day, refresh_bankroll]
+    if: ${{ !cancelled() && needs.slate_day.outputs.proceed == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -170,15 +276,11 @@ jobs:
     - name: Set date
       id: set_date
       run: |
-        DATE="${{ github.event.inputs.date }}"
+        # Resolved (dispatch input / run/fetch-<date> branch / today ET) and
+        # format-validated once, in the slate_day job -- one source of truth.
+        DATE="${{ needs.slate_day.outputs.date }}"
         if [ -z "$DATE" ]; then
-          BRANCH="${{ github.ref_name }}"
-          if [[ "$BRANCH" =~ ^run/fetch-([0-9]{4}-[0-9]{2}-[0-9]{2})$ ]]; then
-            DATE="${BASH_REMATCH[1]}"
-            echo "Date extracted from branch name: $DATE"
-          else
-            DATE=$(TZ='America/New_York' date +%Y-%m-%d)
-          fi
+          echo "::error::slate_day produced no date"; exit 1
         fi
         echo "DATE=$DATE" >> $GITHUB_ENV
         echo "date=$DATE" >> $GITHUB_OUTPUT
@@ -348,44 +450,40 @@ jobs:
           || echo "DATA-HEALTH WARNING: Kalshi snapshot push failed."
 
     # ── BLOCK 3: Pre-validation ───────────────────────────────────────────
-    # Checks starters + pinnacleVF — the fields the Vercel API populates.
+    # Checks starters (the fields the Vercel API populates).
     # Exit 0 = ok, proceed with full pipeline.
-    # Exit 2 = not ready (starters not posted); commit snapshot-only, stop.
-    # Exit 1 = hard fail (wrong date / no games).
+    # Exit 2 = not ready (some starters not posted): a WARNING, the pipeline
+    #          continues (TBD starters use the league-average fallback; the
+    #          post-fetch gate and final validator treat them as warnings).
+    # Exit 1 = hard fail (wrong date / empty slate that is not a verified
+    #          off-day) -> this step fails the job: the single red.
+    # Exit 3 = verified off-day. The slate_day job already stops the run
+    #          before this job on an off-day, so reaching it here means the
+    #          slate emptied between the two jobs -> treated as a hard fail.
+    #
+    # `set +e` is load-bearing: GitHub's default shell is `bash -e`, which
+    # used to exit on the validator's non-zero status BEFORE `$?` was
+    # captured, so `pre_exit` was only ever written for 0 and the former
+    # "Fail if pre-validation not-ready / hard-failed" steps could never
+    # run (the 2026-09-28 off-day fell through to the post-fetch gate).
 
     - name: Pre-validate slate (starters + pinnacle)
       id: pre_validate
       run: |
+        set +e
         python3 scripts/validate_slate_pre.py "${{ env.DATE }}"
         PRE_STATUS=$?
-        echo "pre_exit=$PRE_STATUS" >> $GITHUB_OUTPUT
-        exit $PRE_STATUS
-      continue-on-error: true
-
-    # ── BLOCK 3b: Commit snapshot-only if not-ready ───────────────────────
-
-    - name: Commit snapshot-only (not-ready path)
-      if: steps.pre_validate.outputs.pre_exit == '2' && steps.archive_snapshot.outputs.snapshot_archived == 'true'
-      run: |
-        git config user.name  "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        python3 scripts/ci/git_data_commit.py \
-          --message "kalshi snapshot ${{ env.DATE }} (starters not yet posted)" \
-          data/kalshi_registry_snapshots/
-        echo "Snapshot committed. Stopping pipeline — re-run after starters post (~3pm ET)."
-
-    - name: Fail if pre-validation not-ready
-      if: steps.pre_validate.outputs.pre_exit == '2'
-      run: |
-        echo "PRE-VALIDATION: slate not ready for ${{ env.DATE }} — starters/pinnacle not posted yet."
-        echo "Kalshi snapshot was $([ '${{ steps.archive_snapshot.outputs.snapshot_archived }}' = 'true' ] && echo 'archived' || echo 'NOT archived')."
-        exit 1
-
-    - name: Fail if pre-validation hard-failed
-      if: steps.pre_validate.outputs.pre_exit == '1'
-      run: |
-        echo "PRE-VALIDATION HARD FAIL — wrong date or no games. See above for details."
-        exit 1
+        set -e
+        echo "pre_exit=$PRE_STATUS" >> "$GITHUB_OUTPUT"
+        if [ "$PRE_STATUS" -eq 2 ]; then
+          echo "::warning title=Starters not yet posted::Some starters for ${{ env.DATE }} are TBD -- league-average fallback; a later attempt refreshes them"
+          echo "- pre-validation: NOT_READY (some starters TBD) -- warning only, pipeline continues" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+        if [ "$PRE_STATUS" -ne 0 ]; then
+          echo "PRE-VALIDATION HARD FAIL (exit $PRE_STATUS) -- wrong date, or an empty slate that is not a verified off-day. See above."
+        fi
+        exit "$PRE_STATUS"
 
     # ── BLOCK 4: Full data pipeline ───────────────────────────────────────
     # Only runs when pre-validation passed (exit 0).

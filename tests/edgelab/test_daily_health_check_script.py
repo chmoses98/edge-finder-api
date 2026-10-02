@@ -159,7 +159,7 @@ class TestZeroRowsDespiteEligibleMarkets:
 class TestEndToEndMainExitCode:
     def test_main_writes_health_artifact_and_returns_nonzero_when_unhealthy(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(mlb_schedule, "fetch_schedule", lambda date, timeout=15: {"dates": [{"games": [{"gamePk": 1}, {"gamePk": 2}]}]})
+        monkeypatch.setattr(mlb_schedule, "fetch_schedule_all_game_types", lambda date, timeout=15: {"dates": [{"games": [{"gamePk": 1}, {"gamePk": 2}]}]})
         exit_code = main(["--date", "2026-08-20"])
         assert exit_code == 1
         out_path = os.path.join("data", "edgelab", "health", "2026-08-20.json")
@@ -172,7 +172,7 @@ class TestEndToEndMainExitCode:
 
     def test_main_returns_zero_on_a_legitimate_no_game_day(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(mlb_schedule, "fetch_schedule", lambda date, timeout=15: {"dates": []})
+        monkeypatch.setattr(mlb_schedule, "fetch_schedule_all_game_types", lambda date, timeout=15: {"dates": []})
         exit_code = main(["--date", "2026-08-20"])
         assert exit_code == 0
         with open(os.path.join("data", "edgelab", "health", "2026-08-20.json")) as f:
@@ -183,7 +183,43 @@ class TestEndToEndMainExitCode:
         """Fail-loudly requirement: the health artifact must exist BEFORE the process exits
         non-zero, regardless of what's missing -- never merely a red check with no record."""
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(mlb_schedule, "fetch_schedule", lambda date, timeout=15: None)  # live check unavailable
+        monkeypatch.setattr(mlb_schedule, "fetch_schedule_all_game_types", lambda date, timeout=15: None)  # live check unavailable
         exit_code = main(["--date", "2026-08-20"])
         assert exit_code == 1
         assert os.path.exists(os.path.join("data", "edgelab", "health", "2026-08-20.json"))
+
+
+class TestPostseasonIsAGameDay:
+    """2026-09-29 (Wild Card day 1) recorded NO_MLB_GAMES with 1,297 markets
+    observed: the heartbeat asked the schedule for regular-season games only,
+    so every postseason date skipped all same-day checks. It must use the
+    all-game-types adapter (R,F,D,L,W)."""
+
+    def test_postseason_games_count_as_scheduled(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+
+        def regular_season_only(date, timeout=15):
+            raise AssertionError("the heartbeat must not use the regular-season-only schedule")
+
+        seen = []
+
+        def all_types(date, timeout=15):
+            seen.append(date)
+            return {"dates": [{"date": date, "games": [
+                {"gamePk": 813001, "gameType": "F"}, {"gamePk": 813002, "gameType": "F"}]}]}
+
+        monkeypatch.setattr(mlb_schedule, "fetch_schedule", regular_season_only)
+        monkeypatch.setattr(mlb_schedule, "fetch_schedule_all_game_types", all_types)
+        inputs = gather_inputs("2026-09-29", "2026-09-28")
+        assert seen == ["2026-09-29"]
+        assert inputs["gamesScheduledToday"] == 2
+
+    def test_a_postseason_day_with_no_pipeline_output_is_unhealthy_not_no_games(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr(mlb_schedule, "fetch_schedule_all_game_types",
+                            lambda date, timeout=15: {"dates": [{"date": date, "games": [
+                                {"gamePk": 813001, "gameType": "D"}]}]})
+        assert main(["--date", "2026-10-04"]) == 1
+        with open(os.path.join("data", "edgelab", "health", "2026-10-04.json")) as f:
+            record = json.load(f)
+        assert record["healthStatus"] == daily_health.HEALTH_STATUS_UNHEALTHY

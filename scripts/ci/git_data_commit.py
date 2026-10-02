@@ -465,14 +465,25 @@ def _rebase_retry_with_recovery(branch, append_only_delta, cwd=None):
     """
     Used only from the push-retry loop in commit_and_push, where this
     run's own already-made commit is replayed onto a newly-advanced
-    origin/<branch> via a plain (non-autostash) `git rebase
-    origin/<branch>`. Unlike the autostash-pop case, a conflict here is
-    a genuine in-progress rebase, so a successful append-only recovery
-    must `git rebase --continue` to actually finish it. Returns
-    (ok: bool, message: str); on failure the rebase is aborted and the
-    working tree reset to origin/<branch>'s tip, same as safe_rebase_onto.
+    origin/<branch> via `git rebase --autostash origin/<branch>`. A
+    conflict replaying the commit itself is a genuine in-progress rebase,
+    so a successful append-only recovery must `git rebase --continue` to
+    actually finish it. Returns (ok: bool, message: str); on failure the
+    rebase is aborted and the working tree reset to origin/<branch>'s tip,
+    same as safe_rebase_onto.
+
+    `--autostash` is required, not cosmetic: callers routinely commit a
+    SUBSET of what they changed (fetch-slate.yml commits
+    data/fetch_status.json while data/slate.json and friends are still
+    modified). A plain rebase refuses outright -- "cannot rebase: You have
+    unstaged changes" -- and the abort path below then reset --hard the
+    whole working tree, discarding everything the run had produced and
+    failing it on nothing more than a benign push race (Fetch Slate Data
+    run 35476751338, 2026-09-19). The autostash pop is checked exactly
+    like the first rebase's: any unmerged path that is not a provable
+    append-only delta still fails closed, with the stash preserved.
     """
-    rebase = _run(['git', 'rebase', f'origin/{branch}'], cwd=cwd)
+    rebase = _run(['git', 'rebase', '--autostash', f'origin/{branch}'], cwd=cwd)
     conflicted = unmerged_paths(cwd=cwd)
     if rebase.returncode == 0 and not conflicted:
         return True, 'ok'

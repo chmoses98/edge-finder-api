@@ -12,7 +12,8 @@ already-committed repository state (via lib.edgelab.storage, which
 already transparently handles the .jsonl/.jsonl.gz compaction split --
 see storage.resolve_partition_path's own docstring for the exact
 mistake this repeats otherwise) plus one live, unauthenticated MLB Stats
-API schedule call (lib.edgelab.mlb_schedule.fetch_schedule) that shares
+API schedule call (lib.edgelab.mlb_schedule.fetch_schedule_all_game_types,
+regular season + every postseason round) that shares
 no code path, credentials, or trigger with fetch-slate.yml,
 edgelab-postgame.yml, or RECOMMENDATION_SYNC. Never invoked via
 `workflow_run` off any of them -- see .github/workflows/edgelab-
@@ -163,7 +164,11 @@ def gather_inputs(date, settlement_date, *, now_iso=None):
     now_iso = now_iso or ids.utc_now_iso()
 
     # ---- live, independent ground truth for "were MLB games scheduled today" ----
-    schedule_json = mlb_schedule.fetch_schedule(date)
+    # Regular season AND every postseason round: with the regular-season-only
+    # fetch_schedule(), every Wild Card..World Series date read as "no MLB
+    # games" and the heartbeat skipped all of its same-day checks (2026-09-29
+    # recorded NO_MLB_GAMES with 1,297 markets observed).
+    schedule_json = mlb_schedule.fetch_schedule_all_game_types(date)
     games_scheduled_today = None
     if schedule_json is not None:
         try:

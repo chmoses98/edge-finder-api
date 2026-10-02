@@ -74,6 +74,17 @@ jobs:
           python3 scripts/ci/router_divergence_probe.py --out /tmp/router_evidence.json \
             || echo '{"fetchError": "probe crashed"}' > /tmp/router_evidence.json
 
+      # MLB schedule evidence (regular season + every postseason round) so a
+      # gap with NO MLB games -- the days after the World Series, a pause
+      # between postseason rounds, the All-Star break -- is not read as a
+      # stalled pipeline. Same never-fatal pattern as the router probe: a
+      # failed probe means "no verified off-days", i.e. the gate keeps its
+      # plain calendar-day freshness limits (fail closed).
+      - name: Collect MLB schedule evidence
+        run: |
+          python3 scripts/ci/mlb_schedule_probe.py --out /tmp/schedule_evidence.json \
+            || echo '{"fetchError": "probe crashed"}' > /tmp/schedule_evidence.json
+
       # Evaluate first, commit the artifact second, THEN fail. Ordering
       # matters: the artifact must be persisted even (especially) on a red
       # run, so the history of when the loop broke survives -- this is the
@@ -93,6 +104,7 @@ jobs:
           set -o pipefail
           python3 scripts/ci/production_health_gate.py --write-artifact \
             --router-evidence /tmp/router_evidence.json \
+            --schedule-evidence /tmp/schedule_evidence.json \
             | tee /tmp/health.txt
 
       - name: Publish health artifact

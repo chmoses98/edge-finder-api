@@ -20,18 +20,36 @@ Does NOT check (these require later pipeline steps):
 
 Exit codes:
   0 = passed (pipeline may continue, Kalshi archive may proceed)
-  1 = hard failure (slate missing, wrong date, no games — abort)
-  2 = soft failure (starters/pinnacle missing — too early, retry later)
-      Exit 2 written to $GITHUB_OUTPUT as pre_validation_status=not_ready
-      The calling workflow uses this to skip to commit-snapshot-only path.
+  1 = hard failure (slate missing, wrong date, no games on a day the MLB
+      schedule says has games, schedule unknown -- abort)
+  2 = soft failure (starters not posted yet). NOT a pipeline failure: the
+      workflow continues with a warning, exactly as it has in practice
+      (TBD starters use the league-average fallback downstream).
+      Written to $GITHUB_OUTPUT as pre_validation_status=not_ready.
+  3 = VERIFIED OFF-DAY. The slate is empty AND correctly dated AND the MLB
+      schedule (regular season + every postseason round) says no playable
+      games -- the off-day contract in lib/edgelab/slate_day_contract.py,
+      applied through scripts/post_fetch_gate.py's resolve_empty_slate().
+      data/fetch_status.json records NO_GAMES_SCHEDULED with the schedule
+      evidence. This is a success state (nothing to fetch), never inferred
+      from the empty file alone: an unreachable/malformed schedule is
+      SCHEDULE_UNKNOWN and stays exit 1.
 """
 
 import json, os, sys
 from datetime import datetime, timezone, timedelta
 
+EXIT_OK = 0
+EXIT_HARD_FAIL = 1
+EXIT_NOT_READY = 2
+EXIT_NO_GAMES_SCHEDULED = 3
 
-def load_slate():
-    path = os.path.join(os.path.dirname(__file__), '..', 'data', 'slate.json')
+_SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_SLATE_PATH = os.path.join(_SCRIPTS_DIR, '..', 'data', 'slate.json')
+DEFAULT_FETCH_STATUS_PATH = os.path.join(_SCRIPTS_DIR, '..', 'data', 'fetch_status.json')
+
+
+def load_slate(path=DEFAULT_SLATE_PATH):
     if not os.path.exists(path):
         print('PRE-VALIDATION HARD FAIL: data/slate.json not found', file=sys.stderr)
         sys.exit(1)
@@ -43,10 +61,11 @@ def load_slate():
             sys.exit(1)
 
 
-def expected_date():
+def expected_date(argv=None):
     """Return expected slate date from CLI arg or today ET."""
-    if len(sys.argv) > 1 and sys.argv[1]:
-        return sys.argv[1]
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0]:
+        return argv[0]
     et_now = datetime.now(timezone.utc) - timedelta(hours=4)
     return et_now.strftime('%Y-%m-%d')
 
@@ -113,9 +132,82 @@ def write_github_output(key, value):
             f.write(f'{key}={value}\n')
 
 
-def main():
-    exp_date = expected_date()
-    slate = load_slate()
+def is_empty_slate_for(slate, exp_date):
+    """Pure: True only for a well-formed, correctly dated slate whose games
+    list is present and empty -- the one shape the off-day contract can
+    classify. A missing games key, a wrong date or a non-list stays on the
+    ordinary hard-fail path (exit 1)."""
+    return (isinstance(slate, dict)
+            and isinstance(slate.get('games'), list)
+            and not slate['games']
+            and slate.get('date') == exp_date)
+
+
+def resolve_empty_slate_day(slate, exp_date, fetch_status_path=DEFAULT_FETCH_STATUS_PATH,
+                            schedule_loader=None, now_iso=None):
+    """
+    Adapter: decide what an empty slate means using the EXISTING off-day
+    contract (post_fetch_gate.resolve_empty_slate -> slate_day_contract),
+    and record it in data/fetch_status.json exactly the way the post-fetch
+    gate does. Returns (fetch_status, reason, day_verdict).
+
+    schedule_loader defaults to post_fetch_gate.load_schedule_response,
+    which honours the EDGEFINDER_SCHEDULE_EVIDENCE test/replay seam.
+    """
+    if _SCRIPTS_DIR not in sys.path:
+        sys.path.insert(0, _SCRIPTS_DIR)
+    import post_fetch_gate as gate
+
+    loader = schedule_loader or gate.load_schedule_response
+    if now_iso is None:
+        now_iso = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    status, reason, evidence, day = gate.resolve_empty_slate(
+        slate, exp_date, loader(exp_date), now_iso)
+    if not (status == 'NO_GAMES_SCHEDULED'
+            and _already_recorded_off_day(fetch_status_path, exp_date)):
+        # An off-day already recorded for this date is left byte-identical,
+        # so the 2nd/3rd scheduled attempt of an off-day commits nothing.
+        gate.write_fetch_status(status, exp_date, 'no-games', [], reason,
+                                path=fetch_status_path, schedule_evidence=evidence)
+    return status, reason, day['verdict']
+
+
+def _already_recorded_off_day(fetch_status_path, exp_date):
+    try:
+        with open(fetch_status_path) as f:
+            existing = json.load(f)
+    except (OSError, ValueError):
+        return False
+    return (isinstance(existing, dict)
+            and existing.get('status') == 'NO_GAMES_SCHEDULED'
+            and existing.get('requestedDate') == exp_date
+            and (existing.get('scheduleEvidence') or {}).get('status') == 'NO_GAMES_SCHEDULED')
+
+
+def main(argv=None, slate_path=DEFAULT_SLATE_PATH,
+         fetch_status_path=DEFAULT_FETCH_STATUS_PATH, schedule_loader=None):
+    exp_date = expected_date(argv)
+    slate = load_slate(slate_path)
+
+    # Off-day contract: an empty, correctly dated slate is an off-day ONLY
+    # when MLB schedule evidence says so. Any other verdict (schedule
+    # unknown, games scheduled but none collected) falls through to the
+    # unchanged hard-fail path below.
+    if is_empty_slate_for(slate, exp_date):
+        status, reason, verdict = resolve_empty_slate_day(
+            slate, exp_date, fetch_status_path, schedule_loader)
+        write_github_output('slate_day_verdict', verdict)
+        if status == 'NO_GAMES_SCHEDULED':
+            print(f'PRE-VALIDATION for {exp_date}')
+            print(f'  slate.json date: {slate.get("date")}')
+            print(f'  games found:     0')
+            print(f'\nNO GAMES SCHEDULED for {exp_date} -- {reason}')
+            print('Verified off-day (MLB schedule evidence). Nothing to fetch.')
+            write_github_output('pre_validation_status', 'no_games_scheduled')
+            write_github_output('pre_validation_date', slate.get('date', ''))
+            sys.exit(EXIT_NO_GAMES_SCHEDULED)
+        print(f'Empty slate is NOT a verified off-day ({verdict}): {reason}', file=sys.stderr)
+
     hard_errors, soft_errors, warnings = validate_pre(slate, exp_date)
 
     slate_date = slate.get('date', 'unknown')
@@ -136,7 +228,7 @@ def main():
             print(f'  ✗ {e}', file=sys.stderr)
         write_github_output('pre_validation_status', 'hard_fail')
         write_github_output('pre_validation_date', slate_date)
-        sys.exit(1)
+        sys.exit(EXIT_HARD_FAIL)
 
     if soft_errors:
         print(f'\nPRE-VALIDATION NOT READY — {len(soft_errors)} soft issue(s):')
@@ -144,13 +236,14 @@ def main():
             print(f'  ⏳ {e}')
         write_github_output('pre_validation_status', 'not_ready')
         write_github_output('pre_validation_date', slate_date)
-        # Exit 2 = soft fail: caller should archive Kalshi but skip full pipeline
-        sys.exit(2)
+        # Exit 2 = not ready (TBD starters). The workflow proceeds with a
+        # warning; downstream gates treat TBD starters as warnings.
+        sys.exit(EXIT_NOT_READY)
 
     print(f'\nPRE-VALIDATION PASSED — {len(games)} games, starters confirmed')
     write_github_output('pre_validation_status', 'ok')
     write_github_output('pre_validation_date', slate_date)
-    sys.exit(0)
+    sys.exit(EXIT_OK)
 
 
 if __name__ == '__main__':

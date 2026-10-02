@@ -1,0 +1,129 @@
+{
+  "commit_sha": "1efd8094067ddcd095d1b9955c7e771b797bcbb8",
+  "counts": {
+    "board": 1,
+    "events": 1,
+    "markets": 482,
+    "model_prices": 61,
+    "recommendations": 7,
+    "runs": 1,
+    "settlements": 144,
+    "theses": 1,
+    "wagers": 149
+  },
+  "files": {
+    "board": {
+      "bytes": 2076,
+      "count": 1,
+      "kind": "board",
+      "path": "board.json",
+      "sha256": "c5da621590866ccdcfbe88999ab460d8a9fef00b8959c85292fb7416563c7f59"
+    },
+    "event_detail/evt_fac5cb835e02cd906a11": {
+      "bytes": 475679,
+      "count": null,
+      "kind": "event_detail",
+      "path": "event_detail/evt_fac5cb835e02cd906a11.json",
+      "sha256": "95ad3351685563de51b3b762d6c71569533d0ded3d95c0ca4b3b60631a43584f"
+    },
+    "events": {
+      "bytes": 1578,
+      "count": 1,
+      "kind": "events",
+      "path": "events.json",
+      "sha256": "b56a23ccee13f7281e562296e853bab5c74f610fa9148ed3077c1759da221c65"
+    },
+    "markets": {
+      "bytes": 493044,
+      "count": 482,
+      "kind": "markets",
+      "path": "markets.json",
+      "sha256": "8e6223b52d8a008d78d54c1e7771925865de2bbb5414f2db57d6d23557c1b374"
+    },
+    "model_prices": {
+      "bytes": 65674,
+      "count": 61,
+      "kind": "model_prices",
+      "path": "model_prices.json",
+      "sha256": "65ad75535611946544a8527fd8e9c104bc2755bded73fa3563aeb3f31bc84765"
+    },
+    "performance": {
+      "bytes": 22725,
+      "count": null,
+      "kind": "performance",
+      "path": "performance.json",
+      "sha256": "c780a5c66560944d9a3b3198be9e2ab4be6902a1b404a8d2df772f5010c1a13b"
+    },
+    "recommendations": {
+      "bytes": 9905,
+      "count": 7,
+      "kind": "recommendations",
+      "path": "recommendations.json",
+      "sha256": "3bfb91146d9a71816b55ba29a1b98cf660b0bd132578b5ecdfd40a95317bbdd2"
+    },
+    "runs": {
+      "bytes": 1666,
+      "count": 1,
+      "kind": "runs",
+      "path": "runs.json",
+      "sha256": "a6e27552d099c77baa93e5e5efd42e84dc0d06c1f967ba1375df69fb07c9a3cf"
+    },
+    "settlements": {
+      "bytes": 100283,
+      "count": 144,
+      "kind": "settlements",
+      "path": "settlements.json",
+      "sha256": "60abd1e64e12924c40b377941f04d251baa0818e6480af8fa8d89dff806be270"
+    },
+    "theses": {
+      "bytes": 1837,
+      "count": 1,
+      "kind": "theses",
+      "path": "theses.json",
+      "sha256": "b5476598a736a664d202cb56ca03fe22b5174c7d2cfcff4697f4416a74242073"
+    },
+    "wagers": {
+      "bytes": 244969,
+      "count": 149,
+      "kind": "wagers",
+      "path": "wagers.json",
+      "sha256": "5fb2e9a1b59162a9949608716909e4a6c489f32cd72d3b6507f7534077dc54a5"
+    }
+  },
+  "freshness": {
+    "kalshi": {
+      "as_of": "2026-10-02T03:30:37Z",
+      "status": "STALE"
+    },
+    "model": {
+      "as_of": "2026-10-02T12:19:26Z",
+      "status": "AGING"
+    },
+    "router": {
+      "as_of": "2026-10-02T00:35:16Z",
+      "status": "STALE"
+    },
+    "schedule": {
+      "as_of": "2026-10-02T01:11:39Z",
+      "status": "FRESH"
+    },
+    "settlement": {
+      "as_of": "2026-10-02T12:20:11Z",
+      "status": "FRESH"
+    }
+  },
+  "generated_at": "2026-10-02T17:41:11Z",
+  "kind": "manifest",
+  "model_version": "1.0+774d4b735696",
+  "run_id": "run_8cf53738d2fc5692ec83",
+  "schema_version": "edge_finder.app.v1",
+  "source_branch": "main",
+  "source_repo": "chmoses98/edge-finder-api",
+  "sport": "MLB",
+  "status": "SUCCESS",
+  "warnings": [
+    "331 full-universe recommendation row(s) with status in ('INSUFFICIENT_MODEL_SUPPORT', 'NOT_EVALUATED') not exported",
+    "7 recommendation row(s) skipped: ticker, event or contract side could not be established",
+    "no slate for today (2026-10-02); exporting newest slate date 2026-10-01"
+  ]
+}

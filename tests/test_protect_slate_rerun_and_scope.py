@@ -390,6 +390,11 @@ class TestChangedFileScope:
              # heartbeat/watchdog workflow -- adds a file, never modifies
              # any of the workflows this scope lock protects.
              ":!.github/workflows/edgelab-daily-heartbeat.yml",
+             # Edge Finder app export: new, wholly-additive workflow that
+             # only reads committed data and writes app/latest/ (see
+             # docs/APP_EXPORT.md) -- never the production risk/execution/
+             # bet-logging pipeline this scope lock protects.
+             ":!.github/workflows/app-export.yml",
              # Research Lab MLB-RSCH-0003 (Multi-Season Bullpen Workload
              # Backtest): new, wholly-additive, manual-workflow_dispatch-
              # only research workflow that writes exclusively under

@@ -1,23 +1,23 @@
 {
-  "asOf": "2026-10-02T01:20:49Z",
+  "asOf": "2026-10-02T09:15:15Z",
   "lastRun": {
-    "completedAt": "2026-10-02T01:20:49Z",
+    "completedAt": "2026-10-02T09:15:15Z",
     "counts": {
-      "betsSettled": 0,
+      "betsSettled": 3,
       "datesChanged": 1,
       "datesConsidered": 1,
       "reportsRegenerated": 1,
       "settlementsMeaningfullyChanged": 342,
-      "wagersStillPending": 3
+      "wagersStillPending": 0
     },
     "datesConsidered": [
       "2026-10-01"
     ],
-    "githubRunId": "36950391327",
+    "githubRunId": "36988603448",
     "refusalReason": null,
-    "trigger": "PUSH_CANONICAL_LEDGER"
+    "trigger": "SCHEDULED_SWEEP"
   },
-  "newestPendingDate": "2026-10-01",
+  "newestPendingDate": "2026-09-17",
   "oldestPendingDate": "2026-06-12",
   "pendingByDate": {
     "2026-06-12": 5,
@@ -37,10 +37,9 @@
     "2026-08-30": 2,
     "2026-09-03": 1,
     "2026-09-07": 2,
-    "2026-09-17": 3,
-    "2026-10-01": 3
+    "2026-09-17": 3
   },
-  "pendingTotal": 50,
+  "pendingTotal": 47,
   "pendingWagers": [
     {
       "betId": "0ebaacd152b07b0be3df6e22a766c193ade1de23",
@@ -464,33 +463,6 @@
       "settlementRefusalClass": "CONTRADICTION",
       "settlementRefusalReason": "SETTLEMENT_CONTRADICTED_SETTLEMENT_GAME_IS_NOT_THE_WAGERS_GAME",
       "trackingType": null
-    },
-    {
-      "betId": "23b46798d8c5da2639b8acfeb10780a1be21efde",
-      "gameDate": "2026-10-01",
-      "marketFamily": "team_total",
-      "marketTicker": "KXMLBTEAMTOTAL-26OCT011400PHIATL-PHI5",
-      "settlementRefusalClass": null,
-      "settlementRefusalReason": null,
-      "trackingType": "REAL"
-    },
-    {
-      "betId": "9639c569d18de3c69b77132290af5f320317ffb7",
-      "gameDate": "2026-10-01",
-      "marketFamily": "team_total",
-      "marketTicker": "KXMLBTEAMTOTAL-26OCT011400PHIATL-ATL4",
-      "settlementRefusalClass": null,
-      "settlementRefusalReason": null,
-      "trackingType": "REAL"
-    },
-    {
-      "betId": "c5509d1c6d8fc25cd3f860ba6ab44d468dae9a55",
-      "gameDate": "2026-10-01",
-      "marketFamily": "inning_result",
-      "marketTicker": "KXMLBF3-26OCT011400PHIATL-ATL",
-      "settlementRefusalClass": null,
-      "settlementRefusalReason": null,
-      "trackingType": "REAL"
     }
   ],
   "refusalClassCounts": {

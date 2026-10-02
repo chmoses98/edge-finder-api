@@ -3,20 +3,22 @@
   "closingQuotesCaptured": 188,
   "clvSummary": {
     "avgClvCents": null,
-    "avgClvCentsAllCoverageIncludingStale": null,
+    "avgClvCentsAllCoverageIncludingStale": -1.0,
     "betsTotal": 3,
-    "betsWithClv": 0,
+    "betsWithClv": 3,
     "clvEligibleCount": 0,
-    "coverageClassCounts": {},
+    "coverageClassCounts": {
+      "PRE_CLOSE": 3
+    },
     "headlineCoverageClasses": [
       "TRUE_CLOSE"
     ],
-    "medianSecondsBeforeStart": null,
+    "medianSecondsBeforeStart": 48918.1,
     "negativeClvCount": 0,
     "noValidPrestartQuoteCount": 0,
-    "p90SecondsBeforeStart": null,
+    "p90SecondsBeforeStart": 48918.1,
     "positiveClvCount": 0,
-    "preCloseOnlyCount": 0,
+    "preCloseOnlyCount": 3,
     "trueCloseCount": 0,
     "unclassifiedCount": 0
   },
@@ -54,17 +56,17 @@
   ],
   "date": "2026-10-01",
   "gamesObserved": 1,
-  "generatedAt": "2026-10-02T01:20:49Z",
+  "generatedAt": "2026-10-02T09:15:15Z",
   "insufficientModelSupportCount": 0,
   "marketFamilyCounts": {
     "first_inning_run": 3,
     "game_result": 4,
     "game_total": 30,
-    "hitter_hits": 109,
-    "hitter_hits_runs_rbis": 179,
-    "hitter_rbis": 75,
-    "hitter_stolen_bases": 33,
-    "hitter_total_bases": 132,
+    "hitter_hits": 163,
+    "hitter_hits_runs_rbis": 265,
+    "hitter_rbis": 112,
+    "hitter_stolen_bases": 49,
+    "hitter_total_bases": 198,
     "inning_result": 27,
     "inning_total": 21,
     "pitcher_outs": 2,
@@ -80,22 +82,18 @@
   "placedBetsByTrackingType": {
     "REAL": 3
   },
-  "quotesCaptured": 701,
+  "quotesCaptured": 960,
   "realWagerCount": 3,
   "recommendedBets": 0,
   "schemaVersion": "1",
   "settlementCompletion": {
     "marketsObserved": 342,
     "notYetAttempted": 0,
-    "settled": 1,
-    "unresolved": 341,
+    "settled": 198,
+    "unresolved": 144,
     "void": 0
   },
   "settlementUnresolvedReasons": {
-    "game_not_final": 285,
-    "game_status_In Progress_not_settleable": 3,
-    "missing_final_score": 36,
-    "missing_period_score_F5": 14,
-    "missing_period_score_F7": 3
+    "player_prop_market_not_parseable": 144
   }
 }

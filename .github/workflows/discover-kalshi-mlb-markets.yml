@@ -56,20 +56,38 @@ jobs:
           echo "DATE=$DATE" >> $GITHUB_ENV
           echo "Discovering Kalshi MLB markets for $DATE"
 
+      # Fetch Slate Data now concludes SUCCESS on a schedule-verified MLB
+      # off-day without running its fetch job (slate_day gate). There is
+      # nothing to discover on such a date, so a run triggered by that
+      # completion stops here, green -- but ONLY on the evidence fetch-slate
+      # itself recorded: data/fetch_status.json says NO_GAMES_SCHEDULED for
+      # exactly this date WITH its MLB schedule evidence. Anything else
+      # (game day, unknown, a different date, a manual dispatch) runs the
+      # discovery exactly as before.
+      - name: Off-day guard (schedule-verified, workflow_run only)
+        id: offday
+        if: github.event_name == 'workflow_run'
+        run: python3 scripts/ci/offday_guard.py "${{ env.DATE }}"
+
       - name: Run universal market discovery
+        if: steps.offday.outputs.off_day != 'true'
         run: python3 scripts/discover_kalshi_mlb_markets.py "${{ env.DATE }}"
 
       - name: Build full market coverage accounting (zero-silent-omission audit)
+        if: steps.offday.outputs.off_day != 'true'
         run: python3 scripts/build_full_market_coverage.py "${{ env.DATE }}"
 
       - name: Build paper spread ledger (Rule-81/not-yet-activated spread paper tracking)
+        if: steps.offday.outputs.off_day != 'true'
         run: python3 scripts/build_paper_spread_ledger.py "${{ env.DATE }}"
 
       - name: Run prefix-agnostic series catalogue + F3/F7 search
+        if: steps.offday.outputs.off_day != 'true'
         run: python3 scripts/discover_kalshi_series_catalogue.py "${{ env.DATE }}"
         continue-on-error: true
 
       - name: Commit discovery output (only if changed)
+        if: steps.offday.outputs.off_day != 'true'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

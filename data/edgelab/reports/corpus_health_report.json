@@ -22,8 +22,8 @@
     "boundaryDate": "2026-08-03",
     "status": "ACTIVE"
   },
-  "exitCodeReason": "1 forward-era date(s) with an unacknowledged hard-fail gate status: [('2026-09-28', 'FORWARD_PROVENANCE_AMBIGUOUS')] (plus 5 acknowledged legacy gap(s), excluded from this failure per data/edgelab/corpus_acknowledged_forward_gaps.json: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15'])",
-  "exitShouldFail": true,
+  "exitCodeReason": "Forward operational health is otherwise clean -- the only hard-fail-status forward date(s) are acknowledged, permanently-unrecoverable legacy gaps (['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']), which never resolve and therefore never drive this exit code -- see data/edgelab/corpus_acknowledged_forward_gaps.json.",
+  "exitShouldFail": false,
   "expectedPregameSnapshots": 58,
   "forwardOperationalHealth": {
     "acknowledgedLegacyGapDates": [
@@ -37,25 +37,26 @@
       "linkedMarkets": 44
     },
     "consecutiveDegradedForwardRuns": 0,
-    "expectedRuns": 60,
+    "expectedRuns": 59,
     "gateStatusCounts": {
       "FORWARD_HEALTHY": 39,
       "FORWARD_MISSING_SNAPSHOT": 5,
+      "FORWARD_NO_SLATE": 1,
       "FORWARD_PENDING_TODAY": 1,
-      "FORWARD_PROVENANCE_AMBIGUOUS": 1,
       "FORWARD_RESEARCH_ONLY_NO_DECISION": 15
     },
-    "hardFailDates": [
+    "hardFailDates": [],
+    "incompleteCaptures": [],
+    "noSlateDates": [
       "2026-09-28"
     ],
-    "incompleteCaptures": [],
     "pendingTodayDates": [
       "2026-10-02"
     ],
-    "populationNote": "expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates. snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.",
+    "populationNote": "expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates and noSlateDates (schedule-verified days with no MLB games). snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.",
     "provenanceCoverage": {
       "known": 54,
-      "total": 60
+      "total": 59
     },
     "replayCompletion": {
       "attempted": 217,
@@ -65,7 +66,7 @@
     "settlementCoverage": {
       "linkedMarkets": 89
     },
-    "snapshotsCaptured": 55,
+    "snapshotsCaptured": 54,
     "snapshotsMissing": [
       "2026-08-11",
       "2026-08-12",
@@ -76,10 +77,11 @@
   },
   "gateStatusCounts": {
     "DEGRADED_CONFIG_PARTIAL": 2,
-    "DEGRADED_MISSING_SNAPSHOT": 9,
-    "HEALTHY": 54
+    "DEGRADED_MISSING_SNAPSHOT": 8,
+    "HEALTHY": 54,
+    "NOT_APPLICABLE_NO_SLATE": 1
   },
-  "generatedAt": "2026-10-02T13:40:13Z",
+  "generatedAt": "2026-10-02T15:28:05Z",
   "historicalCorpusQuality": {
     "datesCovered": 4,
     "gateStatusCounts": {
@@ -93,6 +95,24 @@
   "missingSnapshots": [],
   "newestTrustworthyReplayDate": "2026-10-01",
   "oldestTrustworthyReplayDate": "2026-08-01",
+  "operationalHealth": {
+    "consecutiveDegradedForwardRuns": 0,
+    "hardFailDates": [],
+    "historicalGapDates": [
+      "2026-08-11",
+      "2026-08-12",
+      "2026-08-13",
+      "2026-08-14",
+      "2026-08-15"
+    ],
+    "noSlateDates": [
+      "2026-09-28"
+    ],
+    "reasons": [],
+    "state": "HEALTHY",
+    "summary": "Forward operational health is otherwise clean -- the only hard-fail-status forward date(s) are acknowledged, permanently-unrecoverable legacy gaps (['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']), which never resolve and therefore never drive this exit code -- see data/edgelab/corpus_acknowledged_forward_gaps.json.",
+    "workflowShouldFail": false
+  },
   "perDate": [
     {
       "acknowledgedGapReason": null,
@@ -104,6 +124,7 @@
       "effectiveConfigHashKnown": true,
       "era": "HISTORICAL",
       "forwardGateStatus": null,
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": null,
       "forwardReplayStatus": null,
       "gateStatus": "DEGRADED_CONFIG_PARTIAL",
@@ -114,6 +135,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 0,
       "recoveryAttempted": false,
+      "slateDay": null,
       "snapshotId": "6c0886a0db203c668dd7fda37c924afce559e409"
     },
     {
@@ -126,6 +148,7 @@
       "effectiveConfigHashKnown": true,
       "era": "HISTORICAL",
       "forwardGateStatus": null,
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": null,
       "forwardReplayStatus": null,
       "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
@@ -136,6 +159,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 0,
       "recoveryAttempted": false,
+      "slateDay": null,
       "snapshotId": "a3c27631a563c16cf48eda8874e32023dead721b"
     },
     {
@@ -148,6 +172,7 @@
       "effectiveConfigHashKnown": true,
       "era": "HISTORICAL",
       "forwardGateStatus": null,
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": null,
       "forwardReplayStatus": null,
       "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
@@ -158,6 +183,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 0,
       "recoveryAttempted": false,
+      "slateDay": null,
       "snapshotId": "ffaca16713b55fcdd41565d3ab758f7ed97e5f24"
     },
     {
@@ -170,6 +196,7 @@
       "effectiveConfigHashKnown": true,
       "era": "HISTORICAL",
       "forwardGateStatus": null,
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": null,
       "forwardReplayStatus": null,
       "gateStatus": "DEGRADED_CONFIG_PARTIAL",
@@ -180,6 +207,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 0,
       "recoveryAttempted": false,
+      "slateDay": null,
       "snapshotId": "6ac0b6352ae5bfbe4e80c8754caa78e155d26d1f"
     },
     {
@@ -192,6 +220,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "d931383a45c93305018fa58bd39227bb7791fd84",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -202,6 +231,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 0,
       "recoveryAttempted": false,
+      "slateDay": null,
       "snapshotId": "fdc757ed4b01ca013cb0a711b5b1f9632adcebf0"
     },
     {
@@ -214,6 +244,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "9d9a82ebee6a3ce433141834733a458a32f639e2",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -224,6 +255,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 0,
       "recoveryAttempted": false,
+      "slateDay": null,
       "snapshotId": "fa5c77cbdf54f12faab1f2f0e16c1462e601b4bd"
     },
     {
@@ -236,6 +268,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "0befd86566b8d119e9bd6ac92d31307d93ebbd43",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -246,6 +279,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 0,
       "recoveryAttempted": false,
+      "slateDay": null,
       "snapshotId": "5993af003628bade61330563b200c7a5b9479bd3"
     },
     {
@@ -258,6 +292,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "73593a02e4597b6840b3cdb181c4cd708077d254",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -268,6 +303,7 @@
       "productionRunsCaptured": 2,
       "recoveredCount": 0,
       "recoveryAttempted": false,
+      "slateDay": null,
       "snapshotId": "888e63037a44cca92e4b8f39f543ebee74479dc9"
     },
     {
@@ -280,6 +316,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "56748987a86427bb2bbc6a4f106db6c8596fa529",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -290,6 +327,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 0,
       "recoveryAttempted": false,
+      "slateDay": null,
       "snapshotId": "43d3184dc87cff327b83a506c580e633883c28e5"
     },
     {
@@ -302,6 +340,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "d146b72dedaadfa3217cbb73738012855ac0ea97",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -312,6 +351,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 0,
       "recoveryAttempted": false,
+      "slateDay": null,
       "snapshotId": "fbb03c08724582854e7bea3dc0a510d322d4227f"
     },
     {
@@ -324,6 +364,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "c9eecd8ab3835cc0221191553fd95b85e133e802",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -334,6 +375,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 1,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "9824220e2b30f42aaeff3650df9913e300fd2185"
     },
     {
@@ -346,6 +388,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "dc35bce18fe552c6e251ff36da9edae76d61eab0",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -356,6 +399,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "be15b21734f7b9296d25dd77bf66744e48b4ffb5"
     },
     {
@@ -368,6 +412,7 @@
       "effectiveConfigHashKnown": false,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": null,
       "forwardReplayStatus": null,
       "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
@@ -378,6 +423,7 @@
       "productionRunsCaptured": 0,
       "recoveredCount": 1,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": null
     },
     {
@@ -390,6 +436,7 @@
       "effectiveConfigHashKnown": false,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": null,
       "forwardReplayStatus": null,
       "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
@@ -400,6 +447,7 @@
       "productionRunsCaptured": 0,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": null
     },
     {
@@ -412,6 +460,7 @@
       "effectiveConfigHashKnown": false,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": null,
       "forwardReplayStatus": null,
       "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
@@ -422,6 +471,7 @@
       "productionRunsCaptured": 0,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": null
     },
     {
@@ -434,6 +484,7 @@
       "effectiveConfigHashKnown": false,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": null,
       "forwardReplayStatus": null,
       "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
@@ -444,6 +495,7 @@
       "productionRunsCaptured": 0,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": null
     },
     {
@@ -456,6 +508,7 @@
       "effectiveConfigHashKnown": false,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_MISSING_SNAPSHOT",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": null,
       "forwardReplayStatus": null,
       "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
@@ -466,6 +519,7 @@
       "productionRunsCaptured": 0,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": null
     },
     {
@@ -478,6 +532,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "c4c2b290e49c8f37cc314cceffe9ada8742a6bd8",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -488,6 +543,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "52fdf13fc3b15a041179d556fdbef63219bcb51d"
     },
     {
@@ -500,6 +556,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "3c4dcd82785065bdcb492bda19d269887f806347",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -510,6 +567,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "2c02449eaf412b191677047d83ac9825c437b3ad"
     },
     {
@@ -522,6 +580,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "afb900828276a94beb13eccc75accc06d4412e3e",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -532,6 +591,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "baf5e1f51accf734a59a78c39d0b2324d9dbec9b"
     },
     {
@@ -544,6 +604,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "5a2ffe495c5e410dc4ce3c083f8dd7830515ccb3",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -554,6 +615,7 @@
       "productionRunsCaptured": 2,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "290156a9e0acab85b402b595573b3fc44e62ea25"
     },
     {
@@ -566,6 +628,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "3826a305d36d056f4589375adeabe9dfbb8ae423",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -576,6 +639,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "a004ba77c80e42ffe01a9e0b30b6a6040de0b798"
     },
     {
@@ -588,6 +652,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "98f0856df11f5ff8a6a42fddbca8715797440f95",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -598,6 +663,7 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 1,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "d150ad289ae0faaf7eace9427326d0ef3fde5a6c"
     },
     {
@@ -610,6 +676,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "41336158c9051c9eb6ab67f000357dc947ce59a6",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -620,6 +687,7 @@
       "productionRunsCaptured": 3,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "30ebaa2363237dbd613b1322bf38dc1efe7bf8e4"
     },
     {
@@ -632,6 +700,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "858ac650c9c8750eb6fe825d5e6ed78ab63e563b",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -642,6 +711,7 @@
       "productionRunsCaptured": 5,
       "recoveredCount": 1,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "a145a6f2a071fca37d0b62b3d685b2fb93468a1b"
     },
     {
@@ -654,6 +724,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "7b740cae1b7b2bbdf3bb7593ffb35e7c492fa742",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -664,6 +735,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 1,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "01e65c704ec29539f01c086a418a8da5db7658eb"
     },
     {
@@ -676,6 +748,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "2e7d8f7868749b91badbacc88ea6606a7058d1e1",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -686,6 +759,7 @@
       "productionRunsCaptured": 5,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "cadc7c88b0dc567b9dc9b8dc90e4e737340fd865"
     },
     {
@@ -698,6 +772,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "0b602d55ed3c9ff79adbdd30a58bc39c59adbb41",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -708,6 +783,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 1,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "0182ecdca161deffccb8e072e41ac38ea43ac8a7"
     },
     {
@@ -720,6 +796,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "2c2589cfd50ec272aa9f172083831e46890f21ce",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -730,6 +807,7 @@
       "productionRunsCaptured": 2,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "5e0bdbe380b7f546694fa4943e82fa6e203866fb"
     },
     {
@@ -742,6 +820,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "90b01572ca9014f63ba2d4c013766c21b734c1b5",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -752,6 +831,7 @@
       "productionRunsCaptured": 8,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "263276b66b9c674ea085abf0120a203a3da7b24c"
     },
     {
@@ -764,6 +844,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "d03572426cd591b1c983514dfe4900655684e728",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -774,6 +855,7 @@
       "productionRunsCaptured": 6,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "d20887959626ab37ed215b64962a2ce55f3cf10f"
     },
     {
@@ -786,6 +868,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "ca4b214a7e68c01e6413105bbb712c0153f35ee5",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -796,6 +879,7 @@
       "productionRunsCaptured": 5,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "b6596220766d590299acde1f99b4042166b855c4"
     },
     {
@@ -808,6 +892,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "0f0481d78fdab4137002bbf761f1a3a0e5954d0d",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -818,6 +903,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "a8028dff5dc717eb39b8ea6b50780f0852a402a5"
     },
     {
@@ -830,6 +916,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "a2984e5b2d90526e66f7c700104c0e0a040c9434",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -840,6 +927,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "eda39bb5d700938ee919a24187a1a57bacf33094"
     },
     {
@@ -852,6 +940,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "386d62cd7eff03d3cb171e7272826597bda2ff6c",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -862,6 +951,7 @@
       "productionRunsCaptured": 7,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "f9e601fed1273195db7761d946f6cb1496caf32d"
     },
     {
@@ -874,6 +964,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "cc8762be8e45cdd4cf6d249eeddf87890a8b0706",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -884,6 +975,7 @@
       "productionRunsCaptured": 5,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "3d0011df350318391ed6a76fcc64bf4df21f1e52"
     },
     {
@@ -896,6 +988,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "2c159cbf6fca101b9a085635a6ac2bd65f1b244d",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -906,6 +999,7 @@
       "productionRunsCaptured": 6,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "daeb0aab46882d1f400025b6d07aea0f702f3dcb"
     },
     {
@@ -918,6 +1012,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "a9db641d3cb77876d6a086fa12a08287b7d2059c",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -928,6 +1023,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "d89b803bbef969c73ab15fb48ea530c3336b337b"
     },
     {
@@ -940,6 +1036,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "9a802bf0e83a2567c95cd306d79aeb8d3ce06f67",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -950,6 +1047,7 @@
       "productionRunsCaptured": 6,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "4c03d1cc48050422e1249b336af964b3f89c6fa6"
     },
     {
@@ -962,6 +1060,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "708528fbb6de9dd9fda1bd997be744361838fa1d",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -972,6 +1071,7 @@
       "productionRunsCaptured": 6,
       "recoveredCount": 1,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "73fdad9da604509ddb2df2f263825af93c8d3a61"
     },
     {
@@ -984,6 +1084,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "2f04ed0bfe6fc73914d7becfedad63a78f48e9a9",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -994,6 +1095,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "e4bcf05b0557fe2e82c5460e059ffb9b34e8244e"
     },
     {
@@ -1006,6 +1108,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "fc2cb351b64013d21baefc439dc95e2ba8aa7e9e",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -1016,6 +1119,7 @@
       "productionRunsCaptured": 6,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "24a7ec06c11feb5aae1f8e6c3aefa082b52c2725"
     },
     {
@@ -1028,6 +1132,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "61b753f35574f0de62f5d5f124a5234fef6e249c",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -1038,6 +1143,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "661f4569898ae765077dba674efbae1687d0e275"
     },
     {
@@ -1050,6 +1156,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "8749ad0f19d706712062c8f3a91c24dcb88b3c72",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -1060,6 +1167,7 @@
       "productionRunsCaptured": 5,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "71be46ded2614d70a27fcdfa64a0b9b21a0bed89"
     },
     {
@@ -1072,6 +1180,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "f8aef2f2c5c2bd60136db7acf5634c7c69cc89b4",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -1082,6 +1191,7 @@
       "productionRunsCaptured": 5,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "4f11707703a38667a3be41ba868f7ad002f4abed"
     },
     {
@@ -1094,6 +1204,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "bb7a890c507a8698642c96edb584c504499e9351",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -1104,6 +1215,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "8454fd4ffe2970d41674c619a428479560d8b852"
     },
     {
@@ -1116,6 +1228,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "19abb6fcbe81b42925c18490af9c380893f08526",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -1126,6 +1239,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "a232cc798938a3154a342447ec7fb8a5f29200bd"
     },
     {
@@ -1138,6 +1252,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "7dd36a7d70185af85fb902a4c97fce44021dc973",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -1148,6 +1263,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "4b8a04f835a882735991504064c92adff0542bd4"
     },
     {
@@ -1160,6 +1276,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "620f3a8acea0ab4ec279fb0c077bccaa4335448b",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -1170,6 +1287,7 @@
       "productionRunsCaptured": 6,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "513073ed68acc34ff473692c822ed29c68bf3957"
     },
     {
@@ -1182,6 +1300,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "65827eec108ba9464d7abeceb0291c14eed7a11c",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -1192,6 +1311,7 @@
       "productionRunsCaptured": 6,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "4c2c384d72a8fa6a6611cd821303574d0542e369"
     },
     {
@@ -1204,6 +1324,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "0f8177ee3ef4e28aea8cd6a1895527aa21cfdaab",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -1214,6 +1335,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "1637443d8737f50d74bacae835ef517049acba88"
     },
     {
@@ -1226,6 +1348,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "04d277f19b54b0021c6be9cf30c4074c6c51bce1",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -1236,6 +1359,7 @@
       "productionRunsCaptured": 5,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "6361eeb58c48c2bf8d759ebb90ab40cafd2af431"
     },
     {
@@ -1248,6 +1372,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "800919345a3f32b4ff9123240cb38fd8ab540f7d",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -1258,6 +1383,7 @@
       "productionRunsCaptured": 7,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "91c702953e4f36b7c71de8954a53ecb824cecd46"
     },
     {
@@ -1270,6 +1396,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "e9109cae27d667df4e8eef6cf1828b0cf2f9b1d8",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -1280,6 +1407,7 @@
       "productionRunsCaptured": 3,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "104694a3614cd9de422b8cbd7ff3227b32025320"
     },
     {
@@ -1292,6 +1420,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "261f61e6d977c80e8ed50c1429f7b3ed635b9dd4",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -1302,6 +1431,7 @@
       "productionRunsCaptured": 3,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "7aa625e5ec96583912f6c1dd5b4bc10c6179189c"
     },
     {
@@ -1314,6 +1444,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "76d4a53add63592bf017cca3e9d06ba18a724ec2",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -1324,6 +1455,7 @@
       "productionRunsCaptured": 3,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "96d3e535023b4aa453ab091cb9f9a0f0a3c736f0"
     },
     {
@@ -1336,6 +1468,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "9f97506100cafa5a07e8ca930b38256f75e8d91c",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -1346,6 +1479,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "86d27c389399a8ad01b29b8dc6440f03c900d4d2"
     },
     {
@@ -1358,6 +1492,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "402b907cb2bf3df96550e1810ed5d41c18c4918f",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -1368,6 +1503,7 @@
       "productionRunsCaptured": 5,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "80cdf6fb6fed2a2bdbd716e0f31bbd619bb7fea7"
     },
     {
@@ -1380,6 +1516,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "bd9c92395061bfaaf9e3e6012bcd767fa0faa66a",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -1390,6 +1527,7 @@
       "productionRunsCaptured": 5,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "a1527cf35f7c6d2e06aebfdaca015763f4fead99"
     },
     {
@@ -1402,6 +1540,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "839cf030db99797dd4a7b6c40f3218012feaba96",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -1412,6 +1551,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "b0c7f92d119526d4c401e56927caaaa2eeed8a9a"
     },
     {
@@ -1423,10 +1563,11 @@
       "effectiveCompletenessStatus": "MISSING_REQUIRED_INPUT",
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
-      "forwardGateStatus": "FORWARD_PROVENANCE_AMBIGUOUS",
+      "forwardGateStatus": "FORWARD_NO_SLATE",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "745dae0b011b7b773a4b7871b94e566a169dd74c",
       "forwardReplayStatus": "REJECTED_INELIGIBLE",
-      "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
+      "gateStatus": "NOT_APPLICABLE_NO_SLATE",
       "isResearchOnlyRun": false,
       "manifestHash": "56f3160e1daf74833c64ecdea35ff66ebcd5065a28f29af430b516c171e2884a",
       "productionCommitShaKnown": false,
@@ -1434,6 +1575,16 @@
       "productionRunsCaptured": 1,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": {
+        "reason": "no MLB games scheduled on 2026-09-28; an empty slate is correct",
+        "runsInspected": 1,
+        "scheduleEvidencePath": "data/edgelab/schedule_evidence/2026-09-28.json",
+        "scheduleFetchedAt": "2026-10-02T15:28:05Z",
+        "scheduleLookupAttempts": 1,
+        "scheduleSource": "statsapi.mlb.com/api/v1/schedule",
+        "scheduleStatus": "NO_GAMES_SCHEDULED",
+        "verdict": "OFF_DAY"
+      },
       "snapshotId": "0ca82a317c5f9eb3e9bab997158e6648218744d1"
     },
     {
@@ -1446,6 +1597,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "ab029c00419cfc4f584f60e62e8405b4aa205386",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -1456,6 +1608,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "d3ac110322e5cf200baee2057cd318fe2029fe43"
     },
     {
@@ -1468,6 +1621,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_HEALTHY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "a769f3fca5d2cf298cb6f7ea7cfa578cd1061871",
       "forwardReplayStatus": "COMPLETED",
       "gateStatus": "HEALTHY",
@@ -1478,6 +1632,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "45f1b99679b6268414275f3a1746ecd4d9d7a4d3"
     },
     {
@@ -1490,6 +1645,7 @@
       "effectiveConfigHashKnown": true,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": "202089bb52b37b3cc15e3e3b0ef077365cb6fd7a",
       "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
       "gateStatus": "HEALTHY",
@@ -1500,6 +1656,7 @@
       "productionRunsCaptured": 4,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": "266f857fc889009443f6e36af31e47d4bbb98c4c"
     },
     {
@@ -1512,6 +1669,7 @@
       "effectiveConfigHashKnown": false,
       "era": "FORWARD",
       "forwardGateStatus": "FORWARD_PENDING_TODAY",
+      "forwardGateStatusIfFinal": null,
       "forwardReplayId": null,
       "forwardReplayStatus": null,
       "gateStatus": "DEGRADED_MISSING_SNAPSHOT",
@@ -1522,6 +1680,7 @@
       "productionRunsCaptured": 0,
       "recoveredCount": 2,
       "recoveryAttempted": true,
+      "slateDay": null,
       "snapshotId": null
     }
   ],

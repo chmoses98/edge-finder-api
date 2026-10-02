@@ -1,12 +1,15 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-10-02T13:40:13Z
+Generated: 2026-10-02T15:28:05Z
+
+## Operational health: **HEALTHY**
+- Reasons: none
 
 ## Enforcement
 - Status: **ACTIVE**
 - Boundary date: 2026-08-03
 - Activated at: 2026-08-04T09:38:45Z
-- Exit should fail: True
-- Exit-code reason: 1 forward-era date(s) with an unacknowledged hard-fail gate status: [('2026-09-28', 'FORWARD_PROVENANCE_AMBIGUOUS')] (plus 5 acknowledged legacy gap(s), excluded from this failure per data/edgelab/corpus_acknowledged_forward_gaps.json: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15'])
+- Exit should fail: False
+- Exit-code reason: Forward operational health is otherwise clean -- the only hard-fail-status forward date(s) are acknowledged, permanently-unrecoverable legacy gaps (['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']), which never resolve and therefore never drive this exit code -- see data/edgelab/corpus_acknowledged_forward_gaps.json.
 
 ## Historical corpus quality (descriptive only -- never fails this check)
 - Historical/backfill dates: 4
@@ -14,23 +17,24 @@ Generated: 2026-10-02T13:40:13Z
 - DEGRADED_MISSING_SNAPSHOT: 2
 
 ## Forward operational health (drives pass/fail)
-- Population note: expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates. snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.
-- Expected forward runs: 60
-- Forward snapshots captured: 55
+- Population note: expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates and noSlateDates (schedule-verified days with no MLB games). snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.
+- Expected forward runs: 59
+- Forward snapshots captured: 54
 - Forward snapshots missing (no manifest at all): 5 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
 - Forward incomplete captures (manifest exists, missing a required component): 0 []
 - Forward dates pending today (not yet due): 1 ['2026-10-02']
-- Forward provenance coverage: 54/60
+- Forward no-slate dates (MLB schedule verified no games; no production expected): 1 ['2026-09-28']
+- Forward provenance coverage: 54/59
 - Forward replay: attempted 217, completed 125, failed 92
 - Forward CLV-linked markets: 44
 - Forward settlement-linked markets: 89
 - Consecutive degraded forward runs: 0
-- Hard-fail dates (drive exitShouldFail): ['2026-09-28']
+- Hard-fail dates (drive exitShouldFail): []
 - Acknowledged legacy gap dates (excluded from exitShouldFail, see data/edgelab/corpus_acknowledged_forward_gaps.json): ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
 - FORWARD_HEALTHY: 39
 - FORWARD_MISSING_SNAPSHOT: 5
+- FORWARD_NO_SLATE: 1
 - FORWARD_PENDING_TODAY: 1
-- FORWARD_PROVENANCE_AMBIGUOUS: 1
 - FORWARD_RESEARCH_ONLY_NO_DECISION: 15
 
 ## Storage
@@ -101,7 +105,7 @@ Generated: 2026-10-02T13:40:13Z
 | 2026-09-25 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 5 |  |
 | 2026-09-26 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 5 |  |
 | 2026-09-27 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 4 |  |
-| 2026-09-28 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PROVENANCE_AMBIGUOUS | MISSING_REQUIRED_INPUT | MISSING_REQUIRED_INPUT | False | False | REJECTED_INELIGIBLE | 1 |  |
+| 2026-09-28 | FORWARD | NOT_APPLICABLE_NO_SLATE | FORWARD_NO_SLATE | MISSING_REQUIRED_INPUT | MISSING_REQUIRED_INPUT | False | False | REJECTED_INELIGIBLE | 1 |  |
 | 2026-09-29 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 4 |  |
 | 2026-09-30 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 4 |  |
 | 2026-10-01 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 4 |  |

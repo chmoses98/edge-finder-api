@@ -32,8 +32,9 @@ name: EdgeLab Corpus Health Check
 # module docstring for the full policy.
 #
 # Read-only against production files: only writes
-# data/edgelab/reports/corpus_health_report.{json,md} and (once, ever)
-# data/edgelab/corpus_enforcement_boundary.json.
+# data/edgelab/reports/corpus_health_report.{json,md}, (once, ever)
+# data/edgelab/corpus_enforcement_boundary.json, and (once per date, only
+# for empty-slate forward dates) data/edgelab/schedule_evidence/<date>.json.
 
 on:
   schedule:
@@ -56,32 +57,51 @@ jobs:
         with:
           ref: main
 
+      # 2026-10-02 reliability cleanup: ONE pass/fail decision per run.
+      #
+      # Before, the report step itself exited 1 on a failing verdict, the
+      # commit step ran under `if: always()`, and a final step re-raised the
+      # report step's outcome -- two red steps for one fact, and a crash of
+      # the report script was indistinguishable from a legitimate FAILED
+      # verdict. Now:
+      #   1. the report step always writes the report and exits 0 when it
+      #      succeeds in doing so (--report-only); it exits non-zero ONLY
+      #      if the report could not be built at all;
+      #   2. the report (plus the immutable enforcement boundary and any
+      #      newly-obtained MLB schedule evidence) is committed;
+      #   3. the enforcement step is the single place the workflow can turn
+      #      red: it fails if the report could not be built, or if the
+      #      report's operationalHealth.state is FAILED. HEALTHY,
+      #      DEGRADED (postgame data still pending -- surfaced as a warning
+      #      annotation and in the step summary) and NOT_APPLICABLE pass.
+      # Nothing here is continue-on-error, and no verdict is downgraded:
+      # every condition that failed this workflow before still fails it,
+      # except a date the MLB schedule itself verifies had no games (see
+      # STATUS_FORWARD_NO_SLATE in scripts/corpus_health_report.py).
       - name: Build corpus health report
         id: report
-        run: python3 scripts/corpus_health_report.py
+        run: python3 scripts/corpus_health_report.py --report-only
 
-      - name: Commit refreshed report (always -- even if the check above will fail)
-        if: always()
+      - name: Commit refreshed report
+        if: always() && steps.report.outcome == 'success'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          python3 scripts/ci/git_data_commit.py \
+          if ! python3 scripts/ci/git_data_commit.py \
             --message "corpus health report $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             "data/edgelab/reports/corpus_health_report.json" "data/edgelab/reports/corpus_health_report.md" \
             "data/edgelab/corpus_enforcement_boundary.json" \
-            || echo "DATA-HEALTH WARNING: corpus health report push failed."
+            "data/edgelab/schedule_evidence/"; then
+            # The verdict below does not depend on the push; the published
+            # copy is simply one run stale until the next run succeeds.
+            echo "::warning title=Corpus health report not published::push failed after retries; the enforcement verdict below is unaffected."
+          fi
 
-      # Deliberately the LAST step and deliberately NOT continue-on-error:
-      # this is what makes the workflow's own conclusion trustworthy. The
-      # report step above already exits non-zero when corpus health is
-      # genuinely degraded (see scripts/corpus_health_report.py), so this
-      # workflow simply propagates that -- re-running the report step's
-      # own exit code as the job's real outcome.
-      - name: Fail the workflow if corpus health is degraded
+      - name: Enforce corpus health (the only step that decides pass/fail)
         if: always()
         run: |
           if [ "${{ steps.report.outcome }}" != "success" ]; then
-            echo "CORPUS HEALTH DEGRADED -- see the report step above and data/edgelab/reports/corpus_health_report.md"
+            echo "::error title=Corpus health report could not be built::see the 'Build corpus health report' step log."
             exit 1
           fi
-          echo "Corpus health OK."
+          python3 scripts/corpus_health_report.py --enforce

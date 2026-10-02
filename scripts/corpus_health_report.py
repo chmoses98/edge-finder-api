@@ -130,8 +130,29 @@ differently. This is what lets five acknowledged, permanently-irrecoverable
 2026-08-11..15 gaps stop poisoning every future run without requiring the
 enforcement boundary to move or the evidence to be hidden.
 
+── SCHEDULE-VERIFIED NO-SLATE DATES + ONE ENFORCEMENT DECISION (2026-10-02) ─
+2026-09-28 (the MLB off-day between the regular season and the Wild Card
+round) hard-failed this check as FORWARD_PROVENANCE_AMBIGUOUS, and would
+have done so forever: fetch-slate.yml's scheduled runs that day found an
+empty slate, its `if: always()` snapshot step still captured an "unkeyed"
+PRE_GAME_DECISION manifest with no production run behind it, and nothing
+here could tell that apart from a production run that lost its
+provenance. STATUS_FORWARD_NO_SLATE (see its comment for the exact,
+evidence-based conditions -- the MLB schedule is the authority, exactly as
+in lib.edgelab.slate_day_contract) is the terminal, non-failing state for
+such a date; STATUS_FORWARD_SLATE_COLLECTION_FAILED is its hard-failing
+counterpart when the schedule says games were played. An unreadable
+schedule never reclassifies anything (fail closed). This is NOT an
+allowlist: no date is named anywhere, and a new off-day is handled the
+same way with no human action.
+
+operationalHealth.state (HEALTHY / DEGRADED / FAILED / NOT_APPLICABLE) is
+the one machine-readable verdict; exitShouldFail == (state == FAILED).
+The workflow builds the report with --report-only (exit 0 once written),
+publishes it, and makes its single pass/fail decision with --enforce.
+
 Usage:
-  python3 scripts/corpus_health_report.py [--report-path PATH]
+  python3 scripts/corpus_health_report.py [--report-path PATH] [--report-only | --enforce]
 """
 import argparse
 import json
@@ -145,6 +166,7 @@ sys.path.insert(0, ROOT_DIR)
 
 from lib.edgelab import ids  # noqa: E402
 from lib.edgelab import replay  # noqa: E402
+from lib.edgelab import slate_day_contract as day_contract  # noqa: E402
 from lib.edgelab import snapshot as snap  # noqa: E402
 
 _DATE_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -159,6 +181,18 @@ ENFORCEMENT_BOUNDARY_PATH = os.path.join("data", "edgelab", "corpus_enforcement_
 # permanently unrecoverable, and committed that evidence here -- never
 # because this script decided so on its own.
 ACKNOWLEDGED_GAPS_PATH = os.path.join("data", "edgelab", "corpus_acknowledged_forward_gaps.json")
+# Persisted MLB-schedule evidence for empty-slate forward dates (see
+# STATUS_FORWARD_NO_SLATE). One file per date, written by this script the
+# first time it obtains a CONCLUSIVE answer from the schedule (games / no
+# games) and never overwritten afterwards -- an inconclusive lookup
+# (SCHEDULE_UNKNOWN) is never persisted, so it is simply retried next run.
+SCHEDULE_EVIDENCE_DIR = os.path.join("data", "edgelab", "schedule_evidence")
+# Same test/replay seam scripts/post_fetch_gate.py uses (tests/conftest.py
+# sets it to "offline" for the whole suite, so no test ever reaches the
+# network or reads "no network" as "no games").
+SCHEDULE_EVIDENCE_ENV = "EDGEFINDER_SCHEDULE_EVIDENCE"
+SCHEDULE_FETCH_ATTEMPTS = 3
+SCHEDULE_FETCH_BACKOFF_SECONDS = (2, 4)
 
 # Item 11 (original): mechanically-derived per-date quality gate statuses,
 # worst-first (first true condition wins) -- retained unmodified as the
@@ -216,6 +250,42 @@ STATUS_FORWARD_PENDING_TODAY = "FORWARD_PENDING_TODAY"
 # (RISK_GATE_OUTPUT) is structurally absent by design.
 STATUS_FORWARD_RESEARCH_ONLY_NO_DECISION = "FORWARD_RESEARCH_ONLY_NO_DECISION"
 STATUS_FORWARD_HEALTHY = "FORWARD_HEALTHY"
+# ── No-slate dates (2026-10-02 audit of the 2026-09-28 hard fail) ─────────
+# 2026-09-28 was the MLB off-day between the regular season and the Wild
+# Card round. fetch-slate.yml's scheduled runs still fired, found an empty
+# slate (validate_slate_pre.py hard-failed on `games: []`), and its
+# `if: always()` snapshot step still wrote a PRE_GAME_DECISION manifest
+# under the "unkeyed" run key -- with no production pipeline artifacts and
+# productionProvenance MISSING, because there was no production run to
+# record. The rule table below then read that as
+# FORWARD_PROVENANCE_AMBIGUOUS, a hard fail that could never resolve.
+#
+# STATUS_FORWARD_NO_SLATE is the explicit terminal state for that class of
+# date. It is NEVER inferred from an absent directory or an empty file
+# alone (an outage of the schedule fetch produces exactly the same
+# artifacts). It requires ALL of:
+#   1. every PRE_GAME_DECISION run captured for the date passes integrity
+#      verification and froze a PRODUCTION_SLATE_INPUT dated for that date
+#      with an empty `games` list;
+#   2. no production decision exists for the date (no
+#      data/pipeline/<date>/recommendations.json, and no manifest captured
+#      a RECOMMENDATION_OUTPUT);
+#   3. the MLB schedule itself -- the authority lib.edgelab.slate_day_contract
+#      already defines for exactly this question, across the regular season
+#      and every postseason round -- says no playable games were scheduled.
+# When (1)+(2) hold but the schedule says games WERE scheduled, the date is
+# STATUS_FORWARD_SLATE_COLLECTION_FAILED (hard fail: production was expected
+# and never happened). When the schedule cannot be read, nothing is
+# reclassified -- the ordinary rule table applies (fail closed).
+STATUS_FORWARD_NO_SLATE = "FORWARD_NO_SLATE"
+STATUS_FORWARD_SLATE_COLLECTION_FAILED = "FORWARD_SLATE_COLLECTION_FAILED"
+STATUS_NOT_APPLICABLE_NO_SLATE = "NOT_APPLICABLE_NO_SLATE"  # gateStatus counterpart of FORWARD_NO_SLATE
+
+# ── Operational health (the one field the workflow's pass/fail reads) ────
+HEALTH_HEALTHY = "HEALTHY"
+HEALTH_DEGRADED = "DEGRADED"
+HEALTH_FAILED = "FAILED"
+HEALTH_NOT_APPLICABLE = "NOT_APPLICABLE"
 
 # Hard-fail on sight -- one occurrence is enough, no grace period, because
 # each of these already reflects the OUTCOME of any automatic recovery
@@ -229,6 +299,14 @@ HARD_FAIL_FORWARD_STATUSES = frozenset({
     STATUS_FORWARD_INCOMPLETE_CAPTURE,
     STATUS_FORWARD_PROVENANCE_AMBIGUOUS,
     STATUS_FORWARD_REPLAY_FAILURE,
+    STATUS_FORWARD_SLATE_COLLECTION_FAILED,
+})
+# Terminal states that carry no information about pipeline health in
+# either direction: skipped (not counted, not streak-breaking) by the
+# consecutive-degraded scan, and excluded from the expected-run population.
+NOT_DUE_OR_NOT_APPLICABLE_FORWARD_STATUSES = frozenset({
+    STATUS_FORWARD_PENDING_TODAY,
+    STATUS_FORWARD_NO_SLATE,
 })
 # Non-fatal on their own (postgame data naturally lags same-day capture),
 # but still count toward the consecutive-degraded-forward-runs escalation
@@ -340,6 +418,142 @@ def _load_acknowledged_gaps():
     return by_date
 
 
+# ── No-slate evidence (see STATUS_FORWARD_NO_SLATE) ──────────────────────
+
+def _empty_slate_candidate(date):
+    """
+    Conditions (1) and (2) of STATUS_FORWARD_NO_SLATE, from committed
+    evidence only. Returns {"slateInput": <frozen dict>, "runsInspected": n}
+    when EVERY PRE_GAME_DECISION run for `date` verified, froze a
+    PRODUCTION_SLATE_INPUT dated `date` with an empty `games` list, and no
+    production decision exists for the date; otherwise None.
+
+    Any run that fails integrity verification, lacks a frozen slate input,
+    froze a slate for another date, or froze a slate WITH games disqualifies
+    the date -- the ordinary rule table then judges it exactly as before.
+    """
+    if os.path.exists(os.path.join("data", "pipeline", date, "recommendations.json")):
+        return None
+    run_dirs = snap.list_pregame_run_dirs(date)
+    if not run_dirs:
+        return None
+    slate_input = None
+    for run_key in run_dirs:
+        manifest = snap.load_manifest(snap.STAGE_PRE_GAME_DECISION, date, run_key=run_key)
+        if manifest is None or snap.verify_snapshot(manifest)["overallStatus"] != "VERIFIED":
+            return None
+        recommendation = next((c for c in manifest.get("components", [])
+                               if c.get("componentType") == "RECOMMENDATION_OUTPUT"), None)
+        if recommendation is not None and recommendation.get("availabilityStatus") != snap.MISSING:
+            return None
+        try:
+            frozen = snap.load_frozen_component(manifest, "PRODUCTION_SLATE_INPUT")
+        except (OSError, ValueError):
+            return None
+        if not isinstance(frozen, dict) or frozen.get("date") != date:
+            return None
+        games = frozen.get("games")
+        if not isinstance(games, list) or games:
+            return None
+        slate_input = frozen
+    return {"slateInput": slate_input, "runsInspected": len(run_dirs)}
+
+
+def _schedule_evidence_path(date):
+    return os.path.join(SCHEDULE_EVIDENCE_DIR, f"{date}.json")
+
+
+def _load_persisted_schedule_evidence(date):
+    path = _schedule_evidence_path(date)
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path) as f:
+            evidence = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(evidence, dict) or evidence.get("date") != date:
+        return None
+    if evidence.get("status") not in (day_contract.GAMES_SCHEDULED, day_contract.NO_GAMES_SCHEDULED):
+        return None
+    return evidence
+
+
+def _persist_schedule_evidence(evidence):
+    """Write-once: a conclusive answer already on disk is never replaced."""
+    path = _schedule_evidence_path(evidence["date"])
+    if os.path.exists(path):
+        return
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(evidence, f, indent=2, sort_keys=True)
+
+
+def _default_schedule_fetcher(date):
+    """The raw MLB schedule response for `date` (every game type), or None.
+    Honors the same EDGEFINDER_SCHEDULE_EVIDENCE seam as post_fetch_gate.py."""
+    override = os.environ.get(SCHEDULE_EVIDENCE_ENV)
+    if override == "offline":
+        return None
+    if override:
+        with open(override) as f:
+            return json.load(f)
+    from lib.edgelab.mlb_schedule import fetch_schedule_all_game_types
+    return fetch_schedule_all_game_types(date)
+
+
+def _resolve_schedule_evidence(date, fetcher, sleep):
+    """
+    Persisted conclusive evidence if any; otherwise a bounded live lookup
+    (SCHEDULE_FETCH_ATTEMPTS tries, SCHEDULE_FETCH_BACKOFF_SECONDS between
+    them). Returns (evidence, attempts). A conclusive result is persisted;
+    SCHEDULE_UNKNOWN never is, so it is retried on the next run instead of
+    being frozen in as an answer.
+    """
+    persisted = _load_persisted_schedule_evidence(date)
+    if persisted is not None:
+        return persisted, 0
+    evidence = None
+    attempts = 0
+    for attempt in range(SCHEDULE_FETCH_ATTEMPTS):
+        attempts += 1
+        try:
+            response = fetcher(date)
+        except Exception:  # an adapter error is a failed lookup, never "no games"
+            response = None
+        evidence = day_contract.schedule_evidence(date, response, ids.utc_now_iso())
+        if evidence["status"] != day_contract.SCHEDULE_UNKNOWN:
+            _persist_schedule_evidence(evidence)
+            break
+        if attempt < len(SCHEDULE_FETCH_BACKOFF_SECONDS):
+            sleep(SCHEDULE_FETCH_BACKOFF_SECONDS[attempt])
+    return evidence, attempts
+
+
+def _classify_slate_day(date, fetcher, sleep):
+    """
+    None when `date` is not an empty-slate candidate (the ordinary rule
+    table applies). Otherwise a dict recorded verbatim on the per-date
+    record: the off-day contract's verdict for the frozen slate input
+    against the MLB schedule, plus the evidence it was decided on.
+    """
+    candidate = _empty_slate_candidate(date)
+    if candidate is None:
+        return None
+    evidence, attempts = _resolve_schedule_evidence(date, fetcher, sleep)
+    day = day_contract.classify_slate_day(candidate["slateInput"], evidence)
+    return {
+        "verdict": day["verdict"],
+        "reason": day["reason"],
+        "runsInspected": candidate["runsInspected"],
+        "scheduleStatus": evidence.get("status"),
+        "scheduleSource": evidence.get("source"),
+        "scheduleFetchedAt": evidence.get("fetchedAt"),
+        "scheduleLookupAttempts": attempts,
+        "scheduleEvidencePath": _schedule_evidence_path(date) if _load_persisted_schedule_evidence(date) else None,
+    }
+
+
 # ── Enforcement boundary (new) ────────────────────────────────────────────
 
 def _is_qualifying_forward_manifest(manifest):
@@ -444,6 +658,17 @@ def _forward_gate_status(date, rec, manifest, closing_manifest, postgame_manifes
     verification = snap.verify_snapshot(manifest)
     if verification["overallStatus"] != "VERIFIED":
         return STATUS_INTEGRITY_FAILURE
+    # Empty-slate dates, decided by the MLB schedule (see
+    # STATUS_FORWARD_NO_SLATE). Deliberately AFTER the integrity check (a
+    # corrupt artifact is never excused) and BEFORE the provenance check
+    # (on a genuine off-day there is no production run whose provenance
+    # could have been captured). SCHEDULE_UNKNOWN and every other verdict
+    # fall through to the ordinary rule table unchanged -- fail closed.
+    slate_day_verdict = (rec.get("slateDay") or {}).get("verdict")
+    if slate_day_verdict == day_contract.OFF_DAY:
+        return STATUS_FORWARD_NO_SLATE
+    if slate_day_verdict == day_contract.GAME_DAY_COLLECTION_FAILED:
+        return STATUS_FORWARD_SLATE_COLLECTION_FAILED
     provenance_status = (manifest.get("productionProvenance") or {}).get("status")
     if provenance_status in ("MISSING", "AMBIGUOUS"):
         return STATUS_FORWARD_PROVENANCE_AMBIGUOUS
@@ -518,6 +743,14 @@ def _per_date_record(date, recovery_by_date, forward_status):
         # see the historical record AND the current, correct interpretation.
         "isResearchOnlyRun": bool(manifest and snap.is_schedule_triggered_run(manifest)),
         "effectiveCompletenessStatus": snap.effective_completeness_status(manifest) if manifest else None,
+        # Off-day contract verdict for an empty-slate forward date (see
+        # STATUS_FORWARD_NO_SLATE); None when the date is not an empty-slate
+        # candidate or is not in the forward era. Filled in by build_report().
+        "slateDay": None,
+        # Set only for today's date when the rule table would have
+        # hard-failed it (see build_report): what tomorrow's run will
+        # judge if nothing changes. None otherwise.
+        "forwardGateStatusIfFinal": None,
     }
 
     if manifest:
@@ -562,7 +795,7 @@ def _per_date_record(date, recovery_by_date, forward_status):
     return record, manifest
 
 
-def build_report(today=None):
+def build_report(today=None, schedule_fetcher=None, sleep=None):
     production_dates = _production_run_dates()
     snapshot_dates = _all_snapshot_dates()
     all_dates = sorted(set(production_dates) | set(snapshot_dates))
@@ -575,6 +808,11 @@ def build_report(today=None):
     # STATUS_FORWARD_PENDING_TODAY / module docstring finding #4.
     if today is None:
         today = _today_utc()
+    if schedule_fetcher is None:
+        schedule_fetcher = _default_schedule_fetcher
+    if sleep is None:
+        import time
+        sleep = time.sleep
 
     per_date = []
     manifests_by_date = {}
@@ -609,9 +847,23 @@ def build_report(today=None):
         rec["era"] = ERA_FORWARD if (boundary_date and rec["date"] >= boundary_date) else ERA_HISTORICAL
         if rec["era"] == ERA_FORWARD:
             manifest = manifests_by_date[rec["date"]]
+            if manifest is not None and rec["date"] != today:
+                # Today's slate may still be published later today; an
+                # empty-slate verdict is only ever drawn for a past date.
+                rec["slateDay"] = _classify_slate_day(rec["date"], schedule_fetcher, sleep)
+                if (rec["slateDay"] or {}).get("verdict") == day_contract.OFF_DAY:
+                    rec["gateStatus"] = STATUS_NOT_APPLICABLE_NO_SLATE
             closing = snap.load_manifest(snap.STAGE_CLOSING_LINE, rec["date"])
             postgame = snap.load_manifest(snap.STAGE_POST_GAME_SETTLEMENT, rec["date"])
             rec["forwardGateStatus"] = _forward_gate_status(rec["date"], rec, manifest, closing, postgame, today)
+            if (rec["date"] == today and rec["forwardGateStatus"] in HARD_FAIL_FORWARD_STATUSES
+                    and rec["forwardGateStatus"] != STATUS_INTEGRITY_FAILURE):
+                # Today is never final: a capture taken before today's
+                # production run (e.g. an early `if: always()` snapshot) is
+                # not evidence of a miss. Tomorrow's run re-judges this date
+                # as an ordinary forward date. Corrupt artifacts still fail now.
+                rec["forwardGateStatusIfFinal"] = rec["forwardGateStatus"]
+                rec["forwardGateStatus"] = STATUS_FORWARD_PENDING_TODAY
             gap_entry = acknowledged_gaps.get(rec["date"])
             rec["acknowledgedLegacyGap"] = gap_entry is not None
             rec["acknowledgedGapReason"] = gap_entry.get("reason") if gap_entry else None
@@ -627,6 +879,8 @@ def build_report(today=None):
     # forwardOperationalHealth.consecutiveDegradedForwardRuns below).
     consecutive_degraded = 0
     for rec in reversed(per_date):
+        if rec["gateStatus"] == STATUS_NOT_APPLICABLE_NO_SLATE:
+            continue
         if rec["gateStatus"] not in (STATUS_HEALTHY, None):
             consecutive_degraded += 1
         else:
@@ -722,16 +976,22 @@ def build_report(today=None):
     # 2026-08-11..15 and 2026-08-25) silently fell out of
     # `snapshotsMissing` while still being flagged FORWARD_MISSING_SNAPSHOT
     # per-date. Every counter below now shares forward_expected_records.
-    forward_expected_records = [r for r in forward_records if r["forwardGateStatus"] != STATUS_FORWARD_PENDING_TODAY]
+    # Schedule-verified no-slate dates (STATUS_FORWARD_NO_SLATE) are
+    # excluded from the expected population for the same reason: no
+    # production run was ever expected on them.
+    forward_expected_records = [r for r in forward_records
+                                if r["forwardGateStatus"] not in NOT_DUE_OR_NOT_APPLICABLE_FORWARD_STATUSES]
     forward_expected_dates = [r["date"] for r in forward_expected_records]
     pending_today_dates = [r["date"] for r in forward_records if r["forwardGateStatus"] == STATUS_FORWARD_PENDING_TODAY]
+    no_slate_dates = [r["date"] for r in forward_records if r["forwardGateStatus"] == STATUS_FORWARD_NO_SLATE]
     forward_gate_counts = _count_by(forward_records, "forwardGateStatus")
     forward_consecutive_degraded = 0
     for rec in reversed(forward_records):
-        if rec["forwardGateStatus"] == STATUS_FORWARD_PENDING_TODAY:
-            # Not yet due -- neither healthy nor degraded; skip without
-            # breaking the backward scan, so a pending "today" can never
-            # mask (or reset) a real streak accumulating just before it.
+        if rec["forwardGateStatus"] in NOT_DUE_OR_NOT_APPLICABLE_FORWARD_STATUSES:
+            # Not yet due (pending today) or no production expected at all
+            # (schedule-verified no-slate day) -- neither healthy nor
+            # degraded; skip without breaking the backward scan, so neither
+            # can mask (or reset) a real streak accumulating around it.
             continue
         if rec["forwardGateStatus"] in (STATUS_FORWARD_HEALTHY, STATUS_FORWARD_RESEARCH_ONLY_NO_DECISION):
             # RESEARCH_ONLY_NO_DECISION is a fully-resolved terminal state
@@ -770,6 +1030,7 @@ def build_report(today=None):
             if r["forwardGateStatus"] == STATUS_FORWARD_INCOMPLETE_CAPTURE
         ],
         "pendingTodayDates": pending_today_dates,
+        "noSlateDates": no_slate_dates,
         "provenanceCoverage": {
             "known": sum(1 for r in forward_expected_records if r["productionCommitShaKnown"]),
             "total": len(forward_expected_records),
@@ -784,7 +1045,8 @@ def build_report(today=None):
         "populationNote": (
             "expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/"
             "provenanceCoverage all share ONE population: every known forward-era "
-            "date (from production OR snapshot evidence) excluding pendingTodayDates. "
+            "date (from production OR snapshot evidence) excluding pendingTodayDates "
+            "and noSlateDates (schedule-verified days with no MLB games). "
             "snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; "
             "incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured "
             "(they have a manifest, it's just incomplete), never inside snapshotsMissing."
@@ -835,9 +1097,18 @@ def build_report(today=None):
             exit_should_fail = False
             exit_code_reason = "Forward operational health is clean -- no hard-fail dates, no consecutive-degraded escalation."
 
+    operational_health = _operational_health(
+        enforcement_status, exit_should_fail, exit_code_reason, hard_fail_records,
+        forward_consecutive_degraded, forward_records, acknowledged_hard_fail_records, no_slate_dates,
+    )
+
     report = {
         "schemaVersion": "2",
         "generatedAt": None,
+        # The single machine-readable verdict the workflow enforces (see
+        # _operational_health / enforce()). exitShouldFail is kept and is
+        # always equal to (operationalHealth.state == FAILED).
+        "operationalHealth": operational_health,
         "enforcement": {
             "status": enforcement_status,
             "boundaryDate": boundary_date,
@@ -886,6 +1157,94 @@ def build_report(today=None):
     return report
 
 
+def _operational_health(enforcement_status, exit_should_fail, exit_code_reason, hard_fail_records,
+                        forward_consecutive_degraded, forward_records, acknowledged_hard_fail_records,
+                        no_slate_dates):
+    """
+    HEALTHY / DEGRADED / FAILED / NOT_APPLICABLE, with machine-readable
+    reasons -- so tooling never has to parse exitCodeReason prose.
+
+      FAILED          exitShouldFail (an unacknowledged forward hard-fail
+                      date, or the consecutive-degraded escalation).
+      NOT_APPLICABLE  enforcement not yet active (no forward capture yet).
+      DEGRADED        no failure, but the most recent forward evidence is
+                      still waiting on postgame data (closing lines /
+                      settlement) -- normal lag that is recorded, not
+                      alerted on, until it escalates to FAILED via the
+                      consecutive-degraded threshold.
+      HEALTHY         otherwise.
+
+    Acknowledged legacy gaps and schedule-verified no-slate dates are
+    reported (historicalGapDates / noSlateDates) but never change the
+    state: they are permanent, explained facts about the past, and a
+    state that is DEGRADED forever stops meaning anything.
+    """
+    degraded_statuses = sorted({
+        r["forwardGateStatus"] for r in forward_records
+        if r["forwardGateStatus"] in (STATUS_FORWARD_CLOSING_DATA_PENDING, STATUS_FORWARD_SETTLEMENT_DATA_PENDING)
+    })
+    reasons = []
+    if enforcement_status == ENFORCEMENT_AWAITING_FIRST_FORWARD_CAPTURE:
+        state = HEALTH_NOT_APPLICABLE
+        reasons.append("AWAITING_FIRST_FORWARD_CAPTURE")
+    elif exit_should_fail:
+        state = HEALTH_FAILED
+        if hard_fail_records:
+            reasons += sorted({f"HARD_FAIL:{r['forwardGateStatus']}" for r in hard_fail_records})
+        else:
+            reasons.append("CONSECUTIVE_DEGRADED_FORWARD_RUNS")
+    elif forward_consecutive_degraded > 0:
+        state = HEALTH_DEGRADED
+        reasons += [f"PENDING_POSTGAME_DATA:{s}" for s in degraded_statuses] or ["RECENT_FORWARD_RUNS_DEGRADED"]
+    else:
+        state = HEALTH_HEALTHY
+    return {
+        "state": state,
+        "workflowShouldFail": state == HEALTH_FAILED,
+        "reasons": reasons,
+        "summary": exit_code_reason,
+        "hardFailDates": [{"date": r["date"], "status": r["forwardGateStatus"]} for r in hard_fail_records],
+        "consecutiveDegradedForwardRuns": forward_consecutive_degraded,
+        "noSlateDates": list(no_slate_dates),
+        "historicalGapDates": [r["date"] for r in acknowledged_hard_fail_records],
+    }
+
+
+def enforce(report):
+    """The workflow's single pass/fail decision: exit code 1 only for
+    FAILED. A report without an operationalHealth block (e.g. truncated or
+    produced by an incompatible version) is itself a failure -- never
+    silently green."""
+    health = (report or {}).get("operationalHealth") or {}
+    state = health.get("state")
+    if state not in (HEALTH_HEALTHY, HEALTH_DEGRADED, HEALTH_FAILED, HEALTH_NOT_APPLICABLE):
+        return 1, f"corpus health report has no valid operationalHealth.state ({state!r})"
+    if state == HEALTH_FAILED:
+        return 1, f"FAILED: {health.get('summary')}"
+    return 0, f"{state}: {health.get('summary')}"
+
+
+def render_step_summary(report):
+    health = report["operationalHealth"]
+    icon = {HEALTH_HEALTHY: "✅", HEALTH_DEGRADED: "⚠️", HEALTH_FAILED: "❌", HEALTH_NOT_APPLICABLE: "➖"}[health["state"]]
+    fwd = report["forwardOperationalHealth"]
+    lines = [
+        f"## {icon} EdgeLab corpus health: {health['state']}",
+        "",
+        f"- Reasons: {', '.join(health['reasons']) or 'none'}",
+        f"- Summary: {health['summary']}",
+        f"- Hard-fail dates: {health['hardFailDates'] or 'none'}",
+        f"- Consecutive degraded forward runs: {health['consecutiveDegradedForwardRuns']} "
+        f"(fails at {CONSECUTIVE_DEGRADED_FORWARD_THRESHOLD})",
+        f"- No-slate dates (schedule-verified, no production expected): {health['noSlateDates'] or 'none'}",
+        f"- Acknowledged historical gaps (visible, never drive failure): {health['historicalGapDates'] or 'none'}",
+        f"- Pending today: {fwd['pendingTodayDates'] or 'none'}",
+        "",
+        "Full report: `data/edgelab/reports/corpus_health_report.md`",
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def _count_by(records, field):
     """Coerces a missing/None value to the string "null" -- json.dump's
     sort_keys=True sorts raw Python dict keys before ever converting them
@@ -910,6 +1269,9 @@ def render_markdown(report):
         "# EdgeLab Forward Replay Corpus Health Report",
         f"Generated: {report['generatedAt']}",
         "",
+        f"## Operational health: **{report['operationalHealth']['state']}**",
+        f"- Reasons: {', '.join(report['operationalHealth']['reasons']) or 'none'}",
+        "",
         "## Enforcement",
         f"- Status: **{enf['status']}**",
         f"- Boundary date: {enf['boundaryDate']}",
@@ -932,6 +1294,8 @@ def render_markdown(report):
         f"- Forward incomplete captures (manifest exists, missing a required component): "
         f"{len(fwd['incompleteCaptures'])} {fwd['incompleteCaptures']}",
         f"- Forward dates pending today (not yet due): {len(fwd['pendingTodayDates'])} {fwd['pendingTodayDates']}",
+        f"- Forward no-slate dates (MLB schedule verified no games; no production expected): "
+        f"{len(fwd['noSlateDates'])} {fwd['noSlateDates']}",
         f"- Forward provenance coverage: {fwd['provenanceCoverage']['known']}/{fwd['provenanceCoverage']['total']}",
         f"- Forward replay: attempted {fwd['replayCompletion']['attempted']}, "
         f"completed {fwd['replayCompletion']['completed']}, failed {fwd['replayCompletion']['failed']}",
@@ -968,7 +1332,25 @@ def render_markdown(report):
 def main():
     parser = argparse.ArgumentParser(description="EdgeLab forward replay corpus health report.")
     parser.add_argument("--report-path", default=REPORT_JSON_PATH)
+    parser.add_argument("--report-only", action="store_true",
+                        help="Build and write the report, then exit 0 whatever its verdict "
+                             "(the workflow enforces it separately with --enforce). A crash "
+                             "while building the report still exits non-zero.")
+    parser.add_argument("--enforce", action="store_true",
+                        help="Do not build anything: read --report-path and exit 1 only if "
+                             "operationalHealth.state is FAILED (or the report is unreadable).")
     args = parser.parse_args()
+
+    if args.enforce:
+        try:
+            with open(args.report_path) as f:
+                existing = json.load(f)
+        except (OSError, json.JSONDecodeError) as e:
+            print(f"CORPUS HEALTH ENFORCEMENT: cannot read {args.report_path}: {e}", file=sys.stderr)
+            sys.exit(1)
+        code, message = enforce(existing)
+        print(message, file=sys.stderr if code else sys.stdout)
+        sys.exit(code)
 
     report = build_report()
     print(json.dumps({k: v for k, v in report.items() if k != "perDate"}, indent=2))
@@ -984,10 +1366,23 @@ def main():
     print(f"\nFull report written to {args.report_path} and {md_path}", file=sys.stderr)
     print(f"Enforcement: {report['enforcement']['status']} (boundary={report['enforcement']['boundaryDate']})", file=sys.stderr)
 
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_path:
+        with open(summary_path, "a") as f:
+            f.write(render_step_summary(report))
+    state = report["operationalHealth"]["state"]
+    if state == HEALTH_DEGRADED:
+        # GitHub annotation: visible on the run page, never fails it.
+        # stderr: stdout is reserved for the JSON summary other tooling parses.
+        print(f"::warning title=Corpus health DEGRADED::{report['exitCodeReason']}", file=sys.stderr)
+
     if report["exitShouldFail"]:
         print(f"ALERT: {report['exitCodeReason']}", file=sys.stderr)
+        if args.report_only:
+            print("--report-only: exiting 0; the enforcement step decides the workflow outcome.", file=sys.stderr)
+            return
         sys.exit(1)
-    print(f"OK: {report['exitCodeReason']}", file=sys.stderr)
+    print(f"OK ({state}): {report['exitCodeReason']}", file=sys.stderr)
 
 
 if __name__ == "__main__":

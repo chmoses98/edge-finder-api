@@ -169,6 +169,31 @@ def fetch_schedule_range(start_date, end_date, timeout=30):
         return None
 
 
+def fetch_schedule_range_all_game_types(start_date, end_date, timeout=30):
+    """
+    Network adapter: the MLB schedule for an inclusive DATE RANGE across the
+    regular season AND every postseason round (the off-day contract's
+    SCHEDULE_GAME_TYPES), in one call. Same never-raise contract as every
+    adapter here: the parsed JSON, or None on any failure -- which callers
+    must read as "schedule unknown", never as "no games".
+
+    Used by scripts/ci/mlb_schedule_probe.py so the production health gate
+    can tell an off-day / offseason gap from a pipeline that stopped.
+    """
+    from lib.edgelab.slate_day_contract import SCHEDULE_GAME_TYPES
+    url = (f"{MLB_STATS_API}/schedule?sportId=1&gameType={','.join(SCHEDULE_GAME_TYPES)}"
+           f"&startDate={start_date}&endDate={end_date}")
+    try:
+        req = urllib.request.Request(url, headers={
+            "User-Agent": "edge-finder-edgelab/1.0",
+            "Accept": "application/json",
+        })
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode())
+    except Exception:
+        return None
+
+
 def parse_schedule_games(schedule_json):
     """
     Pure. One dict per game from a raw MLB schedule-by-date response:

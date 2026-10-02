@@ -45,6 +45,16 @@ DESIGN PRINCIPLES
    and every downstream freshness assertion reports NOT_APPLICABLE rather
    than firing. One assertion covers "the pipeline itself stopped".
 
+   Short gaps are schedule-aware too. Freshness is measured against the
+   most recent date that was NOT a verified MLB off-day (MLB schedule
+   evidence collected by scripts/ci/mlb_schedule_probe.py, regular season +
+   every postseason round). Without that, the 3-10 days after the World
+   Series, a gap between postseason rounds or the All-Star break made every
+   partition look stale and the gate CRITICAL each morning. Evidence that
+   is missing, failed or does not cover a date never skips that date, so
+   the gate falls back to plain calendar days (fail closed); and the LAST
+   real game day must still be fully settled, recommended and evaluated.
+
 4. EXPLAINED BACKLOG DOES NOT COUNT. PROD-7 counts only bets that SHOULD have
    settled. Rows explicitly classified as legitimately unresolvable (void,
    unsupported family, missing canonical evidence -- see
@@ -187,6 +197,16 @@ def _canonical_router_rows(root):
     return count, newest
 
 
+def _load_schedule_evidence(path):
+    if not path:
+        return None
+    try:
+        with open(path) as handle:
+            return json.load(handle)
+    except (OSError, ValueError) as exc:
+        return {"fetchError": "schedule evidence unreadable: %s" % exc}
+
+
 def _load_router_evidence(path):
     if not path:
         return None
@@ -197,7 +217,7 @@ def _load_router_evidence(path):
         return {"fetchError": "router evidence unreadable: %s" % exc}
 
 
-def collect_state(root=None, now=None, router_evidence_path=None):
+def collect_state(root=None, now=None, router_evidence_path=None, schedule_evidence_path=None):
     """
     Gather every durable fact the assertions need. Pure-ish: reads the
     filesystem and git, never writes, never hits the network.
@@ -279,6 +299,7 @@ def collect_state(root=None, now=None, router_evidence_path=None):
         "canonicalRouterRowCount": router_rows,
         "canonicalRouterNewestGameDate": router_newest,
         "routerEvidence": _load_router_evidence(router_evidence_path),
+        "scheduleEvidence": _load_schedule_evidence(schedule_evidence_path),
     }
 
 
@@ -292,6 +313,61 @@ def _lag_days(now, date_str):
     except ValueError:
         return None
     return (now.date() - d.date()).days
+
+
+def verified_off_days(evidence):
+    """
+    Pure. The set of ISO dates the MLB schedule evidence (see
+    scripts/ci/mlb_schedule_probe.py) PROVES had no playable game. Missing,
+    failed or malformed evidence proves nothing -> empty set, so every
+    assertion keeps its calendar-day behaviour (fail closed). Dates outside
+    the evidence window are never off-days.
+    """
+    if not isinstance(evidence, dict) or evidence.get("fetchError"):
+        return frozenset()
+    counts = evidence.get("playableGamesByDate")
+    start, end = evidence.get("start"), evidence.get("end")
+    if not isinstance(counts, dict) or not isinstance(start, str) or not isinstance(end, str):
+        return frozenset()
+    off = set()
+    for day, n in counts.items():
+        if not isinstance(day, str) or not _DATE_RE.match(day) or len(day) != 10:
+            continue
+        if not (start <= day <= end):
+            continue
+        if isinstance(n, int) and not isinstance(n, bool) and n == 0:
+            off.add(day)
+    return frozenset(off)
+
+
+def _effective_lag(now, date_str, limit, off_days):
+    """
+    Pure. The lag the freshness rule `lag > limit -> FAIL` should see once
+    verified off-days are skipped.
+
+    The calendar rule is "the partition must cover now - limit". Here the
+    required date is walked back from now - limit over consecutive VERIFIED
+    off-days to the most recent date that was not one (a real game day, or
+    a date the evidence does not cover). The returned lag is
+    `limit + (required - latest)`, so FAIL iff latest < required. With no
+    off-days it is exactly the calendar lag.
+    """
+    lag = _lag_days(now, date_str)
+    if lag is None or not off_days:
+        return lag
+    required = now.date() - timedelta(days=limit)
+    while required.isoformat() in off_days:
+        required -= timedelta(days=1)
+    latest = datetime.strptime(date_str, "%Y-%m-%d").date()
+    return limit + (required - latest).days
+
+
+def _skipped_off_days(now, date_str, off_days):
+    """Pure. Verified off-days strictly after `date_str`, up to today -- for
+    the report only."""
+    if not date_str or not off_days:
+        return []
+    return sorted(d for d in off_days if date_str < d <= now.date().isoformat())
 
 
 def _result(assertion_id, severity, status, summary, detail=None):
@@ -332,49 +408,70 @@ def evaluate_health(state):
     """
     now = state["now"]
     results = []
+    off_days = verified_off_days(state.get("scheduleEvidence"))
 
-    slate_lag = _lag_days(now, state.get("slateDate"))
-    pipeline_active = slate_lag is not None and slate_lag <= INACTIVE_PIPELINE_DAYS
+    # The CALENDAR lag decides "inactive for > INACTIVE_PIPELINE_DAYS"
+    # (unchanged); every freshness LIMIT is judged on the off-day-aware lag.
+    slate_calendar_lag = _lag_days(now, state.get("slateDate"))
+    pipeline_active = (slate_calendar_lag is not None
+                       and slate_calendar_lag <= INACTIVE_PIPELINE_DAYS)
+    slate_lag = _effective_lag(now, state.get("slateDate"), MAX_SLATE_LAG_DAYS, off_days)
+    slate_off_days = _skipped_off_days(now, state.get("slateDate"), off_days)
 
     # PROD-1 -- the production pipeline itself is producing slates.
     # Also the switch that suspends every downstream freshness assertion, so
     # this gate stays quiet in the offseason instead of crying every day.
-    if slate_lag is None:
+    if slate_calendar_lag is None:
         results.append(_result(
             "PROD-1", CRITICAL_PRODUCTION, FAIL,
             "data/meta.json carries no usable slate date -- cannot establish whether "
             "the production pipeline is running at all",
             {"slateDate": state.get("slateDate")}))
-    elif slate_lag > INACTIVE_PIPELINE_DAYS:
+    elif slate_calendar_lag > INACTIVE_PIPELINE_DAYS:
         results.append(_result(
             "PROD-1", CRITICAL_PRODUCTION, NOT_APPLICABLE,
             "Production pipeline inactive for %d days (last slate %s) -- treating as "
             "offseason/paused; downstream freshness assertions suspended"
-            % (slate_lag, state.get("slateDate")),
-            {"slateDate": state.get("slateDate"), "lagDays": slate_lag}))
+            % (slate_calendar_lag, state.get("slateDate")),
+            {"slateDate": state.get("slateDate"), "lagDays": slate_calendar_lag}))
     elif slate_lag > MAX_SLATE_LAG_DAYS:
         results.append(_result(
             "PROD-1", CRITICAL_PRODUCTION, FAIL,
-            "Slate pipeline stale: last slate %s is %d days old (limit %d)"
-            % (state.get("slateDate"), slate_lag, MAX_SLATE_LAG_DAYS),
-            {"slateDate": state.get("slateDate"), "lagDays": slate_lag}))
+            "Slate pipeline stale: last slate %s is %d days old (limit %d%s)"
+            % (state.get("slateDate"), slate_calendar_lag, MAX_SLATE_LAG_DAYS,
+               "; %d verified MLB off-day(s) skipped" % len(slate_off_days)
+               if slate_off_days else ""),
+            {"slateDate": state.get("slateDate"), "lagDays": slate_calendar_lag,
+             "effectiveLagDays": slate_lag, "verifiedOffDays": slate_off_days}))
+    elif slate_calendar_lag > MAX_SLATE_LAG_DAYS:
+        results.append(_result(
+            "PROD-1", CRITICAL_PRODUCTION, PASS,
+            "No MLB game day missed: last slate %s (%d calendar day(s) old), and the MLB "
+            "schedule shows no playable game on %d day(s) since (%s) -- off-day/offseason "
+            "gap, not an outage"
+            % (state.get("slateDate"), slate_calendar_lag, len(slate_off_days),
+               ", ".join(slate_off_days)),
+            {"slateDate": state.get("slateDate"), "lagDays": slate_calendar_lag,
+             "effectiveLagDays": slate_lag, "verifiedOffDays": slate_off_days}))
     else:
         results.append(_result(
             "PROD-1", CRITICAL_PRODUCTION, PASS,
             "Slate pipeline active: last slate %s (%d day(s) old)"
-            % (state.get("slateDate"), slate_lag),
-            {"slateDate": state.get("slateDate"), "lagDays": slate_lag}))
+            % (state.get("slateDate"), slate_calendar_lag),
+            {"slateDate": state.get("slateDate"), "lagDays": slate_calendar_lag}))
 
     # PROD-2 -- settlement partitions advancing. THE assertion that would have
     # caught the outage on 2026-09-03, its second day.
-    settlement_lag = _lag_days(now, state.get("settlementLatest"))
+    settlement_lag = _effective_lag(now, state.get("settlementLatest"),
+                                    MAX_SETTLEMENT_LAG_DAYS, off_days)
     results.append(_freshness_assertion(
         "PROD-2", CRITICAL_PRODUCTION, "Settlement corpus",
         state.get("settlementLatest"), settlement_lag,
         MAX_SETTLEMENT_LAG_DAYS, pipeline_active))
 
     # PROD-3 -- recommendation ledger advancing.
-    rec_lag = _lag_days(now, state.get("recommendationLatest"))
+    rec_lag = _effective_lag(now, state.get("recommendationLatest"),
+                             MAX_RECOMMENDATION_LAG_DAYS, off_days)
     results.append(_freshness_assertion(
         "PROD-3", CRITICAL_PRODUCTION, "Recommendation ledger",
         state.get("recommendationLatest"), rec_lag,
@@ -387,7 +484,8 @@ def evaluate_health(state):
     # pipeline) keeps advancing. Predictions accumulating while outcomes do
     # not is the exact, durable fingerprint of that cascade -- and it is
     # visible without a token, which means it is also visible locally.
-    eval_lag = _lag_days(now, state.get("modelEvaluationLatest"))
+    eval_lag = _effective_lag(now, state.get("modelEvaluationLatest"),
+                              MAX_MODEL_EVALUATION_LAG_DAYS, off_days)
     if not pipeline_active:
         results.append(_result("PROD-4", CRITICAL_PRODUCTION, NOT_APPLICABLE,
                                "Skip-cascade check not evaluated: pipeline inactive"))
@@ -422,7 +520,8 @@ def evaluate_health(state):
     # succeeded every night and its commit step never ran. A ledger that has
     # not been committed in days, while games are being played, means output is
     # being computed and discarded.
-    commit_lag = _lag_days(now, state.get("betsLedgerCommitDate"))
+    commit_lag = _effective_lag(now, state.get("betsLedgerCommitDate"),
+                                MAX_LEDGER_COMMIT_LAG_DAYS, off_days)
     if not pipeline_active:
         results.append(_result("PROD-5", CRITICAL_PRODUCTION, NOT_APPLICABLE,
                                "Ledger persistence not evaluated: pipeline inactive"))
@@ -682,9 +781,13 @@ def main(argv=None):
     parser.add_argument("--root", default=ROOT_DIR)
     parser.add_argument("--router-evidence", default=None,
                         help="JSON written by scripts/ci/router_divergence_probe.py (PROD-9)")
+    parser.add_argument("--schedule-evidence", default=None,
+                        help="JSON written by scripts/ci/mlb_schedule_probe.py (off-day-aware "
+                             "freshness; absent/failed = calendar days)")
     args = parser.parse_args(argv)
 
-    state = collect_state(root=args.root, router_evidence_path=args.router_evidence)
+    state = collect_state(root=args.root, router_evidence_path=args.router_evidence,
+                          schedule_evidence_path=args.schedule_evidence)
     results = evaluate_health(state)
     summary = summarize(results)
 
@@ -692,6 +795,7 @@ def main(argv=None):
         "checkedAt": state["now"].strftime("%Y-%m-%dT%H:%M:%SZ"),
         "summary": summary,
         "assertions": results,
+        "verifiedOffDays": sorted(verified_off_days(state.get("scheduleEvidence"))),
         "thresholds": {
             "maxSettlementLagDays": MAX_SETTLEMENT_LAG_DAYS,
             "maxRecommendationLagDays": MAX_RECOMMENDATION_LAG_DAYS,

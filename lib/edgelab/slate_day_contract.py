@@ -110,6 +110,47 @@ def schedule_evidence(date, response, fetched_at=None, source=SCHEDULE_SOURCE):
     return evidence
 
 
+def playable_games_by_date(response, start_date, end_date):
+    """
+    Pure: reduce one MLB Stats API schedule RANGE response to
+    {date: playable game count} for EVERY date in [start_date, end_date]
+    (ISO strings, inclusive). A date absent from the response's ``dates``
+    list has 0 games -- the API omits days with nothing scheduled. Counting
+    rules are schedule_evidence()'s: only SCHEDULE_GAME_TYPES, and games in
+    NOT_PLAYED_STATES do not count.
+
+    Returns None when the response is missing or malformed (no ``dates``
+    list, an unparseable bound): an unknown schedule is never "no games".
+    """
+    from datetime import date, timedelta
+    if not isinstance(response, dict) or not isinstance(response.get("dates"), list):
+        return None
+    try:
+        start = date.fromisoformat(start_date)
+        end = date.fromisoformat(end_date)
+    except (TypeError, ValueError):
+        return None
+    if end < start:
+        return None
+    counts = {}
+    d = start
+    while d <= end:
+        counts[d.isoformat()] = 0
+        d += timedelta(days=1)
+    for day in response["dates"]:
+        if not isinstance(day, dict) or day.get("date") not in counts:
+            continue
+        for game in day.get("games") or []:
+            if not isinstance(game, dict):
+                continue
+            if game.get("gameType") and game["gameType"] not in SCHEDULE_GAME_TYPES:
+                continue
+            if (game.get("status") or {}).get("detailedState") in NOT_PLAYED_STATES:
+                continue
+            counts[day["date"]] += 1
+    return counts
+
+
 def _verdict(verdict, reason, **detail):
     return dict({"verdict": verdict, "ok": verdict in OK_VERDICTS, "reason": reason}, **detail)
 

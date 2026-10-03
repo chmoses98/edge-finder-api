@@ -104,3 +104,80 @@ workflow wiring test.
 - `health.build_health` accepts `extra_components`, which is where the repository's production
   gate and daily heartbeat live; a documented convention for extra component names would help the
   app render them.
+
+## Research explorer (`app/latest/explorer/`, contract 1.1.0)
+
+`scripts/research_export.py` publishes the research graph beside the v1 files, right after the v1
+export in the same workflow step sequence, from the same committed data. `run_id` is the v1
+manifest's `run_id`, `generated_at` the v1 manifest's `generated_at` (default `--now`), `as_of` the
+newest data timestamp read. Publication is `research.publish_explorer` (validated, graph- and
+capability-checked, atomic: a failure leaves the previous tree untouched and exits 1).
+
+    python scripts/research_export.py --out app/latest [--data-root data] [--now ISO] [--commit-sha X]
+        [--slate-start D --slate-end D] [--seasons 2025,2026] [--statcast-start D --statcast-end D]
+
+The bounds exist for tests only; production reads everything listed below. Authority for what is
+exposed and at which status: the phase-2 audit (`audit_mlb.md` §4 matrix, §10 recommendations).
+
+### What it publishes, from where
+
+| file(s) | content | source |
+|---|---|---|
+| `teams/<prt_>.json` (30) | season results and rates (W%, R/G, RA/G, RD/G, OPS, OBP, K%, BB%, HR/G, pitching K%/BB%, starter outs/pitches) for every research-cache season with 30-team ranking context; home/away splits (latest season); current snapshots (bullpen xFIP/ERA, team xwOBA, opponent-quality adj, opposing-starter xERA); L5/L7/L10 form (analysis-only); home park factor; last 162 games as game refs with opponent/score/result; opponents; non-prop markets and projections for the team's v1 events | `research_cache/{bullpen_backtest schedules, batting_backtest, starter_workload}` joined on gamePk; `bullpen.json`, `savant_team.json`, `oppquality.json`, `team_offense_form.json`, slates |
+| `players/<prt_>.json` | only players on the export slate (probable starters, confirmed-lineup batters, never in batting order) or named by a current v1 market whose (team, name) resolves to exactly one MLBAM id: Savant snapshot, slate starter block, pitcher appearance log (last 40), Statcast per-game aggregates (pitches, pitch mix, velocity, whiff%, xwOBA allowed; batter PA, xwOBA, EV, LA) over the labelled window 2026-08-11..2026-09-27 | `savant_team.json`, slates, `research_cache/starter_workload`, `statcast_raw` |
+| `events/<evt_>.json` | one per v1 event: participants, players, matchup rows (projected runs, model win%, season/L7/L15 R/G, wRC+ proxy, offense baseline, opp-quality adj, bullpen xFIP/ERA, starter xFIP/xERA/K%/BB%), v1 model prices as projection refs (RESEARCH unless TRUSTED_PRODUCTION/MARKET_LEDGER), game-level market refs (prop markets counted, listed in player profiles / v1 markets.json), lineup status, venue/park factor, v1 wager ids, `extensions.model_inputs` (starter Savant block, bullpen incl. recentUsage, team form windows, opp quality, offense baseline, the 11-row marketLedger model vs Kalshi VF vs Pinnacle VF, Pinnacle/Kalshi odds) | `slates/<date>/authoritative.json` + the v1 publication |
+| `market_history/<evt_>.json` | every ticker of the event: quote series from `edgelab/observations/<date>` tagged with the checkpoint, closing quotes from `edgelab/clv_quotes/<date>` (`+closing_quote`); game-level tickers first, player-prop tickers dropped whole if the document would pass 400 KB (stated in its quality) | EdgeLab |
+| `series/<ser_>.json` | per team: runs scored / allowed per game (last 162, rolling 10), opponent-quality adj and offense baseline per slate date; per player: outs and pitches per appearance, Statcast velocity / batter xwOBA per game; per ticker with >= 2 evaluations: model P(YES) per run (x_axis RUN, RESEARCH points unless TRUSTED_PRODUCTION) | as above, `edgelab/model_evaluations/<date>` oriented with `decision_side.resolve_side` like v1 |
+| `rankings/<rnk_>.json` | full 30-team universe per team metric and window (13 metrics x each research-cache season, 5 snapshots, form mean/median x L5/L7/L10; team-total overs% is published and ranked only when the form file stores lines) | arithmetic over the stored values |
+| `metrics.json` | 52-59 registered metrics; `wager_win_rate`, `wager_clv` (REAL / REAL_PROBE wagers from the v1 `wagers.json`, by market family, with sample-size tiers, postmortem inventory) and `model_calibration_error` (bins of `data/research/calibration_bins.json`, REAL bankroll-counting wagers) carry their aggregates in `extensions` | |
+| `capabilities.json`, `search_index.json`, `index.json` | the 36 capabilities, search over teams/players/events/metrics/rankings, the file table | |
+
+An empty slate day (no v1 events, e.g. 2026-10-03: postseason markets, no slate) still publishes
+the 30 team profiles, rankings, series, players named by current markets, capabilities, metrics and
+search; the capabilities that need an event are then UNAVAILABLE with the reason "nothing to show
+in this publication".
+
+### Capability statuses (slate day; audit 2026-10-03)
+
+| status | capabilities | why |
+|---|---|---|
+| VERIFIED | team_profiles, event_research, team_metrics, team_game_logs, historical_results, opponents, opponent_adjustment (simple: opposing-starter xERA, capped +/-0.2), recent_form_windows (analysis-only, labelled), raw_projections, market_prices, team_props, game_markets, venue_effects (single static park factor), calibration (descriptive), historical_accuracy, clv, wager_history, rankings, time_series, comparisons, search | research cache / production files with history and tests |
+| PARTIAL | player_profiles, player_metrics (snapshot only), player_game_logs (no batter box lines; Statcast window), usage, lineups (status only), matchup_metrics (platoon context often MISSING_DATA), market_price_history (snapshot series, median 3 points), advanced_stats (48 Statcast game-days), situational_splits (home/away only), play_by_play (Statcast pitch log aggregated, nothing before 2026-08-11) | limitations quoted from the audit in each item |
+| RESEARCH | projection_distributions, player_props | not published: NB shadows and hitter/pitcher prop probabilities are research; production says NO_MODEL_SUPPORT for props |
+| UNAVAILABLE | schedule_strength, injuries, weather | not stored |
+
+### Sizes (measured, `research.tree_bytes`, full production read)
+
+| publication | teams | players | events | market_history | series | rankings | metrics.json | search | index.json | total |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-10-01 (1 game, 21 players) | 3.32 MB | 0.37 MB | 0.10 MB | 0.20 MB | 4.06 MB (149) | 0.64 MB (76) | 90 KB | 63 KB | 74 KB | 8.9 MB |
+| 2026-10-03 (no events, 34 market players) | 3.34 MB | 0.76 MB | - | - | 4.29 MB (169) | 0.64 MB | 83 KB | 64 KB | 82 KB | 9.3 MB |
+| 2026-09-25 (17 games, 305 players) | 3.82 MB | 6.25 MB | 1.76 MB | 3.41 MB | 7.53 MB (642) | 0.64 MB | 91 KB | 163 KB | 282 KB | 24.0 MB |
+
+Largest single documents on 2026-09-25: team 136 KB, event 119 KB, player 43 KB, market history
+299 KB, series 46 KB (budgets 150 / 150 / 150 / 400 KB; team profiles drop projections, then
+markets, if a doubleheader day would push them past 145 KB). Runtime: ~8 s (1 game) to ~15 s (full slate).
+
+### Deliberately not published
+
+Hitter/pitcher prop probabilities, NB distribution shadows, Pinnacle historical, replay scoring
+(RESEARCH, listed in the manifest notes); batting orders (present in recent slates as
+`confirmedLineup`, but the audit rates them UNAVAILABLE, so players are listed by team/role/name
+only); injuries, weather values, umpires, PBP before 2026-08-11, player season-stat history, team
+schedule strength, postseason 2026 (UNAVAILABLE); the research-branch microstructure (not on main);
+single-evaluation "projection series" (the value is already the v1 model price); pitch-level rows.
+
+### Tests and workflow
+
+`tests/test_research_export.py` (real committed corpus, bounded to 4 slate dates, the 2026 season
+and one Statcast week; ~25 s): verify_explorer clean, determinism, v1 identity coverage, capability
+statuses equal the audit, GAME packet with `quality.missing == []`, no secret-shaped strings,
+RESEARCH/PARTIAL statuses preserved into profiles and the packet, atomic failure, size budgets and
+labels, the empty slate day, and the workflow wiring. In `.github/workflows/app-export.yml` the step
+`research_export` runs right after `export` (only when it succeeded), `continue-on-error`, logs to the
+step summary; the same commit step publishes `app/latest/` including `explorer/`, and the final gate
+fails the job when `steps.research_export.outcome == failure` (the v1 payload is published regardless).
+
+Owner note: a full-slate explorer is ~24 MB and every file carries `generated_at`, so each 30-minute
+export rewrites the tree in git; consider exporting the explorer only when its inputs change, or
+publishing it outside the git history.

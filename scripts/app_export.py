@@ -116,6 +116,20 @@ def _read_json(path):
         return json.load(fh)
 
 
+def _load_card(data_root):
+    """The current handicapping card. ``handicapping_card/latest.json`` is a pointer (date, path and
+    summary counts, where ``bettingEligibleGames`` is a COUNT); the card itself, with the per-game
+    market lists, is the dated file it names. Older pointers without ``path`` fall back to the
+    dated file of their ``date``; a pointer whose card is missing yields no card."""
+    pointer = _read_json(os.path.join(data_root, "handicapping_card", "latest.json"))
+    if not pointer:
+        return None
+    if isinstance(pointer.get("bettingEligibleGames"), list):
+        return pointer  # already a full card
+    name = os.path.basename(pointer.get("path") or "") or (f"{pointer['date']}.json" if pointer.get("date") else "")
+    return _read_json(os.path.join(data_root, "handicapping_card", name)) if name else None
+
+
 def _partition(data_root, entity, date):
     """Rows of data/edgelab/<entity>/<date>.jsonl[.gz] (gz-aware, [] when absent)."""
     if not date:
@@ -239,7 +253,7 @@ def load_inputs(data_root, date):
         "execution": _read_json(os.path.join(pipeline_dir, "execution.json")),
         "pipeline_recommendations": _read_json(os.path.join(pipeline_dir, "recommendations.json")),
         "provenance": _read_json(os.path.join(pipeline_dir, "provenance.json")),
-        "card": _read_json(os.path.join(data_root, "handicapping_card", "latest.json")),
+        "card": _load_card(data_root),
         "real_bets": real_bets,
         "settlements": settlements,
         "gate": _read_json(os.path.join(data_root, "edgelab", "operational_health", "production_health_gate.json")),
@@ -564,7 +578,8 @@ def _real_money_tickers(inputs):
     """Tickers the handicapping card / execution gate marks real-money eligible. Never dollars."""
     out = set()
     card = inputs["card"] or {}
-    for g in card.get("bettingEligibleGames") or []:
+    games = card.get("bettingEligibleGames")
+    for g in games if isinstance(games, list) else []:
         for m in g.get("markets") or []:
             if m.get("realMoneyEligible") and _is_ticker(m.get("ticker")):
                 out.add(m["ticker"].strip().upper())

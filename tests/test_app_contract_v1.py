@@ -657,3 +657,23 @@ def test_app_export_workflow_is_wired_like_the_other_data_workflows():
                     found = True
                     break
         assert found, name
+
+
+def test_card_pointer_resolves_to_the_dated_card(tmp_path):
+    """handicapping_card/latest.json is a pointer whose bettingEligibleGames is a COUNT; the exporter must
+    read the dated card it names (the per-game market lists live there) and never iterate the count."""
+    card_dir = tmp_path / "handicapping_card"
+    card_dir.mkdir()
+    full = {"date": "2026-10-03", "bettingEligibleGames": [
+        {"markets": [{"ticker": "KXMLBGAME-26OCT03NYYBOS-NYY", "realMoneyEligible": True},
+                     {"ticker": "KXMLBGAME-26OCT03NYYBOS-BOS", "realMoneyEligible": False}]}]}
+    (card_dir / "2026-10-03.json").write_text(json.dumps(full))
+    (card_dir / "latest.json").write_text(json.dumps(
+        {"date": "2026-10-03", "bettingEligibleGames": 1, "path": "data/handicapping_card/2026-10-03.json"}))
+    card = app_export._load_card(str(tmp_path))
+    assert card == full
+    assert app_export._real_money_tickers({"card": card, "execution": None}) == {"KXMLBGAME-26OCT03NYYBOS-NYY"}
+    # a pointer whose card is missing yields no card, and a bare count is never iterated
+    (card_dir / "2026-10-03.json").unlink()
+    assert app_export._load_card(str(tmp_path)) is None
+    assert app_export._real_money_tickers({"card": {"bettingEligibleGames": 2}, "execution": None}) == set()

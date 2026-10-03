@@ -68,6 +68,9 @@ jobs:
       # from the manifest the v1 export just wrote. continue-on-error so a research failure can
       # never block the v1 publication; the previous explorer tree stays in place on failure
       # (research.publish_explorer is atomic) and the final gate below turns the run red.
+      # --min-interval-minutes 180 (research.refresh_due): the 30-minute backstop runs do not
+      # rewrite the tree; it is rebuilt when the v1 events change (a new slate) or after 3 hours.
+      # A skipped run prints {"skipped": true, "reason": ...} to the step summary and succeeds.
       - name: Build app/latest/explorer (research graph) from committed data
         id: research_export
         if: steps.export.outcome == 'success'
@@ -75,7 +78,7 @@ jobs:
         run: |
           set -o pipefail
           status=0
-          python scripts/research_export.py --out app/latest --commit-sha "$GITHUB_SHA" 2>&1 \
+          python scripts/research_export.py --out app/latest --commit-sha "$GITHUB_SHA" --min-interval-minutes 180 2>&1 \
             | tee "$RUNNER_TEMP/research_export.log" || status=$?
           {
             echo "### Research explorer export (exit $status)"

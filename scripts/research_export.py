@@ -1851,6 +1851,14 @@ def export_explorer(app_root, *, data_root, now=None, commit_sha=None, slate_ran
     return index
 
 
+def refresh_decision(app_root, *, now=None, min_interval_minutes):
+    """(due, reason) from ``research.refresh_due``; ``now`` defaults to the v1 manifest's generated_at
+    (the time of the v1 export that just ran)."""
+    manifest = load_v1(app_root)["manifest"]
+    when = timeutil.to_iso(now) if now is not None else manifest["generated_at"]
+    return R.refresh_due(app_root, now=when, min_interval_seconds=float(min_interval_minutes) * 60.0)
+
+
 def _range(start, end):
     return (start, end) if (start or end) else None
 
@@ -1866,8 +1874,21 @@ def main(argv=None):
     ap.add_argument("--seasons", default=None, help="comma-separated research-cache seasons (default: all)")
     ap.add_argument("--statcast-start", default=None)
     ap.add_argument("--statcast-end", default=None)
+    ap.add_argument("--min-interval-minutes", type=float, default=0,
+                    help="skip the rebuild (exit 0, explorer/ untouched) when the published explorer is younger than this and the "
+                         "v1 events are unchanged (research.refresh_due); 0 = always rebuild")
     args = ap.parse_args(argv)
     out_root = os.path.abspath(args.out)
+    if args.min_interval_minutes > 0:
+        try:
+            due, reason = refresh_decision(out_root, now=args.now, min_interval_minutes=args.min_interval_minutes)
+        except Exception:  # noqa: BLE001
+            traceback.print_exc()
+            return 1
+        if not due:
+            print(json.dumps({"skipped": True, "reason": reason}, indent=2))
+            return 0
+        print(f"research export due: {reason}", file=sys.stderr)
     try:
         index = export_explorer(out_root, data_root=os.path.abspath(args.data_root), now=args.now, commit_sha=args.commit_sha,
                                 slate_range=_range(args.slate_start, args.slate_end),

@@ -152,7 +152,7 @@ in this publication".
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-10-01 (1 game, 21 players) | 3.32 MB | 0.37 MB | 0.10 MB | 0.20 MB | 4.06 MB (149) | 0.64 MB (76) | 90 KB | 63 KB | 74 KB | 8.9 MB |
 | 2026-10-03 (no events, 34 market players) | 3.34 MB | 0.76 MB | - | - | 4.29 MB (169) | 0.64 MB | 83 KB | 64 KB | 82 KB | 9.3 MB |
-| 2026-09-25 (17 games, 305 players) | 3.82 MB | 6.25 MB | 1.76 MB | 3.41 MB | 7.53 MB (642) | 0.64 MB | 91 KB | 163 KB | 282 KB | 24.0 MB |
+| 2026-09-25 (17 games, 305 players) | 3.82 MB | 6.25 MB | 1.76 MB | 3.41 MB | 7.53 MB (642) | 0.64 MB | 91 KB | 163 KB | 229 KB (compact, contract 1.1.1) | 23.9 MB |
 
 Largest single documents on 2026-09-25: team 136 KB, event 119 KB, player 43 KB, market history
 299 KB, series 46 KB (budgets 150 / 150 / 150 / 400 KB; team profiles drop projections, then
@@ -173,11 +173,19 @@ single-evaluation "projection series" (the value is already the v1 model price);
 and one Statcast week; ~25 s): verify_explorer clean, determinism, v1 identity coverage, capability
 statuses equal the audit, GAME packet with `quality.missing == []`, no secret-shaped strings,
 RESEARCH/PARTIAL statuses preserved into profiles and the packet, atomic failure, size budgets and
-labels, the empty slate day, and the workflow wiring. In `.github/workflows/app-export.yml` the step
+labels, the empty slate day, the refresh gate (skip within the interval leaves the tree
+byte-identical; a changed v1 event set rebuilds), and the workflow wiring. In `.github/workflows/app-export.yml` the step
 `research_export` runs right after `export` (only when it succeeded), `continue-on-error`, logs to the
 step summary; the same commit step publishes `app/latest/` including `explorer/`, and the final gate
 fails the job when `steps.research_export.outcome == failure` (the v1 payload is published regardless).
 
-Owner note: a full-slate explorer is ~24 MB and every file carries `generated_at`, so each 30-minute
-export rewrites the tree in git; consider exporting the explorer only when its inputs change, or
-publishing it outside the git history.
+Refresh gate: every explorer file carries `generated_at`, so a rebuild rewrites the whole tree
+(~24 MB on a full slate). The workflow passes `--min-interval-minutes 180`
+(`research.refresh_due`, contract 1.1.1): the rebuild is skipped (exit 0, `explorer/` untouched,
+reason printed to the step summary) unless no explorer exists, the v1 event set changed (a new
+slate rebuilds at once) or the published tree is at least 3 hours old. Since 1.1.1 the v1
+`publish.publish` no longer prunes `explorer/`, so a skipped run keeps the last tree; its `run_id`
+then names the explorer's own publication, not the newer v1 manifest. Default `0` = always rebuild.
+
+GAME handicap packets on 2026-09-25 (17 events, contract 1.1.1 compact text): 25.0-48.7 K chars
+(median 35.8 K) against the 60 K budget, nothing truncated, `quality.missing` empty.

@@ -291,6 +291,53 @@ def test_workflow_runs_the_explorer_after_the_v1_export():
     step = steps[order.index("research_export")]
     assert step["continue-on-error"] is True and "steps.export.outcome == 'success'" in step["if"]
     assert "scripts/research_export.py --out app/latest" in step["run"] and "GITHUB_STEP_SUMMARY" in step["run"]
+    assert "--min-interval-minutes 180" in step["run"]
     commit = steps[order.index("research_export") + 1]
     assert '"app/latest/"' in commit["run"] and commit["if"] == "always()"
     assert "steps.research_export.outcome" in steps[-1]["run"]
+
+
+# 12. refresh gate (research.refresh_due): a second export within the interval is skipped and leaves the tree
+#     byte-identical; a changed v1 event set rebuilds at once; an elapsed interval is due again
+_CLI_BOUNDS = ["--slate-start", BOUNDS["slate_range"][0], "--slate-end", BOUNDS["slate_range"][1], "--seasons", ",".join(BOUNDS["seasons"]),
+               "--statcast-start", BOUNDS["statcast_range"][0], "--statcast-end", BOUNDS["statcast_range"][1]]
+
+
+def _copy(root, tmp_path):
+    other = tmp_path / "latest"
+    shutil.copytree(root, other)
+    return other
+
+
+def test_a_second_export_within_the_interval_is_skipped(published, tmp_path, capsys):
+    root, _inputs, _index = published
+    other = _copy(root, tmp_path)
+    before = R.digest_tree(other)
+    assert research_export.main(["--out", str(other), "--data-root", DATA, "--min-interval-minutes", "180", *_CLI_BOUNDS]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["skipped"] is True and "unchanged" in out["reason"]
+    assert R.digest_tree(other) == before
+    manifest = _read(other, "manifest.json")
+    later = app_export.timeutil.plus(manifest["generated_at"], 3 * 3600 + 1)
+    due, reason = research_export.refresh_decision(str(other), now=later, min_interval_minutes=180)
+    assert due and "refresh every 10800 s" in reason
+
+
+def test_a_changed_v1_event_set_triggers_a_rebuild(published, tmp_path, capsys):
+    root, _inputs, _index = published
+    other = _copy(root, tmp_path)
+    before = R.digest_tree(other)
+    events = _read(other, "events.json")
+    dropped = events["items"][0]["event_id"]
+    events["items"] = events["items"][1:]
+    with open(os.path.join(str(other), "events.json"), "w", encoding="utf-8") as fh:
+        json.dump(events, fh)
+    due, reason = research_export.refresh_decision(str(other), min_interval_minutes=180)
+    assert due and "v1 events changed" in reason
+    assert research_export.main(["--out", str(other), "--data-root", DATA, "--min-interval-minutes", "180", *_CLI_BOUNDS]) == 0
+    assert "skipped" not in capsys.readouterr().out
+    assert R.digest_tree(other) != before
+    assert R.verify_explorer(other) == []
+    index = R.read_index(other)
+    assert dropped not in {e["event_id"] for e in index["events"]}
+    assert not os.path.exists(os.path.join(str(other), "explorer", "events", f"{dropped}.json"))

@@ -8,7 +8,7 @@
   "PRODUCTION_MODEL_SUPPORT": "the production model prices it (config/rules.json market_list)"
  },
  "bankroll": {
-  "ageMinutes": 5.499,
+  "ageMinutes": 5.164,
   "consumerSizingVerdict": {
    "mayPresentDollarStakes": false,
    "reason": "NO_DOLLAR_SIZING_FOR_THIS_CONSUMER: an authenticated, fresh bankroll EXISTS and the private workflow that produced this artifact was permitted to size against it -- but its numeric value is redacted from this copy, because this repository is public. You do not know the amount, so you cannot compute a dollar stake. Handicap normally, give edge, confidence and a bet-up-to fraction, and say that the bankroll exists but is redacted from this consumer.",
@@ -17,8 +17,8 @@
   "currency": "USD",
   "maxAgeMinutes": 30,
   "numericBankrollAvailable": false,
-  "observedAt": "2026-10-03T18:59:09Z",
-  "resolvedAt": "2026-10-03T19:04:38Z",
+  "observedAt": "2026-10-03T19:07:19Z",
+  "resolvedAt": "2026-10-03T19:12:28Z",
   "sizingAllowed": true,
   "source": "kalshi_authenticated_balance",
   "status": "FRESH",
@@ -59,7 +59,7 @@
   "unclassifiedRawContracts": 0
  },
  "date": "2026-10-03",
- "eligibilityEvaluatedAt": "2026-10-03T19:04:39Z",
+ "eligibilityEvaluatedAt": "2026-10-03T19:12:28Z",
  "eligibilityPolicy": "Only games that have NOT started and have BOTH official lineups confirmed (lineupConfirmedOfficial on awayTeamStats AND homeTeamStats) are real-money candidates. Probable/projected lineups are never treated as confirmed. Every other game stays archived and researchable and must not produce a real-money recommendation from the normal slate card.",
  "executionConstants": {
   "_note": "Projected verbatim from config/rules.json at build time. RULES.md and MODEL_CORE.md remain authoritative for everything else; this is the subset needed to size and threshold a wager without loading them.",
@@ -192,7 +192,7 @@
    "bundle": "data/handicap_runtime/2026-10-03/games/849828.json",
    "bundleBytes": 63608,
    "bundleGzip": "data/handicap_runtime/2026-10-03/games/849828.json.gz",
-   "bundleGzipBytes": 12494,
+   "bundleGzipBytes": 12495,
    "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
    "eligibilityStatus": "BETTING_ELIGIBLE",
    "excludedOrUnresolved": 0,
@@ -369,7 +369,7 @@
    "bundle": "data/handicap_runtime/2026-10-03/games/849830.json",
    "bundleBytes": 52563,
    "bundleGzip": "data/handicap_runtime/2026-10-03/games/849830.json.gz",
-   "bundleGzipBytes": 11125,
+   "bundleGzipBytes": 11126,
    "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(SD): official lineup not posted yet, home(MIL): official lineup not posted yet",
    "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
    "excludedOrUnresolved": 0,
@@ -426,7 +426,7 @@
    "unclassified": 0
   }
  ],
- "generatedAt": "2026-10-03T19:04:39Z",
+ "generatedAt": "2026-10-03T19:12:28Z",
  "guarantees": [
   "Only games that have NOT started and have BOTH official lineups confirmed appear under bettingEligibleGames. Everything else is researchOnly and carries realMoneyEligible=false on every market row.",
   "For a betting-eligible game, EVERY raw Kalshi contract attributable to it is accounted for in exactly one visible state: a normalized market, a registry exclusion with its reason, or an unclassified contract with the normalizer's reason. contractAccounting.silentRemainderCount is 0 on every game of a written card -- a violation aborts the build rather than publishing a falsely complete file.",

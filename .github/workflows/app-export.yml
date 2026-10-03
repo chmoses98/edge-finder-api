@@ -1,0 +1,82 @@
+name: Edge Finder App Export
+
+# Publishes app/latest (the Edge Finder app contract, contract/edge_finder_contract/)
+# from the data already committed on main. Pure adapter: scripts/app_export.py reads
+# the slate, EdgeLab partitions, the canonical bet ledger and the health artifacts,
+# and re-expresses them as the contract's documents. It never touches a model,
+# a threshold, a stake or a bet authority, and never reads a secret.
+#
+# Runs after every producer that changes what the app shows (workflow_run on the
+# exact `name:` of each producer), every 30 minutes as a backstop so a producer that
+# silently stops firing still surfaces as STALE in app/latest/health.json, and on
+# demand. On a failed build the exporter rewrites ONLY health.json (export_failed)
+# and exits 1; the last-known-good payload stays in place. The commit step runs
+# regardless so that failure health is published, and the final gate propagates
+# the exporter's own exit code so the run is red.
+#
+# Commit mechanics are the shared scripts/ci/git_data_commit.py path, exactly like
+# edgelab-daily-heartbeat.yml. Only app/latest/ is ever added.
+
+on:
+  workflow_run:
+    workflows:
+      - "Fetch Slate Data"
+      - "Build Handicapping Card"
+      - "Prospective Model Snapshots (Scheduled)"
+      - "EdgeLab Market Capture"
+      - "EdgeLab Postgame Settlement"
+      - "EdgeLab Settlement Reconcile"
+    types: [completed]
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: app-export
+  cancel-in-progress: false
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      - name: Build app/latest from committed data
+        id: export
+        run: |
+          python scripts/app_export.py --out app/latest --commit-sha "$GITHUB_SHA" --workflow-run-id "$GITHUB_RUN_ID"
+
+      - name: Commit app/latest (always -- a failed build still publishes its health.json)
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "app export $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            "app/latest/" \
+            || echo "DATA-HEALTH WARNING: app/latest push failed."
+
+      - name: Fail the workflow if the export failed
+        if: always()
+        run: |
+          if [ "${{ steps.export.outcome }}" != "success" ]; then
+            echo "APP EXPORT FAILED -- app/latest/health.json carries export_failed; payload is last-known-good"
+            exit 1
+          fi
+          echo "app/latest published."

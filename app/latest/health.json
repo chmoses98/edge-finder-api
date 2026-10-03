@@ -1,62 +1,58 @@
 {
   "bet_authority": "MANUAL",
-  "commit_sha": "3c6060156f99f6679caf88d856ac8c51ac0a8781",
+  "commit_sha": "e85cf4df435abc5f70d0e4303013aa95349d3a2b",
   "components": {
     "export": {
-      "age_seconds": 0.4,
-      "as_of": "2026-10-03T15:02:54Z",
-      "detail": null,
-      "status": "OK"
+      "age_seconds": 12121.2,
+      "as_of": "2026-10-03T19:05:28Z",
+      "detail": "last export attempt failed; payload is last-known-good",
+      "status": "STALE"
     },
     "market_data": {
-      "age_seconds": 20523.6,
+      "age_seconds": 47199.2,
       "as_of": "2026-10-03T09:20:50Z",
       "detail": null,
       "status": "STALE"
     },
     "model": {
-      "age_seconds": null,
-      "as_of": null,
+      "age_seconds": 12304.2,
+      "as_of": "2026-10-03T19:02:25Z",
       "detail": null,
-      "status": "UNAVAILABLE"
-    },
-    "production_gate": {
-      "age_seconds": 57061.4,
-      "as_of": "2026-10-02T23:11:53Z",
-      "detail": "production_health_gate overall=HEALTHY",
       "status": "OK"
     },
     "router": {
-      "age_seconds": 138458.4,
-      "as_of": "2026-10-02T00:35:16Z",
+      "age_seconds": null,
+      "as_of": null,
       "detail": null,
-      "status": "STALE"
+      "status": "UNKNOWN"
     },
     "settlement": {
-      "age_seconds": 96163.4,
-      "as_of": "2026-10-02T12:20:11Z",
+      "age_seconds": null,
+      "as_of": null,
       "detail": null,
-      "status": "OK"
+      "status": "UNKNOWN"
     }
   },
-  "data_age_seconds": 20523.6,
-  "errors": [],
+  "data_age_seconds": 47199.2,
+  "errors": [
+    "TypeError: 'int' object is not iterable"
+  ],
   "freshness_status": "STALE",
-  "generated_at": "2026-10-03T15:02:54Z",
+  "generated_at": "2026-10-03T22:27:29Z",
   "kind": "health",
-  "last_export_attempt": "2026-10-03T15:02:54Z",
+  "last_export_attempt": "2026-10-03T22:27:29Z",
   "last_market_capture": "2026-10-03T09:20:50Z",
-  "last_model_generated": null,
-  "last_successful_run": "2026-10-03T15:02:54Z",
+  "last_model_generated": "2026-10-03T19:02:25Z",
+  "last_successful_run": "2026-10-03T19:05:28Z",
   "market_data_status": "STALE",
-  "model_status": "UNAVAILABLE",
-  "next_scheduled_run": "2026-10-03T15:30:00Z",
-  "overall_status": "UNAVAILABLE",
-  "payload_run_id": "run_511805638a4870a142dd",
-  "router_status": "STALE",
-  "run_id": "run_511805638a4870a142dd",
+  "model_status": "OK",
+  "next_scheduled_run": null,
+  "overall_status": "STALE",
+  "payload_run_id": "run_8f76bf7b491226785cff",
+  "router_status": "UNKNOWN",
+  "run_id": "run_8f76bf7b491226785cff",
   "schema_version": "edge_finder.app.v1",
-  "settlement_status": "OK",
+  "settlement_status": "UNKNOWN",
   "sport": "MLB",
   "thresholds": {
     "export": {
@@ -88,7 +84,5 @@
       "stale_after_seconds": 259200
     }
   },
-  "warnings": [
-    "no model price could be exported for 2026-10-03"
-  ]
+  "warnings": []
 }

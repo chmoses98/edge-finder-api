@@ -1,20 +1,20 @@
 {
   "candidateReplays": {
-    "attempted": 221,
+    "attempted": 222,
     "completed": 127,
-    "failed": 94
+    "failed": 95
   },
   "clvLinkedMarkets": 139,
   "completenessStatusCounts": {
-    "MISSING_REQUIRED_INPUT": 5,
+    "MISSING_REQUIRED_INPUT": 6,
     "PARTIAL_REPLAY": 54,
     "null": 6
   },
   "consecutiveDegradedRuns": 1,
-  "datesCovered": 65,
+  "datesCovered": 66,
   "effectiveConfigHashCoverage": {
-    "known": 59,
-    "total": 65
+    "known": 60,
+    "total": 66
   },
   "enforcement": {
     "activatedAt": "2026-08-04T09:38:45Z",
@@ -41,17 +41,18 @@
     "gateStatusCounts": {
       "FORWARD_HEALTHY": 39,
       "FORWARD_MISSING_SNAPSHOT": 5,
-      "FORWARD_NO_SLATE": 1,
+      "FORWARD_NO_SLATE": 2,
       "FORWARD_PENDING_TODAY": 1,
       "FORWARD_RESEARCH_ONLY_NO_DECISION": 15
     },
     "hardFailDates": [],
     "incompleteCaptures": [],
     "noSlateDates": [
-      "2026-09-28"
+      "2026-09-28",
+      "2026-10-02"
     ],
     "pendingTodayDates": [
-      "2026-10-02"
+      "2026-10-03"
     ],
     "populationNote": "expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates and noSlateDates (schedule-verified days with no MLB games). snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.",
     "provenanceCoverage": {
@@ -59,9 +60,9 @@
       "total": 59
     },
     "replayCompletion": {
-      "attempted": 217,
+      "attempted": 218,
       "completed": 125,
-      "failed": 92
+      "failed": 93
     },
     "settlementCoverage": {
       "linkedMarkets": 89
@@ -79,9 +80,9 @@
     "DEGRADED_CONFIG_PARTIAL": 2,
     "DEGRADED_MISSING_SNAPSHOT": 8,
     "HEALTHY": 54,
-    "NOT_APPLICABLE_NO_SLATE": 1
+    "NOT_APPLICABLE_NO_SLATE": 2
   },
-  "generatedAt": "2026-10-02T15:28:05Z",
+  "generatedAt": "2026-10-03T12:17:20Z",
   "historicalCorpusQuality": {
     "datesCovered": 4,
     "gateStatusCounts": {
@@ -106,7 +107,8 @@
       "2026-08-15"
     ],
     "noSlateDates": [
-      "2026-09-28"
+      "2026-09-28",
+      "2026-10-02"
     ],
     "reasons": [],
     "state": "HEALTHY",
@@ -1580,7 +1582,7 @@
         "runsInspected": 1,
         "scheduleEvidencePath": "data/edgelab/schedule_evidence/2026-09-28.json",
         "scheduleFetchedAt": "2026-10-02T15:28:05Z",
-        "scheduleLookupAttempts": 1,
+        "scheduleLookupAttempts": 0,
         "scheduleSource": "statsapi.mlb.com/api/v1/schedule",
         "scheduleStatus": "NO_GAMES_SCHEDULED",
         "verdict": "OFF_DAY"
@@ -1662,9 +1664,42 @@
     {
       "acknowledgedGapReason": null,
       "acknowledgedLegacyGap": false,
+      "captureMode": "LIVE_CAPTURE",
+      "completenessStatus": "MISSING_REQUIRED_INPUT",
+      "date": "2026-10-02",
+      "effectiveCompletenessStatus": "MISSING_REQUIRED_INPUT",
+      "effectiveConfigHashKnown": true,
+      "era": "FORWARD",
+      "forwardGateStatus": "FORWARD_NO_SLATE",
+      "forwardGateStatusIfFinal": null,
+      "forwardReplayId": "32c0a41e1566234ae8f4723834816416eadb63ea",
+      "forwardReplayStatus": "REJECTED_INELIGIBLE",
+      "gateStatus": "NOT_APPLICABLE_NO_SLATE",
+      "isResearchOnlyRun": false,
+      "manifestHash": "9ae202e471f247e4ae8a98baab45529bf596746126bcdae19c54550cffd045d6",
+      "productionCommitShaKnown": false,
+      "productionProvenanceStatus": "MISSING",
+      "productionRunsCaptured": 1,
+      "recoveredCount": 2,
+      "recoveryAttempted": true,
+      "slateDay": {
+        "reason": "no MLB games scheduled on 2026-10-02; an empty slate is correct",
+        "runsInspected": 1,
+        "scheduleEvidencePath": "data/edgelab/schedule_evidence/2026-10-02.json",
+        "scheduleFetchedAt": "2026-10-03T12:17:20Z",
+        "scheduleLookupAttempts": 1,
+        "scheduleSource": "statsapi.mlb.com/api/v1/schedule",
+        "scheduleStatus": "NO_GAMES_SCHEDULED",
+        "verdict": "OFF_DAY"
+      },
+      "snapshotId": "1beb8d0bc2b89762479ad4e38c06c64b4be3f9fd"
+    },
+    {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": null,
       "completenessStatus": null,
-      "date": "2026-10-02",
+      "date": "2026-10-03",
       "effectiveCompletenessStatus": null,
       "effectiveConfigHashKnown": false,
       "era": "FORWARD",
@@ -1686,17 +1721,17 @@
   ],
   "productionCommitShaCoverage": {
     "known": 54,
-    "total": 65
+    "total": 66
   },
   "productionRuns": 58,
   "schemaVersion": "2",
   "settlementLinkedMarkets": 89,
-  "snapshotsRecovered": 103,
-  "snapshotsSuccessfullyCaptured": 59,
+  "snapshotsRecovered": 105,
+  "snapshotsSuccessfullyCaptured": 60,
   "storageBytes": {
-    "replayRunsBytes": 27441910,
-    "snapshotsBytes": 360873317,
-    "totalBytes": 388315227
+    "replayRunsBytes": 27443402,
+    "snapshotsBytes": 360987614,
+    "totalBytes": 388431016
   },
   "unresolvedClvReasons": {
     "INCOMPLETE_CLOSING_QUOTE_OR_ENTRY_PRICE": 115,

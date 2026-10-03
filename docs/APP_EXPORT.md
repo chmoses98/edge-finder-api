@@ -132,7 +132,7 @@ exposed and at which status: the phase-2 audit (`audit_mlb.md` §4 matrix, §10 
 | `metrics.json` | 52-59 registered metrics; `wager_win_rate`, `wager_clv` (REAL / REAL_PROBE wagers from the v1 `wagers.json`, by market family, with sample-size tiers, postmortem inventory) and `model_calibration_error` (bins of `data/research/calibration_bins.json`, REAL bankroll-counting wagers) carry their aggregates in `extensions` | |
 | `capabilities.json`, `search_index.json`, `index.json` | the 36 capabilities, search over teams/players/events/metrics/rankings, the file table | |
 
-An empty slate day (no v1 events, e.g. 2026-10-03: postseason markets, no slate) still publishes
+An empty slate day (no v1 events, e.g. 2026-10-02, which has no slate; 2026-10-03 was empty when first measured, then gained games) still publishes
 the 30 team profiles, rankings, series, players named by current markets, capabilities, metrics and
 search; the capabilities that need an event are then UNAVAILABLE with the reason "nothing to show
 in this publication".
@@ -151,7 +151,7 @@ in this publication".
 | publication | teams | players | events | market_history | series | rankings | metrics.json | search | index.json | total |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-10-01 (1 game, 21 players) | 3.32 MB | 0.37 MB | 0.10 MB | 0.20 MB | 4.06 MB (149) | 0.64 MB (76) | 90 KB | 63 KB | 74 KB | 8.9 MB |
-| 2026-10-03 (no events, 34 market players) | 3.34 MB | 0.76 MB | - | - | 4.29 MB (169) | 0.64 MB | 83 KB | 64 KB | 82 KB | 9.3 MB |
+| 2026-10-03 as first measured (no events then, 34 market players) | 3.34 MB | 0.76 MB | - | - | 4.29 MB (169) | 0.64 MB | 83 KB | 64 KB | 82 KB | 9.3 MB |
 | 2026-09-25 (17 games, 305 players) | 3.82 MB | 6.25 MB | 1.76 MB | 3.41 MB | 7.53 MB (642) | 0.64 MB | 91 KB | 163 KB | 229 KB (compact, contract 1.1.1) | 23.9 MB |
 
 Largest single documents on 2026-09-25: team 136 KB, event 119 KB, player 43 KB, market history

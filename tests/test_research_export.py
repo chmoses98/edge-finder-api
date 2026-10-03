@@ -40,7 +40,10 @@ research_export = _load("research_export")
 
 DATA = os.path.join(ROOT, "data")
 NOW = "2026-10-02T15:00:00Z"          # v1 exports the 2026-10-01 slate (PHI @ ATL)
-EMPTY_NOW = "2026-10-03T15:00:00Z"    # 2026-10-03: markets but no slate games (postseason not captured)
+# An empty slate day: 2026-10-02 has no slate directory, and forcing the v1 date to it keeps the case stable
+# however much later data main gains (2026-10-03 was empty when this test was written, then gained games).
+EMPTY_NOW = "2026-10-02T15:00:00Z"
+EMPTY_DATE = "2026-10-02"
 BOUNDS = {"slate_range": ("2026-09-28", "2026-10-01"), "seasons": ["2026"], "statcast_range": ("2026-09-20", "2026-09-27")}
 WORKFLOW = os.path.join(ROOT, ".github", "workflows", "app-export.yml")
 
@@ -73,8 +76,9 @@ def _read(root, rel):
         return json.load(fh)
 
 
-def _v1(root, now):
-    assert app_export.main(["--out", str(root), "--data-root", DATA, "--now", now]) == 0
+def _v1(root, now, date=None):
+    args = ["--out", str(root), "--data-root", DATA, "--now", now] + (["--date", date] if date else [])
+    assert app_export.main(args) == 0
     return root
 
 
@@ -267,7 +271,7 @@ def _rankings(root):
 
 # 10. an empty slate day still publishes teams, capabilities, metrics and search
 def test_empty_slate_day_publishes_teams_capabilities_metrics_search(tmp_path):
-    root = _v1(tmp_path / "latest", EMPTY_NOW)
+    root = _v1(tmp_path / "latest", EMPTY_NOW, EMPTY_DATE)
     assert _read(root, "events.json")["items"] == []
     research_export.export_explorer(str(root), data_root=DATA, **BOUNDS)
     assert R.verify_explorer(root) == []

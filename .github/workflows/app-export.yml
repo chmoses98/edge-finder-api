@@ -15,7 +15,8 @@ name: Edge Finder App Export
 # the exporter's own exit code so the run is red.
 #
 # Commit mechanics are the shared scripts/ci/git_data_commit.py path, exactly like
-# edgelab-daily-heartbeat.yml. Only app/latest/ is ever added.
+# edgelab-daily-heartbeat.yml. Only app/latest/ is ever added (it includes app/latest/explorer/,
+# the research graph written by scripts/research_export.py right after the v1 export).
 
 on:
   workflow_run:
@@ -62,7 +63,32 @@ jobs:
         run: |
           python scripts/app_export.py --out app/latest --commit-sha "$GITHUB_SHA" --workflow-run-id "$GITHUB_RUN_ID"
 
-      - name: Commit app/latest (always -- a failed build still publishes its health.json)
+      # The research graph (app/latest/explorer/, scripts/research_export.py) is built right after
+      # the v1 export, from the same committed data, as its own command: run_id and --now come
+      # from the manifest the v1 export just wrote. continue-on-error so a research failure can
+      # never block the v1 publication; the previous explorer tree stays in place on failure
+      # (research.publish_explorer is atomic) and the final gate below turns the run red.
+      # --min-interval-minutes 180 (research.refresh_due): the 30-minute backstop runs do not
+      # rewrite the tree; it is rebuilt when the v1 events change (a new slate) or after 3 hours.
+      # A skipped run prints {"skipped": true, "reason": ...} to the step summary and succeeds.
+      - name: Build app/latest/explorer (research graph) from committed data
+        id: research_export
+        if: steps.export.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          status=0
+          python scripts/research_export.py --out app/latest --commit-sha "$GITHUB_SHA" --min-interval-minutes 180 2>&1 \
+            | tee "$RUNNER_TEMP/research_export.log" || status=$?
+          {
+            echo "### Research explorer export (exit $status)"
+            echo '```'
+            tail -n 40 "$RUNNER_TEMP/research_export.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+
+      - name: Commit app/latest incl. explorer/ (always -- a failed build still publishes its health.json)
         if: always()
         run: |
           git config user.name  "github-actions[bot]"
@@ -79,4 +105,8 @@ jobs:
             echo "APP EXPORT FAILED -- app/latest/health.json carries export_failed; payload is last-known-good"
             exit 1
           fi
-          echo "app/latest published."
+          if [ "${{ steps.research_export.outcome }}" == "failure" ]; then
+            echo "RESEARCH EXPORT FAILED -- app/latest (v1) published; app/latest/explorer is last-known-good"
+            exit 1
+          fi
+          echo "app/latest published (v1 + explorer)."

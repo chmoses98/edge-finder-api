@@ -1,20 +1,20 @@
 {
   "candidateReplays": {
-    "attempted": 222,
-    "completed": 127,
-    "failed": 95
+    "attempted": 226,
+    "completed": 128,
+    "failed": 98
   },
   "clvLinkedMarkets": 139,
   "completenessStatusCounts": {
     "MISSING_REQUIRED_INPUT": 6,
-    "PARTIAL_REPLAY": 54,
+    "PARTIAL_REPLAY": 55,
     "null": 6
   },
   "consecutiveDegradedRuns": 1,
-  "datesCovered": 66,
+  "datesCovered": 67,
   "effectiveConfigHashCoverage": {
-    "known": 60,
-    "total": 66
+    "known": 61,
+    "total": 67
   },
   "enforcement": {
     "activatedAt": "2026-08-04T09:38:45Z",
@@ -24,7 +24,7 @@
   },
   "exitCodeReason": "Forward operational health is otherwise clean -- the only hard-fail-status forward date(s) are acknowledged, permanently-unrecoverable legacy gaps (['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']), which never resolve and therefore never drive this exit code -- see data/edgelab/corpus_acknowledged_forward_gaps.json.",
   "exitShouldFail": false,
-  "expectedPregameSnapshots": 58,
+  "expectedPregameSnapshots": 59,
   "forwardOperationalHealth": {
     "acknowledgedLegacyGapDates": [
       "2026-08-11",
@@ -37,13 +37,13 @@
       "linkedMarkets": 44
     },
     "consecutiveDegradedForwardRuns": 0,
-    "expectedRuns": 59,
+    "expectedRuns": 60,
     "gateStatusCounts": {
       "FORWARD_HEALTHY": 39,
       "FORWARD_MISSING_SNAPSHOT": 5,
       "FORWARD_NO_SLATE": 2,
       "FORWARD_PENDING_TODAY": 1,
-      "FORWARD_RESEARCH_ONLY_NO_DECISION": 15
+      "FORWARD_RESEARCH_ONLY_NO_DECISION": 16
     },
     "hardFailDates": [],
     "incompleteCaptures": [],
@@ -52,22 +52,22 @@
       "2026-10-02"
     ],
     "pendingTodayDates": [
-      "2026-10-03"
+      "2026-10-04"
     ],
     "populationNote": "expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates and noSlateDates (schedule-verified days with no MLB games). snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.",
     "provenanceCoverage": {
-      "known": 54,
-      "total": 59
+      "known": 55,
+      "total": 60
     },
     "replayCompletion": {
-      "attempted": 218,
-      "completed": 125,
-      "failed": 93
+      "attempted": 222,
+      "completed": 126,
+      "failed": 96
     },
     "settlementCoverage": {
       "linkedMarkets": 89
     },
-    "snapshotsCaptured": 54,
+    "snapshotsCaptured": 55,
     "snapshotsMissing": [
       "2026-08-11",
       "2026-08-12",
@@ -79,10 +79,10 @@
   "gateStatusCounts": {
     "DEGRADED_CONFIG_PARTIAL": 2,
     "DEGRADED_MISSING_SNAPSHOT": 8,
-    "HEALTHY": 54,
+    "HEALTHY": 55,
     "NOT_APPLICABLE_NO_SLATE": 2
   },
-  "generatedAt": "2026-10-03T12:17:20Z",
+  "generatedAt": "2026-10-04T13:05:05Z",
   "historicalCorpusQuality": {
     "datesCovered": 4,
     "gateStatusCounts": {
@@ -91,10 +91,10 @@
     },
     "note": "Dates before the forward-capture enforcement boundary (or ALL dates if enforcement has not yet activated). These predate real GITHUB_SHA-based provenance capture by construction -- DEGRADED_CONFIG_PARTIAL / DEGRADED_MISSING_SNAPSHOT / approximate-or-non-reconstructable statuses here are expected and never fail this check."
   },
-  "marketsComparable": 12434,
-  "marketsReplayed": 18227,
+  "marketsComparable": 12466,
+  "marketsReplayed": 18271,
   "missingSnapshots": [],
-  "newestTrustworthyReplayDate": "2026-10-01",
+  "newestTrustworthyReplayDate": "2026-10-03",
   "oldestTrustworthyReplayDate": "2026-08-01",
   "operationalHealth": {
     "consecutiveDegradedForwardRuns": 0,
@@ -1687,7 +1687,7 @@
         "runsInspected": 1,
         "scheduleEvidencePath": "data/edgelab/schedule_evidence/2026-10-02.json",
         "scheduleFetchedAt": "2026-10-03T12:17:20Z",
-        "scheduleLookupAttempts": 1,
+        "scheduleLookupAttempts": 0,
         "scheduleSource": "statsapi.mlb.com/api/v1/schedule",
         "scheduleStatus": "NO_GAMES_SCHEDULED",
         "verdict": "OFF_DAY"
@@ -1697,9 +1697,33 @@
     {
       "acknowledgedGapReason": null,
       "acknowledgedLegacyGap": false,
+      "captureMode": "LIVE_CAPTURE",
+      "completenessStatus": "PARTIAL_REPLAY",
+      "date": "2026-10-03",
+      "effectiveCompletenessStatus": "PARTIAL_REPLAY",
+      "effectiveConfigHashKnown": true,
+      "era": "FORWARD",
+      "forwardGateStatus": "FORWARD_RESEARCH_ONLY_NO_DECISION",
+      "forwardGateStatusIfFinal": null,
+      "forwardReplayId": "0911381b8855a4cd6797dc356276e1a757c09060",
+      "forwardReplayStatus": "NOT_APPLICABLE_NO_DECISION",
+      "gateStatus": "HEALTHY",
+      "isResearchOnlyRun": true,
+      "manifestHash": "d00f86fe054571f3d1307283aa2315ee353751620d4b722791b57c04d526fb7d",
+      "productionCommitShaKnown": true,
+      "productionProvenanceStatus": "CAPTURED",
+      "productionRunsCaptured": 4,
+      "recoveredCount": 2,
+      "recoveryAttempted": true,
+      "slateDay": null,
+      "snapshotId": "6efdb924e4b3d475230d034d910c59f0e7b9921f"
+    },
+    {
+      "acknowledgedGapReason": null,
+      "acknowledgedLegacyGap": false,
       "captureMode": null,
       "completenessStatus": null,
-      "date": "2026-10-03",
+      "date": "2026-10-04",
       "effectiveCompletenessStatus": null,
       "effectiveConfigHashKnown": false,
       "era": "FORWARD",
@@ -1720,28 +1744,28 @@
     }
   ],
   "productionCommitShaCoverage": {
-    "known": 54,
-    "total": 66
+    "known": 55,
+    "total": 67
   },
-  "productionRuns": 58,
+  "productionRuns": 59,
   "schemaVersion": "2",
   "settlementLinkedMarkets": 89,
-  "snapshotsRecovered": 105,
-  "snapshotsSuccessfullyCaptured": 60,
+  "snapshotsRecovered": 107,
+  "snapshotsSuccessfullyCaptured": 61,
   "storageBytes": {
-    "replayRunsBytes": 27443402,
-    "snapshotsBytes": 360987614,
-    "totalBytes": 388431016
+    "replayRunsBytes": 27515393,
+    "snapshotsBytes": 363192511,
+    "totalBytes": 390707904
   },
   "unresolvedClvReasons": {
     "INCOMPLETE_CLOSING_QUOTE_OR_ENTRY_PRICE": 115,
     "NO_CLV_QUOTE_FOR_THIS_MARKET": 318,
     "NO_POSTGAME_SNAPSHOT_FOR_DATE": 5412,
-    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 12243
+    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 12287
   },
   "unresolvedSettlementReasons": {
     "NO_POSTGAME_SNAPSHOT_FOR_DATE": 5412,
     "NO_SETTLEMENT_RECORD_FOR_THIS_MARKET": 483,
-    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 12243
+    "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 12287
   }
 }

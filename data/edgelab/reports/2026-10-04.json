@@ -1,6 +1,6 @@
 {
   "apiErrors": [],
-  "closingQuotesCaptured": 1115,
+  "closingQuotesCaptured": 0,
   "clvSummary": {
     "avgClvCents": null,
     "avgClvCentsAllCoverageIncludingStale": null,
@@ -21,7 +21,7 @@
     "unclassifiedCount": 0
   },
   "dataQualityWarnings": [
-    "no kalshi_registry_snapshots file found for 2026-10-03",
+    "no kalshi_registry_snapshots file found for 2026-10-04",
     "bets.json#2026-06-09-001: placed_bet: missing required field 'entryPrice'",
     "bets.json#2026-06-09-002: placed_bet: missing required field 'entryPrice'",
     "bets.json#2026-06-09-003: placed_bet: missing required field 'entryPrice'",
@@ -52,50 +52,51 @@
     "data/bets.json#89: placed_bet: missing required field 'entryPrice'",
     "505 legacy bet record(s) have no marketTicker and were not carried into the EdgeLab ledger \u2014 a known gap in the pre-EdgeLab ledgers (see docs/EDGELAB_PHASE1.md limitations), never fabricated here."
   ],
-  "date": "2026-10-03",
-  "gamesObserved": 4,
-  "generatedAt": "2026-10-04T21:12:31Z",
-  "insufficientModelSupportCount": 1145,
+  "date": "2026-10-04",
+  "gamesObserved": 2,
+  "generatedAt": "2026-10-04T21:12:32Z",
+  "insufficientModelSupportCount": 0,
   "marketFamilyCounts": {
-    "first_inning_run": 7,
-    "game_result": 20,
-    "game_total": 125,
-    "hitter_hits": 513,
-    "hitter_hits_runs_rbis": 820,
-    "hitter_rbis": 343,
-    "hitter_stolen_bases": 158,
-    "hitter_total_bases": 641,
-    "inning_result": 93,
-    "inning_total": 65,
-    "pitcher_outs": 22,
-    "pitcher_strikeouts": 167,
-    "team_total": 176,
-    "winning_margin": 113
+    "first_inning_run": 5,
+    "game_result": 11,
+    "game_total": 59,
+    "hitter_hits": 192,
+    "hitter_hits_runs_rbis": 310,
+    "hitter_rbis": 132,
+    "hitter_stolen_bases": 65,
+    "hitter_total_bases": 240,
+    "inning_result": 50,
+    "inning_total": 37,
+    "pitcher_outs": 8,
+    "pitcher_strikeouts": 79,
+    "team_total": 74,
+    "winning_margin": 54
   },
-  "marketsObserved": 1297,
+  "marketsObserved": 538,
   "newUnclassifiedSeriesWarnings": [],
-  "notEvaluatedCount": 137,
-  "passCountsByReason": {
-    "PASS_DATA_QUALITY": 16,
-    "PASS_NO_EDGE": 24
-  },
+  "notEvaluatedCount": 0,
+  "passCountsByReason": {},
   "placedBets": 1,
   "placedBetsByTrackingType": {
     "REAL": 1
   },
-  "quotesCaptured": 3263,
+  "quotesCaptured": 1316,
   "realWagerCount": 1,
-  "recommendedBets": 4,
+  "recommendedBets": 0,
   "schemaVersion": "1",
   "settlementCompletion": {
-    "marketsObserved": 1297,
+    "marketsObserved": 538,
     "notYetAttempted": 0,
-    "settled": 1239,
-    "unresolved": 58,
+    "settled": 2,
+    "unresolved": 536,
     "void": 0
   },
   "settlementUnresolvedReasons": {
-    "player_not_resolved_zero_candidates": 45,
-    "player_prop_token_malformed": 13
+    "game_not_final": 430,
+    "game_status_In Progress_not_settleable": 3,
+    "missing_final_score": 66,
+    "missing_period_score_F3": 3,
+    "missing_period_score_F5": 28,
+    "missing_period_score_F7": 6
   }
 }

@@ -5,16 +5,22 @@
     "errors": [],
     "gameCount": 2,
     "status": "pass",
-    "warningCount": 4,
+    "warningCount": 10,
     "warnings": [
+      "SD@MIL: pinnacleVF.away missing for Final game (expected \u2014 odds removed post-game)",
+      "SD@MIL: Kalshi ML not in slate (odds.kalshi.ml.away=null) \u2014 must show Missing Data in marketLedger",
       "SD@MIL: Kalshi F5 ML not in slate (odds.kalshi.f5ml.away=null) \u2014 must show Missing Data in marketLedger",
+      "SD@MIL: Kalshi TT Away not in slate (odds.kalshi.team_totals.away.best_ticker=null) \u2014 must show Missing Data in marketLedger",
+      "SD@MIL: Kalshi TT Home not in slate (odds.kalshi.team_totals.home.best_ticker=null) \u2014 must show Missing Data in marketLedger",
       "SD@MIL: Kalshi NRFI/YRFI not in slate (odds.kalshi.nrfi_yrfi.nrfi_american=null) \u2014 must show Missing Data in marketLedger",
+      "SD@MIL: Kalshi Game Total not in slate (odds.kalshi.total.line=null) \u2014 must show Missing Data in marketLedger",
+      "SD@MIL: Kalshi RL not in slate (odds.kalshi.rl.best_ticker=null) \u2014 must show Missing Data in marketLedger",
       "SD@MIL: awayProjRuns not in allEdges \u2014 projection may have used league-average fallback (marketLedger present, game was evaluated)",
       "ATL@LAD: awayProjRuns not in allEdges \u2014 projection may have used league-average fallback (marketLedger present, game was evaluated)"
     ]
   },
   "meta": {
-    "createdAt": "2026-10-04T22:58:19Z",
+    "createdAt": "2026-10-05T00:21:34Z",
     "producedBy": "scripts/validate_slate_final.py",
     "schemaVersion": "1.0",
     "slateDate": "2026-10-04",

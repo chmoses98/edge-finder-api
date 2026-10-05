@@ -1,23 +1,25 @@
 {
   "apiErrors": [],
-  "closingQuotesCaptured": 0,
+  "closingQuotesCaptured": 644,
   "clvSummary": {
-    "avgClvCents": null,
-    "avgClvCentsAllCoverageIncludingStale": null,
+    "avgClvCents": 0.0,
+    "avgClvCentsAllCoverageIncludingStale": 0.0,
     "betsTotal": 1,
-    "betsWithClv": 0,
-    "clvEligibleCount": 0,
-    "coverageClassCounts": {},
+    "betsWithClv": 1,
+    "clvEligibleCount": 1,
+    "coverageClassCounts": {
+      "TRUE_CLOSE": 1
+    },
     "headlineCoverageClasses": [
       "TRUE_CLOSE"
     ],
-    "medianSecondsBeforeStart": null,
+    "medianSecondsBeforeStart": 1777.2,
     "negativeClvCount": 0,
     "noValidPrestartQuoteCount": 0,
-    "p90SecondsBeforeStart": null,
+    "p90SecondsBeforeStart": 1777.2,
     "positiveClvCount": 0,
     "preCloseOnlyCount": 0,
-    "trueCloseCount": 0,
+    "trueCloseCount": 1,
     "unclassifiedCount": 0
   },
   "dataQualityWarnings": [
@@ -54,25 +56,25 @@
   ],
   "date": "2026-10-04",
   "gamesObserved": 2,
-  "generatedAt": "2026-10-04T21:12:32Z",
+  "generatedAt": "2026-10-05T09:54:44Z",
   "insufficientModelSupportCount": 0,
   "marketFamilyCounts": {
     "first_inning_run": 5,
-    "game_result": 11,
-    "game_total": 59,
-    "hitter_hits": 192,
-    "hitter_hits_runs_rbis": 310,
-    "hitter_rbis": 132,
-    "hitter_stolen_bases": 65,
-    "hitter_total_bases": 240,
-    "inning_result": 50,
-    "inning_total": 37,
-    "pitcher_outs": 8,
-    "pitcher_strikeouts": 79,
-    "team_total": 74,
-    "winning_margin": 54
+    "game_result": 16,
+    "game_total": 74,
+    "hitter_hits": 323,
+    "hitter_hits_runs_rbis": 532,
+    "hitter_rbis": 229,
+    "hitter_stolen_bases": 108,
+    "hitter_total_bases": 425,
+    "inning_result": 57,
+    "inning_total": 42,
+    "pitcher_outs": 10,
+    "pitcher_strikeouts": 94,
+    "team_total": 110,
+    "winning_margin": 73
   },
-  "marketsObserved": 538,
+  "marketsObserved": 659,
   "newUnclassifiedSeriesWarnings": [],
   "notEvaluatedCount": 0,
   "passCountsByReason": {},
@@ -80,23 +82,20 @@
   "placedBetsByTrackingType": {
     "REAL": 1
   },
-  "quotesCaptured": 1316,
+  "quotesCaptured": 2098,
   "realWagerCount": 1,
   "recommendedBets": 0,
   "schemaVersion": "1",
   "settlementCompletion": {
-    "marketsObserved": 538,
+    "marketsObserved": 659,
     "notYetAttempted": 0,
-    "settled": 2,
-    "unresolved": 536,
+    "settled": 615,
+    "unresolved": 44,
     "void": 0
   },
   "settlementUnresolvedReasons": {
-    "game_not_final": 430,
-    "game_status_In Progress_not_settleable": 3,
-    "missing_final_score": 66,
-    "missing_period_score_F3": 3,
-    "missing_period_score_F5": 28,
-    "missing_period_score_F7": 6
+    "player_not_resolved_zero_candidates": 15,
+    "player_participation_unverified": 15,
+    "player_prop_token_malformed": 14
   }
 }

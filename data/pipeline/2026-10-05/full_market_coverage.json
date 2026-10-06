@@ -1,7 +1,7 @@
 {
   "data": {
     "byFamilyState": {
-      "KXNBASPREAD": {
+      "KXNBATOTAL": {
         "AMBIGUOUS_TICKER_MATCH": 0,
         "FULLY_EVALUATED": 0,
         "GAME_MAPPING_UNRESOLVED": 0,
@@ -13,14 +13,26 @@
         "STARTED_GAME_EXCLUDED": 0,
         "UNSUPPORTED_MODEL_FAMILY": 0
       },
-      "KXNFL2QSPREAD": {
+      "KXNHL3PTOTAL": {
         "AMBIGUOUS_TICKER_MATCH": 0,
         "FULLY_EVALUATED": 0,
         "GAME_MAPPING_UNRESOLVED": 0,
         "MISSING_REQUIRED_CONTEXT": 0,
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
-        "PARSER_UNRESOLVED": 2,
+        "PARSER_UNRESOLVED": 1,
+        "RESEARCH_MODEL_ONLY": 0,
+        "STARTED_GAME_EXCLUDED": 0,
+        "UNSUPPORTED_MODEL_FAMILY": 0
+      },
+      "KXNKY": {
+        "AMBIGUOUS_TICKER_MATCH": 0,
+        "FULLY_EVALUATED": 0,
+        "GAME_MAPPING_UNRESOLVED": 0,
+        "MISSING_REQUIRED_CONTEXT": 0,
+        "NOT_APPLICABLE": 0,
+        "NOT_EVALUATED_BUG": 0,
+        "PARSER_UNRESOLVED": 60,
         "RESEARCH_MODEL_ONLY": 0,
         "STARTED_GAME_EXCLUDED": 0,
         "UNSUPPORTED_MODEL_FAMILY": 0
@@ -39,7 +51,7 @@
       },
       "game_total": {
         "AMBIGUOUS_TICKER_MATCH": 0,
-        "FULLY_EVALUATED": 10,
+        "FULLY_EVALUATED": 8,
         "GAME_MAPPING_UNRESOLVED": 0,
         "MISSING_REQUIRED_CONTEXT": 0,
         "NOT_APPLICABLE": 0,
@@ -111,7 +123,7 @@
       },
       "inning_result": {
         "AMBIGUOUS_TICKER_MATCH": 0,
-        "FULLY_EVALUATED": 9,
+        "FULLY_EVALUATED": 6,
         "GAME_MAPPING_UNRESOLVED": 0,
         "MISSING_REQUIRED_CONTEXT": 0,
         "NOT_APPLICABLE": 0,
@@ -171,7 +183,7 @@
       },
       "winning_margin": {
         "AMBIGUOUS_TICKER_MATCH": 0,
-        "FULLY_EVALUATED": 10,
+        "FULLY_EVALUATED": 11,
         "GAME_MAPPING_UNRESOLVED": 0,
         "MISSING_REQUIRED_CONTEXT": 0,
         "NOT_APPLICABLE": 0,
@@ -183,16 +195,16 @@
       }
     },
     "coverageAccounting": {
-      "accountedTotal": 316,
-      "archivedTotal": 316,
+      "accountedTotal": 371,
+      "archivedTotal": 371,
       "byState": {
         "AMBIGUOUS_TICKER_MATCH": 0,
-        "FULLY_EVALUATED": 70,
+        "FULLY_EVALUATED": 66,
         "GAME_MAPPING_UNRESOLVED": 0,
         "MISSING_REQUIRED_CONTEXT": 0,
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
-        "PARSER_UNRESOLVED": 3,
+        "PARSER_UNRESOLVED": 62,
         "RESEARCH_MODEL_ONLY": 0,
         "STARTED_GAME_EXCLUDED": 0,
         "UNSUPPORTED_MODEL_FAMILY": 243
@@ -201,45 +213,45 @@
     },
     "date": "2026-10-05",
     "discoverySummary": {
-      "classified": 313,
+      "classified": 309,
       "date": "2026-10-05",
-      "discovered": 316,
-      "exposed": 70,
-      "generatedAt": "2026-10-06T01:20:37Z",
-      "modeled": 70,
+      "discovered": 371,
+      "exposed": 66,
+      "generatedAt": "2026-10-06T02:06:35Z",
+      "modeled": 66,
       "otherDateExcluded": 0,
       "parseFailures": 0,
-      "unsupported": 246
+      "unsupported": 305
     },
     "hitterLegacyBoardFallbackStatus": "NOT_AVAILABLE",
     "hitterProspectiveSnapshotCount": 0,
     "hitterProspectiveSnapshotStoreStatus": "NOT_AVAILABLE",
     "pregameView": {
       "pregameAmbiguousTickerMatch": 0,
-      "pregameFullyEvaluatedProduction": 70,
+      "pregameFullyEvaluatedProduction": 66,
       "pregameMappingUnresolved": 0,
       "pregameMissingRequiredContext": 0,
       "pregameNotEvaluatedBug": 0,
-      "pregameParserUnresolved": 3,
+      "pregameParserUnresolved": 62,
       "pregameResearchSupportedHitterMarkets": 0,
       "pregameUnsupportedByAllModels": 243,
       "startedGameExcluded": 0,
-      "totalValidArchivedMlbMarkets": 316,
+      "totalValidArchivedMlbMarkets": 371,
       "trueSilentRemainder": 0,
-      "validPregameMarkets": 316
+      "validPregameMarkets": 371
     },
     "rawArchiveAccounting": {
-      "accountedTickerCount": 316,
+      "accountedTickerCount": 371,
       "duplicateRawTickerCount": 0,
       "entriesWithoutTicker": 0,
       "missingTickers": [],
-      "rawArchivedUnique": 316,
-      "totalRawEntriesSeen": 316,
+      "rawArchivedUnique": 371,
+      "totalRawEntriesSeen": 371,
       "trueSilentRemainderCount": 0
     }
   },
   "meta": {
-    "createdAt": "2026-10-06T01:20:37Z",
+    "createdAt": "2026-10-06T02:06:36Z",
     "producedBy": "scripts/build_full_market_coverage.py",
     "schemaVersion": "1.0",
     "slateDate": "2026-10-05",

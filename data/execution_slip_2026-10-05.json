@@ -1,9 +1,96 @@
 {
-  "generatedAt": "2026-10-06T01:18:08.665249+00:00",
+  "generatedAt": "2026-10-06T02:03:29.499722+00:00",
   "date": "2026-10-05",
-  "realMoney": [],
+  "realMoney": [
+    {
+      "game": "NYY@TB",
+      "market": "TT_Away_Over",
+      "side": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26OCT052000NYYTB-NYY3",
+      "modelProb": "81.26%",
+      "execPrice": "42.0\u00a2",
+      "rawEdge": "+39.26%",
+      "calEdge": "+10.01%",
+      "conf": "MEDIUM",
+      "betSize": 4.0,
+      "maxBetPrice": "76.06\u00a2 or better",
+      "snapshotTs": "2026-10-06T02:03:15Z",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG",
+        "LINEUP_CONFIRMED_OFFICIAL",
+        "LINEUP_ADJ_APPLIED",
+        "PRICE_WITHIN_MAX"
+      ],
+      "gatesFired": [
+        "Tier cap: model/market disagreement 40.8pt > 7pt -- Tier A withheld pending explanation"
+      ],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "confirmed"
+    }
+  ],
   "priceMoved": [],
-  "paperOnly": [],
+  "paperOnly": [
+    {
+      "game": "NYY@TB",
+      "market": "Game_Total",
+      "side": "Game_Total",
+      "ticker": "KXMLBTOTAL-26OCT052000NYYTB-7",
+      "modelProb": "56.82%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-10-06T02:03:15Z",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "NYY@TB",
+      "market": "RL_Away",
+      "side": "RL_Away",
+      "ticker": null,
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-10-06T02:03:15Z",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "NYY@TB",
+      "market": "RL_Home",
+      "side": "RL_Home",
+      "ticker": "KXMLBSPREAD-26OCT052000NYYTB-TB2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-10-06T02:03:15Z",
+      "reasonCodes": [],
+      "gatesFired": [],
+      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    }
+  ],
   "rejectedBlocked": [
     {
       "game": "CWS@CLE",
@@ -260,275 +347,77 @@
     },
     {
       "game": "NYY@TB",
-      "market": "NRFI",
-      "side": "NRFI",
-      "ticker": null,
-      "modelProb": "\u2014",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
-      "conf": "\u2014",
-      "betSize": "\u2014",
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-06T01:17:56Z",
-      "reasonCodes": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "gatesFired": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "rejectionReason": "LIVE_GAME_BLOCKED: NYY@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
-      "status": "Rejected",
-      "lineupStatus": "\u2014"
-    },
-    {
-      "game": "NYY@TB",
-      "market": "YRFI",
-      "side": "YRFI",
-      "ticker": null,
-      "modelProb": "\u2014",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
-      "conf": "\u2014",
-      "betSize": "\u2014",
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-06T01:17:56Z",
-      "reasonCodes": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "gatesFired": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "rejectionReason": "LIVE_GAME_BLOCKED: NYY@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
-      "status": "Rejected",
-      "lineupStatus": "\u2014"
-    },
-    {
-      "game": "NYY@TB",
-      "market": "F5_ML_Away",
-      "side": "F5_ML_Away",
-      "ticker": "KXMLBF5-26OCT052000NYYTB-NYY",
-      "modelProb": "\u2014",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
-      "conf": "\u2014",
-      "betSize": "\u2014",
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-06T01:17:56Z",
-      "reasonCodes": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "gatesFired": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "rejectionReason": "LIVE_GAME_BLOCKED: NYY@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
-      "status": "Rejected",
-      "lineupStatus": "\u2014"
-    },
-    {
-      "game": "NYY@TB",
-      "market": "F5_ML_Home",
-      "side": "F5_ML_Home",
-      "ticker": "KXMLBF5-26OCT052000NYYTB-TB",
-      "modelProb": "\u2014",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
-      "conf": "\u2014",
-      "betSize": "\u2014",
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-06T01:17:56Z",
-      "reasonCodes": [
-        "EXECUTABLE_EDGE_BELOW_THRESHOLD",
-        "LIVE_GAME_BLOCKED"
-      ],
-      "gatesFired": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "rejectionReason": "LIVE_GAME_BLOCKED: NYY@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
-      "status": "Rejected",
-      "lineupStatus": "\u2014"
-    },
-    {
-      "game": "NYY@TB",
-      "market": "TT_Away_Over",
-      "side": "TT_Away_Over",
-      "ticker": "KXMLBTEAMTOTAL-26OCT052000NYYTB-NYY4",
-      "modelProb": "\u2014",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
-      "conf": "\u2014",
-      "betSize": "\u2014",
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-06T01:17:56Z",
-      "reasonCodes": [
-        "MARKET_REAL_MONEY_ELIGIBLE",
-        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
-        "RAW_EDGE_STRONG",
-        "LINEUP_CONFIRMED_OFFICIAL",
-        "LINEUP_ADJ_APPLIED",
-        "PRICE_WITHIN_MAX",
-        "LIVE_GAME_BLOCKED"
-      ],
-      "gatesFired": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "rejectionReason": "LIVE_GAME_BLOCKED: NYY@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
-      "status": "Rejected",
-      "lineupStatus": "\u2014"
-    },
-    {
-      "game": "NYY@TB",
       "market": "TT_Home_Over",
       "side": "TT_Home_Over",
-      "ticker": "KXMLBTEAMTOTAL-26OCT052000NYYTB-TB3",
-      "modelProb": "\u2014",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
+      "ticker": "KXMLBTEAMTOTAL-26OCT052000NYYTB-TB5",
+      "modelProb": "14.31%",
+      "execPrice": "57.0\u00a2",
+      "rawEdge": "-42.69%",
+      "calEdge": "-10.89%",
       "conf": "\u2014",
-      "betSize": "\u2014",
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-06T01:17:56Z",
+      "betSize": null,
+      "maxBetPrice": "9.77\u00a2 or better",
+      "snapshotTs": "2026-10-06T02:03:15Z",
       "reasonCodes": [
-        "EXECUTABLE_EDGE_BELOW_THRESHOLD",
-        "LIVE_GAME_BLOCKED"
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
       ],
-      "gatesFired": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "rejectionReason": "LIVE_GAME_BLOCKED: NYY@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
+      "gatesFired": [],
+      "rejectionReason": "edge -11.324% below 1.0% floor",
       "status": "Rejected",
-      "lineupStatus": "\u2014"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "NYY@TB",
       "market": "ML_Away",
       "side": "ML_Away",
       "ticker": "KXMLBGAME-26OCT052000NYYTB-NYY",
-      "modelProb": "\u2014",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
+      "modelProb": "72.0%",
+      "execPrice": "19.0\u00a2",
+      "rawEdge": "+53.00%",
+      "calEdge": "+13.52%",
       "conf": "\u2014",
-      "betSize": "\u2014",
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-06T01:17:56Z",
-      "reasonCodes": [
-        "LIVE_GAME_BLOCKED"
-      ],
+      "betSize": null,
+      "maxBetPrice": "66.52\u00a2 or better",
+      "snapshotTs": "2026-10-06T02:03:15Z",
+      "reasonCodes": [],
       "gatesFired": [
-        "LIVE_GAME_BLOCKED"
+        "Tier cap: model/market disagreement 53.5pt > 7pt -- Tier A withheld pending explanation",
+        "Rule71: model 72.0% vs PinVF 46.1% = 25.9% gap > 8%"
       ],
-      "rejectionReason": "LIVE_GAME_BLOCKED: NYY@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
+      "rejectionReason": "Tier cap: model/market disagreement 53.5pt > 7pt -- Tier A withheld pending explanation; Rule71: model 72.0% vs PinVF 46.1% = 25.9% gap > 8%",
       "status": "Rejected",
-      "lineupStatus": "\u2014"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "NYY@TB",
       "market": "ML_Home",
       "side": "ML_Home",
       "ticker": "KXMLBGAME-26OCT052000NYYTB-TB",
-      "modelProb": "\u2014",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
+      "modelProb": "23.83%",
+      "execPrice": "82.0\u00a2",
+      "rawEdge": "-58.17%",
+      "calEdge": "-14.83%",
       "conf": "\u2014",
-      "betSize": "\u2014",
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-06T01:17:56Z",
-      "reasonCodes": [
-        "LIVE_GAME_BLOCKED"
-      ],
+      "betSize": null,
+      "maxBetPrice": "18.84\u00a2 or better",
+      "snapshotTs": "2026-10-06T02:03:15Z",
+      "reasonCodes": [],
       "gatesFired": [
-        "LIVE_GAME_BLOCKED"
+        "Rule71: model 23.8% vs PinVF 53.9% = 30.1% gap > 8%"
       ],
-      "rejectionReason": "LIVE_GAME_BLOCKED: NYY@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
+      "rejectionReason": "Rule71: model 23.8% vs PinVF 53.9% = 30.1% gap > 8%",
       "status": "Rejected",
-      "lineupStatus": "\u2014"
-    },
-    {
-      "game": "NYY@TB",
-      "market": "Game_Total",
-      "side": "Game_Total",
-      "ticker": "KXMLBTOTAL-26OCT052000NYYTB-7",
-      "modelProb": "\u2014",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
-      "conf": "\u2014",
-      "betSize": "\u2014",
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-06T01:17:56Z",
-      "reasonCodes": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "gatesFired": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "rejectionReason": "LIVE_GAME_BLOCKED: NYY@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
-      "status": "Rejected",
-      "lineupStatus": "\u2014"
-    },
-    {
-      "game": "NYY@TB",
-      "market": "RL_Away",
-      "side": "RL_Away",
-      "ticker": "KXMLBSPREAD-26OCT052000NYYTB-NYY2",
-      "modelProb": "\u2014",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
-      "conf": "\u2014",
-      "betSize": "\u2014",
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-06T01:17:56Z",
-      "reasonCodes": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "gatesFired": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "rejectionReason": "LIVE_GAME_BLOCKED: NYY@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
-      "status": "Rejected",
-      "lineupStatus": "\u2014"
-    },
-    {
-      "game": "NYY@TB",
-      "market": "RL_Home",
-      "side": "RL_Home",
-      "ticker": null,
-      "modelProb": "\u2014",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
-      "conf": "\u2014",
-      "betSize": "\u2014",
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-06T01:17:56Z",
-      "reasonCodes": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "gatesFired": [
-        "LIVE_GAME_BLOCKED"
-      ],
-      "rejectionReason": "LIVE_GAME_BLOCKED: NYY@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
-      "status": "Rejected",
-      "lineupStatus": "\u2014"
+      "lineupStatus": "confirmed"
     }
   ],
   "liveGameBlockedGames": [
-    "CWS@CLE",
-    "NYY@TB"
+    "CWS@CLE"
   ],
   "summary": {
-    "realMoneyCount": 0,
+    "realMoneyCount": 1,
     "priceMovedCount": 0,
-    "paperOnlyCount": 0,
-    "rejectedBlockedCount": 22,
-    "liveGameBlockedCount": 2
+    "paperOnlyCount": 3,
+    "rejectedBlockedCount": 14,
+    "liveGameBlockedCount": 1
   }
 }

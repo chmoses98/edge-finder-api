@@ -5,14 +5,23 @@
     "errors": [],
     "gameCount": 2,
     "status": "pass",
-    "warningCount": 2,
+    "warningCount": 11,
     "warnings": [
+      "CWS@CLE: pinnacleVF.away missing for Final game (expected \u2014 odds removed post-game)",
+      "CWS@CLE: Kalshi ML not in slate (odds.kalshi.ml.away=null) \u2014 must show Missing Data in marketLedger",
+      "CWS@CLE: Kalshi F5 ML not in slate (odds.kalshi.f5ml.away=null) \u2014 must show Missing Data in marketLedger",
+      "CWS@CLE: Kalshi TT Away not in slate (odds.kalshi.team_totals.away.best_ticker=null) \u2014 must show Missing Data in marketLedger",
+      "CWS@CLE: Kalshi TT Home not in slate (odds.kalshi.team_totals.home.best_ticker=null) \u2014 must show Missing Data in marketLedger",
       "CWS@CLE: Kalshi NRFI/YRFI not in slate (odds.kalshi.nrfi_yrfi.nrfi_american=null) \u2014 must show Missing Data in marketLedger",
-      "CWS@CLE: awayProjRuns not in allEdges \u2014 projection may have used league-average fallback (marketLedger present, game was evaluated)"
+      "CWS@CLE: Kalshi Game Total not in slate (odds.kalshi.total.line=null) \u2014 must show Missing Data in marketLedger",
+      "CWS@CLE: Kalshi RL not in slate (odds.kalshi.rl.best_ticker=null) \u2014 must show Missing Data in marketLedger",
+      "CWS@CLE: awayProjRuns not in allEdges \u2014 projection may have used league-average fallback (marketLedger present, game was evaluated)",
+      "NYY@TB: Kalshi NRFI/YRFI not in slate (odds.kalshi.nrfi_yrfi.nrfi_american=null) \u2014 must show Missing Data in marketLedger",
+      "NYY@TB: awayProjRuns not in allEdges \u2014 projection may have used league-average fallback (marketLedger present, game was evaluated)"
     ]
   },
   "meta": {
-    "createdAt": "2026-10-05T22:25:59Z",
+    "createdAt": "2026-10-06T01:18:08Z",
     "producedBy": "scripts/validate_slate_final.py",
     "schemaVersion": "1.0",
     "slateDate": "2026-10-05",

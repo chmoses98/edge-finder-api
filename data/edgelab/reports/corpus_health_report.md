@@ -1,5 +1,5 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-10-05T15:37:52Z
+Generated: 2026-10-06T13:59:42Z
 
 ## Operational health: **HEALTHY**
 - Reasons: none
@@ -18,14 +18,14 @@ Generated: 2026-10-05T15:37:52Z
 
 ## Forward operational health (drives pass/fail)
 - Population note: expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates and noSlateDates (schedule-verified days with no MLB games). snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.
-- Expected forward runs: 61
-- Forward snapshots captured: 56
+- Expected forward runs: 62
+- Forward snapshots captured: 57
 - Forward snapshots missing (no manifest at all): 5 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
 - Forward incomplete captures (manifest exists, missing a required component): 0 []
-- Forward dates pending today (not yet due): 1 ['2026-10-05']
+- Forward dates pending today (not yet due): 1 ['2026-10-06']
 - Forward no-slate dates (MLB schedule verified no games; no production expected): 2 ['2026-09-28', '2026-10-02']
-- Forward provenance coverage: 56/61
-- Forward replay: attempted 225, completed 126, failed 99
+- Forward provenance coverage: 57/62
+- Forward replay: attempted 228, completed 126, failed 102
 - Forward CLV-linked markets: 44
 - Forward settlement-linked markets: 89
 - Consecutive degraded forward runs: 0
@@ -35,12 +35,12 @@ Generated: 2026-10-05T15:37:52Z
 - FORWARD_MISSING_SNAPSHOT: 5
 - FORWARD_NO_SLATE: 2
 - FORWARD_PENDING_TODAY: 1
-- FORWARD_RESEARCH_ONLY_NO_DECISION: 17
+- FORWARD_RESEARCH_ONLY_NO_DECISION: 18
 
 ## Storage
-- Snapshots: 364,334,734 bytes
-- Replay runs: 27,519,713 bytes
-- Total: 391,854,447 bytes
+- Snapshots: 365,341,996 bytes
+- Replay runs: 27,524,033 bytes
+- Total: 392,866,029 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Stored Completeness | Effective Completeness | Research-Only | Commit SHA Known | Replay | Runs | Acknowledged Gap |
@@ -112,4 +112,5 @@ Generated: 2026-10-05T15:37:52Z
 | 2026-10-02 | FORWARD | NOT_APPLICABLE_NO_SLATE | FORWARD_NO_SLATE | MISSING_REQUIRED_INPUT | MISSING_REQUIRED_INPUT | False | False | REJECTED_INELIGIBLE | 1 |  |
 | 2026-10-03 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 4 |  |
 | 2026-10-04 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 3 |  |
-| 2026-10-05 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |
+| 2026-10-05 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 3 |  |
+| 2026-10-06 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |

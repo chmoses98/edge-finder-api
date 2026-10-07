@@ -3,23 +3,13 @@
 EXECUTION SLIP — 2026-10-07
 ======================================================================
 
-=== REAL-MONEY BETS (1) ===
-  CLE@CWS | TT_Home_Over | TT_Home_Over
-    Ticker:    KXMLBTEAMTOTAL-26OCT071600CLECWS-CWS4
-    Model%:    59.77% | Exec Price: 50.0¢ | Raw Edge: +9.77% | Cal Edge: +2.49%
-    Tier:      MEDIUM | Stake: $4.0
-    MaxBet:    54.11¢ or better
-    Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
-    Snapshot:  2026-10-07T21:13:44Z
-
+=== REAL-MONEY BETS (0) ===
+  (none)
 
 === PRICE-MOVED PASSES (0) ===
   (none)
 
-=== PAPER-ONLY (24) ===
-  CLE@CWS | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
-  CLE@CWS | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
-  CLE@CWS | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
+=== PAPER-ONLY (21) ===
   LAD@ATL | NRFI | Cal Edge: -2.28% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   LAD@ATL | YRFI | Cal Edge: +2.03% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   LAD@ATL | ML_Away | Cal Edge: +1.90% | paper-tier
@@ -42,16 +32,22 @@ EXECUTION SLIP — 2026-10-07
   MIL@SD | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   MIL@SD | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
 
-=== REJECTED / BLOCKED (17) ===
-  CLE@CWS | F5_ML_Away | Raw Edge: -53.83% | Rule71-F5: model 36.2% vs KalshiF5VF 89.1% = 52.9% > 12%
-  CLE@CWS | F5_ML_Home | Raw Edge: +30.17% | Tier cap: model/market disagreement 30.7pt > 7pt -- Tier A withheld pending explanation
-  CLE@CWS | TT_Away_Over | Raw Edge: -33.91% | edge -9.089% below 1.0% floor
-  CLE@CWS | ML_Away | Raw Edge: -21.32% | Rule71: model 47.7% vs PinVF 77.5% = 29.8% gap > 8%
-  CLE@CWS | ML_Home | Raw Edge: +20.32% | Tier cap: model/market disagreement 20.6pt > 7pt -- Tier A withheld pending explanation; Rule71: mod
+=== REJECTED / BLOCKED (23) ===
+  CLE@CWS | NRFI | Raw Edge: — | LIVE_GAME_BLOCKED: CLE@CWS status='In Progress' — pregame-only mode cannot recommend real-money bets
+  CLE@CWS | YRFI | Raw Edge: — | LIVE_GAME_BLOCKED: CLE@CWS status='In Progress' — pregame-only mode cannot recommend real-money bets
+  CLE@CWS | F5_ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: CLE@CWS status='In Progress' — pregame-only mode cannot recommend real-money bets
+  CLE@CWS | F5_ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: CLE@CWS status='In Progress' — pregame-only mode cannot recommend real-money bets
+  CLE@CWS | TT_Away_Over | Raw Edge: — | LIVE_GAME_BLOCKED: CLE@CWS status='In Progress' — pregame-only mode cannot recommend real-money bets
+  CLE@CWS | TT_Home_Over | Raw Edge: — | LIVE_GAME_BLOCKED: CLE@CWS status='In Progress' — pregame-only mode cannot recommend real-money bets
+  CLE@CWS | ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: CLE@CWS status='In Progress' — pregame-only mode cannot recommend real-money bets
+  CLE@CWS | ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: CLE@CWS status='In Progress' — pregame-only mode cannot recommend real-money bets
+  CLE@CWS | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: CLE@CWS status='In Progress' — pregame-only mode cannot recommend real-money bets
+  CLE@CWS | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: CLE@CWS status='In Progress' — pregame-only mode cannot recommend real-money bets
+  CLE@CWS | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: CLE@CWS status='In Progress' — pregame-only mode cannot recommend real-money bets
   LAD@ATL | F5_ML_Away | Raw Edge: +2.72% | edge 0.248% below threshold
   LAD@ATL | F5_ML_Home | Raw Edge: -9.49% | edge -2.832% below threshold
   LAD@ATL | TT_Away_Over | Raw Edge: -6.87% | edge -2.196% below 1.0% floor
-  LAD@ATL | TT_Home_Over | Raw Edge: -9.04% | edge -2.749% below 1.0% floor
+  LAD@ATL | TT_Home_Over | Raw Edge: -8.04% | edge -2.493% below 1.0% floor
   LAD@ATL | ML_Home | Raw Edge: -8.43% | edge -2.588% below 1.0% floor
   TB@NYY | F5_ML_Away | Raw Edge: -8.25% | edge -2.498% below threshold
   TB@NYY | F5_ML_Home | Raw Edge: +3.70% | edge 0.498% below threshold
@@ -62,6 +58,7 @@ EXECUTION SLIP — 2026-10-07
   MIL@SD | TT_Home_Over | Raw Edge: +4.39% | edge 0.674% below 1.0% floor
 
 ======================================================================
-SLIP SUMMARY: Real=1 PriceMoved=0 Paper=24 Rejected=17
+SLIP SUMMARY: Real=0 PriceMoved=0 Paper=21 Rejected=23
+LIVE_GAME_BLOCKED: CLE@CWS — pregame-only gate applied, 0 real-money bets from these games
 ======================================================================
 ======================================================================

@@ -346,6 +346,14 @@ export default async function handler(req, res) {
               venue:     game.venue?.name,
               park,
               scheduleSource: 'statsapi',
+              // MLB game-type code (R regular season; F/D/L/W postseason rounds) and series
+              // position, verbatim. Lets downstream consumers (prop projections, the app
+              // export) treat October games as postseason instead of inferring it. Null when
+              // the schedule omits them; never guessed.
+              gameType:          game.gameType || null,
+              seriesDescription: game.seriesDescription || null,
+              seriesGameNumber:  game.seriesGameNumber ?? null,
+              gamesInSeries:     game.gamesInSeries ?? null,
               away: {
                 team:   away?.team?.name,
                 abbr:   away?.team?.abbreviation,

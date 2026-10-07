@@ -109,6 +109,10 @@ def capture_provenance(date: str) -> dict:
         "workflow": os.environ.get("GITHUB_WORKFLOW"),
         "job": os.environ.get("GITHUB_JOB"),
         "eventName": os.environ.get("GITHUB_EVENT_NAME"),
+        # fetch-slate.yml's SLATE_TRIGGER_SOURCE: "schedule" for a cron run AND for an
+        # unattended pipeline-watchdog dispatch (eventName workflow_dispatch, but the
+        # execution/bet-logging chain is skipped exactly as on a cron run).
+        "triggerSource": os.environ.get("SLATE_TRIGGER_SOURCE"),
         "capturedAt": ids.utc_now_iso(),
     }
     pipeline_artifacts.write_stage_artifact(

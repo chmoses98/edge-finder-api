@@ -1094,6 +1094,9 @@ def _production_provenance(date):
         # is_schedule_triggered_run(), which falls back to the frozen raw
         # payload for any manifest built before this line existed.
         "eventName": payload.get("eventName"),
+        # "schedule" also for an unattended pipeline-watchdog dispatch (see
+        # is_schedule_triggered_run()); absent on provenance captured before it existed.
+        "triggerSource": payload.get("triggerSource"),
     }
     return provenance
 
@@ -1212,7 +1215,8 @@ def build_pre_game_manifest(date, workflow_run_id=None):
     # deliberately never is here) -- see effective_completeness_status()
     # for how an ALREADY-COMMITTED manifest predating this fix is
     # reclassified live, without altering its stored record.
-    if production_provenance.get("eventName") == EVENT_NAME_SCHEDULE:
+    if (production_provenance.get("eventName") == EVENT_NAME_SCHEDULE
+            or production_provenance.get("triggerSource") == EVENT_NAME_SCHEDULE):
         components.append(not_applicable_component(
             "RISK_GATE_OUTPUT", required_status=REQUIRED, reason=REASON_NOT_APPLICABLE_FOR_RUN_TYPE,
         ))
@@ -1710,11 +1714,16 @@ def is_schedule_triggered_run(manifest):
         return False
     provenance = manifest.get("productionProvenance") or {}
     if "eventName" in provenance:
-        return provenance.get("eventName") == EVENT_NAME_SCHEDULE
+        # An unattended watchdog dispatch (scripts/ci/pipeline_watchdog.py) is a
+        # workflow_dispatch whose execution chain is skipped like a cron run's;
+        # capture_production_provenance.py records that as triggerSource "schedule".
+        return (provenance.get("eventName") == EVENT_NAME_SCHEDULE
+                or provenance.get("triggerSource") == EVENT_NAME_SCHEDULE)
     raw = load_frozen_component(manifest, "PRODUCTION_PROVENANCE")
     if not raw:
         return False
-    return (raw.get("data") or {}).get("eventName") == EVENT_NAME_SCHEDULE
+    data = raw.get("data") or {}
+    return data.get("eventName") == EVENT_NAME_SCHEDULE or data.get("triggerSource") == EVENT_NAME_SCHEDULE
 
 
 def _required_components_missing_excluding(manifest, excluded_component_types):

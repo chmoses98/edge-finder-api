@@ -397,7 +397,11 @@ def test_recommendation_status_mapping(published):
     _data_root, out = published
     recs = {r["market_id"]: r for r in _load(out, "recommendations.json")["items"]}
     placed = recs["mkt_kalshi_KXMLBTEAMTOTAL-26OCT011400PHIATL-ATL4"]
-    assert placed["status"] == "RECOMMENDED" and placed["authority"] == "MANUAL" and placed["research_only"] is False
+    # NOW (10-02 15:00Z) is after the 10-02 00:00Z first pitch: the pregame recommendation is
+    # history, never an actionable candidate (test_started_game_* covers the pregame side).
+    assert placed["status"] == "EXPIRED" and placed["authority"] == "MANUAL" and placed["research_only"] is False
+    assert placed["reason_not_playable"].startswith("GAME_STARTED")
+    assert placed["extensions"]["native_status"] == "BET_PLACED"
     assert placed["selection"] == "YES" and placed["extensions"]["side_basis"] == "PLACED_BET_SIDE"
     assert placed["stake_dollars"] is None and placed["bankroll_basis"] is None
     passed = recs["mkt_kalshi_KXMLBGAME-26OCT011400PHIATL-PHI"]

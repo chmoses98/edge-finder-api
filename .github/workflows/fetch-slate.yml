@@ -62,6 +62,10 @@ on:
         description: 'Date to fetch (YYYY-MM-DD). Leave blank for today ET.'
         required: false
         default: ''
+      unattended:
+        description: 'true = dispatched by scripts/ci/pipeline_watchdog.py: run with SCHEDULED semantics (non-final slate-day attempt, SCHEDULED_REFRESH authority, no bet logging). Humans leave this false.'
+        required: false
+        default: 'false'
 
 # Shared with clv-update.yml and lineup-recheck.yml (Production Reliability
 # and Settlement Recovery milestone, docs/POSTMORTEM_PRODUCTION_RELIABILITY_2026.md
@@ -155,7 +159,8 @@ jobs:
       id: gate
       env:
         DATE: ${{ steps.date.outputs.date }}
-        EVENT_NAME: ${{ github.event_name }}
+        # An unattended (watchdog) dispatch is a scheduled attempt in every respect.
+        EVENT_NAME: ${{ github.event.inputs.unattended == 'true' && 'schedule' || github.event_name }}
         CRON: ${{ github.event.schedule }}
       run: |
         set +e
@@ -293,7 +298,7 @@ jobs:
         # workflow_dispatch/push (always authoritative). See
         # lib/slate_manager.py's "Scheduled vs. manual authority" docstring
         # section for the full semantics this drives.
-        if [ "${{ github.event_name }}" = "schedule" ]; then
+        if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event.inputs.unattended }}" = "true" ]; then
           echo "SLATE_TRIGGER_SOURCE=schedule" >> $GITHUB_ENV
         else
           echo "SLATE_TRIGGER_SOURCE=manual" >> $GITHUB_ENV
@@ -812,13 +817,13 @@ jobs:
 
     - name: Risk gate (TT safety + portfolio concentration)
       id: risk_gate
-      if: github.event_name != 'schedule' && steps.publish_slate.outcome == 'success'
+      if: github.event_name != 'schedule' && github.event.inputs.unattended != 'true' && steps.publish_slate.outcome == 'success'
       continue-on-error: true
       run: python3 scripts/risk_gate.py
 
     - name: Write pending bets to bets.json
       id: write_pending_bets
-      if: github.event_name != 'schedule' && steps.risk_gate.outcome == 'success'
+      if: github.event_name != 'schedule' && github.event.inputs.unattended != 'true' && steps.risk_gate.outcome == 'success'
       continue-on-error: true
       run: python3 scripts/write_pending_bets.py
 
@@ -828,7 +833,7 @@ jobs:
     # authoritative slate publication, which already completed above.
     - name: Validate bet logging (hard gate for execution chain — does not affect slate publication)
       id: validate_bet_logging
-      if: github.event_name != 'schedule' && steps.write_pending_bets.outcome == 'success'
+      if: github.event_name != 'schedule' && github.event.inputs.unattended != 'true' && steps.write_pending_bets.outcome == 'success'
       continue-on-error: true
       run: python3 scripts/validate_bet_logging.py
 
@@ -836,6 +841,7 @@ jobs:
       id: write_tracked_tickers
       if: >-
         github.event_name != 'schedule' &&
+        github.event.inputs.unattended != 'true' &&
         steps.write_pending_bets.outcome == 'success' &&
         steps.validate_bet_logging.outcome == 'success'
       continue-on-error: true

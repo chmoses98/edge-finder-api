@@ -63,8 +63,13 @@ if ROOT_DIR not in sys.path:
 
 from scripts.fetch_lineups import fetch_boxscore, parse_lineup_response, missing_lineup_fields  # noqa: E402
 from scripts.fetch_opp_quality import MLB_ID_TO_ABBR  # noqa: E402
+from lib.edgelab.slate_day_contract import SCHEDULE_GAME_TYPES  # noqa: E402
 
-MLB_SCHEDULE_URL = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={date}&gameType=R&hydrate=probablePitcher"
+# Regular season AND postseason (F/D/L/W): with gameType=R alone every October game was
+# invisible here, so the hitter snapshot pipeline had no lineups/probables for the
+# postseason (2026-10-07 P0). Same game-type set as lib.edgelab.slate_day_contract.
+MLB_SCHEDULE_URL = ("https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={date}"
+                    "&gameType=" + ",".join(SCHEDULE_GAME_TYPES) + "&hydrate=probablePitcher")
 
 # MLB Stats API's own team codes occasionally differ from the abbreviation Kalshi's own
 # tickers/other parts of this repo use for the same team -- same two known discrepancies

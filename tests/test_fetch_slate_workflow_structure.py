@@ -161,20 +161,21 @@ EXPECTED_IF_CONDITIONS = {
     # events (Prospective/CLV Measurement Reliability mission): automated
     # bet placement must stay a workflow_dispatch/push-only action, never
     # triggered by the new scheduled slate-refresh cron.
-    "risk_gate": "github.event_name != 'schedule' && steps.publish_slate.outcome == 'success'",
+    "risk_gate": "github.event_name != 'schedule' && github.event.inputs.unattended != 'true' && steps.publish_slate.outcome == 'success'",
     # write_pending_bets reads data/slate.json AFTER risk_gate's in-place
     # mutation (TT downgrades) — must not run against a slate risk_gate
     # failed to produce. Also schedule-gated (see risk_gate above).
-    "write_pending_bets": "github.event_name != 'schedule' && steps.risk_gate.outcome == 'success'",
+    "write_pending_bets": "github.event_name != 'schedule' && github.event.inputs.unattended != 'true' && steps.risk_gate.outcome == 'success'",
     # validate_bet_logging compares bets.json against the ledger; bets.json
     # is only trustworthy once write_pending_bets has finished. Also
     # schedule-gated (see risk_gate above).
-    "validate_bet_logging": "github.event_name != 'schedule' && steps.write_pending_bets.outcome == 'success'",
+    "validate_bet_logging": "github.event_name != 'schedule' && github.event.inputs.unattended != 'true' && steps.write_pending_bets.outcome == 'success'",
     # write_tracked_tickers registers CLV tracking for bets that were both
     # logged AND confirmed consistent with the ledger — requires both.
     # Also schedule-gated (see risk_gate above).
     "write_tracked_tickers": (
         "github.event_name != 'schedule' && "
+        "github.event.inputs.unattended != 'true' && "
         "steps.write_pending_bets.outcome == 'success' && "
         "steps.validate_bet_logging.outcome == 'success'"
     ),

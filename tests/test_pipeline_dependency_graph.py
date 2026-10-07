@@ -91,9 +91,12 @@ _COND_RE = re.compile(r"steps\.([\w]+)\.outcome == '(\w+)'")
 # than hand-copying the workflow's own condition logic into a second
 # implementation.
 _EVENT_COND_RE = re.compile(r"github\.event_name (==|!=) '(\w+)'")
+# pipeline-watchdog dispatches (scripts/ci/pipeline_watchdog.py) pass unattended=true and must
+# be gated exactly like a scheduled run.
+_UNATTENDED_COND_RE = re.compile(r"github\.event\.inputs\.unattended (==|!=) '(\w+)'")
 
 
-def _condition_holds(condition, outcomes, event_name):
+def _condition_holds(condition, outcomes, event_name, unattended=False):
     """
     Evaluate the small subset of GitHub Actions `if:` expression syntax
     actually used in fetch-slate.yml: `None` (no condition => always runs),
@@ -115,6 +118,14 @@ def _condition_holds(condition, outcomes, event_name):
             if not matches:
                 return False
             continue
+        un_m = _UNATTENDED_COND_RE.fullmatch(clause)
+        if un_m:
+            matches = ("true" if unattended else "false") == un_m.group(2)
+            if un_m.group(1) == "!=":
+                matches = not matches
+            if not matches:
+                return False
+            continue
         m = _COND_RE.fullmatch(clause)
         assert m, f"unrecognized if: clause (extend the test evaluator): {clause!r}"
         step_id, expected = m.group(1), m.group(2)
@@ -123,7 +134,7 @@ def _condition_holds(condition, outcomes, event_name):
     return True
 
 
-def simulate_job(steps, intended_outcomes, event_name="workflow_dispatch"):
+def simulate_job(steps, intended_outcomes, event_name="workflow_dispatch", unattended=False):
     """
     Walk the real step list in order. For each step with an id: if its real
     `if:` condition (evaluated against outcomes computed so far and the
@@ -144,7 +155,7 @@ def simulate_job(steps, intended_outcomes, event_name="workflow_dispatch"):
         step_id = step.get("id")
         if not step_id:
             continue
-        if _condition_holds(step.get("if"), outcomes, event_name):
+        if _condition_holds(step.get("if"), outcomes, event_name, unattended):
             outcomes[step_id] = intended_outcomes.get(step_id, "success")
         else:
             outcomes[step_id] = "skipped"
@@ -315,6 +326,20 @@ class TestScheduledRunNeverPlacesABet:
                 f"{step_id} must be skipped on a schedule-triggered run, "
                 f"got {outcomes[step_id]!r}"
             )
+
+    def test_bet_placement_chain_all_skipped_on_an_unattended_dispatch(self, workflow_steps):
+        """A workflow_dispatch with unattended=true (scripts/ci/pipeline_watchdog.py) is a
+        scheduled run in every respect: it publishes the slate but never logs a bet."""
+        full = {**REQUIRED_SUCCESS, "risk_gate": "success", "write_pending_bets": "success",
+                "validate_bet_logging": "success", "write_tracked_tickers": "success",
+                "capture_closing_lines": "success"}
+        outcomes = simulate_job(workflow_steps, full, event_name="workflow_dispatch", unattended=True)
+        for step_id in self.BET_PLACEMENT_STEP_IDS:
+            assert outcomes[step_id] == "skipped", step_id
+        assert outcomes["publish_slate"] == "success"
+        # a human's dispatch is unchanged
+        human = simulate_job(workflow_steps, full, event_name="workflow_dispatch")
+        assert human["risk_gate"] == "success"
 
     def test_slate_publication_and_closing_line_capture_still_run_on_schedule(self, workflow_steps):
         """

@@ -37,6 +37,7 @@ import json
 import urllib.request
 
 from lib.edgelab.player_stats import parse_nonnegative_int
+from lib.edgelab.slate_day_contract import SCHEDULE_GAME_TYPES
 
 MLB_STATS_API = "https://statsapi.mlb.com/api/v1"
 
@@ -79,8 +80,11 @@ def fetch_team_recent_schedule(team_id, start_date, end_date, timeout=15):
     scripts/fetch_opp_quality.py's fetch_recent_games()."""
     if not team_id:
         return None
+    # Regular season AND postseason: with gameType=R alone every October bullpen looked
+    # fully rested (no "recent" games), so the workload adjustment never fired in the
+    # playoffs. Same game-type set as lib.edgelab.slate_day_contract.SCHEDULE_GAME_TYPES.
     url = (f"{MLB_STATS_API}/schedule?sportId=1&teamId={team_id}"
-           f"&startDate={start_date}&endDate={end_date}&gameType=R")
+           f"&startDate={start_date}&endDate={end_date}&gameType={','.join(SCHEDULE_GAME_TYPES)}")
     return _fetch_json(url, timeout)
 
 

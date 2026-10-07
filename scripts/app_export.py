@@ -278,6 +278,31 @@ def _event_status(raw, final_from_settlement=False):
     return EVENT_STATUS.get(str(raw or "").strip().lower(), "UNKNOWN" if raw else "SCHEDULED")
 
 
+#: Statuses at which a pregame recommendation can still be acted on.
+_PREGAME_REC_STATUSES = ("RECOMMENDED", "RESEARCH_CANDIDATE", "WATCH")
+
+
+def _time_gate(status, start_iso, confidence, now_iso):
+    """(status, basis). The slate's status is a snapshot from its fetch, often hours old; a game
+    whose scheduled first pitch has passed must never be exported as SCHEDULED (a pregame
+    candidate). It becomes LIVE with basis FIRST_PITCH_PASSED until the schedule or settlement
+    says otherwise (FINAL / POSTPONED / CANCELLED are never overridden)."""
+    if (status == "SCHEDULED" and confidence != "PLACEHOLDER" and start_iso and now_iso
+            and timeutil.parse_ts(start_iso) <= timeutil.parse_ts(now_iso)):
+        return "LIVE", "FIRST_PITCH_PASSED"
+    return status, None
+
+
+def pregame_closed(event, now_iso):
+    """True when no pregame recommendation may be offered for this event: it is live, final,
+    postponed/cancelled, or its scheduled first pitch has passed."""
+    if event is None:
+        return True
+    if event["status"] not in ("SCHEDULED", "UNKNOWN"):
+        return True
+    return timeutil.parse_ts(event["start_time_utc"]) <= timeutil.parse_ts(now_iso)
+
+
 def build_events(inputs, now_iso, warnings):
     """events, plus the lookups the other builders need:
     by_pk {gamePk str: event}, by_key {(date, kalshi teams): event}, by_alias {fallback gameId: event}."""
@@ -305,11 +330,13 @@ def build_events(inputs, now_iso, warnings):
                       "odds_api_event_id": g.get("oddsApiEventId")}
         if extra:
             source_ids["edgelab_game_id"] = extra[0].get("gameId")
+        status, status_basis = _time_gate(_event_status(g.get("status"), pk in final_pks),
+                                          _ts(g["startTime"]), "SCHEDULED", now_iso)
         ev = build.event(
             sport=SPORT, source=EVENT_SOURCE, source_id=pk, start_time_utc=g["startTime"],
             participants=[a, h], home_participant=h["participant_id"], away_participant=a["participant_id"],
             league="MLB", season=date[:4], competition=None,
-            status=_event_status(g.get("status"), pk in final_pks),
+            status=status,
             start_time_source=g.get("scheduleSource") or "statsapi", start_time_confidence="SCHEDULED",
             venue=g.get("venue"), source_ids=source_ids,
             schedule_updated_at=g.get("lineupCheckedAt"), last_updated_at=now_iso,
@@ -321,7 +348,9 @@ def build_events(inputs, now_iso, warnings):
                 "away_pitcher": ((away.get("pitcher") or {}).get("name")),
                 "home_pitcher": ((home.get("pitcher") or {}).get("name")),
                 "park": (g.get("park") or {}).get("name"), "park_factor": (g.get("park") or {}).get("parkFactor"),
-                "slate_status_raw": g.get("status"),
+                "slate_status_raw": g.get("status"), "status_basis": status_basis,
+                "game_type": g.get("gameType"), "series_description": g.get("seriesDescription"),
+                "series_game_number": g.get("seriesGameNumber"),
             })
         events.append(ev)
         by_pk[pk] = ev
@@ -345,16 +374,17 @@ def build_events(inputs, now_iso, warnings):
             start_iso, confidence, source = f"{row.get('gameDate') or date}T00:00:00Z", "PLACEHOLDER", "edgelab_games_date_only"
             warnings.append(f"event {pk}: no scheduled start time in games partition; placeholder midnight UTC")
         a, h = _team(row.get("awayTeam")), _team(row.get("homeTeam"))
+        status, status_basis = _time_gate(_event_status(row.get("status"), pk in final_pks), start_iso, confidence, now_iso)
         ev = build.event(
             sport=SPORT, source=EVENT_SOURCE, source_id=pk, start_time_utc=start_iso, participants=[a, h],
             home_participant=h["participant_id"], away_participant=a["participant_id"], league="MLB",
-            season=date[:4], status=_event_status(row.get("status"), pk in final_pks),
+            season=date[:4], status=status,
             start_time_source=source, start_time_confidence=confidence, venue=row.get("venue"),
             source_ids={"edgelab_game_id": row.get("gameId"), "kalshi_event_key": row.get("kalshiKey")},
             schedule_updated_at=row.get("updatedAt"), last_updated_at=now_iso,
             extensions={"game_date": row.get("gameDate") or date, "kalshi_key": row.get("kalshiKey"),
                         "doubleheader_game_number": row.get("doubleheaderGameNumber"),
-                        "slate_status_raw": row.get("status")})
+                        "slate_status_raw": row.get("status"), "status_basis": status_basis})
         events.append(ev)
         by_pk[pk] = ev
         if row.get("kalshiKey"):
@@ -619,6 +649,19 @@ def _map_status(native, real_money, bet_is_real):
     return "NOT_PLAYABLE", "RESEARCH_ONLY", True
 
 
+def _gate_recommendation(status, authority, research_only, event, now):
+    """-> (status, authority, research_only, reason). A pregame recommendation for a game that is
+    live, final, past its first pitch, postponed or cancelled is never exported as actionable:
+    RECOMMENDED / RESEARCH_CANDIDATE / WATCH become EXPIRED (game started) or NOT_PLAYABLE
+    (postponed / cancelled). Authority and research_only are history (what the recommendation was
+    when issued) and are kept; the native status stays in extensions.native_status."""
+    if status not in _PREGAME_REC_STATUSES or not pregame_closed(event, timeutil.to_iso(now)):
+        return status, authority, research_only, None
+    if event["status"] in ("POSTPONED", "CANCELLED"):
+        return "NOT_PLAYABLE", authority, research_only, f"EVENT_{event['status']}: no pregame action on this game"
+    return "EXPIRED", authority, research_only, "GAME_STARTED: the pregame window closed at first pitch"
+
+
 def build_recommendations(inputs, run_id, lookups, market_index, now, warnings):
     market_rows = {m.get("marketTicker"): m for m in inputs["markets"] if m.get("marketTicker")}
     real_money = _real_money_tickers(inputs)
@@ -652,6 +695,7 @@ def build_recommendations(inputs, run_id, lookups, market_index, now, warnings):
                                    family=r.get("marketFamily"), game_id=r.get("gameId"))
             status, authority, research_only = _map_status(r.get("status"), t in real_money,
                                                            bool(bet) and bet.get("trackingType") in REAL_TRACKING_TYPES)
+            status, authority, research_only, gate_reason = _gate_recommendation(status, authority, research_only, ev, now)
             recs.append(build.recommendation(
                 sport=SPORT, source_repo=SOURCE_REPO, event_id=ev["event_id"], market_id=m["market_id"], run_id=run_id,
                 selection=side, market_description=f"{r.get('marketName') or m['yes_description']} ({side} on {t})",
@@ -660,7 +704,7 @@ def build_recommendations(inputs, run_id, lookups, market_index, now, warnings):
                 current_price=_pct(r.get("marketImpliedProbability")), fair_probability=_pct(r.get("modelFairProbability")),
                 edge=_pct(r.get("estimatedEdge")), bet_up_to_price=_pct(r.get("priceCeiling")),
                 bet_up_to_probability=_pct(r.get("priceCeiling")), confidence=r.get("confidence"),
-                reason_not_playable=r.get("passReason") if status in ("PASS", "NOT_PLAYABLE") else None,
+                reason_not_playable=gate_reason or (r.get("passReason") if status in ("PASS", "NOT_PLAYABLE") else None),
                 data_freshness=freshness.status_for(r["createdAt"], component="recommendations", now=now),
                 source_ids={"recommendation_id": r.get("recommendationId"), "model_evaluation_id": r.get("modelEvaluationId"),
                             "bet_id": r.get("betId"), "native_run_id": r.get("runId")},
@@ -688,13 +732,14 @@ def build_recommendations(inputs, run_id, lookups, market_index, now, warnings):
                 continue
             m = ensure_market_stub(market_index, inputs["_markets_list"], t, lookups=lookups, game_id=pk)
             status, authority, research_only = _map_status(c.get("status"), bool(c.get("realMoneyEligible")), False)
+            status, authority, research_only, gate_reason = _gate_recommendation(status, authority, research_only, ev, now)
             recs.append(build.recommendation(
                 sport=SPORT, source_repo=SOURCE_REPO, event_id=ev["event_id"], market_id=m["market_id"], run_id=run_id,
                 selection=side, market_description=f"{c.get('market')} ({side} on {t})", created_at=created,
                 status=status, authority=authority, research_only=research_only,
                 native_id=f"execution:{inputs['date']}:{c.get('game')}:{c.get('market')}",
                 bet_up_to_price=_pct(c.get("approvedPrice")), confidence=c.get("tier"),
-                reason_not_playable=c.get("rejectionReason") if status in ("PASS", "NOT_PLAYABLE") else None,
+                reason_not_playable=gate_reason or (c.get("rejectionReason") if status in ("PASS", "NOT_PLAYABLE") else None),
                 data_freshness=freshness.status_for(created, component="recommendations", now=now),
                 extensions={"native_status": c.get("status"), "market_name": c.get("market"), "side_basis": basis,
                             "real_money_eligible": bool(c.get("realMoneyEligible")), "source": "pipeline_execution"}))
@@ -905,6 +950,11 @@ def build_bundle(inputs, *, now, commit_sha=None, workflow_run_id=None):
 
     if not inputs["markets"]:
         warnings.append(f"markets partition for {date} is empty")
+    if inputs["slate"] is None and inputs["markets"]:
+        kalshi_games = {(r.get("awayTeam"), r.get("homeTeam")) for r in inputs["games"] if r.get("awayTeam")}
+        warnings.append(f"no published slate for {date} (data/slates/{date}/authoritative.json missing): "
+                        f"{len(kalshi_games)} Kalshi-discovered game(s) await MLB schedule reconciliation, so "
+                        f"events and model prices cannot be built until Fetch Slate Data publishes the slate")
     if not model_prices:
         warnings.append(f"no model price could be exported for {date}")
     if date != et_date_for_instant(now):

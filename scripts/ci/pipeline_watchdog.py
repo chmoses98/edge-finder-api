@@ -230,7 +230,11 @@ def main(argv=None):
         listed = [] if args.dry_run else _gh_runs(wf)
         if listed is None:
             # Unknown run state: mark as in flight so nothing is stacked on top of it.
+            print(f"gh run list {wf}: UNKNOWN -> failed closed (treated as in flight, no dispatch)")
             listed = [{"status": "in_progress"}]
+        elif not args.dry_run:
+            print(f"gh run list {wf}: {len(listed)} run(s), newest created "
+                  f"{max((r.get('createdAt') or '' for r in listed), default='') or 'n/a'}")
         runs[wf] = listed
     verdict = decide(state, runs, now)
     printable = dict(state)

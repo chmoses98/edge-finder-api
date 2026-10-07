@@ -645,7 +645,8 @@ def test_app_export_workflow_is_wired_like_the_other_data_workflows():
     assert watched == {"Fetch Slate Data", "Build Handicapping Card", "Prospective Model Snapshots (Scheduled)",
                        "EdgeLab Market Capture", "EdgeLab Postgame Settlement", "EdgeLab Settlement Reconcile"}
     assert triggers["workflow_run"]["types"] == ["completed"]
-    assert doc["permissions"] == {"contents": "write"}
+    # actions: write is for scripts/ci/pipeline_watchdog.py only (tests/test_pipeline_watchdog.py)
+    assert doc["permissions"] == {"contents": "write", "actions": "write"}
     assert doc["concurrency"]["cancel-in-progress"] is False
     assert "scripts/app_export.py" in source and "--out app/latest" in source
     assert "scripts/ci/git_data_commit.py" in source and '"app/latest/"' in source

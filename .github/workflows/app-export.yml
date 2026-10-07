@@ -34,6 +34,9 @@ on:
 
 permissions:
   contents: write
+  # scripts/ci/pipeline_watchdog.py lists and dispatches this repository's own MLB producers
+  # (fetch-slate / capture-snapshots-scheduled / model-snapshot-scheduler) that GitHub's cron missed.
+  actions: write
 
 concurrency:
   group: app-export
@@ -57,6 +60,18 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           pip install -r requirements-ci.txt
+
+      # 2026-10-07 missed-cron incident: GitHub fired this repository's crons hours late or not
+      # at all, so the MLB slate / Kalshi capture / model snapshots never ran. This export runs
+      # after every producer, so it re-arms only the producer that is missing or stale, at that
+      # producer's own cadence, never on top of a recent or in-flight run (unknown run state =
+      # no dispatch). Slate dispatches are unattended=true: scheduled-run semantics, no bet
+      # logging. continue-on-error: a watchdog failure can never block the export below.
+      - name: Re-arm missed MLB producers
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/pipeline_watchdog.py
 
       - name: Build app/latest from committed data
         id: export

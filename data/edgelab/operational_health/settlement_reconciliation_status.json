@@ -1,23 +1,23 @@
 {
-  "asOf": "2026-10-07T02:56:48Z",
+  "asOf": "2026-10-07T09:39:08Z",
   "lastRun": {
-    "completedAt": "2026-10-07T02:56:48Z",
+    "completedAt": "2026-10-07T09:39:08Z",
     "counts": {
-      "betsSettled": 1,
+      "betsSettled": 2,
       "datesChanged": 1,
       "datesConsidered": 1,
       "reportsRegenerated": 1,
       "settlementsMeaningfullyChanged": 661,
-      "wagersStillPending": 2
+      "wagersStillPending": 0
     },
     "datesConsidered": [
       "2026-10-06"
     ],
-    "githubRunId": "37564319019",
+    "githubRunId": "37601949301",
     "refusalReason": null,
-    "trigger": "PUSH_CANONICAL_LEDGER"
+    "trigger": "SCHEDULED_SWEEP"
   },
-  "newestPendingDate": "2026-10-06",
+  "newestPendingDate": "2026-09-17",
   "oldestPendingDate": "2026-06-12",
   "pendingByDate": {
     "2026-06-12": 5,
@@ -37,10 +37,9 @@
     "2026-08-30": 2,
     "2026-09-03": 1,
     "2026-09-07": 2,
-    "2026-09-17": 3,
-    "2026-10-06": 2
+    "2026-09-17": 3
   },
-  "pendingTotal": 49,
+  "pendingTotal": 47,
   "pendingWagers": [
     {
       "betId": "0ebaacd152b07b0be3df6e22a766c193ade1de23",
@@ -464,24 +463,6 @@
       "settlementRefusalClass": "CONTRADICTION",
       "settlementRefusalReason": "SETTLEMENT_CONTRADICTED_SETTLEMENT_GAME_IS_NOT_THE_WAGERS_GAME",
       "trackingType": null
-    },
-    {
-      "betId": "10641c15e6fd4b30580f5a10a72f076d416fd1ac",
-      "gameDate": "2026-10-06",
-      "marketFamily": "team_total",
-      "marketTicker": "KXMLBTEAMTOTAL-26OCT062130MILSD-SD4",
-      "settlementRefusalClass": null,
-      "settlementRefusalReason": null,
-      "trackingType": "REAL"
-    },
-    {
-      "betId": "36ab835d81b90dda8153a1d8c97fd44f18223885",
-      "gameDate": "2026-10-06",
-      "marketFamily": "inning_result",
-      "marketTicker": "KXMLBF5-26OCT062130MILSD-TIE",
-      "settlementRefusalClass": null,
-      "settlementRefusalReason": null,
-      "trackingType": "REAL"
     }
   ],
   "refusalClassCounts": {

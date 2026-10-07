@@ -1,23 +1,23 @@
 {
-  "asOf": "2026-10-07T09:39:08Z",
+  "asOf": "2026-10-07T23:37:01Z",
   "lastRun": {
-    "completedAt": "2026-10-07T09:39:08Z",
+    "completedAt": "2026-10-07T23:37:01Z",
     "counts": {
-      "betsSettled": 2,
+      "betsSettled": 1,
       "datesChanged": 1,
       "datesConsidered": 1,
       "reportsRegenerated": 1,
-      "settlementsMeaningfullyChanged": 661,
-      "wagersStillPending": 0
+      "settlementsMeaningfullyChanged": 1126,
+      "wagersStillPending": 1
     },
     "datesConsidered": [
-      "2026-10-06"
+      "2026-10-07"
     ],
-    "githubRunId": "37601949301",
+    "githubRunId": "37703053184",
     "refusalReason": null,
-    "trigger": "SCHEDULED_SWEEP"
+    "trigger": "PUSH_CANONICAL_LEDGER"
   },
-  "newestPendingDate": "2026-09-17",
+  "newestPendingDate": "2026-10-07",
   "oldestPendingDate": "2026-06-12",
   "pendingByDate": {
     "2026-06-12": 5,
@@ -37,9 +37,10 @@
     "2026-08-30": 2,
     "2026-09-03": 1,
     "2026-09-07": 2,
-    "2026-09-17": 3
+    "2026-09-17": 3,
+    "2026-10-07": 1
   },
-  "pendingTotal": 47,
+  "pendingTotal": 48,
   "pendingWagers": [
     {
       "betId": "0ebaacd152b07b0be3df6e22a766c193ade1de23",
@@ -463,6 +464,15 @@
       "settlementRefusalClass": "CONTRADICTION",
       "settlementRefusalReason": "SETTLEMENT_CONTRADICTED_SETTLEMENT_GAME_IS_NOT_THE_WAGERS_GAME",
       "trackingType": null
+    },
+    {
+      "betId": "818964add071696c9aabc504afba2075d16f1420",
+      "gameDate": "2026-10-07",
+      "marketFamily": "game_result",
+      "marketTicker": "KXMLBGAME-26OCT071800LADATL-LAD",
+      "settlementRefusalClass": null,
+      "settlementRefusalReason": null,
+      "trackingType": "REAL"
     }
   ],
   "refusalClassCounts": {

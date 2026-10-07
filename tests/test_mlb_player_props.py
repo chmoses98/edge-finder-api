@@ -275,3 +275,11 @@ def test_hitter_snapshot_fields_scratch_wins_and_expected_stat_uses_distribution
     assert hit["projection_generated_at"] == "2026-10-07T19:00:00Z"
     tb = recs["KXMLBTB-26OCT071800LADATL-LADSOHTANI17-3"]
     assert tb["model_probability_yes"] is None and "scratched" in tb["status_reason"]
+
+
+def test_engine_not_in_starting_lineup_status_maps_to_player_not_starting():
+    snaps = [{"marketTicker": "KXMLBHIT-26OCT071800LADATL-LADSOHTANI17-2", "snapshotGeneratedAt": "2026-10-07T20:00:00Z",
+              "projectionStatus": "PLAYER_NOT_IN_STARTING_LINEUP", "modelProbability": None}]
+    recs = MP.build_records(slate=_slate(), markets=MARKETS, now_iso="2026-10-07T21:00:00Z", event_for=lambda t: EV,
+                            pregame_closed=lambda e: False, player_id_for=str, hitter_rows=snaps)
+    assert recs["KXMLBHIT-26OCT071800LADATL-LADSOHTANI17-2"]["projection_status"] == "PLAYER_NOT_STARTING"

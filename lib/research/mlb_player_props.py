@@ -360,7 +360,7 @@ def _hitter(rec, g, side, ticker, snap, player_id_for):
     if snap is None:
         return _status(rec, "MISSING_REQUIRED_CONTEXT", "The hitter engine has not produced a pregame snapshot for this market.")
     st = str(snap.get("projectionStatus") or "")
-    if st == "NOT_IN_LINEUP":
+    if st in ("NOT_IN_LINEUP", "PLAYER_NOT_IN_STARTING_LINEUP"):
         return _status(rec, "PLAYER_NOT_STARTING", "The hitter engine's snapshot found the player out of the lineup.")
     p = snap.get("modelProbability")
     if not snap.get("isProjected") or p is None:

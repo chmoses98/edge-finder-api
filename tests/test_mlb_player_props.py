@@ -256,3 +256,22 @@ def test_exporter_attaches_player_prop_and_player_id_and_keeps_props_out_of_mode
     assert "player_prop" not in items["KXMLBGAME-26OCT011400PHIATL-PHI"]["extensions"]
     priced = {p["market_id"] for p in base._load(tmp_path / "out", "model_prices.json")["items"]}
     assert ks["market_id"] not in priced
+
+
+def test_hitter_snapshot_fields_scratch_wins_and_expected_stat_uses_distribution_mean():
+    snaps = [
+        {"marketTicker": "KXMLBHIT-26OCT071800LADATL-LADSOHTANI17-2", "snapshotGeneratedAt": "2026-10-07T19:00:00Z",
+         "projectionStatus": "PROJECTED", "modelProbability": 0.44, "distributionMean": 1.12, "checkpoint": "T_MINUS_90"},
+        # a later non-PROJECTED snapshot (scratch) must withdraw the older probability
+        {"marketTicker": "KXMLBTB-26OCT071800LADATL-LADSOHTANI17-3", "snapshotGeneratedAt": "2026-10-07T19:00:00Z",
+         "projectionStatus": "PROJECTED", "modelProbability": 0.3},
+        {"marketTicker": "KXMLBTB-26OCT071800LADATL-LADSOHTANI17-3", "snapshotGeneratedAt": "2026-10-07T20:30:00Z",
+         "projectionStatus": "MODEL_ERROR", "modelProbability": None, "projectionStatusReason": "scratched"},
+    ]
+    recs = MP.build_records(slate=_slate(), markets=MARKETS, now_iso="2026-10-07T21:00:00Z", event_for=lambda t: EV,
+                            pregame_closed=lambda e: False, player_id_for=lambda i: f"pid_{i}", hitter_rows=snaps)
+    hit = recs["KXMLBHIT-26OCT071800LADATL-LADSOHTANI17-2"]
+    assert hit["model_probability_yes"] == 0.44 and hit["expected_stat"]["mean"] == 1.12
+    assert hit["projection_generated_at"] == "2026-10-07T19:00:00Z"
+    tb = recs["KXMLBTB-26OCT071800LADATL-LADSOHTANI17-3"]
+    assert tb["model_probability_yes"] is None and "scratched" in tb["status_reason"]

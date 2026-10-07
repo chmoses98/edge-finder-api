@@ -39,6 +39,7 @@ import re
 import unicodedata
 
 from lib.research import pitcher_prop_projection as PP
+from lib.research.hitter_prop_projection_loader import select_latest_rows
 
 SCHEMA = "mlb.player_prop.v1"
 
@@ -248,15 +249,9 @@ def build_records(*, slate, markets, now_iso, event_for, pregame_closed, player_
     player_id_for  mlbam id -> contract participant id
     """
     games_by_pk = {str(g.get("gameId")): g for g in (slate or {}).get("games") or []}
-    hitter_latest = {}
-    for r in hitter_rows or []:
-        t = r.get("marketTicker")
-        ts = r.get("createdAt") or r.get("capturedAt")
-        if not t or not ts or ts > now_iso:
-            continue
-        cur = hitter_latest.get(t)
-        if cur is None or ts > (cur.get("createdAt") or cur.get("capturedAt")):
-            hitter_latest[t] = r
+    # newest snapshot available at or before now per ticker (lib/research/hitter_prop_projection_loader:
+    # a newer non-PROJECTED row, e.g. a scratch, wins over an older probability)
+    hitter_latest = select_latest_rows(hitter_rows or [], now_iso) if hitter_rows else {}
     pitcher_cache = {}
     out = {}
     for row in markets:
@@ -368,25 +363,26 @@ def _hitter(rec, g, side, ticker, snap, player_id_for):
     if st == "NOT_IN_LINEUP":
         return _status(rec, "PLAYER_NOT_STARTING", "The hitter engine's snapshot found the player out of the lineup.")
     p = snap.get("modelProbability")
-    if st != "PROJECTED" or p is None:
-        return _status(rec, "MISSING_REQUIRED_CONTEXT", f"The hitter engine's snapshot status is {st or 'unknown'}.")
+    if not snap.get("isProjected") or p is None:
+        reason = snap.get("projectionStatusReason") or st or "unknown"
+        return _status(rec, "MISSING_REQUIRED_CONTEXT", f"The hitter engine's latest snapshot is not a projection ({reason}).")
     p = float(p)
     if p > 1.0:
         p /= 100.0
     rec["model_probability_yes"] = round(p, 4)
-    exp = snap.get("expectedValue") or snap.get("expectedStat")
+    exp = snap.get("distributionMean")
     if exp is not None:
         rec["expected_stat"] = {"stat": rec["family"].replace("hitter_", ""), "mean": round(float(exp), 2), "median": None,
                                 "p10": None, "p90": None, "unit": rec["stat_unit"]}
-    rec["projection_generated_at"] = snap.get("createdAt") or snap.get("capturedAt")
-    rec["inputs_as_of"] = rec["projection_generated_at"]
+    rec["projection_generated_at"] = snap.get("snapshotGeneratedAt") or snap.get("projectionGeneratedAt")
+    rec["inputs_as_of"] = snap.get("marketObservedAt") or rec["projection_generated_at"]
     diag = snap.get("sampleSizeDiagnostics") or {}
     rec["drivers"] = [d for d in (
         {"label": "Lineup slot", "value": str(slot)},
-        {"label": "Archived PAs (batter)", "value": str(diag.get("hitterArchivedPACount"))} if diag.get("hitterArchivedPACount") is not None else None,
-        {"label": "Simulations", "value": str(diag.get("monteCarloSimulations"))} if diag.get("monteCarloSimulations") else None,
+        {"label": "Snapshot checkpoint", "value": str(snap.get("checkpoint"))} if snap.get("checkpoint") else None,
+        {"label": "Monte Carlo std. error", "value": f"{float(snap['monteCarloStderr']):.3f}"} if snap.get("monteCarloStderr") is not None else None,
     ) if d]
-    rec["provenance"] = {"engine": "hitter engine (lib/research/lineup_game_simulator.py)", "engine_version": snap.get("modelVersion"),
+    rec["provenance"] = {"engine": "hitter engine (lib/research/lineup_game_simulator.py)", "engine_version": snap.get("engineCommitSha"),
                          "source": "data/edgelab/hitter_projection_snapshots"}
     rec["limitations"] = list(LIMITATIONS_HITTER) + list(snap.get("modelLimitations") or [])[:3]
     rec["validation"] = dict(FAMILY_EVIDENCE["hitter"])

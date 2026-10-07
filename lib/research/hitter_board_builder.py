@@ -229,6 +229,9 @@ def build_hitter_projection_rows(
             "marketFamily": family,
             "threshold": threshold,
             "distributionUsed": dist_key,
+            # expected value of the same simulated distribution (additive; read by the app
+            # export's player_prop expected_stat via lib/research/hitter_prop_projection_loader.py)
+            "distributionMean": distributions[dist_key].get("mean"),
             "modelProbability": pricing["modelProbability"],
             "fairAmericanOdds": pricing["fairAmericanOdds"],
             "executableKalshiPrice": executable_price,

@@ -27,7 +27,7 @@ STALE = NOW - timedelta(hours=3)
 
 def state(**kw):
     s = {"today": TODAY, "kalshi_game_count": 4, "market_count": 663, "slate_exists": True,
-         "latest_observation_at": FRESH, "latest_model_evaluation_at": FRESH}
+         "latest_observation_at": FRESH, "latest_raw_snapshot_at": None, "latest_model_evaluation_at": FRESH}
     s.update(kw)
     return s
 
@@ -86,6 +86,39 @@ def test_stale_capture_outside_the_window_dispatches_nothing(hour):
 def test_recent_or_in_progress_capture_blocks_a_duplicate():
     for runs in ([run(status="in_progress")], [run(created=NOW - timedelta(minutes=10))]):
         assert W.decide(state(latest_observation_at=STALE), {W.CAPTURE: runs}, NOW)["dispatch"] == []
+
+
+def test_uningested_newer_raw_capture_dispatches_one_ingest_not_another_capture():
+    """2026-10-07: captures dispatched by github-actions[bot] at 21:42 / 21:53 / 23:42 were never
+    ingested (a GITHUB_TOKEN dispatch does not start the workflow_run successor)."""
+    st = state(latest_observation_at=NOW - timedelta(minutes=74), latest_raw_snapshot_at=NOW - timedelta(minutes=5))
+    out = W.decide(st, {}, NOW)
+    assert workflows(out) == [W.INGEST] and out["dispatch"][0]["inputs"] == {"date": TODAY}
+    for runs in ([run(status="in_progress")], [run(created=NOW - timedelta(minutes=10))]):
+        assert W.decide(st, {W.INGEST: runs}, NOW)["dispatch"] == []      # no duplicate ingest
+    # a recent raw capture does not block the ingest; only a recent ingest does
+    assert workflows(W.decide(st, {W.CAPTURE: [run(status="in_progress")]}, NOW)) == [W.INGEST]
+
+
+def test_raw_capture_not_newer_than_observations_falls_back_to_capture():
+    st = state(latest_observation_at=STALE, latest_raw_snapshot_at=STALE - timedelta(minutes=1))
+    assert workflows(W.decide(st, {}, NOW)) == [W.CAPTURE]
+
+
+def test_ingest_is_never_dispatched_outside_the_capture_window_or_when_fresh():
+    t = datetime(2026, 10, 7, 9, 0, tzinfo=timezone.utc)
+    st = state(latest_observation_at=STALE, latest_raw_snapshot_at=t, latest_model_evaluation_at=t)
+    assert W.INGEST not in workflows(W.decide(st, {}, t))
+    assert W.decide(state(latest_raw_snapshot_at=NOW), {}, NOW)["dispatch"] == []
+
+
+def test_raw_snapshot_time_is_read_from_the_capture_head(tmp_path):
+    folder = tmp_path / "kalshi_registry_snapshots"
+    folder.mkdir()
+    (folder / f"kalshi_search_{TODAY}_2342.json").write_text('{"date":"2026-10-07","fetched_at":"2026-10-07T23:42:04.000Z","markets":[]}')
+    (folder / f"kalshi_search_{TODAY}_0034.json").write_text('{"date":"2026-10-07","fetched_at":"2026-10-07T04:34:00.000Z"}')
+    (folder / "kalshi_search_2026-10-06_2359.json").write_text('{"fetched_at":"2026-10-07T03:59:00.000Z"}')
+    assert W.latest_raw_snapshot_at(str(tmp_path), TODAY) == datetime(2026, 10, 7, 23, 42, 4, tzinfo=timezone.utc)
 
 
 def test_stale_model_with_todays_slate_dispatches_one_model_snapshot():
@@ -149,19 +182,19 @@ def _main(monkeypatch, data_root, runs_by_wf, dispatch_raises=False):
 
 def test_unknown_github_run_list_state_fails_closed(monkeypatch, tmp_path, capsys):
     root = _data_root(tmp_path)                       # slate, capture and model all stale/missing
-    rc, sent = _main(monkeypatch, root, {W.FETCH_SLATE: None, W.CAPTURE: None, W.MODEL: None})
+    rc, sent = _main(monkeypatch, root, {W.FETCH_SLATE: None, W.CAPTURE: None, W.INGEST: None, W.MODEL: None})
     assert rc == 0 and sent == []
     out = capsys.readouterr().out
-    assert out.count("UNKNOWN -> failed closed") == 3
+    assert out.count("UNKNOWN -> failed closed") == 4
 
 
 def test_main_dispatches_exactly_what_decide_returns_and_logs_each_run_list(monkeypatch, tmp_path, capsys):
     root = _data_root(tmp_path, obs_at="2026-10-07T19:40:00Z")
-    rc, sent = _main(monkeypatch, root, {W.FETCH_SLATE: [], W.CAPTURE: [], W.MODEL: []})
+    rc, sent = _main(monkeypatch, root, {W.FETCH_SLATE: [], W.CAPTURE: [], W.INGEST: [], W.MODEL: []})
     assert rc == 0
     assert [(d["workflow"], d["inputs"]) for d in sent] == [(W.FETCH_SLATE, {"date": TODAY, "unattended": "true"})]
     out = capsys.readouterr().out
-    for wf in (W.FETCH_SLATE, W.CAPTURE, W.MODEL):
+    for wf in (W.FETCH_SLATE, W.CAPTURE, W.INGEST, W.MODEL):
         assert f"gh run list {wf}: 0 run(s)" in out
 
 
@@ -213,7 +246,8 @@ def test_app_export_runs_the_watchdog_with_exactly_contents_and_actions_write():
 
 
 def test_every_producer_the_watchdog_dispatches_accepts_its_inputs():
-    for wf, inputs in ((W.FETCH_SLATE, {"date", "unattended"}), (W.CAPTURE, {"date"}), (W.MODEL, set())):
+    for wf, inputs in ((W.FETCH_SLATE, {"date", "unattended"}), (W.CAPTURE, {"date"}), (W.INGEST, {"date"}),
+                       (W.MODEL, set())):
         on = _workflow(wf).get("on") or _workflow(wf).get(True)
         declared = set(((on.get("workflow_dispatch") or {}).get("inputs") or {}).keys())
         assert inputs <= declared, (wf, inputs, declared)

@@ -43,8 +43,11 @@ DECISIONS (all pure, see decide())
             today is older than CAPTURE_STALE_MINUTES (or absent while today
             has games), and no capture run in the last CAPTURE_MIN_GAP_MINUTES
             -> dispatch capture-snapshots-scheduled.yml (read-only price
-            capture; EdgeLab Market Capture and the app export follow via
-            workflow_run).
+            capture). If a raw capture for today is already NEWER than the
+            newest observation, it was never ingested -- a run dispatched with
+            GITHUB_TOKEN does not start its workflow_run successor (EdgeLab
+            Market Capture) -- so the ingest, edgelab-capture.yml, is
+            dispatched instead, under the same gap and in-flight guard.
   model     today's slate exists, the newest model evaluation for today is
             older than MODEL_STALE_MINUTES (or absent), and no model-snapshot
             run in the last MODEL_MIN_GAP_MINUTES -> dispatch
@@ -61,6 +64,7 @@ import argparse
 import gzip
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -74,6 +78,7 @@ from lib.edgelab.production_date import et_date_for_instant  # noqa: E402
 
 FETCH_SLATE = "fetch-slate.yml"
 CAPTURE = "capture-snapshots-scheduled.yml"
+INGEST = "edgelab-capture.yml"
 MODEL = "model-snapshot-scheduler.yml"
 
 #: Postseason starters are announced the day before; 09:00 ET gives the
@@ -114,6 +119,31 @@ def _iter_jsonl(path):
             return
 
 
+_FETCHED_AT_RE = re.compile(r'"fetched_at"\s*:\s*"([^"]+)"')
+
+
+def latest_raw_snapshot_at(data_root, today):
+    """fetched_at of the newest raw Kalshi capture for today
+    (data/kalshi_registry_snapshots/kalshi_search_<today>_*.json). Only the head of each file
+    is read: the capture writes fetched_at among its first keys."""
+    folder = os.path.join(data_root, "kalshi_registry_snapshots")
+    newest = None
+    if not os.path.isdir(folder):
+        return None
+    for name in os.listdir(folder):
+        if not (name.startswith(f"kalshi_search_{today}_") and name.endswith(".json")):
+            continue
+        try:
+            with open(os.path.join(folder, name), encoding="utf-8") as fh:
+                m = _FETCHED_AT_RE.search(fh.read(2048))
+        except OSError:
+            continue
+        t = _parse(m.group(1)) if m else None
+        if t and (newest is None or t > newest):
+            newest = t
+    return newest
+
+
 def read_state(data_root, today):
     """Facts about today's production data (pure file reads)."""
     games = list(_iter_jsonl(os.path.join(data_root, "edgelab", "games", f"{today}.jsonl")))
@@ -135,6 +165,7 @@ def read_state(data_root, today):
         "market_count": market_count,
         "slate_exists": os.path.exists(os.path.join(data_root, "slates", today, "authoritative.json")),
         "latest_observation_at": obs_latest,
+        "latest_raw_snapshot_at": latest_raw_snapshot_at(data_root, today),
         "latest_model_evaluation_at": eval_latest,
     }
 
@@ -189,11 +220,23 @@ def decide(state, runs_by_workflow, now):
         stale = latest is None or (now - latest) > timedelta(minutes=CAPTURE_STALE_MINUTES)
         if not stale:
             notes.append("capture: market observations are fresh")
-        elif _recent(runs_by_workflow.get(CAPTURE), now, CAPTURE_MIN_GAP_MINUTES):
-            notes.append(f"capture: stale but a capture run is in flight or <{CAPTURE_MIN_GAP_MINUTES}m old")
         else:
             age = "none yet" if latest is None else f"{int((now - latest).total_seconds() // 60)}m old"
-            out.append({"workflow": CAPTURE, "inputs": {"date": today}, "reason": f"newest {today} observation {age}"})
+            raw = state.get("latest_raw_snapshot_at")
+            if raw is not None and (latest is None or raw > latest):
+                # A newer raw capture exists but was never ingested: a capture dispatched with
+                # GITHUB_TOKEN does not start its workflow_run successor (EdgeLab Market Capture),
+                # so re-arm the ingest itself rather than capturing again.
+                if _recent(runs_by_workflow.get(INGEST), now, CAPTURE_MIN_GAP_MINUTES):
+                    notes.append(f"capture: raw snapshot {raw.isoformat()} not ingested; an ingest run is in "
+                                 f"flight or <{CAPTURE_MIN_GAP_MINUTES}m old")
+                else:
+                    out.append({"workflow": INGEST, "inputs": {"date": today},
+                                "reason": f"newest {today} observation {age}; raw snapshot {raw.isoformat()} not ingested"})
+            elif _recent(runs_by_workflow.get(CAPTURE), now, CAPTURE_MIN_GAP_MINUTES):
+                notes.append(f"capture: stale but a capture run is in flight or <{CAPTURE_MIN_GAP_MINUTES}m old")
+            else:
+                out.append({"workflow": CAPTURE, "inputs": {"date": today}, "reason": f"newest {today} observation {age}"})
     return {"dispatch": out, "notes": notes}
 
 
@@ -226,7 +269,7 @@ def main(argv=None):
     today = et_date_for_instant(now)
     state = read_state(args.data_root, today)
     runs = {}
-    for wf in (FETCH_SLATE, CAPTURE, MODEL):
+    for wf in (FETCH_SLATE, CAPTURE, INGEST, MODEL):
         listed = [] if args.dry_run else _gh_runs(wf)
         if listed is None:
             # Unknown run state: mark as in flight so nothing is stacked on top of it.
@@ -238,7 +281,7 @@ def main(argv=None):
         runs[wf] = listed
     verdict = decide(state, runs, now)
     printable = dict(state)
-    for k in ("latest_observation_at", "latest_model_evaluation_at"):
+    for k in ("latest_observation_at", "latest_raw_snapshot_at", "latest_model_evaluation_at"):
         printable[k] = printable[k].isoformat() if printable[k] else None
     print(json.dumps({"state": printable, **verdict}, indent=2))
     failures = 0

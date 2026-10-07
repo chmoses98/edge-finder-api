@@ -112,6 +112,33 @@ def estimate_pitch_outcome_probabilities(hitter_pitches, pitch_family: str, in_z
     }
 
 
+# PERFORMANCE (output-identical memoization): estimate_pitch_outcome_probabilities
+# is a pure, RNG-free function of (this hitter's archived pitch list, pitch
+# family, in-zone flag), yet simulate_pa_pitch_by_pitch called it on EVERY
+# simulated pitch, re-deriving plate discipline over the hitter's whole archive
+# (~600-1000 pitches) 7+ times per pitch. Profiled on the 2026-10-07 LAD@ATL
+# board this was ~95% of runtime (~14s per Monte Carlo draw for one 18-hitter
+# game, i.e. hours at the production n_sims=1500). The cache below returns the
+# identical dict for an identical (list object, family, in_zone) key; it holds a
+# reference to the list so its id() can never be recycled for a different list
+# while cached, and it never consumes randomness, so seeded results are
+# unchanged bit-for-bit.
+_PITCH_PROB_CACHE = {}
+_PITCH_PROB_CACHE_MAX = 4096
+
+
+def _estimate_pitch_outcome_probabilities_cached(hitter_pitches, pitch_family: str, in_zone: bool) -> dict:
+    key = (id(hitter_pitches), len(hitter_pitches), pitch_family, bool(in_zone))
+    hit = _PITCH_PROB_CACHE.get(key)
+    if hit is not None and hit[0] is hitter_pitches:
+        return dict(hit[1])
+    result = estimate_pitch_outcome_probabilities(hitter_pitches, pitch_family, in_zone)
+    if len(_PITCH_PROB_CACHE) >= _PITCH_PROB_CACHE_MAX:
+        _PITCH_PROB_CACHE.clear()
+    _PITCH_PROB_CACHE[key] = (hitter_pitches, dict(result))
+    return result
+
+
 def simulate_pa_pitch_by_pitch(hitter_pitches, pitcher_pitch_mix: dict, rng: random.Random,
                                 zone_rate: float = 0.48, hbp_rate: Optional[float] = None) -> dict:
     """
@@ -142,7 +169,7 @@ def simulate_pa_pitch_by_pitch(hitter_pitches, pitcher_pitch_mix: dict, rng: ran
     for _ in range(MAX_PITCHES_PER_PA):
         family = rng.choices(families, weights=weights, k=1)[0]
         in_zone = rng.random() < zone_rate
-        probs = estimate_pitch_outcome_probabilities(hitter_pitches, family, in_zone)
+        probs = _estimate_pitch_outcome_probabilities_cached(hitter_pitches, family, in_zone)
 
         swings = rng.random() < probs["swingPct"]
         if not swings:

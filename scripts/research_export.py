@@ -1515,9 +1515,16 @@ def _capabilities(ctx, files_present, evidence):
         cap("situational_splits", "PARTIAL", "Home/away splits (win%, runs per game) for the latest research-cache season.", ev=evidence.get("team"),
             lims=["No game-state/leverage splits precomputed; handedness splits only per pitch in Statcast (not published as splits)."],
             splits=["home_away"]),
-        cap("player_props", "RESEARCH", "Prop markets are listed with prices; the prop model is research-only.",
-            lims=["Production says NO_MODEL_SUPPORT for props (184,641 eval rows); hitter engine snapshots over-confident by ~6 pts "
-                  "(hitter_validation hitter_hits n=454); prop prices/settlements are VERIFIED in the v1 markets."]),
+        cap("player_props", "RESEARCH",
+            "Every prop market carries extensions.player_prop (mlb.player_prop.v1): a research projection or the reason "
+            "it cannot be priced. Research projections are not edges and never enter model prices or recommendations.",
+            lims=["Pitcher K/outs (lib/research/pitcher_prop_projection.py): better than the incumbent engine out of sample "
+                  "but worse than Kalshi (2026 settled markets: K Brier 0.166 vs 0.157, outs 0.259 vs 0.239; postseason outs "
+                  "0.313 vs 0.199, n=25) -- data/edgelab/analytics/mlb_pitcher_prop_calibration_2026-10-07.json.",
+                  "Hitter H/TB/H+R+RBI/RBI: hitter engine snapshots, at parity with Kalshi at best (MLB-RSCH-0028); "
+                  "published only for confirmed-lineup starters with a pregame snapshot.",
+                  "Stolen bases, home runs, runs, hits/ER/walks allowed: NO_MODEL_SUPPORT.",
+                  "Prop prices/settlements are VERIFIED in the v1 markets."]),
         cap("team_props", "VERIFIED", "Team-total markets (KXMLBTEAMTOTAL ladder; ledger TT rows) as market references.", ev=evidence.get("team_props")),
         cap("game_markets", "VERIFIED", "ML, run line, total, F5, NRFI/YRFI, winning margin as market references with model prices.", ev=evidence.get("game_markets")),
         cap("play_by_play", "PARTIAL", "Statcast pitch log aggregated per player per game (not the pitch rows).", ev=evidence.get("player_statcast"),

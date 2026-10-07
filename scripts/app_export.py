@@ -59,8 +59,9 @@ from lib.edgelab.decision_side import resolve_side  # noqa: E402
 from lib.edgelab.production_date import et_date_for_instant  # noqa: E402
 
 from edge_finder_contract import (  # noqa: E402
-    board, build, freshness, health, linkage, performance, publish, timeutil,
+    board, build, freshness, health, ids, linkage, performance, publish, timeutil,
 )
+from lib.research import mlb_player_props  # noqa: E402
 
 SPORT = "MLB"
 SOURCE_REPO = "chmoses98/edge-finder-api"
@@ -259,6 +260,11 @@ def load_inputs(data_root, date):
         "gate": _read_json(os.path.join(data_root, "edgelab", "operational_health", "production_health_gate.json")),
         "daily_health": _read_json(os.path.join(data_root, "edgelab", "health", f"{date}.json")),
         "meta": _read_json(os.path.join(data_root, "meta.json")),
+        # research-only player-prop projection inputs (lib/research/mlb_player_props.py)
+        "pitcher_model": mlb_player_props.load_pitcher_model(data_root),
+        "postseason_settlements": [r for d in _partition_dates(data_root, "settlements")
+                                   if d >= "2026-09-29" and d <= date for r in _partition(data_root, "settlements", d)],
+        "hitter_snapshots": mlb_player_props.load_hitter_snapshots(data_root, date),
     }
 
 
@@ -424,8 +430,31 @@ def _latest_observations(observations):
     return best
 
 
+PLAYER_SOURCE = "mlbam_player_id"   # same participant scheme as scripts/research_export.py player profiles
+
+
+def _player_pid(mlbam_id):
+    return ids.participant_id(SPORT, "PLAYER", PLAYER_SOURCE, str(mlbam_id)) if mlbam_id else None
+
+
+def build_player_props(inputs, lookups, now_iso):
+    """{ticker: mlb.player_prop.v1 record} for every player-prop market (research only)."""
+    params, starts, team_games = inputs.get("pitcher_model") or (None, [], [])
+    ctx = None
+    if params:
+        ctx = mlb_player_props.PitcherContext(
+            params, starts, team_games,
+            mlb_player_props.postseason_starts_from_settlements(inputs.get("postseason_settlements") or []))
+    return mlb_player_props.build_records(
+        slate=inputs["slate"], markets=inputs["markets"], now_iso=now_iso,
+        event_for=lambda t: _event_for(lookups, ticker=t),
+        pregame_closed=lambda ev: pregame_closed(ev, now_iso), player_id_for=_player_pid,
+        pitcher_ctx=ctx, hitter_rows=inputs.get("hitter_snapshots"))
+
+
 def build_markets(inputs, lookups, warnings):
     obs = _latest_observations(inputs["observations"])
+    props = inputs.get("_player_props") or {}
     discovery = {c.get("ticker"): c for c in (inputs["discovery"].get("contracts") or []) if _is_ticker(c.get("ticker"))}
     settled = {}
     for s in inputs["settlements"]:
@@ -465,13 +494,15 @@ def build_markets(inputs, lookups, warnings):
             "real_money_eligibility_status": c.get("realMoneyEligibilityStatus"),
             "observation_checkpoint": o.get("checkpoint"), "spread": o.get("spreadCents"),
             "settlement_result": (settled.get(ticker) or {}).get("result"), "observed_status": observed or None,
+            "player_prop": props.get(ticker),
         }
         m = build.market(
             sport=SPORT, kalshi_ticker=ticker, market_family=row.get("marketFamily") or c.get("marketFamily"),
             yes_description=row.get("title") or c.get("marketTitle") or f"YES on {ticker}", source=MARKET_SOURCE,
             event_id=ev["event_id"] if ev else None, kalshi_event_ticker=row.get("eventTicker"),
             kalshi_series_ticker=row.get("seriesTicker"), period=str(period).upper() if period else None,
-            participant_id=_team(team)["participant_id"] if team else None, side=side,
+            participant_id=_team(team)["participant_id"] if team else None,
+            player_id=(props.get(ticker) or {}).get("player_id"), side=side,
             line=c.get("line"), threshold=row.get("threshold"),
             yes_bid=o.get("yesBid"), yes_ask=o.get("yesAsk"), no_bid=o.get("noBid"), no_ask=o.get("noAsk"),
             last_price=o.get("lastPrice"), volume=o.get("volume"), open_interest=o.get("openInterest"),
@@ -917,6 +948,7 @@ def build_bundle(inputs, *, now, commit_sha=None, workflow_run_id=None):
     warnings = []
     date = inputs["date"]
     events, lookups = build_events(inputs, now_iso, warnings)
+    inputs["_player_props"] = build_player_props(inputs, lookups, now_iso)
     markets, market_index = build_markets(inputs, lookups, warnings)
     inputs["_markets_list"] = markets
 

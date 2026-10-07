@@ -1,0 +1,1797 @@
+{
+  "auditId": "MLB_PROP_CALIBRATION_HITTERS_2026_10",
+  "asOfDate": "2026-10-07",
+  "researchOnly": true,
+  "predecessor": "MLB-RSCH-0028 (docs/EDGELAB_MLB_RSCH_0028_HITTER_PROP_AUDIT.md)",
+  "methodology": {
+    "observationUnit": "one row per Kalshi marketTicker",
+    "selection": "last snapshot with snapshotGeneratedAt, projectionGeneratedAt and marketObservedAt all strictly before scheduled first pitch; ticker excluded if that row is not PROJECTED",
+    "scheduledStartSource": "data/slates/<date>/*.json games[].startTime (statsapi), fallback Kalshi ticker ET time",
+    "marketProbability": "PRIMARY = mid of the archived observation of the same ticker at/just before the snapshot's own marketObservedAt (the capture the snapshot priced against); sensitivities: fresh mid at snapshotGeneratedAt, snapshot executableKalshiPrice (which hitter_board_builder._executable_yes_price sets to the MID, not the ask), spread<=5c subset. Asks are used only for ROI.",
+    "priceUnits": "observation archive is integer cents before 2026-09-10 ~19:04Z, dollars after; unit inferred per capture",
+    "calibration": "logistic recalibration y ~ a + b*logit(p) (Newton); ECE 10 equal-width bins",
+    "intervals": "95% percentile bootstrap, 2000 resamples, clustered by gameId, seed 20261007",
+    "economics": "hypothetical 1 contract on model side vs mid: YES at observed yesAsk, NO at 1-yesBid; Kalshi taker fee multiplier*p*(1-p) from lib.edgelab.kalshi_fees series registry (unrounded); no staking/methodology change",
+    "holdout": "dates sorted; first ceil(60%) dev, rest test; Platt (logistic on logit) fitted on dev only"
+  },
+  "corpus": {
+    "snapshotRowsAllFamilies": 9617,
+    "selection": {
+      "familyRows": 9617,
+      "pregameTickers": 6315,
+      "supersededPregameRegenerations": 3302,
+      "selectedTickers": 6009
+    },
+    "selectionExclusions": {
+      "TICKER_LAST_PREGAME_STATUS_MODEL_ERROR": 142,
+      "TICKER_LAST_PREGAME_STATUS_PLAYER_NOT_IN_STARTING_LINEUP": 164
+    },
+    "selectedCheckpointMix": {
+      "T_MINUS_30": 2487,
+      "HITTER_CLOSING_WINDOW": 507,
+      "T_MINUS_90": 651,
+      "LINEUP_CONFIRMATION": 2055,
+      "T_MINUS_60": 309
+    },
+    "settlementConflictsDropped": 0,
+    "corpusExclusions": {
+      "NO_SETTLED_OUTCOME": 90,
+      "DEGENERATE_MID": 6
+    },
+    "settlementActualValueConsistency": {
+      "CONSISTENT": 5919
+    },
+    "scheduledStartSourceByGame": {
+      "SLATE_STATSAPI_START_TIME": 67,
+      "KALSHI_TICKER_EASTERN_TIME": 3
+    },
+    "slateVsTickerStartDisagreements": [],
+    "finalRows": 5913,
+    "snapshotExecutableKalshiPriceBasis": {
+      "AMBIGUOUS_1C_SPREAD": 3694,
+      "MID": 2219
+    },
+    "freshQuoteSameAsPrimaryShare": 0.8236,
+    "medianQuoteAgeMinutesAtSnapshot": 67.9,
+    "medianMinutesSnapshotBeforeStart": 27.8,
+    "dates": [
+      "2026-08-19",
+      "2026-08-20",
+      "2026-08-21",
+      "2026-08-22",
+      "2026-08-23",
+      "2026-08-24",
+      "2026-08-25",
+      "2026-08-26",
+      "2026-08-27",
+      "2026-08-29",
+      "2026-09-05",
+      "2026-09-07",
+      "2026-09-09",
+      "2026-09-12",
+      "2026-09-23"
+    ]
+  },
+  "overall": {
+    "rows": 5913,
+    "independentPlayerGames": 418,
+    "games": 69,
+    "dates": 15,
+    "realizedYesRate": 0.2591,
+    "model": {
+      "brier": 0.15617,
+      "logLoss": 0.478955,
+      "ece10": 0.026076,
+      "calibrationIntercept": -0.1014,
+      "calibrationSlope": 0.8491,
+      "meanProbability": 0.2548
+    },
+    "market": {
+      "brier": 0.155453,
+      "logLoss": 0.475904,
+      "ece10": 0.010787,
+      "calibrationIntercept": -0.0503,
+      "calibrationSlope": 0.9584,
+      "meanProbability": 0.2616
+    },
+    "pairedBrierDelta_modelMinusMarket": 0.000717,
+    "pairedLogLossDelta_modelMinusMarket": 0.003051,
+    "pairedBrierDeltaCI95_gameClustered": [
+      -0.002246,
+      0.003652
+    ],
+    "pairedLogLossDeltaCI95_gameClustered": [
+      -0.006134,
+      0.012181
+    ]
+  },
+  "byFamily": {
+    "hitter_hits": {
+      "rows": 1357,
+      "independentPlayerGames": 418,
+      "games": 69,
+      "dates": 15,
+      "realizedYesRate": 0.2704,
+      "model": {
+        "brier": 0.144897,
+        "logLoss": 0.438562,
+        "ece10": 0.04539,
+        "calibrationIntercept": -0.3122,
+        "calibrationSlope": 1.0022,
+        "meanProbability": 0.3158
+      },
+      "market": {
+        "brier": 0.14403,
+        "logLoss": 0.435792,
+        "ece10": 0.020044,
+        "calibrationIntercept": -0.0236,
+        "calibrationSlope": 0.9269,
+        "meanProbability": 0.2678
+      },
+      "pairedBrierDelta_modelMinusMarket": 0.000867,
+      "pairedLogLossDelta_modelMinusMarket": 0.002771,
+      "pairedBrierDeltaCI95_gameClustered": [
+        -0.003969,
+        0.005592
+      ],
+      "pairedLogLossDeltaCI95_gameClustered": [
+        -0.0111,
+        0.015543
+      ]
+    },
+    "hitter_total_bases": {
+      "rows": 1673,
+      "independentPlayerGames": 417,
+      "games": 69,
+      "dates": 15,
+      "realizedYesRate": 0.1919,
+      "model": {
+        "brier": 0.144259,
+        "logLoss": 0.456413,
+        "ece10": 0.025541,
+        "calibrationIntercept": -0.1943,
+        "calibrationSlope": 0.7815,
+        "meanProbability": 0.1779
+      },
+      "market": {
+        "brier": 0.145234,
+        "logLoss": 0.456805,
+        "ece10": 0.023075,
+        "calibrationIntercept": -0.2278,
+        "calibrationSlope": 0.855,
+        "meanProbability": 0.1988
+      },
+      "pairedBrierDelta_modelMinusMarket": -0.000974,
+      "pairedLogLossDelta_modelMinusMarket": -0.000391,
+      "pairedBrierDeltaCI95_gameClustered": [
+        -0.004085,
+        0.002305
+      ],
+      "pairedLogLossDeltaCI95_gameClustered": [
+        -0.012009,
+        0.012521
+      ]
+    },
+    "hitter_hits_runs_rbis": {
+      "rows": 2008,
+      "independentPlayerGames": 408,
+      "games": 66,
+      "dates": 13,
+      "realizedYesRate": 0.3396,
+      "model": {
+        "brier": 0.179298,
+        "logLoss": 0.536012,
+        "ece10": 0.026946,
+        "calibrationIntercept": -0.0363,
+        "calibrationSlope": 0.872,
+        "meanProbability": 0.3338
+      },
+      "market": {
+        "brier": 0.178775,
+        "logLoss": 0.534468,
+        "ece10": 0.02759,
+        "calibrationIntercept": -0.0183,
+        "calibrationSlope": 0.9882,
+        "meanProbability": 0.3418
+      },
+      "pairedBrierDelta_modelMinusMarket": 0.000523,
+      "pairedLogLossDelta_modelMinusMarket": 0.001544,
+      "pairedBrierDeltaCI95_gameClustered": [
+        -0.003652,
+        0.004662
+      ],
+      "pairedLogLossDeltaCI95_gameClustered": [
+        -0.009162,
+        0.01226
+      ]
+    },
+    "hitter_rbis": {
+      "rows": 875,
+      "independentPlayerGames": 405,
+      "games": 66,
+      "dates": 13,
+      "realizedYesRate": 0.1851,
+      "model": {
+        "brier": 0.143349,
+        "logLoss": 0.453758,
+        "ece10": 0.05908,
+        "calibrationIntercept": 0.4788,
+        "calibrationSlope": 0.9958,
+        "meanProbability": 0.1261
+      },
+      "market": {
+        "brier": 0.139188,
+        "logLoss": 0.440232,
+        "ece10": 0.008286,
+        "calibrationIntercept": -0.0212,
+        "calibrationSlope": 0.9987,
+        "meanProbability": 0.1879
+      },
+      "pairedBrierDelta_modelMinusMarket": 0.004161,
+      "pairedLogLossDelta_modelMinusMarket": 0.013526,
+      "pairedBrierDeltaCI95_gameClustered": [
+        -0.001409,
+        0.009748
+      ],
+      "pairedLogLossDeltaCI95_gameClustered": [
+        -0.004965,
+        0.03264
+      ]
+    }
+  },
+  "reliability": {
+    "overall": {
+      "model": [
+        {
+          "bucket": "[0.0,0.1)",
+          "rows": 1883,
+          "games": 69,
+          "meanPredicted": 0.0604,
+          "realizedRate": 0.0728
+        },
+        {
+          "bucket": "[0.1,0.2)",
+          "rows": 1205,
+          "games": 69,
+          "meanPredicted": 0.1489,
+          "realizedRate": 0.1776
+        },
+        {
+          "bucket": "[0.2,0.3)",
+          "rows": 1006,
+          "games": 68,
+          "meanPredicted": 0.2427,
+          "realizedRate": 0.2674
+        },
+        {
+          "bucket": "[0.3,0.4)",
+          "rows": 534,
+          "games": 68,
+          "meanPredicted": 0.3446,
+          "realizedRate": 0.3221
+        },
+        {
+          "bucket": "[0.4,0.5)",
+          "rows": 400,
+          "games": 66,
+          "meanPredicted": 0.4451,
+          "realizedRate": 0.4575
+        },
+        {
+          "bucket": "[0.5,0.6)",
+          "rows": 82,
+          "games": 41,
+          "meanPredicted": 0.5369,
+          "realizedRate": 0.561
+        },
+        {
+          "bucket": "[0.6,0.7)",
+          "rows": 370,
+          "games": 63,
+          "meanPredicted": 0.664,
+          "realizedRate": 0.5865
+        },
+        {
+          "bucket": "[0.7,0.8)",
+          "rows": 432,
+          "games": 66,
+          "meanPredicted": 0.7338,
+          "realizedRate": 0.6806
+        },
+        {
+          "bucket": "[0.8,0.9)",
+          "rows": 1,
+          "games": 1,
+          "meanPredicted": 0.8013,
+          "realizedRate": 0.0
+        }
+      ],
+      "market": [
+        {
+          "bucket": "[0.0,0.1)",
+          "rows": 1439,
+          "games": 69,
+          "meanPredicted": 0.0589,
+          "realizedRate": 0.0577
+        },
+        {
+          "bucket": "[0.1,0.2)",
+          "rows": 1409,
+          "games": 69,
+          "meanPredicted": 0.1446,
+          "realizedRate": 0.1576
+        },
+        {
+          "bucket": "[0.2,0.3)",
+          "rows": 1054,
+          "games": 69,
+          "meanPredicted": 0.2465,
+          "realizedRate": 0.2372
+        },
+        {
+          "bucket": "[0.3,0.4)",
+          "rows": 697,
+          "games": 68,
+          "meanPredicted": 0.3432,
+          "realizedRate": 0.3314
+        },
+        {
+          "bucket": "[0.4,0.5)",
+          "rows": 379,
+          "games": 68,
+          "meanPredicted": 0.4464,
+          "realizedRate": 0.4617
+        },
+        {
+          "bucket": "[0.5,0.6)",
+          "rows": 337,
+          "games": 59,
+          "meanPredicted": 0.5485,
+          "realizedRate": 0.5163
+        },
+        {
+          "bucket": "[0.6,0.7)",
+          "rows": 400,
+          "games": 68,
+          "meanPredicted": 0.6491,
+          "realizedRate": 0.65
+        },
+        {
+          "bucket": "[0.7,0.8)",
+          "rows": 189,
+          "games": 58,
+          "meanPredicted": 0.7321,
+          "realizedRate": 0.6931
+        },
+        {
+          "bucket": "[0.8,0.9)",
+          "rows": 9,
+          "games": 4,
+          "meanPredicted": 0.8211,
+          "realizedRate": 0.6667
+        }
+      ]
+    },
+    "byFamily": {
+      "hitter_hits": {
+        "model": [
+          {
+            "bucket": "[0.0,0.1)",
+            "rows": 489,
+            "games": 67,
+            "meanPredicted": 0.0549,
+            "realizedRate": 0.0286
+          },
+          {
+            "bucket": "[0.1,0.2)",
+            "rows": 51,
+            "games": 27,
+            "meanPredicted": 0.1367,
+            "realizedRate": 0.1373
+          },
+          {
+            "bucket": "[0.2,0.3)",
+            "rows": 256,
+            "games": 62,
+            "meanPredicted": 0.2556,
+            "realizedRate": 0.2188
+          },
+          {
+            "bucket": "[0.3,0.4)",
+            "rows": 143,
+            "games": 53,
+            "meanPredicted": 0.3269,
+            "realizedRate": 0.2937
+          },
+          {
+            "bucket": "[0.5,0.6)",
+            "rows": 23,
+            "games": 14,
+            "meanPredicted": 0.5818,
+            "realizedRate": 0.4783
+          },
+          {
+            "bucket": "[0.6,0.7)",
+            "rows": 264,
+            "games": 62,
+            "meanPredicted": 0.6607,
+            "realizedRate": 0.5758
+          },
+          {
+            "bucket": "[0.7,0.8)",
+            "rows": 131,
+            "games": 51,
+            "meanPredicted": 0.723,
+            "realizedRate": 0.6489
+          }
+        ]
+      },
+      "hitter_total_bases": {
+        "model": [
+          {
+            "bucket": "[0.0,0.1)",
+            "rows": 567,
+            "games": 69,
+            "meanPredicted": 0.0605,
+            "realizedRate": 0.0864
+          },
+          {
+            "bucket": "[0.1,0.2)",
+            "rows": 549,
+            "games": 69,
+            "meanPredicted": 0.1454,
+            "realizedRate": 0.1694
+          },
+          {
+            "bucket": "[0.2,0.3)",
+            "rows": 184,
+            "games": 58,
+            "meanPredicted": 0.238,
+            "realizedRate": 0.2663
+          },
+          {
+            "bucket": "[0.3,0.4)",
+            "rows": 267,
+            "games": 62,
+            "meanPredicted": 0.3543,
+            "realizedRate": 0.3184
+          },
+          {
+            "bucket": "[0.4,0.5)",
+            "rows": 106,
+            "games": 47,
+            "meanPredicted": 0.4251,
+            "realizedRate": 0.4245
+          }
+        ]
+      },
+      "hitter_hits_runs_rbis": {
+        "model": [
+          {
+            "bucket": "[0.0,0.1)",
+            "rows": 361,
+            "games": 66,
+            "meanPredicted": 0.0728,
+            "realizedRate": 0.0859
+          },
+          {
+            "bucket": "[0.1,0.2)",
+            "rows": 435,
+            "games": 66,
+            "meanPredicted": 0.1415,
+            "realizedRate": 0.1793
+          },
+          {
+            "bucket": "[0.2,0.3)",
+            "rows": 327,
+            "games": 63,
+            "meanPredicted": 0.2504,
+            "realizedRate": 0.2477
+          },
+          {
+            "bucket": "[0.3,0.4)",
+            "rows": 124,
+            "games": 44,
+            "meanPredicted": 0.344,
+            "realizedRate": 0.3629
+          },
+          {
+            "bucket": "[0.4,0.5)",
+            "rows": 294,
+            "games": 61,
+            "meanPredicted": 0.4523,
+            "realizedRate": 0.4694
+          },
+          {
+            "bucket": "[0.5,0.6)",
+            "rows": 59,
+            "games": 38,
+            "meanPredicted": 0.5194,
+            "realizedRate": 0.5932
+          },
+          {
+            "bucket": "[0.6,0.7)",
+            "rows": 106,
+            "games": 33,
+            "meanPredicted": 0.672,
+            "realizedRate": 0.6132
+          },
+          {
+            "bucket": "[0.7,0.8)",
+            "rows": 301,
+            "games": 63,
+            "meanPredicted": 0.7385,
+            "realizedRate": 0.6944
+          },
+          {
+            "bucket": "[0.8,0.9)",
+            "rows": 1,
+            "games": 1,
+            "meanPredicted": 0.8013,
+            "realizedRate": 0.0
+          }
+        ]
+      },
+      "hitter_rbis": {
+        "model": [
+          {
+            "bucket": "[0.0,0.1)",
+            "rows": 466,
+            "games": 66,
+            "meanPredicted": 0.0562,
+            "realizedRate": 0.0923
+          },
+          {
+            "bucket": "[0.1,0.2)",
+            "rows": 170,
+            "games": 54,
+            "meanPredicted": 0.1828,
+            "realizedRate": 0.2118
+          },
+          {
+            "bucket": "[0.2,0.3)",
+            "rows": 239,
+            "games": 52,
+            "meanPredicted": 0.2219,
+            "realizedRate": 0.3473
+          }
+        ]
+      }
+    }
+  },
+  "marketBenchmarkSensitivity": {
+    "freshMidAtSnapshotGeneratedAt": {
+      "rows": 5913,
+      "independentPlayerGames": 418,
+      "games": 69,
+      "dates": 15,
+      "realizedYesRate": 0.2591,
+      "model": {
+        "brier": 0.15617,
+        "logLoss": 0.478955,
+        "ece10": 0.026076,
+        "calibrationIntercept": -0.1014,
+        "calibrationSlope": 0.8491,
+        "meanProbability": 0.2548
+      },
+      "market": {
+        "brier": 0.155468,
+        "logLoss": 0.475854,
+        "ece10": 0.011069,
+        "calibrationIntercept": -0.0511,
+        "calibrationSlope": 0.9595,
+        "meanProbability": 0.2619
+      },
+      "pairedBrierDelta_modelMinusMarket": 0.000701,
+      "pairedLogLossDelta_modelMinusMarket": 0.003101,
+      "pairedBrierDeltaCI95_gameClustered": [
+        -0.002227,
+        0.003588
+      ],
+      "pairedLogLossDeltaCI95_gameClustered": [
+        -0.006061,
+        0.012187
+      ]
+    },
+    "snapshotExecutableKalshiPrice": {
+      "rows": 5913,
+      "independentPlayerGames": 418,
+      "games": 69,
+      "dates": 15,
+      "realizedYesRate": 0.2591,
+      "model": {
+        "brier": 0.15617,
+        "logLoss": 0.478955,
+        "ece10": 0.026076,
+        "calibrationIntercept": -0.1014,
+        "calibrationSlope": 0.8491,
+        "meanProbability": 0.2548
+      },
+      "market": {
+        "brier": 0.155453,
+        "logLoss": 0.475904,
+        "ece10": 0.010787,
+        "calibrationIntercept": -0.0503,
+        "calibrationSlope": 0.9584,
+        "meanProbability": 0.2616
+      },
+      "pairedBrierDelta_modelMinusMarket": 0.000717,
+      "pairedLogLossDelta_modelMinusMarket": 0.003051,
+      "pairedBrierDeltaCI95_gameClustered": [
+        -0.002246,
+        0.003652
+      ],
+      "pairedLogLossDeltaCI95_gameClustered": [
+        -0.006134,
+        0.012181
+      ]
+    },
+    "primaryMidSpreadAtMost5c": {
+      "rows": 5787,
+      "independentPlayerGames": 418,
+      "games": 69,
+      "dates": 15,
+      "realizedYesRate": 0.2575,
+      "model": {
+        "brier": 0.155016,
+        "logLoss": 0.475017,
+        "ece10": 0.02421,
+        "calibrationIntercept": -0.1038,
+        "calibrationSlope": 0.8629,
+        "meanProbability": 0.2555
+      },
+      "market": {
+        "brier": 0.154171,
+        "logLoss": 0.471967,
+        "ece10": 0.013154,
+        "calibrationIntercept": -0.0488,
+        "calibrationSlope": 0.9769,
+        "meanProbability": 0.2621
+      },
+      "pairedBrierDelta_modelMinusMarket": 0.000845,
+      "pairedLogLossDelta_modelMinusMarket": 0.00305,
+      "pairedBrierDeltaCI95_gameClustered": [
+        -0.002076,
+        0.003813
+      ],
+      "pairedLogLossDeltaCI95_gameClustered": [
+        -0.005727,
+        0.012079
+      ]
+    },
+    "primaryMidSpreadAtMost5cByFamily": {
+      "hitter_hits": {
+        "rows": 1347,
+        "independentPlayerGames": 418,
+        "games": 69,
+        "dates": 15,
+        "realizedYesRate": 0.2695,
+        "model": {
+          "brier": 0.14468,
+          "logLoss": 0.437724,
+          "ece10": 0.046687,
+          "calibrationIntercept": -0.3205,
+          "calibrationSlope": 1.0056,
+          "meanProbability": 0.3161
+        },
+        "market": {
+          "brier": 0.143296,
+          "logLoss": 0.433654,
+          "ece10": 0.02144,
+          "calibrationIntercept": -0.0318,
+          "calibrationSlope": 0.933,
+          "meanProbability": 0.2686
+        },
+        "pairedBrierDelta_modelMinusMarket": 0.001384,
+        "pairedLogLossDelta_modelMinusMarket": 0.00407
+      },
+      "hitter_total_bases": {
+        "rows": 1646,
+        "independentPlayerGames": 417,
+        "games": 69,
+        "dates": 15,
+        "realizedYesRate": 0.1896,
+        "model": {
+          "brier": 0.142138,
+          "logLoss": 0.449709,
+          "ece10": 0.022427,
+          "calibrationIntercept": -0.1674,
+          "calibrationSlope": 0.8169,
+          "meanProbability": 0.1789
+        },
+        "market": {
+          "brier": 0.143309,
+          "logLoss": 0.450787,
+          "ece10": 0.025951,
+          "calibrationIntercept": -0.1968,
+          "calibrationSlope": 0.8988,
+          "meanProbability": 0.2
+        },
+        "pairedBrierDelta_modelMinusMarket": -0.001171,
+        "pairedLogLossDelta_modelMinusMarket": -0.001079
+      },
+      "hitter_hits_runs_rbis": {
+        "rows": 1964,
+        "independentPlayerGames": 407,
+        "games": 66,
+        "dates": 13,
+        "realizedYesRate": 0.3366,
+        "model": {
+          "brier": 0.178114,
+          "logLoss": 0.532841,
+          "ece10": 0.025513,
+          "calibrationIntercept": -0.0416,
+          "calibrationSlope": 0.8795,
+          "meanProbability": 0.3323
+        },
+        "market": {
+          "brier": 0.177576,
+          "logLoss": 0.531569,
+          "ece10": 0.028289,
+          "calibrationIntercept": -0.021,
+          "calibrationSlope": 0.9961,
+          "meanProbability": 0.3399
+        },
+        "pairedBrierDelta_modelMinusMarket": 0.000537,
+        "pairedLogLossDelta_modelMinusMarket": 0.001272
+      },
+      "hitter_rbis": {
+        "rows": 830,
+        "independentPlayerGames": 391,
+        "games": 66,
+        "dates": 13,
+        "realizedYesRate": 0.1855,
+        "model": {
+          "brier": 0.142677,
+          "logLoss": 0.448898,
+          "ece10": 0.058175,
+          "calibrationIntercept": 0.6156,
+          "calibrationSlope": 1.0793,
+          "meanProbability": 0.1274
+        },
+        "market": {
+          "brier": 0.13798,
+          "logLoss": 0.435109,
+          "ece10": 0.00744,
+          "calibrationIntercept": 0.0825,
+          "calibrationSlope": 1.0935,
+          "meanProbability": 0.1905
+        },
+        "pairedBrierDelta_modelMinusMarket": 0.004697,
+        "pairedLogLossDelta_modelMinusMarket": 0.013789
+      }
+    }
+  },
+  "edgeBuckets": {
+    "overall": [
+      {
+        "bucket": "[-1.00,-0.10)",
+        "rows": 430,
+        "independentPlayerGames": 174,
+        "games": 62,
+        "dates": 13,
+        "meanModel": 0.2062,
+        "meanMarketMid": 0.3448,
+        "realizedYesRate": 0.2884,
+        "realizedMinusMarket": -0.0564,
+        "pairedBrierDelta_modelMinusMarket": 0.002948,
+        "tradeSide": "NO@noAsk",
+        "tradesWithExecutablePrice": 429,
+        "roiAfterFees": 0.0458,
+        "roiGross": 0.0691,
+        "roiAfterFeesCI95_gameClustered": [
+          -0.037462,
+          0.132529
+        ]
+      },
+      {
+        "bucket": "[-0.10,-0.05)",
+        "rows": 905,
+        "independentPlayerGames": 296,
+        "games": 68,
+        "dates": 14,
+        "meanModel": 0.1896,
+        "meanMarketMid": 0.2608,
+        "realizedYesRate": 0.2199,
+        "realizedMinusMarket": -0.0409,
+        "pairedBrierDelta_modelMinusMarket": -0.000438,
+        "tradeSide": "NO@noAsk",
+        "tradesWithExecutablePrice": 902,
+        "roiAfterFees": 0.0292,
+        "roiGross": 0.0453,
+        "roiAfterFeesCI95_gameClustered": [
+          -0.030281,
+          0.093916
+        ]
+      },
+      {
+        "bucket": "[-0.05,-0.02)",
+        "rows": 1151,
+        "independentPlayerGames": 355,
+        "games": 67,
+        "dates": 14,
+        "meanModel": 0.1742,
+        "meanMarketMid": 0.2079,
+        "realizedYesRate": 0.2103,
+        "realizedMinusMarket": 0.0023,
+        "pairedBrierDelta_modelMinusMarket": 0.001221,
+        "tradeSide": "NO@noAsk",
+        "tradesWithExecutablePrice": 1135,
+        "roiAfterFees": -0.0246,
+        "roiGross": -0.0131,
+        "roiAfterFeesCI95_gameClustered": [
+          -0.077334,
+          0.023923
+        ]
+      },
+      {
+        "bucket": "[-0.02,+0.02)",
+        "rows": 1549,
+        "independentPlayerGames": 408,
+        "games": 69,
+        "dates": 15,
+        "meanModel": 0.2025,
+        "meanMarketMid": 0.2029,
+        "realizedYesRate": 0.213,
+        "realizedMinusMarket": 0.0102,
+        "pairedBrierDelta_modelMinusMarket": 0.000203,
+        "tradeSide": "mixed",
+        "tradesWithExecutablePrice": 1513,
+        "roiAfterFees": -0.0259,
+        "roiGross": -0.0096,
+        "roiAfterFeesCI95_gameClustered": [
+          -0.057643,
+          0.006903
+        ]
+      },
+      {
+        "bucket": "[+0.02,+0.05)",
+        "rows": 864,
+        "independentPlayerGames": 354,
+        "games": 60,
+        "dates": 15,
+        "meanModel": 0.2957,
+        "meanMarketMid": 0.2619,
+        "realizedYesRate": 0.2535,
+        "realizedMinusMarket": -0.0084,
+        "pairedBrierDelta_modelMinusMarket": 0.001501,
+        "tradeSide": "YES@ask",
+        "tradesWithExecutablePrice": 864,
+        "roiAfterFees": -0.0986,
+        "roiGross": -0.0657,
+        "roiAfterFeesCI95_gameClustered": [
+          -0.238022,
+          0.036111
+        ]
+      },
+      {
+        "bucket": "[+0.05,+0.10)",
+        "rows": 660,
+        "independentPlayerGames": 280,
+        "games": 52,
+        "dates": 13,
+        "meanModel": 0.4396,
+        "meanMarketMid": 0.3678,
+        "realizedYesRate": 0.3742,
+        "realizedMinusMarket": 0.0064,
+        "pairedBrierDelta_modelMinusMarket": 0.004925,
+        "tradeSide": "YES@ask",
+        "tradesWithExecutablePrice": 660,
+        "roiAfterFees": -0.0392,
+        "roiGross": -0.006,
+        "roiAfterFeesCI95_gameClustered": [
+          -0.191884,
+          0.122199
+        ]
+      },
+      {
+        "bucket": "[+0.10,+1.00)",
+        "rows": 354,
+        "independentPlayerGames": 138,
+        "games": 34,
+        "dates": 11,
+        "meanModel": 0.5275,
+        "meanMarketMid": 0.3951,
+        "realizedYesRate": 0.4831,
+        "realizedMinusMarket": 0.0879,
+        "pairedBrierDelta_modelMinusMarket": -0.00819,
+        "tradeSide": "YES@ask",
+        "tradesWithExecutablePrice": 354,
+        "roiAfterFees": 0.1481,
+        "roiGross": 0.189,
+        "roiAfterFeesCI95_gameClustered": [
+          -0.008075,
+          0.313762
+        ]
+      }
+    ],
+    "byFamily": {
+      "hitter_hits": [
+        {
+          "bucket": "[-1.00,-0.10)",
+          "rows": 4,
+          "independentPlayerGames": 4,
+          "games": 1,
+          "dates": 1,
+          "meanModel": 0.2965,
+          "meanMarketMid": 0.4238,
+          "realizedYesRate": 0.0,
+          "realizedMinusMarket": -0.4238,
+          "pairedBrierDelta_modelMinusMarket": -0.091206,
+          "tradeSide": "NO@noAsk",
+          "tradesWithExecutablePrice": 4,
+          "roiAfterFees": 0.6612,
+          "roiGross": 0.7094,
+          "roiAfterFeesCI95_gameClustered": [
+            null,
+            null
+          ]
+        },
+        {
+          "bucket": "[-0.10,-0.05)",
+          "rows": 21,
+          "independentPlayerGames": 12,
+          "games": 5,
+          "dates": 4,
+          "meanModel": 0.412,
+          "meanMarketMid": 0.4821,
+          "realizedYesRate": 0.4762,
+          "realizedMinusMarket": -0.006,
+          "pairedBrierDelta_modelMinusMarket": 0.001674,
+          "tradeSide": "NO@noAsk",
+          "tradesWithExecutablePrice": 21,
+          "roiAfterFees": -0.0262,
+          "roiGross": -0.0018,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.393442,
+            0.467775
+          ]
+        },
+        {
+          "bucket": "[-0.05,-0.02)",
+          "rows": 42,
+          "independentPlayerGames": 29,
+          "games": 22,
+          "dates": 8,
+          "meanModel": 0.4117,
+          "meanMarketMid": 0.442,
+          "realizedYesRate": 0.4286,
+          "realizedMinusMarket": -0.0135,
+          "pairedBrierDelta_modelMinusMarket": 0.000681,
+          "tradeSide": "NO@noAsk",
+          "tradesWithExecutablePrice": 42,
+          "roiAfterFees": -0.0143,
+          "roiGross": 0.0093,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.241755,
+            0.258551
+          ]
+        },
+        {
+          "bucket": "[-0.02,+0.02)",
+          "rows": 328,
+          "independentPlayerGames": 189,
+          "games": 64,
+          "dates": 15,
+          "meanModel": 0.1595,
+          "meanMarketMid": 0.1562,
+          "realizedYesRate": 0.1463,
+          "realizedMinusMarket": -0.0099,
+          "pairedBrierDelta_modelMinusMarket": 0.000237,
+          "tradeSide": "mixed",
+          "tradesWithExecutablePrice": 304,
+          "roiAfterFees": -0.062,
+          "roiGross": -0.0458,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.140267,
+            0.007066
+          ]
+        },
+        {
+          "bucket": "[+0.02,+0.05)",
+          "rows": 415,
+          "independentPlayerGames": 295,
+          "games": 56,
+          "dates": 15,
+          "meanModel": 0.2516,
+          "meanMarketMid": 0.2172,
+          "realizedYesRate": 0.1904,
+          "realizedMinusMarket": -0.0268,
+          "pairedBrierDelta_modelMinusMarket": 0.003165,
+          "tradeSide": "YES@ask",
+          "tradesWithExecutablePrice": 415,
+          "roiAfterFees": -0.1828,
+          "roiGross": -0.1537,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.339874,
+            -0.037247
+          ]
+        },
+        {
+          "bucket": "[+0.05,+0.10)",
+          "rows": 326,
+          "independentPlayerGames": 216,
+          "games": 52,
+          "dates": 13,
+          "meanModel": 0.4164,
+          "meanMarketMid": 0.3434,
+          "realizedYesRate": 0.3374,
+          "realizedMinusMarket": -0.006,
+          "pairedBrierDelta_modelMinusMarket": 0.006718,
+          "tradeSide": "YES@ask",
+          "tradesWithExecutablePrice": 326,
+          "roiAfterFees": -0.0705,
+          "roiGross": -0.0377,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.240464,
+            0.099554
+          ]
+        },
+        {
+          "bucket": "[+0.10,+1.00)",
+          "rows": 221,
+          "independentPlayerGames": 136,
+          "games": 34,
+          "dates": 11,
+          "meanModel": 0.493,
+          "meanMarketMid": 0.3608,
+          "realizedYesRate": 0.4615,
+          "realizedMinusMarket": 0.1007,
+          "pairedBrierDelta_modelMinusMarket": -0.009517,
+          "tradeSide": "YES@ask",
+          "tradesWithExecutablePrice": 221,
+          "roiAfterFees": 0.1994,
+          "roiGross": 0.2438,
+          "roiAfterFeesCI95_gameClustered": [
+            0.020245,
+            0.398798
+          ]
+        }
+      ],
+      "hitter_total_bases": [
+        {
+          "bucket": "[-1.00,-0.10)",
+          "rows": 111,
+          "independentPlayerGames": 54,
+          "games": 38,
+          "dates": 11,
+          "meanModel": 0.1806,
+          "meanMarketMid": 0.3159,
+          "realizedYesRate": 0.2162,
+          "realizedMinusMarket": -0.0996,
+          "pairedBrierDelta_modelMinusMarket": -0.013662,
+          "tradeSide": "NO@noAsk",
+          "tradesWithExecutablePrice": 111,
+          "roiAfterFees": 0.1083,
+          "roiGross": 0.1309,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.013666,
+            0.26568
+          ]
+        },
+        {
+          "bucket": "[-0.10,-0.05)",
+          "rows": 310,
+          "independentPlayerGames": 165,
+          "games": 64,
+          "dates": 13,
+          "meanModel": 0.1561,
+          "meanMarketMid": 0.2275,
+          "realizedYesRate": 0.1774,
+          "realizedMinusMarket": -0.0501,
+          "pairedBrierDelta_modelMinusMarket": -0.001728,
+          "tradeSide": "NO@noAsk",
+          "tradesWithExecutablePrice": 310,
+          "roiAfterFees": 0.0396,
+          "roiGross": 0.0545,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.035706,
+            0.118794
+          ]
+        },
+        {
+          "bucket": "[-0.05,-0.02)",
+          "rows": 414,
+          "independentPlayerGames": 238,
+          "games": 65,
+          "dates": 12,
+          "meanModel": 0.1386,
+          "meanMarketMid": 0.1722,
+          "realizedYesRate": 0.1594,
+          "realizedMinusMarket": -0.0128,
+          "pairedBrierDelta_modelMinusMarket": 0.000507,
+          "tradeSide": "NO@noAsk",
+          "tradesWithExecutablePrice": 410,
+          "roiAfterFees": -0.0055,
+          "roiGross": 0.0049,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.053332,
+            0.041515
+          ]
+        },
+        {
+          "bucket": "[-0.02,+0.02)",
+          "rows": 517,
+          "independentPlayerGames": 257,
+          "games": 55,
+          "dates": 14,
+          "meanModel": 0.1655,
+          "meanMarketMid": 0.1666,
+          "realizedYesRate": 0.1896,
+          "realizedMinusMarket": 0.0229,
+          "pairedBrierDelta_modelMinusMarket": 0.000417,
+          "tradeSide": "mixed",
+          "tradesWithExecutablePrice": 516,
+          "roiAfterFees": -0.0337,
+          "roiGross": -0.0187,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.084217,
+            0.022254
+          ]
+        },
+        {
+          "bucket": "[+0.02,+0.05)",
+          "rows": 187,
+          "independentPlayerGames": 139,
+          "games": 29,
+          "dates": 11,
+          "meanModel": 0.2426,
+          "meanMarketMid": 0.2095,
+          "realizedYesRate": 0.2353,
+          "realizedMinusMarket": 0.0257,
+          "pairedBrierDelta_modelMinusMarket": -0.000694,
+          "tradeSide": "YES@ask",
+          "tradesWithExecutablePrice": 187,
+          "roiAfterFees": 0.0229,
+          "roiGross": 0.0742,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.265441,
+            0.338705
+          ]
+        },
+        {
+          "bucket": "[+0.05,+0.10)",
+          "rows": 110,
+          "independentPlayerGames": 86,
+          "games": 25,
+          "dates": 9,
+          "meanModel": 0.2905,
+          "meanMarketMid": 0.2201,
+          "realizedYesRate": 0.2273,
+          "realizedMinusMarket": 0.0071,
+          "pairedBrierDelta_modelMinusMarket": 0.005173,
+          "tradeSide": "YES@ask",
+          "tradesWithExecutablePrice": 110,
+          "roiAfterFees": -0.0605,
+          "roiGross": -0.0126,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.402127,
+            0.296653
+          ]
+        },
+        {
+          "bucket": "[+0.10,+1.00)",
+          "rows": 24,
+          "independentPlayerGames": 24,
+          "games": 10,
+          "dates": 5,
+          "meanModel": 0.3731,
+          "meanMarketMid": 0.2552,
+          "realizedYesRate": 0.375,
+          "realizedMinusMarket": 0.1198,
+          "pairedBrierDelta_modelMinusMarket": -0.01843,
+          "tradeSide": "YES@ask",
+          "tradesWithExecutablePrice": 24,
+          "roiAfterFees": 0.3591,
+          "roiGross": 0.4286,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.389179,
+            1.123434
+          ]
+        }
+      ],
+      "hitter_hits_runs_rbis": [
+        {
+          "bucket": "[-1.00,-0.10)",
+          "rows": 128,
+          "independentPlayerGames": 56,
+          "games": 34,
+          "dates": 11,
+          "meanModel": 0.2555,
+          "meanMarketMid": 0.3957,
+          "realizedYesRate": 0.375,
+          "realizedMinusMarket": -0.0207,
+          "pairedBrierDelta_modelMinusMarket": 0.012672,
+          "tradeSide": "NO@noAsk",
+          "tradesWithExecutablePrice": 128,
+          "roiAfterFees": -0.0086,
+          "roiGross": 0.016,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.143778,
+            0.126481
+          ]
+        },
+        {
+          "bucket": "[-0.10,-0.05)",
+          "rows": 311,
+          "independentPlayerGames": 145,
+          "games": 59,
+          "dates": 12,
+          "meanModel": 0.2582,
+          "meanMarketMid": 0.3291,
+          "realizedYesRate": 0.2572,
+          "realizedMinusMarket": -0.0719,
+          "pairedBrierDelta_modelMinusMarket": -0.004597,
+          "tradeSide": "NO@noAsk",
+          "tradesWithExecutablePrice": 311,
+          "roiAfterFees": 0.0736,
+          "roiGross": 0.0946,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.03013,
+            0.163883
+          ]
+        },
+        {
+          "bucket": "[-0.05,-0.02)",
+          "rows": 445,
+          "independentPlayerGames": 212,
+          "games": 60,
+          "dates": 13,
+          "meanModel": 0.2316,
+          "meanMarketMid": 0.2651,
+          "realizedYesRate": 0.2764,
+          "realizedMinusMarket": 0.0113,
+          "pairedBrierDelta_modelMinusMarket": 0.001379,
+          "tradeSide": "NO@noAsk",
+          "tradesWithExecutablePrice": 443,
+          "roiAfterFees": -0.0417,
+          "roiGross": -0.0274,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.145844,
+            0.048026
+          ]
+        },
+        {
+          "bucket": "[-0.02,+0.02)",
+          "rows": 541,
+          "independentPlayerGames": 294,
+          "games": 59,
+          "dates": 13,
+          "meanModel": 0.2944,
+          "meanMarketMid": 0.2949,
+          "realizedYesRate": 0.3031,
+          "realizedMinusMarket": 0.0082,
+          "pairedBrierDelta_modelMinusMarket": 0.000112,
+          "tradeSide": "mixed",
+          "tradesWithExecutablePrice": 541,
+          "roiAfterFees": -0.0207,
+          "roiGross": -0.0009,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.082151,
+            0.039
+          ]
+        },
+        {
+          "bucket": "[+0.02,+0.05)",
+          "rows": 251,
+          "independentPlayerGames": 194,
+          "games": 46,
+          "dates": 12,
+          "meanModel": 0.4139,
+          "meanMarketMid": 0.3802,
+          "realizedYesRate": 0.3785,
+          "realizedMinusMarket": -0.0017,
+          "pairedBrierDelta_modelMinusMarket": 0.000263,
+          "tradeSide": "YES@ask",
+          "tradesWithExecutablePrice": 251,
+          "roiAfterFees": -0.0568,
+          "roiGross": -0.0273,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.233502,
+            0.138622
+          ]
+        },
+        {
+          "bucket": "[+0.05,+0.10)",
+          "rows": 223,
+          "independentPlayerGames": 182,
+          "games": 37,
+          "dates": 8,
+          "meanModel": 0.5481,
+          "meanMarketMid": 0.4773,
+          "realizedYesRate": 0.5022,
+          "realizedMinusMarket": 0.025,
+          "pairedBrierDelta_modelMinusMarket": 0.002115,
+          "tradeSide": "YES@ask",
+          "tradesWithExecutablePrice": 223,
+          "roiAfterFees": 0.0019,
+          "roiGross": 0.0321,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.173898,
+            0.198993
+          ]
+        },
+        {
+          "bucket": "[+0.10,+1.00)",
+          "rows": 109,
+          "independentPlayerGames": 78,
+          "games": 20,
+          "dates": 7,
+          "meanModel": 0.6316,
+          "meanMarketMid": 0.4956,
+          "realizedYesRate": 0.5505,
+          "realizedMinusMarket": 0.0549,
+          "pairedBrierDelta_modelMinusMarket": -0.003243,
+          "tradeSide": "YES@ask",
+          "tradesWithExecutablePrice": 109,
+          "roiAfterFees": 0.0474,
+          "roiGross": 0.0809,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.098809,
+            0.214845
+          ]
+        }
+      ],
+      "hitter_rbis": [
+        {
+          "bucket": "[-1.00,-0.10)",
+          "rows": 187,
+          "independentPlayerGames": 166,
+          "games": 61,
+          "dates": 12,
+          "meanModel": 0.1857,
+          "meanMarketMid": 0.3255,
+          "realizedYesRate": 0.2781,
+          "realizedMinusMarket": -0.0474,
+          "pairedBrierDelta_modelMinusMarket": 0.008166,
+          "tradeSide": "NO@noAsk",
+          "tradesWithExecutablePrice": 186,
+          "roiAfterFees": 0.0304,
+          "roiGross": 0.0528,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.058579,
+            0.116143
+          ]
+        },
+        {
+          "bucket": "[-0.10,-0.05)",
+          "rows": 263,
+          "independentPlayerGames": 249,
+          "games": 61,
+          "dates": 12,
+          "meanModel": 0.1301,
+          "meanMarketMid": 0.2015,
+          "realizedYesRate": 0.2053,
+          "realizedMinusMarket": 0.0038,
+          "pairedBrierDelta_modelMinusMarket": 0.00583,
+          "tradeSide": "NO@noAsk",
+          "tradesWithExecutablePrice": 260,
+          "roiAfterFees": -0.025,
+          "roiGross": -0.0124,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.086052,
+            0.023405
+          ]
+        },
+        {
+          "bucket": "[-0.05,-0.02)",
+          "rows": 250,
+          "independentPlayerGames": 237,
+          "games": 53,
+          "dates": 13,
+          "meanModel": 0.0911,
+          "meanMarketMid": 0.1261,
+          "realizedYesRate": 0.14,
+          "realizedMinusMarket": 0.0139,
+          "pairedBrierDelta_modelMinusMarket": 0.002213,
+          "tradeSide": "NO@noAsk",
+          "tradesWithExecutablePrice": 240,
+          "roiAfterFees": -0.0301,
+          "roiGross": -0.0225,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.087146,
+            0.024923
+          ]
+        },
+        {
+          "bucket": "[-0.02,+0.02)",
+          "rows": 163,
+          "independentPlayerGames": 127,
+          "games": 33,
+          "dates": 11,
+          "meanModel": 0.1013,
+          "meanMarketMid": 0.1062,
+          "realizedYesRate": 0.1227,
+          "realizedMinusMarket": 0.0165,
+          "pairedBrierDelta_modelMinusMarket": -0.000243,
+          "tradeSide": "mixed",
+          "tradesWithExecutablePrice": 152,
+          "roiAfterFees": 0.022,
+          "roiGross": 0.0317,
+          "roiAfterFeesCI95_gameClustered": [
+            -0.056617,
+            0.116007
+          ]
+        },
+        {
+          "bucket": "[+0.02,+0.05)",
+          "rows": 11,
+          "independentPlayerGames": 11,
+          "games": 5,
+          "dates": 4,
+          "meanModel": 0.1678,
+          "meanMarketMid": 0.1391,
+          "realizedYesRate": 0.0909,
+          "realizedMinusMarket": -0.0482,
+          "pairedBrierDelta_modelMinusMarket": 0.004288,
+          "tradeSide": "YES@ask",
+          "tradesWithExecutablePrice": 11,
+          "roiAfterFees": -0.6085,
+          "roiGross": -0.5885,
+          "roiAfterFeesCI95_gameClustered": [
+            null,
+            null
+          ]
+        },
+        {
+          "bucket": "[+0.05,+0.10)",
+          "rows": 1,
+          "independentPlayerGames": 1,
+          "games": 1,
+          "dates": 1,
+          "meanModel": 0.2167,
+          "meanMarketMid": 0.165,
+          "realizedYesRate": 0.0,
+          "realizedMinusMarket": -0.165,
+          "pairedBrierDelta_modelMinusMarket": 0.019734,
+          "tradeSide": "YES@ask",
+          "tradesWithExecutablePrice": 1,
+          "roiAfterFees": -1.0,
+          "roiGross": -1.0,
+          "roiAfterFeesCI95_gameClustered": [
+            null,
+            null
+          ]
+        },
+        {
+          "bucket": "[+0.10,+1.00)",
+          "rows": 0
+        }
+      ]
+    }
+  },
+  "holdout": {
+    "devDates": [
+      "2026-08-19",
+      "2026-08-20",
+      "2026-08-21",
+      "2026-08-22",
+      "2026-08-23",
+      "2026-08-24",
+      "2026-08-25",
+      "2026-08-26",
+      "2026-08-27"
+    ],
+    "testDates": [
+      "2026-08-29",
+      "2026-09-05",
+      "2026-09-07",
+      "2026-09-09",
+      "2026-09-12",
+      "2026-09-23"
+    ],
+    "dev": {
+      "rows": 5612,
+      "independentPlayerGames": 393,
+      "games": 62,
+      "dates": 9
+    },
+    "test": {
+      "rows": 301,
+      "independentPlayerGames": 25,
+      "games": 7,
+      "dates": 6
+    },
+    "testScore": {
+      "rows": 301,
+      "independentPlayerGames": 25,
+      "games": 7,
+      "dates": 6,
+      "realizedYesRate": 0.299,
+      "model": {
+        "brier": 0.193833,
+        "logLoss": 0.580096,
+        "ece10": 0.082204,
+        "calibrationIntercept": -0.1567,
+        "calibrationSlope": 0.5843,
+        "meanProbability": 0.2623
+      },
+      "market": {
+        "brier": 0.202776,
+        "logLoss": 0.602986,
+        "ece10": 0.096462,
+        "calibrationIntercept": -0.2705,
+        "calibrationSlope": 0.5025,
+        "meanProbability": 0.2706
+      },
+      "pairedBrierDelta_modelMinusMarket": -0.008943,
+      "pairedLogLossDelta_modelMinusMarket": -0.02289,
+      "pairedBrierDeltaCI95_gameClustered": [
+        -0.016889,
+        0.000396
+      ],
+      "pairedLogLossDeltaCI95_gameClustered": [
+        -0.045041,
+        0.001739
+      ]
+    },
+    "plattFitOnDev_pooled": {
+      "intercept": -0.0977,
+      "slope": 0.8663
+    },
+    "plattFitOnDev_perFamily": {
+      "hitter_hits": {
+        "intercept": -0.3121,
+        "slope": 1.0072
+      },
+      "hitter_total_bases": {
+        "intercept": -0.1679,
+        "slope": 0.8207
+      },
+      "hitter_hits_runs_rbis": {
+        "intercept": -0.0316,
+        "slope": 0.8917
+      },
+      "hitter_rbis": {
+        "intercept": 0.4604,
+        "slope": 0.9969
+      }
+    },
+    "testRaw": {
+      "testBrier": 0.193833,
+      "testLogLoss": 0.580096,
+      "testECE10": 0.082204
+    },
+    "testPlattPooled": {
+      "testBrier": 0.19086,
+      "testLogLoss": 0.56819,
+      "testECE10": 0.062603,
+      "brierChangeVsRaw": -0.002973,
+      "brierChangeVsRawCI95_gameClustered": [
+        -0.006458,
+        0.002536
+      ],
+      "logLossChangeVsRaw": -0.011905,
+      "logLossChangeVsRawCI95_gameClustered": [
+        -0.030537,
+        0.008394
+      ],
+      "pairedBrierDeltaVsMarket": -0.011916
+    },
+    "testPlattPerFamily": {
+      "testBrier": 0.189503,
+      "testLogLoss": 0.562822,
+      "testECE10": 0.065,
+      "brierChangeVsRaw": -0.00433,
+      "brierChangeVsRawCI95_gameClustered": [
+        -0.008207,
+        0.001849
+      ],
+      "logLossChangeVsRaw": -0.017274,
+      "logLossChangeVsRawCI95_gameClustered": [
+        -0.037469,
+        0.005688
+      ],
+      "pairedBrierDeltaVsMarket": -0.013273
+    },
+    "testByFamily": {
+      "hitter_hits": {
+        "rows": 87,
+        "games": 7,
+        "rawBrier": 0.148654,
+        "plattPooledBrier": 0.146812,
+        "plattFamilyBrier": 0.146247,
+        "marketBrier": 0.156428
+      },
+      "hitter_total_bases": {
+        "rows": 107,
+        "games": 7,
+        "rawBrier": 0.19712,
+        "plattPooledBrier": 0.194584,
+        "plattFamilyBrier": 0.194178,
+        "marketBrier": 0.205656
+      },
+      "hitter_hits_runs_rbis": {
+        "rows": 75,
+        "games": 4,
+        "rawBrier": 0.235493,
+        "plattPooledBrier": 0.230903,
+        "plattFamilyBrier": 0.23154,
+        "marketBrier": 0.24942
+      },
+      "hitter_rbis": {
+        "rows": 32,
+        "games": 4,
+        "rawBrier": 0.208036,
+        "plattPooledBrier": 0.204313,
+        "plattFamilyBrier": 0.192949,
+        "marketBrier": 0.209828
+      }
+    }
+  },
+  "holdoutByGameChronological": {
+    "devDates": [
+      "2026-08-19",
+      "2026-08-20",
+      "2026-08-21",
+      "2026-08-22"
+    ],
+    "testDates": [
+      "2026-08-22",
+      "2026-08-23",
+      "2026-08-24",
+      "2026-08-25",
+      "2026-08-26",
+      "2026-08-27",
+      "2026-08-29",
+      "2026-09-05",
+      "2026-09-07",
+      "2026-09-09",
+      "2026-09-12",
+      "2026-09-23"
+    ],
+    "dev": {
+      "rows": 4539,
+      "independentPlayerGames": 320,
+      "games": 44,
+      "dates": 4
+    },
+    "test": {
+      "rows": 1374,
+      "independentPlayerGames": 98,
+      "games": 25,
+      "dates": 12
+    },
+    "testScore": {
+      "rows": 1374,
+      "independentPlayerGames": 98,
+      "games": 25,
+      "dates": 12,
+      "realizedYesRate": 0.2897,
+      "model": {
+        "brier": 0.16504,
+        "logLoss": 0.502159,
+        "ece10": 0.042221,
+        "calibrationIntercept": 0.1093,
+        "calibrationSlope": 0.8618,
+        "meanProbability": 0.254
+      },
+      "market": {
+        "brier": 0.168343,
+        "logLoss": 0.509783,
+        "ece10": 0.036732,
+        "calibrationIntercept": 0.0453,
+        "calibrationSlope": 0.8903,
+        "meanProbability": 0.2678
+      },
+      "pairedBrierDelta_modelMinusMarket": -0.003303,
+      "pairedLogLossDelta_modelMinusMarket": -0.007624,
+      "pairedBrierDeltaCI95_gameClustered": [
+        -0.008248,
+        0.002161
+      ],
+      "pairedLogLossDeltaCI95_gameClustered": [
+        -0.022587,
+        0.008961
+      ]
+    },
+    "plattFitOnDev_pooled": {
+      "intercept": -0.165,
+      "slope": 0.8474
+    },
+    "plattFitOnDev_perFamily": {
+      "hitter_hits": {
+        "intercept": -0.3849,
+        "slope": 0.995
+      },
+      "hitter_total_bases": {
+        "intercept": -0.2974,
+        "slope": 0.7762
+      },
+      "hitter_hits_runs_rbis": {
+        "intercept": -0.0941,
+        "slope": 0.8713
+      },
+      "hitter_rbis": {
+        "intercept": 0.5728,
+        "slope": 1.0554
+      }
+    },
+    "testRaw": {
+      "testBrier": 0.16504,
+      "testLogLoss": 0.502159,
+      "testECE10": 0.042221
+    },
+    "testPlattPooled": {
+      "testBrier": 0.165348,
+      "testLogLoss": 0.501239,
+      "testECE10": 0.043335,
+      "brierChangeVsRaw": 0.000308,
+      "brierChangeVsRawCI95_gameClustered": [
+        -0.002278,
+        0.002482
+      ],
+      "logLossChangeVsRaw": -0.00092,
+      "logLossChangeVsRawCI95_gameClustered": [
+        -0.009345,
+        0.006667
+      ],
+      "pairedBrierDeltaVsMarket": -0.002995
+    },
+    "testPlattPerFamily": {
+      "testBrier": 0.165177,
+      "testLogLoss": 0.499984,
+      "testECE10": 0.044976,
+      "brierChangeVsRaw": 0.000137,
+      "brierChangeVsRawCI95_gameClustered": [
+        -0.003412,
+        0.00359
+      ],
+      "logLossChangeVsRaw": -0.002175,
+      "logLossChangeVsRawCI95_gameClustered": [
+        -0.013665,
+        0.008755
+      ],
+      "pairedBrierDeltaVsMarket": -0.003166
+    },
+    "testByFamily": {
+      "hitter_hits": {
+        "rows": 331,
+        "games": 25,
+        "rawBrier": 0.142531,
+        "plattPooledBrier": 0.143077,
+        "plattFamilyBrier": 0.144805,
+        "marketBrier": 0.149564
+      },
+      "hitter_total_bases": {
+        "rows": 413,
+        "games": 25,
+        "rawBrier": 0.165764,
+        "plattPooledBrier": 0.165249,
+        "plattFamilyBrier": 0.166073,
+        "marketBrier": 0.166904
+      },
+      "hitter_hits_runs_rbis": {
+        "rows": 436,
+        "games": 22,
+        "rawBrier": 0.188337,
+        "plattPooledBrier": 0.18987,
+        "plattFamilyBrier": 0.188543,
+        "marketBrier": 0.19259
+      },
+      "hitter_rbis": {
+        "rows": 194,
+        "games": 22,
+        "rawBrier": 0.149546,
+        "plattPooledBrier": 0.148445,
+        "plattFamilyBrier": 0.145516,
+        "marketBrier": 0.148955
+      }
+    }
+  },
+  "clv": {
+    "rowsWithAnyEntryQuote": 5913,
+    "rowsWithCloseQuoteWithin60Min": 3974,
+    "coverage": 0.6721,
+    "meanSignedMidMove": 0.00051,
+    "shareMovingTowardModel": 0.1933,
+    "shareUnchanged": 0.6452,
+    "meanCloseMidMinusEntryAsk_modelSide": -0.00716,
+    "verdict": "DESCRIPTIVE_ONLY: registry captures are sparse (a few per day), so the 'close' is the last capture within 60 min of first pitch, not a true closing line"
+  },
+  "verdict": {
+    "overallVsMarket": "PARITY",
+    "evidenceLevel": "LEVEL_0_MEASUREMENT_ONLY",
+    "note": "Research measurement only; no production change is implied or made."
+  }
+}

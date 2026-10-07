@@ -264,6 +264,28 @@ def validate_game_for_rerun(game_entry, now_utc=None):
     return True, "OK"
 
 
+def _carry_over_market_ledger(auth_game, rerun_game):
+    """
+    A rerun that carries NO marketLedger for a game (Lineup Recheck never runs
+    scripts/build_market_ledger.py, by design) must not delete the authoritative
+    game's priced ledger: on 2026-10-07 a manual IN_PLAY_RECHECK replaced three
+    not-started postseason games wholesale and erased every model price they had.
+    The previous ledger is kept, explicitly marked as carried over with its own
+    as-of time, so no consumer can mistake it for a re-priced one. A rerun that
+    DOES carry a ledger (a full Fetch Slate rerun) always replaces it.
+    """
+    prev = (auth_game or {}).get("marketLedger")
+    if rerun_game.get("marketLedger") or not prev:
+        return rerun_game
+    out = dict(rerun_game)
+    out["marketLedger"] = prev
+    out["marketLedgerCarriedOver"] = {
+        "reason": "rerun carried no market ledger; previous authoritative ledger kept",
+        "asOf": max((r.get("priceSnapshotTimestamp") or "" for r in prev), default="") or None,
+    }
+    return out
+
+
 def merge_rerun_into_authoritative(auth_data, rerun_data, run_type, now_utc=None, trigger_source=None):
     """
     Merge a rerun slate into the authoritative slate.
@@ -317,7 +339,7 @@ def merge_rerun_into_authoritative(auth_data, rerun_data, run_type, now_utc=None
             # function's own docstring. Scheduled runs keep the legacy
             # completeness-gated heuristic.
             if trigger_source == TRIGGER_MANUAL or _improves_completeness(auth_game, game):
-                auth_games[gpk] = game
+                auth_games[gpk] = _carry_over_market_ledger(auth_game, game)
                 accepted.append({"gamePk": gpk, "action": "UPDATED"})
             else:
                 accepted.append({"gamePk": gpk, "action": "UNCHANGED_NO_IMPROVEMENT"})

@@ -39,7 +39,12 @@ from lib.research.statcast_pitch_store import has_game  # noqa: E402
 from scripts.fetch_statcast_pitch_log import fetch_and_ingest_game, fetch_json, game_pks_from_slate  # noqa: E402
 from lib.edgelab.mlb_boxscore import fetch_game_feed, extract_game_status, is_final_status  # noqa: E402
 
-MLB_SCHEDULE_URL = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate={start}&endDate={end}&gameType=R"
+from lib.edgelab.slate_day_contract import SCHEDULE_GAME_TYPES  # noqa: E402
+
+# Regular season AND postseason: gameType=R stopped the Statcast archive at the last
+# regular-season day (2026-09-27), starving every October hitter/pitcher feature.
+MLB_SCHEDULE_URL = ("https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate={start}&endDate={end}"
+                    "&gameType=" + ",".join(SCHEDULE_GAME_TYPES))
 _SCHEDULE_COMPLETED_STATES = frozenset({"Final", "Game Over", "Completed Early"})
 
 

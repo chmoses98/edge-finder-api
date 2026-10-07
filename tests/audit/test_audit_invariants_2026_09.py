@@ -111,8 +111,9 @@ def _ml_away_engine_disagreements(slate):
 def _cr6_population(slates):
     """
     Pure. Reduces an iterable of (date, slate) into the CR-6 evaluation
-    population: the most recent CR6_WINDOW_DATES dates that actually carry
-    comparable ML_Away observations, plus summary statistics.
+    population: the most recent CR6_WINDOW_DATES (or more, until the window
+    holds CR6_MIN_OBSERVATIONS) dates that actually carry comparable ML_Away
+    observations, plus summary statistics.
 
     Taking a fixed COUNT of dates rather than a fixed calendar anchor is what
     makes this invariant both un-flippable by one benign day and still able to
@@ -121,7 +122,13 @@ def _cr6_population(slates):
     per_date = [(date, _ml_away_engine_disagreements(slate))
                 for date, slate in slates]
     per_date = [(date, diffs) for date, diffs in per_date if diffs]
-    window = per_date[-CR6_WINDOW_DATES:]
+    # At least CR6_WINDOW_DATES dates, extended further back until the window holds
+    # CR6_MIN_OBSERVATIONS: postseason slates carry 2-4 games, so 20 October dates are
+    # far fewer observations than 20 regular-season dates (143 < 150 on 2026-10-07).
+    start = max(0, len(per_date) - CR6_WINDOW_DATES)
+    while start > 0 and sum(len(ds) for _d, ds in per_date[start:]) < CR6_MIN_OBSERVATIONS:
+        start -= 1
+    window = per_date[start:]
     diffs = [d for _date, ds in window for d in ds]
     return {
         "dates": [date for date, _ds in window],

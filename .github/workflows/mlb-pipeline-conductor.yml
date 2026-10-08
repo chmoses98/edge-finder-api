@@ -1,0 +1,86 @@
+name: MLB Pipeline Conductor
+
+# Keeps the MLB current-slate pipeline advancing without depending on GitHub's
+# scheduler or on workflow_run.
+#
+# On 2026-10-07 the slate / capture / model crons fired hours late or not at all
+# (0 events / 0 model prices with four playoff games on Kalshi), and runs dispatched
+# with GITHUB_TOKEN never start their workflow_run successors (raw Kalshi captures
+# were never ingested). So this job reconciles the pipeline from the committed
+# artifacts themselves: scripts/ci/pipeline_watchdog.py --host conductor decides
+# slate / capture / ingest / model / export dispatches (every one guarded by the
+# producer's own recent / in-flight run list; unknown state never dispatches).
+#
+# CADENCE: one bounded job evaluates every INTERVAL_SECONDS for EVALUATIONS rounds
+# (~50 min), refreshing the checkout from main before each round, then requests
+# its ONE successor (the repository's chain pattern, scripts/research/mrv_collector/
+# chain_successor.py). The non-cancelling concurrency group admits one running +
+# one pending conductor, so two can never overlap. The hourly cron only restarts a
+# stopped chain; app-export.yml also revives a chain it finds stopped.
+#
+# KILL SWITCH: repository variable MLB_CONDUCTOR_ENABLED = false/0/no/off/disabled
+# -> the running job finishes, requests no successor, cron runs are skipped, and
+# app-export.yml takes back stages A-D. Unset or anything else = enabled.
+#
+# AUTHORITY: dispatch only. It never writes to the repository (contents: read),
+# never runs a model, and dispatches Fetch Slate only with unattended=true
+# (scheduled-run semantics: no risk gate, no bet logging).
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 * * * *'   # restart backstop only; the chain is the cadence
+
+permissions:
+  contents: read
+  actions: write        # list producer runs, dispatch producers and the one successor
+
+concurrency:
+  group: mlb-pipeline-conductor
+  cancel-in-progress: false
+
+jobs:
+  conduct:
+    if: github.event_name != 'schedule' || !contains(fromJSON('["false","0","no","off","disabled"]'), vars.MLB_CONDUCTOR_ENABLED)
+    runs-on: ubuntu-latest
+    timeout-minutes: 58
+    env:
+      GH_TOKEN: ${{ github.token }}
+      MLB_CONDUCTOR_ENABLED: ${{ vars.MLB_CONDUCTOR_ENABLED }}
+      EVALUATIONS: '10'
+      INTERVAL_SECONDS: '300'
+    steps:
+      # History (trees only, no blobs) so the export stage can tell whether app/latest was
+      # built from a commit containing today's newest upstream commit.
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 300
+          filter: blob:none
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Reconcile the MLB pipeline (bounded loop)
+        run: |
+          for i in $(seq 1 "$EVALUATIONS"); do
+            # Evaluate only the CURRENT main: a failed refresh skips the round rather than
+            # deciding on stale state.
+            if git fetch --quiet --depth=300 --filter=blob:none origin main && git reset --quiet --hard FETCH_HEAD; then
+              echo "::group::evaluation $i/$EVALUATIONS $(date -u +%Y-%m-%dT%H:%M:%SZ) main@$(git rev-parse --short HEAD)"
+              python3 scripts/ci/pipeline_watchdog.py --host conductor || echo "::warning::evaluation $i raised; continuing"
+              echo "::endgroup::"
+            else
+              echo "::warning::evaluation $i skipped: could not refresh main"
+            fi
+            if [ "$i" -lt "$EVALUATIONS" ]; then sleep "$INTERVAL_SECONDS"; fi
+          done
+
+      # Not after a cancellation (an operator stop); after anything else, including a failed
+      # loop, so one bad round cannot end the chain.
+      - name: Request the successor conductor
+        if: ${{ !cancelled() && github.ref_name == 'main' }}
+        run: python3 scripts/ci/pipeline_watchdog.py --successor | tee -a "$GITHUB_STEP_SUMMARY"

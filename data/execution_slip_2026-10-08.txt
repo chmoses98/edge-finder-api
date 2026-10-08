@@ -3,30 +3,34 @@
 EXECUTION SLIP — 2026-10-08
 ======================================================================
 
-=== REAL-MONEY BETS (0) ===
+=== REAL-MONEY BETS (1) ===
+  CLE@CWS | TT_Away_Over | TT_Away_Over
+    Ticker:    KXMLBTEAMTOTAL-26OCT081700CLECWS-CLE4
+    Model%:    61.12% | Exec Price: 52.0¢ | Raw Edge: +9.12% | Cal Edge: +2.33%
+    Tier:      MEDIUM | Stake: $4.0
+    MaxBet:    55.47¢ or better
+    Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
+    Snapshot:  2026-10-08T21:10:10Z
+
+
+=== PRICE-MOVED PASSES (0) ===
   (none)
 
-=== PRICE-MOVED PASSES (1) ===
-  CLE@CWS | TT_Home_Over
-    REASON: Rule 50: lineupConfirmedOfficial=False → TT Paper only; Executable EV: price 48.0¢ exceeds fee-aware bet-up-to 39.85¢ (gross ceiling was 41.53¢) -- PRICE_MOVED_BEYOND_MAX
-    Exec: 48.0¢ | MaxBet: 39.85¢ or better
-
-
-=== PAPER-ONLY (9) ===
-  CLE@CWS | NRFI | Cal Edge: -3.90% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  CLE@CWS | YRFI | Cal Edge: +3.64% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  CLE@CWS | F5_ML_Away | Cal Edge: -4.30% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
-  CLE@CWS | TT_Away_Over | Cal Edge: +2.14% | Rule 50: lineupConfirmedOfficial=False → TT Paper only
-  CLE@CWS | ML_Away | Cal Edge: +2.26% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER; Ru
-  CLE@CWS | ML_Home | Cal Edge: -2.52% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER; Ru
+=== PAPER-ONLY (5) ===
+  CLE@CWS | NRFI | Cal Edge: -3.96% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  CLE@CWS | YRFI | Cal Edge: +3.70% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   CLE@CWS | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   CLE@CWS | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   CLE@CWS | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
 
-=== REJECTED / BLOCKED (1) ===
+=== REJECTED / BLOCKED (5) ===
+  CLE@CWS | F5_ML_Away | Raw Edge: -16.94% | Rule71-F5: model 27.1% vs KalshiF5VF 43.3% = 16.2% > 12%
   CLE@CWS | F5_ML_Home | Raw Edge: — | Rule 24: home pitcher is opener (avgIP=2.0) — F5 UNQUALIFIED
+  CLE@CWS | TT_Home_Over | Raw Edge: -1.38% | edge -0.796% below 1.0% floor
+  CLE@CWS | ML_Away | Raw Edge: +9.26% | Rule71: model 61.3% vs PinVF 52.2% = 9.1% gap > 8%
+  CLE@CWS | ML_Home | Raw Edge: -10.26% | Rule71: model 38.7% vs PinVF 47.8% = 9.1% gap > 8%
 
 ======================================================================
-SLIP SUMMARY: Real=0 PriceMoved=1 Paper=9 Rejected=1
+SLIP SUMMARY: Real=1 PriceMoved=0 Paper=5 Rejected=5
 ======================================================================
 ======================================================================

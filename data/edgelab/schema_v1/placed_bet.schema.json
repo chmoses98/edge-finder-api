@@ -961,9 +961,10 @@
       "enum": [
         "SINGLE",
         "MULTI_LEG",
+        "COMBO_CONTRACT",
         null
       ],
-      "description": "Shape of this wager. Absent/null and \"SINGLE\" both mean an ordinary one-contract wager — every pre-existing row is therefore already correct without migration. \"MULTI_LEG\" means one user-placed combo/parlay: ONE economic position (one stake, one payout, one result) spanning the contracts in legs[]. Legs are embedded here rather than written as their own PlacedBet rows precisely so that bankroll, ROI, P/L and every report count the position exactly once and a leg can never independently contribute stake or profit."
+      "description": "Shape of this wager. Absent/null and \"SINGLE\" both mean an ordinary one-contract wager — every pre-existing row is therefore already correct without migration. \"MULTI_LEG\" means one user-placed combo/parlay: ONE economic position (one stake, one payout, one result) spanning the contracts in legs[]. Legs are embedded here rather than written as their own PlacedBet rows precisely so that bankroll, ROI, P/L and every report count the position exactly once and a leg can never independently contribute stake or profit. \"COMBO_CONTRACT\" means one Kalshi multivariate COMBO contract: a single exchange contract with its own marketTicker, side, entryPrice and settlement. It is graded only from the exchange's own final result for that contract (lib.edgelab.combo_contract_settlement); its legs are provenance only, in comboLegs."
     },
     "legs": {
       "type": "array",
@@ -1060,6 +1061,47 @@
         }
       },
       "description": "Ordered legs of a MULTI_LEG wager. Empty/absent for a SINGLE wager. Adding a leg never adds a ledger row, so an N-leg combo of any N needs no further schema change."
+    },
+    "comboLegs": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "description": "COMBO_CONTRACT only, and PROVENANCE ONLY: the legs of the combo contract as the exchange stated them (mve_selected_legs), when the source knew them. Absent on every other wager shape. Never an input to settlement: a combo is graded from its own contract's final exchange result, never from its legs.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "legIndex",
+          "marketTicker"
+        ],
+        "properties": {
+          "legIndex": {
+            "type": "integer"
+          },
+          "marketTicker": {
+            "type": "string",
+            "description": "the leg market's exchange ticker"
+          },
+          "eventTicker": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "side": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "YES",
+              "NO",
+              null
+            ]
+          }
+        }
+      }
     },
     "clvConvention": {
       "type": [

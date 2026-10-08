@@ -255,6 +255,24 @@ jobs:
           python3 scripts/edgelab/reconcile_settlement_catchup.py $RECON_ARGV \
             --receipt-out "$RUNNER_TEMP/settlement_reconciliation_receipt.json"
 
+      # Kalshi COMBO contracts (PlacedBet.wagerStructure == COMBO_CONTRACT) name no MLB game, so
+      # settle_date() above never reaches them. They settle ONLY from the exchange's own final result for
+      # the one contract held (lib/edgelab/combo_contract_settlement.py; public market endpoint, no
+      # credential); a contract that is not final, or whose result is not binary, stays pending. Never
+      # touches straight wagers, MULTI_LEG parlays or player props.
+      - name: Settle Kalshi combo contracts from the exchange's own result
+        id: combos
+        continue-on-error: true
+        env:
+          IN_DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [ "${IN_DRY_RUN:-}" = "true" ]; then
+            python3 scripts/edgelab/settle_combo_contracts.py --dry-run
+          else
+            python3 scripts/edgelab/settle_combo_contracts.py
+          fi
+
       - name: Write job summary
         if: always()
         env:
@@ -353,6 +371,12 @@ jobs:
             --message "edgelab settlement reconcile: $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             --branch "${{ steps.target.outputs.branch }}" \
             "${FILES[@]}"
+
+      - name: Fail the job if combo-contract settlement errored
+        if: steps.combos.outcome == 'failure'
+        run: |
+          echo "::error title=EdgeLab combo settlement::scripts/edgelab/settle_combo_contracts.py exited nonzero. Anything it settled was committed above; it is idempotent, so re-running is safe."
+          exit 1
 
       - name: Fail the job if reconciliation reported an error
         if: steps.reconcile.outcome == 'failure'

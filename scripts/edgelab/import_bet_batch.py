@@ -373,6 +373,13 @@ def process_row(row, index, import_batch_id):
     if price_error:
         return _unresolved_receipt(row, index, price_error)
 
+    # A Kalshi COMBO contract (lib.edgelab.bets COMBO_CONTRACT): one exchange contract whose own ticker IS its
+    # market identity. It is never resolved from the corpus (no MLB market record names it) -- it must arrive
+    # with that exact ticker, or the row is refused rather than matched to something else.
+    wager_structure = row.get("wagerStructure")
+    if wager_structure == "COMBO_CONTRACT" and not row.get("marketTicker"):
+        return _unresolved_receipt(row, index, "a COMBO_CONTRACT row requires the combo contract's own marketTicker")
+
     away, home = _parse_matchup(row)
     games, markets = _load_game_and_market_dims(game_date)
 
@@ -470,6 +477,7 @@ def process_row(row, index, import_batch_id):
         # fields above. `stake` above is unaffected by either.
         share_card_evidence=row.get("shareCardEvidence"),
         execution_economics=row.get("executionEconomics"),
+        wager_structure=wager_structure, combo_legs=row.get("comboLegs"),
     )
     # importBatchId/sourceBetKey are always recorded for traceability and
     # only become part of betId's IDENTITY when entry_timestamp is None

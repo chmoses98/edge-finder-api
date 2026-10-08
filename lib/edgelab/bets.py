@@ -416,7 +416,16 @@ def _execution_economics_defaults(execution_economics):
     return {field: execution_economics.get(field) for field in _EXECUTION_ECONOMICS_FIELDS}
 
 
-_WAGER_STRUCTURES = {"SINGLE", "MULTI_LEG"}
+_WAGER_STRUCTURES = {"SINGLE", "MULTI_LEG", "COMBO_CONTRACT"}
+
+# COMBO_CONTRACT (2026-10-08). A Kalshi multivariate COMBO is ONE exchange contract with its own ticker
+# (e.g. KXMVE...), its own side, its own executed price and its own settlement -- unlike MULTI_LEG, which is a
+# user-described parlay with NO single contract to name. It is recorded as exactly that one contract: the combo
+# ticker is the wager's opaque market identity, and it settles ONLY from the exchange's own final result for
+# that contract (lib.edgelab.combo_contract_settlement), never by grading or multiplying its legs. The legs, when
+# the source knows them, ride along as PROVENANCE ONLY in `comboLegs` -- never as `legs`, never as their own
+# PlacedBet rows, never an input to any result.
+_COMBO_LEG_FIELDS = {"legIndex", "marketTicker", "eventTicker", "side"}
 _LEG_FIELDS = {
     "legIndex", "legKey", "selection", "marketTicker", "side", "marketFamily",
     "marketHorizon", "threshold", "gameId", "matchup", "legResult",
@@ -459,6 +468,17 @@ def _normalize_wager_structure(wager_structure, legs, market_ticker, entry_price
     if wager_structure not in _WAGER_STRUCTURES:
         raise ValueError(
             f"wager_structure must be one of {sorted(_WAGER_STRUCTURES)}, got {wager_structure!r}")
+
+    if wager_structure == "COMBO_CONTRACT":
+        if legs:
+            raise ValueError(
+                "a COMBO_CONTRACT wager is ONE exchange contract; its legs are provenance only and travel in "
+                "comboLegs, never in legs (legs are the MULTI_LEG shape)")
+        if not market_ticker:
+            raise ValueError("a COMBO_CONTRACT wager requires the combo contract's own marketTicker")
+        if entry_price is None:
+            raise ValueError("a COMBO_CONTRACT wager requires the entryPrice actually paid for the combo contract")
+        return wager_structure, []
 
     if wager_structure == "SINGLE":
         if legs:
@@ -510,6 +530,32 @@ def _normalize_wager_structure(wager_structure, legs, market_ticker, entry_price
     return wager_structure, normalized
 
 
+def _normalize_combo_legs(wager_structure, combo_legs):
+    """PROVENANCE ONLY. The legs of a COMBO_CONTRACT as the exchange stated them, or None when the source did
+    not know them -- a combo with no leg metadata is exactly as well defined (it is its own contract). Each leg
+    needs a market ticker; side is YES/NO or None. Nothing reads these to decide a result."""
+    if combo_legs in (None, []):
+        return None if wager_structure != "COMBO_CONTRACT" or combo_legs is None else []
+    if wager_structure != "COMBO_CONTRACT":
+        raise ValueError("comboLegs are only valid on a wager_structure='COMBO_CONTRACT' wager")
+    normalized = []
+    for index, leg in enumerate(combo_legs):
+        if not isinstance(leg, dict):
+            raise ValueError(f"comboLegs[{index}] must be an object")
+        unknown = set(leg) - _COMBO_LEG_FIELDS
+        if unknown:
+            raise ValueError(f"comboLegs[{index}] has unknown field(s): {sorted(unknown)}")
+        ticker = leg.get("marketTicker")
+        if not isinstance(ticker, str) or not ticker.strip():
+            raise ValueError(f"comboLegs[{index}] requires a marketTicker")
+        side = leg.get("side")
+        if side not in ("YES", "NO", None):
+            raise ValueError(f"comboLegs[{index}].side must be YES, NO or null, got {side!r}")
+        normalized.append({"legIndex": index, "marketTicker": ticker.strip(),
+                           "eventTicker": leg.get("eventTicker"), "side": side})
+    return normalized
+
+
 def build_manual_bet_record(
     market_ticker, selection, stake, entry_price, entry_timestamp,
     *, game_id=None, game_date=None, matchup=None, event_ticker=None, series_ticker=None,
@@ -526,7 +572,7 @@ def build_manual_bet_record(
     timestamp_status=None, import_batch_id=None, source_bet_key=None, source_row=None, market_observation_linkage=None,
     executable_price_at_entry=None, bet_up_to_price_at_entry=None,
     share_card_evidence=None, execution_economics=None,
-    wager_structure=None, legs=None,
+    wager_structure=None, legs=None, combo_legs=None,
 ):
     """
     Build one PlacedBet record for a bet being logged right now (manual
@@ -643,6 +689,7 @@ def build_manual_bet_record(
         raise ValueError(f"entry_method must be one of {sorted(_ENTRY_METHODS)}, got {entry_method!r}")
 
     wager_structure, legs = _normalize_wager_structure(wager_structure, legs, market_ticker, entry_price)
+    combo_legs = _normalize_combo_legs(wager_structure, combo_legs)
 
     if entry_timestamp is None:
         if timestamp_status is not None and timestamp_status != "NOT_PROVIDED":
@@ -689,6 +736,9 @@ def build_manual_bet_record(
         "marketHorizon": market_horizon,
         "wagerStructure": wager_structure,
         "legs": legs,
+        # Present ONLY on a COMBO_CONTRACT row, so every other row keeps exactly the shape it always had (and a
+        # replay of an existing straight row can never CONFLICT on a key it never carried).
+        **({"comboLegs": combo_legs} if wager_structure == "COMBO_CONTRACT" else {}),
         "selection": selection,
         "side": side,
         "threshold": threshold,

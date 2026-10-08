@@ -71,9 +71,11 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-for _p in (REPO_ROOT, os.path.join(REPO_ROOT, "contract")):
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+_CONTRACT_DIR = os.path.join(REPO_ROOT, "contract")
+if _CONTRACT_DIR not in sys.path:
+    sys.path.insert(0, _CONTRACT_DIR)
 
 from lib.edgelab.production_date import et_date_for_instant  # noqa: E402
 

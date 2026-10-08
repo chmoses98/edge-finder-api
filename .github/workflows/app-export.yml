@@ -34,8 +34,8 @@ on:
 
 permissions:
   contents: write
-  # scripts/ci/pipeline_watchdog.py lists and dispatches this repository's own MLB producers
-  # (fetch-slate / capture-snapshots-scheduled / model-snapshot-scheduler) that GitHub's cron missed.
+  # scripts/ci/pipeline_watchdog.py --host app-export: list/revive the MLB pipeline conductor
+  # (and, only with the conductor switched off, re-arm the MLB producers).
   actions: write
 
 concurrency:
@@ -61,17 +61,17 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install -r requirements-ci.txt
 
-      # 2026-10-07 missed-cron incident: GitHub fired this repository's crons hours late or not
-      # at all, so the MLB slate / Kalshi capture / model snapshots never ran. This export runs
-      # after every producer, so it re-arms only the producer that is missing or stale, at that
-      # producer's own cadence, never on top of a recent or in-flight run (unknown run state =
-      # no dispatch). Slate dispatches are unattended=true: scheduled-run semantics, no bet
-      # logging. continue-on-error: a watchdog failure can never block the export below.
+      # Liveness backstop for .github/workflows/mlb-pipeline-conductor.yml, which owns MLB
+      # pipeline reconciliation (same script, scripts/ci/pipeline_watchdog.py). While the
+      # conductor chain is alive this step dispatches nothing; it revives a stopped chain, and
+      # with MLB_CONDUCTOR_ENABLED=false it re-arms the producers itself (slate unattended=true:
+      # no bet logging). continue-on-error: it can never block the export below.
       - name: Re-arm missed MLB producers
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 scripts/ci/pipeline_watchdog.py
+          MLB_CONDUCTOR_ENABLED: ${{ vars.MLB_CONDUCTOR_ENABLED }}
+        run: python3 scripts/ci/pipeline_watchdog.py --host app-export
 
       - name: Build app/latest from committed data
         id: export

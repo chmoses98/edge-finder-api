@@ -40,7 +40,6 @@ def _load(name, rel):
 
 base = _load("_app_contract_fixture", "tests/test_app_contract_v1.py")
 app_export = base.app_export
-watchdog = _load("pipeline_watchdog", "scripts/ci/pipeline_watchdog.py")
 
 DATE = base.DATE                    # 2026-10-01; first pitch 2026-10-02T00:00:00Z
 BEFORE_FIRST_PITCH = "2026-10-01T23:00:00Z"
@@ -171,51 +170,4 @@ def test_slate_api_passes_game_type_through():
         assert field in src
 
 
-# ---------------------------------------------------------------- pipeline watchdog
-
-NOW_1945 = datetime(2026, 10, 7, 19, 45, tzinfo=timezone.utc)
-
-
-def _state(**kw):
-    s = {"today": "2026-10-07", "kalshi_game_count": 4, "market_count": 663, "slate_exists": False,
-         "latest_observation_at": datetime(2026, 10, 7, 10, 46, tzinfo=timezone.utc),
-         "latest_model_evaluation_at": None}
-    s.update(kw)
-    return s
-
-
-def test_watchdog_rearms_the_missing_postseason_slate_unattended():
-    out = watchdog.decide(_state(), {}, NOW_1945)
-    slate = [d for d in out["dispatch"] if d["workflow"] == "fetch-slate.yml"]
-    assert slate and slate[0]["inputs"] == {"date": "2026-10-07", "unattended": "true"}
-    assert any(d["workflow"] == "capture-snapshots-scheduled.yml" for d in out["dispatch"])
-
-
-def test_watchdog_never_stacks_on_an_in_flight_or_recent_run():
-    runs = {"fetch-slate.yml": [{"status": "in_progress"}],
-            "capture-snapshots-scheduled.yml": [{"status": "completed", "createdAt": "2026-10-07T19:30:00Z"}]}
-    out = watchdog.decide(_state(), runs, NOW_1945)
-    assert out["dispatch"] == []
-
-
-def test_watchdog_waits_for_starters_and_ignores_days_without_games():
-    early = datetime(2026, 10, 7, 11, 0, tzinfo=timezone.utc)   # 07:00 ET
-    assert not any(d["workflow"] == "fetch-slate.yml" for d in watchdog.decide(_state(), {}, early)["dispatch"])
-    assert watchdog.decide(_state(kalshi_game_count=0, market_count=0), {}, NOW_1945)["dispatch"] == []
-
-
-def test_watchdog_refreshes_stale_model_once_the_slate_exists():
-    out = watchdog.decide(_state(slate_exists=True,
-                                 latest_observation_at=datetime(2026, 10, 7, 19, 40, tzinfo=timezone.utc)), {}, NOW_1945)
-    assert [d["workflow"] for d in out["dispatch"]] == ["model-snapshot-scheduler.yml"]
-
-
-def test_watchdog_reads_the_real_shape_of_a_day_without_slate(tmp_path):
-    root = tmp_path / "data"
-    base._write_jsonl(str(root / "edgelab" / "games" / "2026-10-07.jsonl"),
-                      [{"awayTeam": "LAD", "homeTeam": "ATL", "mlbGamePk": None},
-                       {"awayTeam": "TB", "homeTeam": "NYY", "mlbGamePk": None}])
-    base._write_jsonl(str(root / "edgelab" / "markets" / "2026-10-07.jsonl"), [{"marketTicker": "X"}] * 3)
-    state = watchdog.read_state(str(root), "2026-10-07")
-    assert state["kalshi_game_count"] == 2 and state["market_count"] == 3 and state["slate_exists"] is False
-    assert json.loads(json.dumps(watchdog.decide(state, {}, NOW_1945), default=str))["dispatch"][0]["workflow"] == "fetch-slate.yml"
+# Pipeline watchdog / conductor state machine: tests/test_pipeline_watchdog.py

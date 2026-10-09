@@ -643,7 +643,8 @@ def test_app_export_workflow_is_wired_like_the_other_data_workflows():
     assert triggers["schedule"][0]["cron"].startswith("*/30 ")
     watched = set(triggers["workflow_run"]["workflows"])
     assert watched == {"Fetch Slate Data", "Build Handicapping Card", "Prospective Model Snapshots (Scheduled)",
-                       "EdgeLab Market Capture", "EdgeLab Postgame Settlement", "EdgeLab Settlement Reconcile"}
+                       "EdgeLab Market Capture", "EdgeLab Postgame Settlement", "EdgeLab Settlement Reconcile",
+                       "Refresh MLB Game State"}
     assert triggers["workflow_run"]["types"] == ["completed"]
     # actions: write is for scripts/ci/pipeline_watchdog.py only (tests/test_pipeline_watchdog.py)
     assert doc["permissions"] == {"contents": "write", "actions": "write"}
@@ -682,3 +683,58 @@ def test_card_pointer_resolves_to_the_dated_card(tmp_path):
     (card_dir / "2026-10-03.json").unlink()
     assert app_export._load_card(str(tmp_path)) is None
     assert app_export._real_money_tickers({"card": {"bettingEligibleGames": 2}, "execution": None}) == set()
+
+
+# ---------------------------------------------------------------------------
+# 10. event status: settlement > game-state feed > slate snapshot; an old first-pitch LIVE says so
+# ---------------------------------------------------------------------------
+
+def _game_state(abstract, detailed, as_of="2026-10-02T03:30:00Z"):
+    return {"schema_version": "mlb_game_state/1.0.0", "date": DATE, "as_of": as_of, "source": "statsapi.mlb.com/api/v1/schedule",
+            "games": {"849844": {"abstract_game_state": abstract, "detailed_state": detailed, "start_time_utc": "2026-10-02T00:00:00Z"}}}
+
+
+def _event(tmp_path, *, game_state=None, now=NOW, settlements=None):
+    root = make_data_root(tmp_path / "data")
+    if game_state is not None:
+        _write_json(os.path.join(root, "slates", DATE, "game_state.json"), game_state)
+    if settlements is not None:
+        _write_jsonl(os.path.join(root, "edgelab", "settlements", f"{DATE}.jsonl"), settlements)
+    out = tmp_path / "out"
+    assert run_export(root, out, now=now) == 0
+    ev = _load(out, "events.json")["items"][0]
+    return ev["status"], ev["extensions"].get("status_basis"), ev["extensions"].get("status_as_of")
+
+
+def test_a_finished_game_is_final_from_the_game_state_feed_not_live_until_settlement(tmp_path):
+    # The slate still says Pre-Game at 15:00Z (first pitch 00:00Z); without the feed the first-pitch gate holds LIVE.
+    status, basis, as_of = _event(tmp_path, game_state=_game_state("Final", "Final"), settlements=[])
+    assert (status, basis, as_of) == ("FINAL", "STATSAPI_GAME_STATE", "2026-10-02T03:30:00Z")
+
+
+def test_game_state_live_postponed_and_preview_map_to_the_contract(tmp_path):
+    assert _event(tmp_path, game_state=_game_state("Live", "In Progress"), settlements=[])[:2] == ("LIVE", "STATSAPI_GAME_STATE")
+    assert _event(tmp_path, game_state=_game_state("Final", "Postponed"), settlements=[])[:2] == ("POSTPONED", "STATSAPI_GAME_STATE")
+    # Preview before first pitch stays a pregame SCHEDULED; after first pitch the gate still turns it LIVE.
+    assert _event(tmp_path, game_state=_game_state("Preview", "Pre-Game"), settlements=[], now="2026-10-01T23:00:00Z")[:2] == ("SCHEDULED", "STATSAPI_GAME_STATE")
+    assert _event(tmp_path, game_state=_game_state("Preview", "Pre-Game"), settlements=[], now="2026-10-02T01:00:00Z")[:2] == ("LIVE", "FIRST_PITCH_PASSED")
+
+
+def test_settlement_final_outranks_a_game_state_that_still_says_live(tmp_path):
+    status, basis, _ = _event(tmp_path, game_state=_game_state("Live", "In Progress"))
+    assert (status, basis) == ("FINAL", "SETTLEMENT_FINAL")
+
+
+def test_an_old_first_pitch_live_with_no_word_is_marked_unconfirmed_and_warned(tmp_path):
+    root = make_data_root(tmp_path / "data")
+    _write_jsonl(os.path.join(root, "edgelab", "settlements", f"{DATE}.jsonl"), [])
+    out = tmp_path / "out"
+    assert run_export(root, out, now="2026-10-02T07:30:00Z") == 0   # 7.5h after first pitch, nothing says it ended
+    ev = _load(out, "events.json")["items"][0]
+    assert (ev["status"], ev["extensions"]["status_basis"]) == ("LIVE", "FIRST_PITCH_PASSED_UNCONFIRMED")
+    health = _load(out, "health.json")
+    assert any("no schedule or settlement word" in w for w in health["warnings"])
+    # Two hours after first pitch the same silence is ordinary.
+    out2 = tmp_path / "out2"
+    assert run_export(root, out2, now="2026-10-02T02:00:00Z") == 0
+    assert _load(out2, "events.json")["items"][0]["extensions"]["status_basis"] == "FIRST_PITCH_PASSED"

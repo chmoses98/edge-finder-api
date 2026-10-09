@@ -1,0 +1,57 @@
+name: Refresh MLB Game State
+
+# Reads the public MLB Stats API schedule for the slate date and commits each game's own
+# abstractGameState / detailedState to data/slates/<date>/game_state.json
+# (scripts/refresh_game_state.py). scripts/app_export.py reads it as the authoritative event
+# status between slate fetches and settlement, so a finished game is exported FINAL within the
+# refresh cadence instead of staying LIVE until the next day's postgame settlement (the
+# 2026-10-09 production review: CLE@CWS LIVE for thirteen hours after it ended).
+#
+# Dispatched by scripts/ci/pipeline_watchdog.py stage F (a started game with no final word),
+# every 30 minutes through the hours games end as a backstop, and on demand. A failed fetch
+# writes nothing; the previous document stays. Read-only: no model, ledger, bet or secret.
+
+on:
+  schedule:
+    - cron: '10,40 23,0,1,2,3,4,5,6,7,8 * * *'   # 23:10-08:40 UTC: late-game endings through the overnight
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Slate date (YYYY-MM-DD, ET). Leave blank for today ET.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mlb-game-state-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Refresh game state from the MLB Stats API schedule
+        run: |
+          python3 scripts/refresh_game_state.py ${{ github.event.inputs.date != '' && format('--date {0}', github.event.inputs.date) || '' }}
+
+      - name: Commit game state
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "mlb game state $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            "data/slates/" \
+            || echo "DATA-HEALTH WARNING: game state push failed; the next refresh retries."

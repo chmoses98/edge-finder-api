@@ -49,11 +49,40 @@ def wfs(out):
 
 # ---------------------------------------------------------------- stage decisions
 
-def test_no_games_or_markets_dispatches_nothing():
-    out = W.decide(state(kalshi_game_count=0, market_count=0, slate_exists=False, latest_raw_snapshot=None,
-                         latest_raw_snapshot_at=None, latest_raw_snapshot_ingested=None,
-                         latest_model_evaluation_at=None, export={"stale": True}), {}, NOW)
-    assert out["dispatch"] == []
+def _no_games(**kw):
+    return state(**{"kalshi_game_count": 0, "market_count": 0, "slate_exists": False, "slate_status_counts": {},
+                    "pregame_game_count": 0, "latest_raw_snapshot": None, "latest_raw_snapshot_at": None,
+                    "latest_raw_snapshot_ingested": None, "latest_model_evaluation_at": None,
+                    "export": {"stale": True}, **kw})
+
+
+def test_no_games_or_markets_dispatches_no_slate_model_or_export():
+    # outside the capture window: nothing at all
+    early = datetime(2026, 10, 7, 12, 30, tzinfo=timezone.utc)
+    assert W.decide(_no_games(), {}, early)["dispatch"] == []
+    # inside it, only the capture probe (below) -- never a slate fetch, a model run or an export
+    out = W.decide(_no_games(), {}, NOW)
+    assert not {W.FETCH_SLATE, W.MODEL, W.EXPORT} & set(wfs(out))
+
+
+def test_a_day_with_no_discovered_games_is_still_probed_inside_the_capture_window():
+    """2026-10-09 regression: the newest capture (11:12Z) found 0 markets, the capture cron then did
+    not fire, and the early 'nothing to reconcile' return kept every conductor round from capturing
+    again -- so today's discovery (itself written only by an ingested capture) could never advance."""
+    off_day = _no_games(latest_raw_snapshot="data/kalshi_registry_snapshots/kalshi_search_2026-10-07_1112.json",
+                        latest_raw_snapshot_ingested=None)   # newest capture is empty -> nothing to ingest
+    out = W.decide(off_day, {}, NOW)
+    assert wfs(out) == [W.CAPTURE] and out["dispatch"][0]["inputs"] == {"date": TODAY}
+    # still guarded like any capture: one in flight / recent / unknown blocks a duplicate
+    for runs in ([run(status="in_progress")], [run(created=NOW - timedelta(minutes=10))], None):
+        assert W.decide(off_day, {W.CAPTURE: runs}, NOW)["dispatch"] == []
+
+
+def test_an_uningested_capture_is_ingested_even_before_any_game_is_discovered():
+    """Discovery (games / markets partitions) is the ingest's own output, so it cannot gate the ingest."""
+    out = W.decide(_no_games(latest_raw_snapshot=RAW, latest_raw_snapshot_at=FRESH, latest_raw_snapshot_ingested=False),
+                   {}, NOW)
+    assert wfs(out) == [W.INGEST]
 
 
 def test_settled_healthy_day_dispatches_nothing():
@@ -560,8 +589,11 @@ def test_after_midnight_et_stage_f_reads_yesterdays_slate_and_dispatches_its_dat
     assert s["overdue_started_games"] == ["849832"] and s["game_state_at"] is None
     assert s["kalshi_game_count"] == 0 and s["market_count"] == 0
     out = W.decide(s, {}, now)
-    assert wfs(out) == [W.GAME_STATE]
+    # 05:00Z is inside the capture window and 2026-10-09 has no capture yet: today's capture probe
+    # runs too (a day with no discovered game is still probed -- see the off-day tests above)
+    assert wfs(out) == [W.GAME_STATE, W.CAPTURE]
     assert out["dispatch"][0]["inputs"] == {"date": "2026-10-08"}
+    assert out["dispatch"][1]["inputs"] == {"date": "2026-10-09"}
     assert "2026-10-08 slate" in out["dispatch"][0]["reason"]
     # the feed's own FINAL for that slate ends the dispatch
     slate_dir.joinpath("game_state.json").write_text(json.dumps(

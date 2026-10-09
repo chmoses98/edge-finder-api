@@ -245,6 +245,8 @@ def load_inputs(data_root, date):
     return {
         "date": date,
         "slate": slate,
+        # authoritative live state between slate fetches and settlement (scripts/refresh_game_state.py)
+        "game_state": _read_json(os.path.join(data_root, "slates", date, "game_state.json")),
         "games": _partition(data_root, "games", date),
         "markets": _partition(data_root, "markets", date),
         "observations": _partition(data_root, "observations", date),
@@ -287,6 +289,37 @@ def _event_status(raw, final_from_settlement=False):
 #: Statuses at which a pregame recommendation can still be acted on.
 _PREGAME_REC_STATUSES = ("RECOMMENDED", "RESEARCH_CANDIDATE", "WATCH")
 
+#: MLB Stats API abstractGameState -> contract status (the detailedState goes through EVENT_STATUS first).
+_ABSTRACT_STATE = {"preview": "SCHEDULED", "live": "LIVE", "final": "FINAL"}
+#: A LIVE held only by the first-pitch gate for longer than this is flagged as unconfirmed.
+LIVE_UNCONFIRMED_AFTER_SECONDS = 6 * 3600
+
+
+def _game_state_status(game_state, pk):
+    """(status, as_of) from data/slates/<date>/game_state.json for a gamePk, or (None, None). The
+    feed's detailedState maps through EVENT_STATUS (Postponed, Cancelled, Final, In Progress, ...);
+    an unmapped detailedState falls back to the abstractGameState; an unmapped abstract is ignored."""
+    g = ((game_state or {}).get("games") or {}).get(str(pk))
+    if not g:
+        return None, None
+    as_of = (game_state or {}).get("as_of")
+    detailed = EVENT_STATUS.get(str(g.get("detailed_state") or "").strip().lower())
+    if detailed:
+        return detailed, as_of
+    abstract = _ABSTRACT_STATE.get(str(g.get("abstract_game_state") or "").strip().lower())
+    return (abstract, as_of) if abstract else (None, None)
+
+
+def _event_status_with_evidence(raw, *, final_from_settlement, game_state, pk):
+    """(status, basis, as_of). Settlement evidence (MLB Stats API final via EdgeLab settlement) wins;
+    then the game-state feed; then the slate's own snapshot (basis None)."""
+    if final_from_settlement:
+        return "FINAL", "SETTLEMENT_FINAL", None
+    gs, as_of = _game_state_status(game_state, pk)
+    if gs:
+        return gs, "STATSAPI_GAME_STATE", as_of
+    return _event_status(raw), None, None
+
 
 def _time_gate(status, start_iso, confidence, now_iso):
     """(status, basis). The slate's status is a snapshot from its fetch, often hours old; a game
@@ -295,7 +328,10 @@ def _time_gate(status, start_iso, confidence, now_iso):
     says otherwise (FINAL / POSTPONED / CANCELLED are never overridden)."""
     if (status == "SCHEDULED" and confidence != "PLACEHOLDER" and start_iso and now_iso
             and timeutil.parse_ts(start_iso) <= timeutil.parse_ts(now_iso)):
-        return "LIVE", "FIRST_PITCH_PASSED"
+        age = (timeutil.parse_ts(now_iso) - timeutil.parse_ts(start_iso)).total_seconds()
+        # Past any plausible game length with no schedule or settlement word: still LIVE (nothing says
+        # otherwise), but the basis says so, and the watchdog dispatches a game-state refresh.
+        return "LIVE", ("FIRST_PITCH_PASSED_UNCONFIRMED" if age > LIVE_UNCONFIRMED_AFTER_SECONDS else "FIRST_PITCH_PASSED")
     return status, None
 
 
@@ -336,8 +372,13 @@ def build_events(inputs, now_iso, warnings):
                       "odds_api_event_id": g.get("oddsApiEventId")}
         if extra:
             source_ids["edgelab_game_id"] = extra[0].get("gameId")
-        status, status_basis = _time_gate(_event_status(g.get("status"), pk in final_pks),
-                                          _ts(g["startTime"]), "SCHEDULED", now_iso)
+        ev_status, ev_basis, ev_as_of = _event_status_with_evidence(
+            g.get("status"), final_from_settlement=pk in final_pks, game_state=inputs.get("game_state"), pk=pk)
+        status, gate_basis = _time_gate(ev_status, _ts(g["startTime"]), "SCHEDULED", now_iso)
+        status_basis = gate_basis or ev_basis
+        if gate_basis == "FIRST_PITCH_PASSED_UNCONFIRMED":
+            warnings.append(f"event {pk}: first pitch passed more than {LIVE_UNCONFIRMED_AFTER_SECONDS // 3600}h ago with "
+                            "no schedule or settlement word on the outcome (data/slates/<date>/game_state.json missing or older)")
         ev = build.event(
             sport=SPORT, source=EVENT_SOURCE, source_id=pk, start_time_utc=g["startTime"],
             participants=[a, h], home_participant=h["participant_id"], away_participant=a["participant_id"],
@@ -354,7 +395,7 @@ def build_events(inputs, now_iso, warnings):
                 "away_pitcher": ((away.get("pitcher") or {}).get("name")),
                 "home_pitcher": ((home.get("pitcher") or {}).get("name")),
                 "park": (g.get("park") or {}).get("name"), "park_factor": (g.get("park") or {}).get("parkFactor"),
-                "slate_status_raw": g.get("status"), "status_basis": status_basis,
+                "slate_status_raw": g.get("status"), "status_basis": status_basis, "status_as_of": ev_as_of,
                 "game_type": g.get("gameType"), "series_description": g.get("seriesDescription"),
                 "series_game_number": g.get("seriesGameNumber"),
             })
@@ -380,7 +421,10 @@ def build_events(inputs, now_iso, warnings):
             start_iso, confidence, source = f"{row.get('gameDate') or date}T00:00:00Z", "PLACEHOLDER", "edgelab_games_date_only"
             warnings.append(f"event {pk}: no scheduled start time in games partition; placeholder midnight UTC")
         a, h = _team(row.get("awayTeam")), _team(row.get("homeTeam"))
-        status, status_basis = _time_gate(_event_status(row.get("status"), pk in final_pks), start_iso, confidence, now_iso)
+        ev_status, ev_basis, _ev_as_of = _event_status_with_evidence(
+            row.get("status"), final_from_settlement=pk in final_pks, game_state=inputs.get("game_state"), pk=pk)
+        status, gate_basis = _time_gate(ev_status, start_iso, confidence, now_iso)
+        status_basis = gate_basis or ev_basis
         ev = build.event(
             sport=SPORT, source=EVENT_SOURCE, source_id=pk, start_time_utc=start_iso, participants=[a, h],
             home_participant=h["participant_id"], away_participant=a["participant_id"], league="MLB",

@@ -504,3 +504,40 @@ def test_unattended_slate_dispatch_skips_every_bet_logging_step():
 def test_the_only_fetch_slate_dispatch_is_unattended():
     out = W.decide(state(slate_exists=False), {}, NOW)
     assert all(d["inputs"].get("unattended") == "true" for d in out["dispatch"] if d["workflow"] == W.FETCH_SLATE)
+
+
+# ---------------------------------------------------------------- stage F: game state
+
+def test_a_started_game_without_a_final_word_dispatches_one_game_state_refresh():
+    out = W.decide(state(overdue_started_games=["849832"], game_state_at=None), {}, NOW)
+    assert wfs(out) == [W.GAME_STATE] or W.GAME_STATE in wfs(out)
+    item = next(d for d in out["dispatch"] if d["workflow"] == W.GAME_STATE)
+    assert item["inputs"] == {"date": TODAY}
+    assert "849832" in item["reason"]
+
+
+def test_a_recent_game_state_read_or_in_flight_refresh_blocks_a_duplicate():
+    recent = NOW - timedelta(minutes=10)
+    assert W.GAME_STATE not in wfs(W.decide(state(overdue_started_games=["849832"], game_state_at=recent), {}, NOW))
+    assert W.GAME_STATE not in wfs(W.decide(state(overdue_started_games=["849832"], game_state_at=None), {W.GAME_STATE: [run(recent, "in_progress")]}, NOW))
+    assert W.GAME_STATE not in wfs(W.decide(state(overdue_started_games=["849832"], game_state_at=None), {W.GAME_STATE: None}, NOW))
+
+
+def test_no_overdue_game_dispatches_no_refresh():
+    out = W.decide(state(overdue_started_games=[], game_state_at=None), {}, NOW)
+    assert W.GAME_STATE not in wfs(out)
+    assert any("every started game has a final word" in n for n in out["notes"])
+
+
+def test_overdue_started_games_is_the_slate_without_a_final_word_from_slate_or_feed():
+    slate = _slate(("Pre-Game", "2026-10-07T18:00:00Z"),      # started 4.5h ago, slate still Pre-Game: overdue
+                   ("Final", "2026-10-07T17:00:00Z"),         # the slate says final
+                   ("In Progress", "2026-10-07T21:30:00Z"),   # started 1h ago: not yet overdue
+                   ("Pre-Game", "2026-10-08T00:00:00Z"))      # pregame
+    assert W.overdue_started_games(slate, None, H_NOW) == ["0"]
+    feed = {"as_of": "2026-10-07T22:00:00Z", "games": {"0": {"abstract_game_state": "Final", "detailed_state": "Final"}}}
+    assert W.overdue_started_games(slate, feed, H_NOW) == []
+    postponed = {"as_of": "2026-10-07T22:00:00Z", "games": {"0": {"abstract_game_state": "Final", "detailed_state": "Postponed"}}}
+    assert W.overdue_started_games(slate, postponed, H_NOW) == []
+    live = {"as_of": "2026-10-07T22:00:00Z", "games": {"0": {"abstract_game_state": "Live", "detailed_state": "In Progress"}}}
+    assert W.overdue_started_games(slate, live, H_NOW) == ["0"]

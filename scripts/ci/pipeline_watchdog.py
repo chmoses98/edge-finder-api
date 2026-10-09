@@ -39,6 +39,10 @@ unreadable run list counts as in flight -- unknown state never dispatches)
              counts as fresh), and the newest capture is not awaiting ingest
              -> capture-snapshots-scheduled.yml. Not gated on games having
              started: complete market archival follows the capture window.
+             Not gated on Kalshi-discovered games either (B and C are the only
+             stages that run on a day with none): discovery IS an ingested
+             capture, and on an off day the empty capture is the evidence
+             app_export needs to call market data idle rather than STALE.
   C INGEST   the newest raw capture for today (the file EdgeLab's ingest selects)
              carries markets and is not the source of any EdgeLab observation
              (observation provenance.sourceFile) -> edgelab-capture.yml.
@@ -401,9 +405,17 @@ def decide(state, runs_by_workflow, now, *, stages="ABCDEF"):
     elif "F" in stages:
         notes.append("game state: every started game has a final word or started recently")
 
-    if not (state["kalshi_game_count"] > 0 or state["market_count"] > 0):
-        notes.append(f"{today}: no Kalshi-discovered MLB game or market -- nothing to reconcile")
-        return {"dispatch": out, "notes": notes}
+    # With no Kalshi-discovered game or market for today there is no slate, model or export to
+    # reconcile -- but capture (B) and ingest (C) still run: today's games/markets partitions are
+    # themselves written only by an ingested capture, so gating capture on them is circular. On
+    # 2026-10-09 the last capture ran at 11:12Z, the capture cron then did not fire, and this early
+    # return kept every conductor round from probing again, so the off-day "0 markets" evidence aged
+    # into a STALE market_data and a market listed later in the day would have gone unseen.
+    no_games = not (state["kalshi_game_count"] > 0 or state["market_count"] > 0)
+    if no_games:
+        notes.append(f"{today}: no Kalshi-discovered MLB game or market -- no slate, model or export to reconcile; "
+                     f"capture / ingest still follow the capture window")
+        stages = "".join(s for s in stages if s in "BC")
 
     if "A" in stages and not state["slate_exists"]:
         if _et_hour(now) < SLATE_EARLIEST_ET_HOUR:

@@ -738,3 +738,70 @@ def test_an_old_first_pitch_live_with_no_word_is_marked_unconfirmed_and_warned(t
     out2 = tmp_path / "out2"
     assert run_export(root, out2, now="2026-10-02T02:00:00Z") == 0
     assert _load(out2, "events.json")["items"][0]["extensions"]["status_basis"] == "FIRST_PITCH_PASSED"
+
+
+# ---------------------------------------------------------------------------
+# 11. an MLB off day: market capture idle is NOT_APPLICABLE, never STALE -- on current evidence only
+# ---------------------------------------------------------------------------
+
+_SERIES = ("KXMLBGAME", "KXMLBTOTAL", "KXMLBRFI")
+
+
+def _capture(fetched_at, *, markets=0, truncated=(), failures=0, pagination=True):
+    """A raw registry capture for TODAY (2026-10-02 ET) shaped like data/kalshi_registry_snapshots/
+    kalshi_search_2026-10-09_1112.json: every series answered HTTP 200, records only for other
+    dates, the broad discovery pass truncated -- and therefore labelled captureStatus FAILED."""
+    pages = [{"scope": "series", "series": s, "complete": s not in truncated, "recordsReceived": 7,
+              "truncationReason": "MAX_PAGES" if s in truncated else None} for s in _SERIES]
+    pages.append({"scope": "discovery", "series": None, "complete": False, "recordsReceived": 40000,
+                  "truncationReason": "ENTRY_CAP"})
+    rows = [{"market_ticker": f"KXMLBGAME-26OCT021900PHIATL-{i}", "event_ticker": "KXMLBGAME-26OCT021900PHIATL"}
+            for i in range(markets)]
+    return {"date": "2026-10-02", "kalshi_date": "26OCT02", "fetched_at": fetched_at, "total_markets": markets,
+            "markets": rows, "series_counts": {s: 0 for s in _SERIES}, "captureStatus": "FAILED" if not markets else "COMPLETE",
+            "captureContractVersion": "kalshi_capture_v4", "fetchFailures": [{"scope": "series"}] * failures,
+            "fetchFailureCount": failures, "pagination": pages if pagination else [],
+            "exclusions": {"event_ticker_not_for_this_slate_date": 21}}
+
+
+def _off_day_health(tmp_path, capture, *, settlements=None, now=NOW):
+    root = make_data_root(tmp_path / "data")
+    if capture is not None:
+        _write_json(os.path.join(root, "kalshi_registry_snapshots", "kalshi_search_2026-10-02_1450.json"), capture)
+    if settlements is not None:
+        _write_jsonl(os.path.join(root, "edgelab", "settlements", f"{DATE}.jsonl"), settlements)
+    out = tmp_path / "out"
+    assert run_export(root, out, now=now) == 0
+    assert publish.verify_published(out) == []
+    return _load(out, "health.json"), _load(out, "events.json")
+
+
+def test_an_off_day_with_a_current_empty_capture_is_idle_not_stale(tmp_path):
+    """2026-10-09 regression: no MLB game listed for today, yesterday's only game FINAL, and health
+    still said market_data STALE (57,000 s) for yesterday's last pre-close quote."""
+    h, events = _off_day_health(tmp_path, _capture("2026-10-02T14:50:00.000Z"))
+    assert [e["status"] for e in events["items"]] == ["FINAL"]
+    assert h["market_data_status"] == "NOT_APPLICABLE" and h["model_status"] == "NOT_APPLICABLE"
+    assert h["overall_status"] == "HEALTHY" and h["freshness_status"] == "FRESH"
+    md = h["components"]["market_data"]
+    assert md["as_of"] == "2026-10-02T14:50:00Z" and md["age_seconds"] == 600.0
+    assert "kalshi_search_2026-10-02_1450.json found 0 markets" in md["detail"]
+    # the real last observation is still reported as such
+    assert h["last_market_capture"] == "2026-10-02T00:41:44Z"
+    assert any(w.startswith("market capture idle: no MLB market listed for 2026-10-02") for w in h["warnings"])
+    assert any("no slate for today" in w for w in h["warnings"])
+
+
+@pytest.mark.parametrize("capture, settlements, why", [
+    (None, None, "no capture for today at all (a capture outage)"),
+    (_capture("2026-10-02T12:30:00.000Z"), None, "the empty capture is older than the 2h stale threshold"),
+    (_capture("2026-10-02T14:50:00.000Z", failures=1), None, "a recorded fetch failure"),
+    (_capture("2026-10-02T14:50:00.000Z", pagination=False), None, "no per-series evidence (workflow FAILED stub)"),
+    (_capture("2026-10-02T14:50:00.000Z", truncated=("KXMLBTOTAL",)), None, "a series did not paginate to exhaustion"),
+    (_capture("2026-10-02T14:50:00.000Z", markets=2), None, "today has markets"),
+    (_capture("2026-10-02T14:50:00.000Z"), [], "the exported slate's game has no final word (still LIVE)"),
+])
+def test_anything_short_of_current_complete_evidence_stays_stale(tmp_path, capture, settlements, why):
+    h, _events = _off_day_health(tmp_path, capture, settlements=settlements)
+    assert h["market_data_status"] == "STALE" and h["overall_status"] == "STALE", why
+    assert not any(w.startswith("market capture idle") for w in h["warnings"]), why

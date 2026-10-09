@@ -969,6 +969,72 @@ def _next_half_hour(now_dt):
     return base + timedelta(minutes=minutes)
 
 
+TERMINAL_EVENT_STATUSES = ("FINAL", "POSTPONED", "CANCELLED")
+
+
+def today_capture_probe(data_root, today):
+    """The newest raw Kalshi capture for ``today`` (ET), in the order EdgeLab's ingest reads them
+    (lib.edgelab.market_universe.find_snapshots_for_date: by each file's own fetched_at).
+    -> {"path", "fetched_at", "total_markets", "complete"} | None when no capture exists.
+
+    ``complete`` is True only when every per-series endpoint paginated to exhaustion with no
+    recorded fetch failure and no capture error: a transport-error / truncated capture is never
+    evidence that no market exists. It deliberately does NOT read ``captureStatus``: the capture
+    contract (api/kalshisearch.js summarizeCapture, lib/edgelab/capture_completeness.py) labels
+    every zero-market capture FAILED, because the broad discovery pass is truncated by design
+    (40,000-record cap) and counts as "incomplete" when nothing was archived -- so on an MLB off
+    day a capture whose 17 series all answered HTTP 200 with nothing for the date still says FAILED."""
+    from lib.edgelab.market_universe import find_snapshots_for_date
+    folder = os.path.join(data_root, "kalshi_registry_snapshots")
+    files = find_snapshots_for_date(today, folder) if os.path.isdir(folder) else []
+    if not files:
+        return None
+    doc = _read_json(files[-1]) or {}
+    series = [p for p in (doc.get("pagination") or []) if isinstance(p, dict) and p.get("scope") == "series"]
+    complete_series = {p.get("series") for p in series if p.get("complete") is True}
+    markets = doc.get("markets")
+    total = doc.get("total_markets")
+    complete = (not doc.get("captureError") and not doc.get("fetchFailureCount") and not doc.get("fetchFailures")
+                and bool(series) and all(p.get("complete") is True for p in series)
+                and set(doc.get("series_counts") or {}) <= complete_series)
+    return {"path": f"data/kalshi_registry_snapshots/{os.path.basename(files[-1])}",
+            "fetched_at": doc.get("fetched_at"),
+            "total_markets": total if isinstance(total, int) else (len(markets) if isinstance(markets, list) else None),
+            "complete": complete}
+
+
+def off_day_market_component(inputs, events, now):
+    """The market_data component for a day with nothing to capture, or None.
+
+    When there is no slate for today (ET) the export publishes the newest earlier slate, and that
+    slate's last observation keeps ageing although market capture has nothing left to do: on
+    2026-10-09 (no MLB game listed on Kalshi) health said market_data STALE at 57,000 s for the
+    2026-10-08 slate's final pre-close quote. A day is idle -- market_data NOT_APPLICABLE, and the
+    model not required -- only on positive, current evidence:
+      * the exported slate is an EARLIER date than today (ET);
+      * every event on it is FINAL / POSTPONED / CANCELLED (nothing of its own left to capture);
+      * today's newest raw Kalshi capture is complete (every series endpoint answered, no fetch
+        failure) and found ZERO MLB markets for today;
+      * that capture is no older than the market_data stale threshold.
+    Anything else -- no capture, a failed or truncated one, an old one, any market listed, an
+    unfinished event -- keeps the ordinary freshness rule, so a capture outage still reads STALE."""
+    today = et_date_for_instant(now)
+    if inputs["date"] >= today or not events:
+        return None
+    if any(ev["status"] not in TERMINAL_EVENT_STATUSES for ev in events):
+        return None
+    probe = inputs.get("today_capture")
+    if not probe or not probe["complete"] or probe["total_markets"] != 0 or not probe["fetched_at"]:
+        return None
+    age = timeutil.age_seconds(probe["fetched_at"], now)
+    if age is None or age < 0 or age > THRESHOLDS["market_data"].stale_after_seconds:
+        return None
+    return {"status": health.NOT_APPLICABLE, "as_of": _ts(probe["fetched_at"]), "age_seconds": round(age, 1),
+            "detail": (f"no MLB market listed for {today}: {probe['path']} found 0 markets with every series "
+                       f"endpoint complete; every event on the {inputs['date']} slate is "
+                       f"{'/'.join(TERMINAL_EVENT_STATUSES)}")}
+
+
 def _extra_components(inputs, now):
     comps = {}
     gate = inputs["gate"] or {}
@@ -1035,6 +1101,10 @@ def build_bundle(inputs, *, now, commit_sha=None, workflow_run_id=None):
         warnings.append(f"no model price could be exported for {date}")
     if date != et_date_for_instant(now):
         warnings.append(f"no slate for today ({et_date_for_instant(now)}); exporting newest slate date {date}")
+    off_day = off_day_market_component(inputs, events, now)
+    if off_day:
+        warnings.append(f"market capture idle: {off_day['detail']}; market_data and model are NOT_APPLICABLE "
+                        f"(last market capture {_ts(last_market_capture)})")
 
     run_doc = build.run(
         sport=SPORT, repo=SOURCE_REPO, completed_at=now_iso, scope=f"slate {date}", status="SUCCESS",
@@ -1057,8 +1127,9 @@ def build_bundle(inputs, *, now, commit_sha=None, workflow_run_id=None):
         last_model_generated=last_model_generated, last_successful_run=now_iso, payload_run_id=run_id,
         payload_available=True, export_failed=False, commit_sha=commit_sha,
         next_scheduled_run=_next_half_hour(timeutil.parse_ts(now)), router_as_of=router_as_of,
-        settlement_as_of=settlement_as_of, model_required=MODEL_REQUIRED, thresholds=THRESHOLDS,
-        warnings=warnings, errors=[], extra_components=_extra_components(inputs, now), now=now)
+        settlement_as_of=settlement_as_of, model_required=MODEL_REQUIRED and not off_day, thresholds=THRESHOLDS,
+        warnings=warnings, errors=[],
+        extra_components={**_extra_components(inputs, now), **({"market_data": off_day} if off_day else {})}, now=now)
 
     board_doc = board.build_board(sport=SPORT, run_id=run_id, generated_at=now_iso, events=events, markets=markets,
                                   model_prices=model_prices, recommendations=recommendations, wagers=wagers,
@@ -1110,6 +1181,8 @@ def export(*, out_root, data_root, now, commit_sha=None, workflow_run_id=None, d
     today = et_date_for_instant(now)
     date = date or resolve_export_date(data_root, today)
     inputs = load_inputs(data_root, date)
+    # off-day evidence (off_day_market_component): only read when the export falls back to an earlier slate
+    inputs["today_capture"] = today_capture_probe(data_root, today) if date < today else None
     bundle = build_bundle(inputs, now=now, commit_sha=commit_sha, workflow_run_id=workflow_run_id)
     manifest = publish.publish(
         root=out_root, sport=SPORT, run_id=bundle["run_id"], generated_at=bundle["generated_at"],

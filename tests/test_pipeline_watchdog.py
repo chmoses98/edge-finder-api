@@ -541,3 +541,44 @@ def test_overdue_started_games_is_the_slate_without_a_final_word_from_slate_or_f
     assert W.overdue_started_games(slate, postponed, H_NOW) == []
     live = {"as_of": "2026-10-07T22:00:00Z", "games": {"0": {"abstract_game_state": "Live", "detailed_state": "In Progress"}}}
     assert W.overdue_started_games(slate, live, H_NOW) == ["0"]
+
+
+# ---------------------------------------------------------------- stage F keys on the published slate's date
+
+def test_after_midnight_et_stage_f_reads_yesterdays_slate_and_dispatches_its_date(tmp_path):
+    """01:00 ET on 2026-10-09: no 2026-10-09 slate or discovery yet; the 2026-10-08 slate's 20:00 ET game is
+    still Pre-Game in the snapshot. The production case (CLE@CWS LIVE for thirteen hours): the refresh must
+    target 2026-10-08, the slate app/latest publishes, and today's empty discovery must not short-circuit it."""
+    root = tmp_path / "data"
+    slate_dir = root / "slates" / "2026-10-08"
+    slate_dir.mkdir(parents=True)
+    slate_dir.joinpath("authoritative.json").write_text(json.dumps(
+        {"date": "2026-10-08", "games": [{"gameId": 849832, "status": "Pre-Game", "startTime": "2026-10-09T00:00:00Z"}]}))
+    now = datetime(2026, 10, 9, 5, 0, tzinfo=timezone.utc)
+    s = W.read_state(str(root), "2026-10-09", now, with_export=False)
+    assert s["today"] == "2026-10-09" and s["game_state_date"] == "2026-10-08"
+    assert s["overdue_started_games"] == ["849832"] and s["game_state_at"] is None
+    assert s["kalshi_game_count"] == 0 and s["market_count"] == 0
+    out = W.decide(s, {}, now)
+    assert wfs(out) == [W.GAME_STATE]
+    assert out["dispatch"][0]["inputs"] == {"date": "2026-10-08"}
+    assert "2026-10-08 slate" in out["dispatch"][0]["reason"]
+    # the feed's own FINAL for that slate ends the dispatch
+    slate_dir.joinpath("game_state.json").write_text(json.dumps(
+        {"as_of": "2026-10-09T03:10:00Z", "games": {"849832": {"abstract_game_state": "Final", "detailed_state": "Final"}}}))
+    s2 = W.read_state(str(root), "2026-10-09", now, with_export=False)
+    assert s2["overdue_started_games"] == []
+    assert W.GAME_STATE not in wfs(W.decide(s2, {}, now))
+
+
+def test_stage_f_uses_todays_slate_when_it_is_published(tmp_path):
+    root = tmp_path / "data"
+    for d, start in (("2026-10-08", "2026-10-08T23:00:00Z"), ("2026-10-09", "2026-10-09T17:00:00Z")):
+        p = root / "slates" / d
+        p.mkdir(parents=True)
+        p.joinpath("authoritative.json").write_text(json.dumps(
+            {"date": d, "games": [{"gameId": int(d[-2:]), "status": "Pre-Game", "startTime": start}]}))
+    now = datetime(2026, 10, 9, 21, 0, tzinfo=timezone.utc)
+    s = W.read_state(str(root), "2026-10-09", now, with_export=False)
+    assert s["game_state_date"] == "2026-10-09"
+    assert s["overdue_started_games"] == ["9"]   # yesterday's slate is no longer the published one

@@ -47,3 +47,26 @@ def test_successful_fetch_writes_the_document(tmp_path, monkeypatch):
     assert rgs.main(["--date", "2026-10-08", "--data-root", str(root), "--now", "2026-10-09T03:30:00Z"]) == 0
     doc = json.loads((root / "slates" / "2026-10-08" / "game_state.json").read_text())
     assert doc["date"] == "2026-10-08" and doc["games"]["849832"]["abstract_game_state"] == "Final"
+
+
+def test_default_date_is_the_published_slate_not_the_et_calendar_date(tmp_path, monkeypatch):
+    """01:00 ET on 2026-10-09 with only the 2026-10-08 slate published: the refresh reads and writes
+    2026-10-08, the slate app/latest publishes (the first production run read an empty 2026-10-09 instead)."""
+    root = tmp_path / "data"
+    (root / "slates" / "2026-10-08").mkdir(parents=True)
+    (root / "slates" / "2026-10-08" / "authoritative.json").write_text('{"date": "2026-10-08", "games": []}')
+    asked = []
+    def fetch(date, timeout=15):
+        asked.append(date)
+        return SCHEDULE
+    monkeypatch.setattr(rgs.mlb_schedule, "fetch_schedule_all_game_types", fetch)
+    assert rgs.main(["--data-root", str(root), "--now", "2026-10-09T05:00:00Z"]) == 0
+    assert asked == ["2026-10-08"]
+    doc = json.loads((root / "slates" / "2026-10-08" / "game_state.json").read_text())
+    assert doc["date"] == "2026-10-08" and doc["games"]["849832"]["abstract_game_state"] == "Final"
+    assert not (root / "slates" / "2026-10-09").exists()
+    # once today's slate is published, today is the published slate
+    (root / "slates" / "2026-10-09").mkdir()
+    (root / "slates" / "2026-10-09" / "authoritative.json").write_text('{"date": "2026-10-09", "games": []}')
+    assert rgs.main(["--data-root", str(root), "--now", "2026-10-09T18:00:00Z"]) == 0
+    assert asked[-1] == "2026-10-09"

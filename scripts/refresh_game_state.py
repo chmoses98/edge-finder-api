@@ -17,6 +17,12 @@ scripts/ci/pipeline_watchdog.py dispatches this refresh when a started game has 
 
 NEVER: a failed or empty fetch writes nothing (the previous document stays, and the export says so
 through its own staleness rules); no status is invented; no model, ledger, bet or secret is touched.
+
+WHICH DATE: without --date, the slate the app export publishes (lib.edgelab.slate_dates.export_slate_date:
+the newest slate at or before today ET). The Eastern calendar date is the wrong key after midnight ET,
+when the late game that most needs a FINAL belongs to yesterday's slate and today's does not exist yet
+(the first production run of this workflow, 2026-10-09T15:25Z, read an empty 2026-10-09 schedule while
+app/latest was still publishing the 2026-10-08 slate).
 """
 from __future__ import annotations
 
@@ -31,6 +37,7 @@ sys.path.insert(0, REPO_ROOT)
 
 from lib.edgelab import mlb_schedule  # noqa: E402
 from lib.edgelab.production_date import et_date_for_instant  # noqa: E402
+from lib.edgelab.slate_dates import export_slate_date  # noqa: E402
 
 SOURCE = "statsapi.mlb.com/api/v1/schedule"
 SCHEMA = "mlb_game_state/1.0.0"
@@ -60,12 +67,14 @@ def game_state_from_schedule(schedule_json, *, date, as_of_iso):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--date", default=None, help="slate date (YYYY-MM-DD, ET); default today ET")
+    ap.add_argument("--date", default=None,
+                    help="slate date (YYYY-MM-DD, ET); default: the slate the app export publishes, i.e. the newest "
+                         "slate at or before today ET (a game that ends after midnight ET belongs to yesterday's slate)")
     ap.add_argument("--data-root", default=os.path.join(REPO_ROOT, "data"))
     ap.add_argument("--now", default=None, help="ISO UTC override (tests)")
     args = ap.parse_args(argv)
     now = datetime.fromisoformat(args.now.replace("Z", "+00:00")) if args.now else datetime.now(timezone.utc)
-    date = args.date or et_date_for_instant(now)
+    date = args.date or export_slate_date(args.data_root, et_date_for_instant(now))
     raw = mlb_schedule.fetch_schedule_all_game_types(date)
     if raw is None:
         print(f"[refresh_game_state] {date}: schedule fetch failed; leaving the previous document in place", file=sys.stderr)

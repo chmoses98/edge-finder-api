@@ -52,8 +52,9 @@ unreadable run list counts as in flight -- unknown state never dispatches)
   E EXPORT   the newest commit touching today's upstream artifacts is not
              contained in the commit app/latest/manifest.json was built from
              -> app-export.yml (conductor only; unknown git state never dispatches).
-  F GAME STATE a slate game's first pitch passed more than GAME_STATE_OVERDUE_MINUTES
-             ago and neither the slate nor data/slates/<today>/game_state.json says
+  F GAME STATE a game on the published slate (the newest at or before today ET: yesterday's
+             after midnight ET) started more than GAME_STATE_OVERDUE_MINUTES ago and
+             neither that slate nor its data/slates/<date>/game_state.json says
              Final / Postponed / Cancelled, and the game-state feed was not read in
              the last GAME_STATE_MIN_GAP_MINUTES -> mlb-game-state-refresh.yml
              (scripts/refresh_game_state.py: a read of the public MLB Stats API
@@ -86,6 +87,7 @@ if _CONTRACT_DIR not in sys.path:
     sys.path.insert(0, _CONTRACT_DIR)
 
 from lib.edgelab.production_date import et_date_for_instant  # noqa: E402
+from lib.edgelab.slate_dates import export_slate_date  # noqa: E402
 
 FETCH_SLATE = "fetch-slate.yml"
 CAPTURE = "capture-snapshots-scheduled.yml"
@@ -281,6 +283,17 @@ def export_state(repo_root, today, runner=subprocess.run):
             "upstream": upstream, "exported_from": exported}
 
 
+def _read_json_or_none(path):
+    """The parsed document, {} when unreadable, None when absent."""
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return {}
+
+
 def read_state(data_root, today, now, *, repo_root=None, with_export=True, runner=subprocess.run):
     """Facts about today's production data (file reads, plus git for the export stage)."""
     games = list(_iter_jsonl(os.path.join(data_root, "edgelab", "games", f"{today}.jsonl")))
@@ -307,14 +320,12 @@ def read_state(data_root, today, now, *, repo_root=None, with_export=True, runne
         except (OSError, ValueError):
             slate = {}
     horizon = pregame_horizon(slate, now) if slate is not None else {}
-    game_state_path = os.path.join(data_root, "slates", today, "game_state.json")
-    game_state = None
-    if os.path.exists(game_state_path):
-        try:
-            with open(game_state_path, encoding="utf-8") as fh:
-                game_state = json.load(fh)
-        except (OSError, ValueError):
-            game_state = {}
+    # stage F keys on the slate the app export publishes (the newest at or before today ET): after midnight
+    # ET the late game that needs a FINAL belongs to yesterday's slate and today's does not exist yet
+    game_state_date = export_slate_date(data_root, today)
+    gs_slate = slate if game_state_date == today else _read_json_or_none(
+        os.path.join(data_root, "slates", game_state_date, "authoritative.json"))
+    game_state = _read_json_or_none(os.path.join(data_root, "slates", game_state_date, "game_state.json"))
     raw = raw_captures(data_root, today)
     game_keys = {(g.get("awayTeam"), g.get("homeTeam")) for g in games if g.get("awayTeam") and g.get("homeTeam")}
     state = {
@@ -325,7 +336,8 @@ def read_state(data_root, today, now, *, repo_root=None, with_export=True, runne
         "slate_status_counts": horizon,
         "pregame_game_count": horizon.get("SCHEDULED", 0),
         # stage F: started games with no final / postponed / cancelled word from the slate or the game-state feed
-        "overdue_started_games": overdue_started_games(slate, game_state, now) if slate is not None else [],
+        "game_state_date": game_state_date,
+        "overdue_started_games": overdue_started_games(gs_slate, game_state, now) if gs_slate is not None else [],
         "game_state_at": _parse((game_state or {}).get("as_of")),
         # what ingest would read next, and whether EdgeLab already holds observations from it
         # (observation provenance.sourceFile); None when it is a failed / empty capture
@@ -369,6 +381,25 @@ def decide(state, runs_by_workflow, now, *, stages="ABCDEF"):
     out, notes = [], []
     runs = lambda wf: runs_by_workflow.get(wf, [])  # noqa: E731
     today = state["today"]
+
+    # stage F first: it keys on the published slate's date (yesterday's after midnight ET), so today's
+    # empty discovery must not short-circuit it
+    overdue = state.get("overdue_started_games") or []
+    gs_date = state.get("game_state_date") or today
+    if "F" in stages and overdue:
+        gs_at = state.get("game_state_at")
+        if gs_at is not None and (now - gs_at) <= timedelta(minutes=GAME_STATE_MIN_GAP_MINUTES):
+            notes.append(f"game state: {len(overdue)} started game(s) without a final word, but the feed was read {_age(now, gs_at)}")
+        elif _recent(runs(GAME_STATE), now, GAME_STATE_MIN_GAP_MINUTES):
+            notes.append(f"game state: {len(overdue)} started game(s) without a final word; a refresh run is in flight, "
+                         f"<{GAME_STATE_MIN_GAP_MINUTES}m old or unknown")
+        else:
+            out.append({"workflow": GAME_STATE, "inputs": {"date": gs_date},
+                        "reason": f"{len(overdue)} game(s) ({', '.join(overdue)}) on the {gs_date} slate started more than "
+                                  f"{GAME_STATE_OVERDUE_MINUTES}m ago with no final / postponed / cancelled word "
+                                  f"(game state {_age(now, gs_at)})"})
+    elif "F" in stages:
+        notes.append("game state: every started game has a final word or started recently")
 
     if not (state["kalshi_game_count"] > 0 or state["market_count"] > 0):
         notes.append(f"{today}: no Kalshi-discovered MLB game or market -- nothing to reconcile")
@@ -419,21 +450,6 @@ def decide(state, runs_by_workflow, now, *, stages="ABCDEF"):
         else:
             out.append({"workflow": CAPTURE, "inputs": {"date": today},
                         "reason": f"newest {today} raw capture {_age(now, raw_at)}"})
-
-    overdue = state.get("overdue_started_games") or []
-    if "F" in stages and overdue:
-        gs_at = state.get("game_state_at")
-        if gs_at is not None and (now - gs_at) <= timedelta(minutes=GAME_STATE_MIN_GAP_MINUTES):
-            notes.append(f"game state: {len(overdue)} started game(s) without a final word, but the feed was read {_age(now, gs_at)}")
-        elif _recent(runs(GAME_STATE), now, GAME_STATE_MIN_GAP_MINUTES):
-            notes.append(f"game state: {len(overdue)} started game(s) without a final word; a refresh run is in flight, "
-                         f"<{GAME_STATE_MIN_GAP_MINUTES}m old or unknown")
-        else:
-            out.append({"workflow": GAME_STATE, "inputs": {"date": today},
-                        "reason": f"{len(overdue)} game(s) ({', '.join(overdue)}) started more than {GAME_STATE_OVERDUE_MINUTES}m ago "
-                                  f"with no final / postponed / cancelled word (game state {_age(now, gs_at)})"})
-    elif "F" in stages:
-        notes.append("game state: every started game has a final word or started recently")
 
     if "E" in stages:
         ex = state.get("export") or {}

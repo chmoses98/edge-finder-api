@@ -1,15 +1,15 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-10-09T14:11:44Z
+Generated: 2026-10-10T13:20:20Z
 
-## Operational health: **HEALTHY**
-- Reasons: none
+## Operational health: **FAILED**
+- Reasons: HARD_FAIL:FORWARD_MISSING_SNAPSHOT
 
 ## Enforcement
 - Status: **ACTIVE**
 - Boundary date: 2026-08-03
 - Activated at: 2026-08-04T09:38:45Z
-- Exit should fail: False
-- Exit-code reason: Forward operational health is otherwise clean -- the only hard-fail-status forward date(s) are acknowledged, permanently-unrecoverable legacy gaps (['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']), which never resolve and therefore never drive this exit code -- see data/edgelab/corpus_acknowledged_forward_gaps.json.
+- Exit should fail: True
+- Exit-code reason: 1 forward-era date(s) with an unacknowledged hard-fail gate status: [('2026-10-09', 'FORWARD_MISSING_SNAPSHOT')] (plus 5 acknowledged legacy gap(s), excluded from this failure per data/edgelab/corpus_acknowledged_forward_gaps.json: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15'])
 
 ## Historical corpus quality (descriptive only -- never fails this check)
 - Historical/backfill dates: 4
@@ -18,29 +18,28 @@ Generated: 2026-10-09T14:11:44Z
 
 ## Forward operational health (drives pass/fail)
 - Population note: expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates and noSlateDates (schedule-verified days with no MLB games). snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.
-- Expected forward runs: 65
-- Forward snapshots captured: 60
-- Forward snapshots missing (no manifest at all): 5 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
+- Expected forward runs: 67
+- Forward snapshots captured: 61
+- Forward snapshots missing (no manifest at all): 6 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15', '2026-10-09']
 - Forward incomplete captures (manifest exists, missing a required component): 0 []
-- Forward dates pending today (not yet due): 1 ['2026-10-09']
+- Forward dates pending today (not yet due): 0 []
 - Forward no-slate dates (MLB schedule verified no games; no production expected): 2 ['2026-09-28', '2026-10-02']
-- Forward provenance coverage: 60/65
-- Forward replay: attempted 240, completed 131, failed 109
+- Forward provenance coverage: 61/67
+- Forward replay: attempted 241, completed 131, failed 110
 - Forward CLV-linked markets: 44
 - Forward settlement-linked markets: 89
 - Consecutive degraded forward runs: 0
-- Hard-fail dates (drive exitShouldFail): []
+- Hard-fail dates (drive exitShouldFail): ['2026-10-09']
 - Acknowledged legacy gap dates (excluded from exitShouldFail, see data/edgelab/corpus_acknowledged_forward_gaps.json): ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
 - FORWARD_HEALTHY: 40
-- FORWARD_MISSING_SNAPSHOT: 5
+- FORWARD_MISSING_SNAPSHOT: 6
 - FORWARD_NO_SLATE: 2
-- FORWARD_PENDING_TODAY: 1
-- FORWARD_RESEARCH_ONLY_NO_DECISION: 20
+- FORWARD_RESEARCH_ONLY_NO_DECISION: 21
 
 ## Storage
-- Snapshots: 371,014,604 bytes
-- Replay runs: 27,872,009 bytes
-- Total: 398,886,613 bytes
+- Snapshots: 371,225,691 bytes
+- Replay runs: 27,873,449 bytes
+- Total: 399,099,140 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Stored Completeness | Effective Completeness | Research-Only | Commit SHA Known | Replay | Runs | Acknowledged Gap |
@@ -116,4 +115,5 @@ Generated: 2026-10-09T14:11:44Z
 | 2026-10-06 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 3 |  |
 | 2026-10-07 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 5 |  |
 | 2026-10-08 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 4 |  |
-| 2026-10-09 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |
+| 2026-10-09 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | None | False | False | None | 0 |  |
+| 2026-10-10 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 1 |  |

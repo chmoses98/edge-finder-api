@@ -26,6 +26,7 @@ on:
     paths:
       - ".github/workflows/research-mlb-postseason-boxscore-backfill.yml"
       - "scripts/research/mlb_postseason_boxscore_backfill.py"
+      - "scripts/research/mlb_postseason_coverage_report.py"
   workflow_dispatch:
     inputs:
       seasons:
@@ -78,6 +79,10 @@ jobs:
           SEASONS: ${{ github.event.inputs.seasons || '2022,2023,2024,2025,2026' }}
         run: |
           python3 scripts/research/mlb_postseason_boxscore_backfill.py --seasons "$SEASONS" | tee fetch_result.json
+
+      - name: Coverage report (completeness, identity, cross-check, timestamps)
+        run: |
+          python3 scripts/research/mlb_postseason_coverage_report.py --out "$RUNNER_TEMP/pitcher_postseason_coverage.json"
 
       - name: Run focused tests (network-free)
         run: |

@@ -1,0 +1,287 @@
+{
+  "bootstrap": {
+    "replicates": 1000,
+    "seed": 20261010
+  },
+  "conditional_dnp_excluded": 0,
+  "coverage": {
+    "challenger_only_without_champion": 0,
+    "challenger_rows": 53298,
+    "champion_only_without_challenger": 0,
+    "champion_rows": 53298,
+    "matched_forecasts_without_outcome": 0,
+    "outcome_rows": 262116,
+    "outcomes_without_matched_forecasts": 208818,
+    "settled_with_both_forecasts": 53298
+  },
+  "exclusions_by_statistic": {},
+  "gate": "pure_gate 1.0.0",
+  "metric_policy": "matched unique player-game-statistic rows only; one representative common ladder rung per player-game (average probability closest to 0.5, outcome-blind); CRPS approximated by 2x mean pinball loss over common quantile levels; paired percentile bootstrap resampling whole games (sport|game_id); deltas are challenger minus champion",
+  "note": "Scores use sports outcomes and player-stat projections only. Market odds are never model inputs. Promotion needs a preregistered, untouched chronological holdout.",
+  "statistic_scorecards": {
+    "MLB:hitter_hits": {
+      "challenger_bias": 0.00373,
+      "challenger_brier": 0.233312,
+      "challenger_crps_quantile_approx": 0.440988,
+      "challenger_mae": 0.685787,
+      "challenger_p10_p90_coverage": 0.953732,
+      "challenger_rmse": 0.869613,
+      "champion_bias": 0.1352,
+      "champion_brier": 0.238028,
+      "champion_crps_quantile_approx": 0.448461,
+      "champion_mae": 0.694817,
+      "champion_p10_p90_coverage": 0.958122,
+      "champion_rmse": 0.884143,
+      "crps_min_common_quantile_levels": 5,
+      "delta_brier_game_cluster_bootstrap_95ci": [
+        -0.006681,
+        -0.002703
+      ],
+      "delta_coverage_game_cluster_bootstrap_95ci": [
+        -0.006309,
+        -0.002598
+      ],
+      "delta_crps_game_cluster_bootstrap_95ci": [
+        -0.010381,
+        -0.004399
+      ],
+      "delta_mae_challenger_minus_champion": -0.009031,
+      "delta_mae_game_cluster_bootstrap_95ci": [
+        -0.013266,
+        -0.004827
+      ],
+      "delta_mean_squared_error": -0.025482,
+      "delta_mse_game_cluster_bootstrap_95ci": [
+        -0.032581,
+        -0.01744
+      ],
+      "few_game_clusters_warning": false,
+      "n_common_thresholds_scored_one_per_player_game": 8883,
+      "n_crps": 8883,
+      "n_games": 519,
+      "n_player_games": 8883,
+      "n_without_common_threshold": 0,
+      "status": "DESCRIPTIVE_ONLY_NOT_AUTOMATIC_PROMOTION"
+    },
+    "MLB:hitter_home_runs": {
+      "challenger_bias": 0.000922,
+      "challenger_brier": 0.10112,
+      "challenger_crps_quantile_approx": 0.112993,
+      "challenger_mae": 0.212727,
+      "challenger_p10_p90_coverage": 0.961837,
+      "challenger_rmse": 0.345288,
+      "champion_bias": -0.036635,
+      "champion_brier": 0.103538,
+      "champion_crps_quantile_approx": 0.118383,
+      "champion_mae": 0.186887,
+      "champion_p10_p90_coverage": 0.914894,
+      "champion_rmse": 0.34894,
+      "crps_min_common_quantile_levels": 5,
+      "delta_brier_game_cluster_bootstrap_95ci": [
+        -0.003253,
+        -0.001525
+      ],
+      "delta_coverage_game_cluster_bootstrap_95ci": [
+        0.042214,
+        0.05142
+      ],
+      "delta_crps_game_cluster_bootstrap_95ci": [
+        -0.007087,
+        -0.003548
+      ],
+      "delta_mae_challenger_minus_champion": 0.025839,
+      "delta_mae_game_cluster_bootstrap_95ci": [
+        0.023961,
+        0.027641
+      ],
+      "delta_mean_squared_error": -0.002535,
+      "delta_mse_game_cluster_bootstrap_95ci": [
+        -0.003535,
+        -0.001477
+      ],
+      "few_game_clusters_warning": false,
+      "n_common_thresholds_scored_one_per_player_game": 8883,
+      "n_crps": 8883,
+      "n_games": 519,
+      "n_player_games": 8883,
+      "n_without_common_threshold": 0,
+      "status": "DESCRIPTIVE_ONLY_NOT_AUTOMATIC_PROMOTION"
+    },
+    "MLB:hitter_plate_appearances": {
+      "challenger_bias": 0.057273,
+      "challenger_brier": 0.207035,
+      "challenger_crps_quantile_approx": 0.375742,
+      "challenger_mae": 0.578884,
+      "challenger_p10_p90_coverage": 0.896319,
+      "challenger_rmse": 0.759155,
+      "champion_bias": 0.42079,
+      "champion_brier": 0.266622,
+      "champion_crps_quantile_approx": 0.456659,
+      "champion_mae": 0.665943,
+      "champion_p10_p90_coverage": 0.831363,
+      "champion_rmse": 0.876265,
+      "crps_min_common_quantile_levels": 5,
+      "delta_brier_game_cluster_bootstrap_95ci": [
+        -0.070167,
+        -0.048949
+      ],
+      "delta_coverage_game_cluster_bootstrap_95ci": [
+        0.055161,
+        0.07493
+      ],
+      "delta_crps_game_cluster_bootstrap_95ci": [
+        -0.0929,
+        -0.068442
+      ],
+      "delta_mae_challenger_minus_champion": -0.087059,
+      "delta_mae_game_cluster_bootstrap_95ci": [
+        -0.103091,
+        -0.070665
+      ],
+      "delta_mean_squared_error": -0.191525,
+      "delta_mse_game_cluster_bootstrap_95ci": [
+        -0.216851,
+        -0.165828
+      ],
+      "few_game_clusters_warning": false,
+      "n_common_thresholds_scored_one_per_player_game": 8883,
+      "n_crps": 8883,
+      "n_games": 519,
+      "n_player_games": 8883,
+      "n_without_common_threshold": 0,
+      "status": "DESCRIPTIVE_ONLY_NOT_AUTOMATIC_PROMOTION"
+    },
+    "MLB:hitter_rbis": {
+      "challenger_bias": 0.00712,
+      "challenger_brier": 0.209284,
+      "challenger_crps_quantile_approx": 0.349193,
+      "challenger_mae": 0.629455,
+      "challenger_p10_p90_coverage": 0.939322,
+      "challenger_rmse": 0.824662,
+      "champion_bias": -0.151057,
+      "champion_brier": 0.220036,
+      "champion_crps_quantile_approx": 0.372397,
+      "champion_mae": 0.574747,
+      "champion_p10_p90_coverage": 0.896994,
+      "champion_rmse": 0.841479,
+      "crps_min_common_quantile_levels": 5,
+      "delta_brier_game_cluster_bootstrap_95ci": [
+        -0.013343,
+        -0.008478
+      ],
+      "delta_coverage_game_cluster_bootstrap_95ci": [
+        0.037806,
+        0.047274
+      ],
+      "delta_crps_game_cluster_bootstrap_95ci": [
+        -0.028254,
+        -0.01849
+      ],
+      "delta_mae_challenger_minus_champion": 0.054708,
+      "delta_mae_game_cluster_bootstrap_95ci": [
+        0.050222,
+        0.059086
+      ],
+      "delta_mean_squared_error": -0.028019,
+      "delta_mse_game_cluster_bootstrap_95ci": [
+        -0.036309,
+        -0.020617
+      ],
+      "few_game_clusters_warning": false,
+      "n_common_thresholds_scored_one_per_player_game": 8883,
+      "n_crps": 8883,
+      "n_games": 519,
+      "n_player_games": 8883,
+      "n_without_common_threshold": 0,
+      "status": "DESCRIPTIVE_ONLY_NOT_AUTOMATIC_PROMOTION"
+    },
+    "MLB:hitter_runs_scored": {
+      "challenger_bias": 0.008042,
+      "challenger_brier": 0.233609,
+      "challenger_crps_quantile_approx": 0.310035,
+      "challenger_mae": 0.579909,
+      "challenger_p10_p90_coverage": 0.94315,
+      "challenger_rmse": 0.678388,
+      "champion_bias": -0.104101,
+      "champion_brier": 0.239705,
+      "champion_crps_quantile_approx": 0.313779,
+      "champion_mae": 0.561414,
+      "champion_p10_p90_coverage": 0.917821,
+      "champion_rmse": 0.688411,
+      "crps_min_common_quantile_levels": 5,
+      "delta_brier_game_cluster_bootstrap_95ci": [
+        -0.008678,
+        -0.00373
+      ],
+      "delta_coverage_game_cluster_bootstrap_95ci": [
+        0.021625,
+        0.029117
+      ],
+      "delta_crps_game_cluster_bootstrap_95ci": [
+        -0.006062,
+        -0.001472
+      ],
+      "delta_mae_challenger_minus_champion": 0.018495,
+      "delta_mae_game_cluster_bootstrap_95ci": [
+        0.014516,
+        0.022087
+      ],
+      "delta_mean_squared_error": -0.0137,
+      "delta_mse_game_cluster_bootstrap_95ci": [
+        -0.019356,
+        -0.008235
+      ],
+      "few_game_clusters_warning": false,
+      "n_common_thresholds_scored_one_per_player_game": 8883,
+      "n_crps": 8883,
+      "n_games": 519,
+      "n_player_games": 8883,
+      "n_without_common_threshold": 0,
+      "status": "DESCRIPTIVE_ONLY_NOT_AUTOMATIC_PROMOTION"
+    },
+    "MLB:hitter_total_bases": {
+      "challenger_bias": 0.017164,
+      "challenger_brier": 0.24395,
+      "challenger_crps_quantile_approx": 0.844095,
+      "challenger_mae": 1.328302,
+      "challenger_p10_p90_coverage": 0.932568,
+      "challenger_rmse": 1.724793,
+      "champion_bias": -0.01549,
+      "champion_brier": 0.247768,
+      "champion_crps_quantile_approx": 0.852494,
+      "champion_mae": 1.329596,
+      "champion_p10_p90_coverage": 0.907576,
+      "champion_rmse": 1.733239,
+      "crps_min_common_quantile_levels": 5,
+      "delta_brier_game_cluster_bootstrap_95ci": [
+        -0.005611,
+        -0.001897
+      ],
+      "delta_coverage_game_cluster_bootstrap_95ci": [
+        0.02085,
+        0.029021
+      ],
+      "delta_crps_game_cluster_bootstrap_95ci": [
+        -0.01237,
+        -0.004373
+      ],
+      "delta_mae_challenger_minus_champion": -0.001294,
+      "delta_mae_game_cluster_bootstrap_95ci": [
+        -0.007517,
+        0.005237
+      ],
+      "delta_mean_squared_error": -0.029204,
+      "delta_mse_game_cluster_bootstrap_95ci": [
+        -0.049459,
+        -0.008975
+      ],
+      "few_game_clusters_warning": false,
+      "n_common_thresholds_scored_one_per_player_game": 8883,
+      "n_crps": 8883,
+      "n_games": 519,
+      "n_player_games": 8883,
+      "n_without_common_threshold": 0,
+      "status": "DESCRIPTIVE_ONLY_NOT_AUTOMATIC_PROMOTION"
+    }
+  }
+}

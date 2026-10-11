@@ -1,0 +1,249 @@
+{
+  "certified": true,
+  "checks": {
+    "control_deterministic": true,
+    "control_normal_ok": true,
+    "control_responds_to_every_mutation": true,
+    "market_inputs_restored_unchanged": true,
+    "model_deterministic": true,
+    "model_identical_under_all_mutations": true,
+    "model_normal_ok": true,
+    "randomization_effective": true,
+    "sports_inputs_unchanged": true
+  },
+  "compare": "bytes",
+  "control_command": [
+    "python3",
+    "scripts/research/hitter_w2/run_hitter_w2.py",
+    "forecast",
+    "--start",
+    "2026-09-12",
+    "--end",
+    "2026-09-13",
+    "--n-sims",
+    "100",
+    "--seed",
+    "{seed}",
+    "--feed-root",
+    "{sports[mlb_feed]}",
+    "--market-file",
+    "{market[totals]}",
+    "--quotes-file",
+    "{market[hitter_quotes]}",
+    "--control-read-market",
+    "--out",
+    "{out}/challenger.jsonl"
+  ],
+  "gate": "pure_gate 1.0.0",
+  "market_inputs": {
+    "hitter_quotes": {
+      "path": "data/research/hitter_w2/rerun_inputs/hitter_quotes.jsonl",
+      "sha256": "873450568bf0baf898c6a7cae41b758aa50304a14ef18e4035156a157f091b42"
+    },
+    "totals": {
+      "path": "data/research/hitter_w2/rerun_inputs/totals.json",
+      "sha256": "9c7707f8a9e563f6e48488ce65f87b0c5e2525ac2969254128e2205d33a70edd"
+    }
+  },
+  "mode": "placeholder",
+  "model_command": [
+    "python3",
+    "scripts/research/hitter_w2/run_hitter_w2.py",
+    "forecast",
+    "--start",
+    "2026-09-12",
+    "--end",
+    "2026-09-13",
+    "--n-sims",
+    "100",
+    "--seed",
+    "{seed}",
+    "--feed-root",
+    "{sports[mlb_feed]}",
+    "--market-file",
+    "{market[totals]}",
+    "--quotes-file",
+    "{market[hitter_quotes]}",
+    "--out",
+    "{out}/challenger.jsonl"
+  ],
+  "mutation_seed": 20261010,
+  "note": "Each arm ran the actual command at identical seed, sports inputs and command-line paths. Model-owned outputs must be bit-identical with market inputs deleted or randomized; the market-reading negative control must change, proving the mutation reaches readers. This cannot detect market information baked into the sports snapshot itself or into frozen parameters; pair it with the source/dependency audit.",
+  "passed": true,
+  "per_arm": {
+    "control_responded": {
+      "deleted": "failed_or_invalid",
+      "randomized_0": "output_changed",
+      "randomized_1": "output_changed"
+    },
+    "model_identical": {
+      "deleted": true,
+      "randomized_0": true,
+      "randomized_1": true
+    }
+  },
+  "random_draws": 2,
+  "randomization_effective_by_input": {
+    "hitter_quotes@20261010": true,
+    "hitter_quotes@20261011": true,
+    "totals@20261010": true,
+    "totals@20261011": true
+  },
+  "runs": {
+    "control": {
+      "deleted": {
+        "arm": "deleted",
+        "exit_code": 1,
+        "kept_outputs": "rerun_proof/results/control-deleted",
+        "ok": false,
+        "output_problem": null,
+        "outputs_sha256": {},
+        "role": "control",
+        "seconds": 5.073,
+        "stderr_tail": "mp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/hitter-wt/scripts/research/hitter_w2/run_hitter_w2.py\", line 124, in stage_forecast\n    with open(market_file) as f:\n         ~~~~^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'rerun_proof/run/market/totals/totals.json'\n",
+        "stdout_tail": ""
+      },
+      "normal": {
+        "arm": "normal",
+        "exit_code": 0,
+        "kept_outputs": "rerun_proof/results/control-normal",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "challenger.jsonl": "540cbbafafebae8d6fbaf39a13f73986d3d061d63c69e738ec858c74b0bd70cd"
+        },
+        "role": "control",
+        "seconds": 5.83,
+        "stderr_tail": "",
+        "stdout_tail": "0/30 games (0s)\n"
+      },
+      "normal_repeat": {
+        "arm": "normal_repeat",
+        "exit_code": 0,
+        "kept_outputs": "rerun_proof/results/control-normal_repeat",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "challenger.jsonl": "540cbbafafebae8d6fbaf39a13f73986d3d061d63c69e738ec858c74b0bd70cd"
+        },
+        "role": "control",
+        "seconds": 5.715,
+        "stderr_tail": "",
+        "stdout_tail": "0/30 games (0s)\n"
+      },
+      "randomized_0": {
+        "arm": "randomized_0",
+        "exit_code": 0,
+        "kept_outputs": "rerun_proof/results/control-randomized_0",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "challenger.jsonl": "740d0adbaa16933ca41cf876d6c9000646d0428d98bdfaccaeb45d8154a15049"
+        },
+        "role": "control",
+        "seconds": 6.14,
+        "stderr_tail": "",
+        "stdout_tail": "0/30 games (0s)\n"
+      },
+      "randomized_1": {
+        "arm": "randomized_1",
+        "exit_code": 0,
+        "kept_outputs": "rerun_proof/results/control-randomized_1",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "challenger.jsonl": "734b62848bb7f528800f3f77ed10d13b8c88e9ad4316fe09a4ace5dfec2c9d21"
+        },
+        "role": "control",
+        "seconds": 5.773,
+        "stderr_tail": "",
+        "stdout_tail": "0/30 games (0s)\n"
+      }
+    },
+    "model": {
+      "deleted": {
+        "arm": "deleted",
+        "exit_code": 0,
+        "kept_outputs": "rerun_proof/results/model-deleted",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "challenger.jsonl": "bd7558d2ac58aef95147b3192dc9db254c612b29304d8a90f94f3abf3ccf6314"
+        },
+        "role": "model",
+        "seconds": 5.926,
+        "stderr_tail": "",
+        "stdout_tail": "0/30 games (0s)\n"
+      },
+      "normal": {
+        "arm": "normal",
+        "exit_code": 0,
+        "kept_outputs": "rerun_proof/results/model-normal",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "challenger.jsonl": "bd7558d2ac58aef95147b3192dc9db254c612b29304d8a90f94f3abf3ccf6314"
+        },
+        "role": "model",
+        "seconds": 5.922,
+        "stderr_tail": "",
+        "stdout_tail": "0/30 games (0s)\n"
+      },
+      "normal_repeat": {
+        "arm": "normal_repeat",
+        "exit_code": 0,
+        "kept_outputs": "rerun_proof/results/model-normal_repeat",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "challenger.jsonl": "bd7558d2ac58aef95147b3192dc9db254c612b29304d8a90f94f3abf3ccf6314"
+        },
+        "role": "model",
+        "seconds": 5.86,
+        "stderr_tail": "",
+        "stdout_tail": "0/30 games (0s)\n"
+      },
+      "randomized_0": {
+        "arm": "randomized_0",
+        "exit_code": 0,
+        "kept_outputs": "rerun_proof/results/model-randomized_0",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "challenger.jsonl": "bd7558d2ac58aef95147b3192dc9db254c612b29304d8a90f94f3abf3ccf6314"
+        },
+        "role": "model",
+        "seconds": 5.895,
+        "stderr_tail": "",
+        "stdout_tail": "0/30 games (0s)\n"
+      },
+      "randomized_1": {
+        "arm": "randomized_1",
+        "exit_code": 0,
+        "kept_outputs": "rerun_proof/results/model-randomized_1",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "challenger.jsonl": "bd7558d2ac58aef95147b3192dc9db254c612b29304d8a90f94f3abf3ccf6314"
+        },
+        "role": "model",
+        "seconds": 5.8,
+        "stderr_tail": "",
+        "stdout_tail": "0/30 games (0s)\n"
+      }
+    }
+  },
+  "seed": 20261011,
+  "sports_inputs": {
+    "mlb_feed": {
+      "path": "data/research/hitter_w2/mlb_feed",
+      "sha256": "a5b0d85ae5f0f53565288d98cf57ec02d5fda8289669133f98bd52d08b4a3725"
+    },
+    "params": {
+      "path": "data/research/hitter_w2/params_v1.json",
+      "sha256": "e34c413e9d96727f581090710d43c54bc515276479176e8286d3b6e4d73c73e5"
+    }
+  },
+  "verdict": "PASS_RUNTIME_NONLEAKAGE",
+  "workdir": "rerun_proof"
+}

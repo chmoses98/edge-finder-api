@@ -202,7 +202,6 @@ def main(argv=None):
                                        for m, d in blk["summary"].items() if isinstance(d, dict)}
                                   for st, blk in block(scored_all, ("challenger", "baseline"), [],
                                                        lambda s, key=key, v=v: s["sub"][key] == v).items()}
-                                 if True else None
     for key, vals in (("listed", (True, False)), ("slot", ("1-2", "3-5", "6-9"))):
         for v in vals:
             subs[f"H2_incumbent_matched:{key}={v}"] = {

@@ -137,3 +137,22 @@ def test_incumbent_instrumented_replica_matches_original():
             assert a == b
             assert ins["PA_starter"] + ins["PA_bullpen"] == a["PA"]
             assert ins["H_starter"] + ins["H_bullpen"] == a["H"]
+
+
+def test_challenger_feature_and_model_code_reads_no_market_vocabulary():
+    for rel in ("features.py", "model.py", "sidecars.py"):
+        src = open(os.path.join(ROOT, "scripts", "research", "hitter_w2", rel)).read()
+        code = "\n".join(line for line in src.splitlines() if not line.strip().startswith("#"))
+        code = re.sub(r'"""[\s\S]*?"""', "", code).lower()
+        for term in ("kalshi", "odds", "implied", "sportsbook", "pinnacle", "settle", "price", "ticker", "quote",
+                     "slates", "teamtotals", "vegas"):
+            assert term not in code, (rel, term)
+
+
+def test_pure_path_never_opens_market_file(tmp_path, monkeypatch):
+    """The PURE forecast path must not reference the market-file argument except in the
+    negative-control branch."""
+    src = open(os.path.join(ROOT, "scripts", "research", "hitter_w2", "run_hitter_w2.py")).read()
+    body = src[src.index("def stage_forecast"):src.index("def _control_params")]
+    assert body.count("open(market_file)") == 1
+    assert "if control_read_market:" in body

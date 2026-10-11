@@ -442,6 +442,9 @@ def cmd_evaluate(a):
     versions = {"challenger": J.MODEL_VERSION, "champion": "pitcher_prop_projection@params_asof_2026-10-07",
                 "baseline": "naive_recent5_v1"}
     sched, games, index = sports_dataset(a.data_root)
+    if a.postseason_only:
+        postseason_diagnostic(a, params, games, index, Champion(a.data_root))
+        return 0
     rows = target_rows(games, index, set(a.seasons.split(",")))
     champ = Champion(a.data_root)
     files = {}
@@ -601,6 +604,23 @@ def postseason_diagnostic(a, params, games, index, champ):
                        "log_loss": round(sum(_nll(pmf, yy) for (pmf, _m), yy in zip(d[arm], d["y"])) / len(errs), 4),
                        "p10_p90_coverage": round(sum(1 for (pmf, _m), yy in zip(d[arm], d["y"])
                                                      if J.quantile(pmf, .1) <= yy <= J.quantile(pmf, .9)) / len(errs), 4)}
+        # paired game-clustered bootstrap of |error| differences, challenger minus each champion arm
+        for arm in ("champion_regular_history", "champion_postseason_path"):
+            if len(set(d["game"])) < 3:
+                continue
+            groups = defaultdict(list)
+            for (pc, mc), (pa, ma), yy, g in zip(d["challenger"], d[arm], d["y"], d["game"]):
+                groups[g].append(abs(mc - yy) - abs(ma - yy))
+            gk = sorted(groups)
+            rng = random.Random(20261010)
+            sims = []
+            for _ in range(a.reps):
+                pick = [v for _k in gk for v in groups[gk[rng.randrange(len(gk))]]]
+                sims.append(sum(pick) / len(pick))
+            sims.sort()
+            allv = [v for g in gk for v in groups[g]]
+            st[f"challenger_minus_{arm}_delta_mae"] = {"point": round(sum(allv) / len(allv), 4),
+                                                       "ci95": [round(sims[int(0.025 * a.reps)], 4), round(sims[int(0.975 * a.reps) - 1], 4)]}
         out["stats"][stat] = st
     with open(os.path.join(a.outdir, "postseason_diagnostic.json"), "w", encoding="utf-8") as fh:
         json.dump(out, fh, indent=1, sort_keys=True)
@@ -697,6 +717,7 @@ def main(argv=None):
     e.add_argument("--reps", type=int, default=1000)
     e.add_argument("--asof", default="2026-10-10")
     e.add_argument("--postseason-diagnostic", action="store_true")
+    e.add_argument("--postseason-only", action="store_true", help="only the market-selected postseason diagnostic")
     r = sub.add_parser("rerun")
     r.add_argument("--data-root", default=os.path.join(ROOT, "data"))
     r.add_argument("--params", default=PARAMS_PATH)

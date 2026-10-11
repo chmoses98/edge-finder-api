@@ -1,0 +1,201 @@
+{
+  "certified": true,
+  "checks": {
+    "control_deterministic": true,
+    "control_normal_ok": true,
+    "control_responds_to_every_mutation": true,
+    "market_inputs_restored_unchanged": true,
+    "model_deterministic": true,
+    "model_identical_under_all_mutations": true,
+    "model_normal_ok": true,
+    "randomization_effective": true,
+    "sports_inputs_unchanged": true
+  },
+  "compare": "bytes",
+  "control_command": [
+    "python3",
+    "scripts/research/mlb_pitcher_workload_joint.py",
+    "rerun",
+    "--arm",
+    "champion_postseason",
+    "--data-root",
+    "data",
+    "--out",
+    "{out}/rerun.jsonl"
+  ],
+  "gate": "pure_gate 1.0.0",
+  "market_inputs": {
+    "kalshi_settled_pitcher_props": {
+      "path": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlb-wt/data/edgelab/settlements",
+      "sha256": "da3eeced98cd017e28d02cca0f344e644ea2801e7bf4ab8cf85825466e032f39"
+    }
+  },
+  "mode": "in_place",
+  "model_command": [
+    "python3",
+    "scripts/research/mlb_pitcher_workload_joint.py",
+    "rerun",
+    "--arm",
+    "challenger",
+    "--data-root",
+    "data",
+    "--out",
+    "{out}/rerun.jsonl"
+  ],
+  "mutation_seed": 20261010,
+  "note": "Each arm ran the actual command at identical seed, sports inputs and command-line paths. Model-owned outputs must be bit-identical with market inputs deleted or randomized; the market-reading negative control must change, proving the mutation reaches readers. This cannot detect market information baked into the sports snapshot itself or into frozen parameters; pair it with the source/dependency audit.",
+  "passed": true,
+  "per_arm": {
+    "control_responded": {
+      "deleted": "output_changed",
+      "randomized_0": "output_changed"
+    },
+    "model_identical": {
+      "deleted": true,
+      "randomized_0": true
+    }
+  },
+  "random_draws": 1,
+  "randomization_effective_by_input": {
+    "kalshi_settled_pitcher_props@20261010": true
+  },
+  "runs": {
+    "control": {
+      "deleted": {
+        "arm": "deleted",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlb/pure_rerun/results/control-deleted",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "1e268d98f3bade3c77773d44c07c2278634a8ff84491953ce03f21f274d8098e"
+        },
+        "role": "control",
+        "seconds": 0.219,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"champion_postseason\", \"rows\": 132, \"sha256\": \"1e268d98f3bade3c77773d44c07c2278634a8ff84491953ce03f21f274d8098e\"}\n"
+      },
+      "normal": {
+        "arm": "normal",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlb/pure_rerun/results/control-normal",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "d0e7ba643d493a877f259e4a4aeea6fbb0f79d07c6522e6504647470d75373ee"
+        },
+        "role": "control",
+        "seconds": 0.475,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"champion_postseason\", \"rows\": 132, \"sha256\": \"d0e7ba643d493a877f259e4a4aeea6fbb0f79d07c6522e6504647470d75373ee\"}\n"
+      },
+      "normal_repeat": {
+        "arm": "normal_repeat",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlb/pure_rerun/results/control-normal_repeat",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "d0e7ba643d493a877f259e4a4aeea6fbb0f79d07c6522e6504647470d75373ee"
+        },
+        "role": "control",
+        "seconds": 0.407,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"champion_postseason\", \"rows\": 132, \"sha256\": \"d0e7ba643d493a877f259e4a4aeea6fbb0f79d07c6522e6504647470d75373ee\"}\n"
+      },
+      "randomized_0": {
+        "arm": "randomized_0",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlb/pure_rerun/results/control-randomized_0",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "bb811308a58156180c6a6be6bc8b9273032ddf74238318dd21884ff921892abf"
+        },
+        "role": "control",
+        "seconds": 0.429,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"champion_postseason\", \"rows\": 132, \"sha256\": \"bb811308a58156180c6a6be6bc8b9273032ddf74238318dd21884ff921892abf\"}\n"
+      }
+    },
+    "model": {
+      "deleted": {
+        "arm": "deleted",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlb/pure_rerun/results/model-deleted",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "9c36b00c433c562f42ce4871f800bb950dafb517bc9bac2b4ed39d39b2ab69e0"
+        },
+        "role": "model",
+        "seconds": 7.568,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"challenger\", \"rows\": 2187, \"sha256\": \"9c36b00c433c562f42ce4871f800bb950dafb517bc9bac2b4ed39d39b2ab69e0\"}\n"
+      },
+      "normal": {
+        "arm": "normal",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlb/pure_rerun/results/model-normal",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "9c36b00c433c562f42ce4871f800bb950dafb517bc9bac2b4ed39d39b2ab69e0"
+        },
+        "role": "model",
+        "seconds": 9.031,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"challenger\", \"rows\": 2187, \"sha256\": \"9c36b00c433c562f42ce4871f800bb950dafb517bc9bac2b4ed39d39b2ab69e0\"}\n"
+      },
+      "normal_repeat": {
+        "arm": "normal_repeat",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlb/pure_rerun/results/model-normal_repeat",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "9c36b00c433c562f42ce4871f800bb950dafb517bc9bac2b4ed39d39b2ab69e0"
+        },
+        "role": "model",
+        "seconds": 7.052,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"challenger\", \"rows\": 2187, \"sha256\": \"9c36b00c433c562f42ce4871f800bb950dafb517bc9bac2b4ed39d39b2ab69e0\"}\n"
+      },
+      "randomized_0": {
+        "arm": "randomized_0",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlb/pure_rerun/results/model-randomized_0",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "9c36b00c433c562f42ce4871f800bb950dafb517bc9bac2b4ed39d39b2ab69e0"
+        },
+        "role": "model",
+        "seconds": 6.766,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"challenger\", \"rows\": 2187, \"sha256\": \"9c36b00c433c562f42ce4871f800bb950dafb517bc9bac2b4ed39d39b2ab69e0\"}\n"
+      }
+    }
+  },
+  "seed": 7,
+  "sports_inputs": {
+    "pipeline_schedule_snapshots": {
+      "path": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlb-wt/data/pipeline",
+      "sha256": "38818ad2d188d6718327a8c623b81f3f2b9fc634d621d0b73da244288ed3b6cc"
+    },
+    "schedules": {
+      "path": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlb-wt/data/research_cache/bullpen_backtest",
+      "sha256": "2d9c0f5f54dfcbc1fa5ccb84fdc9ef58799fe53a86f3b1bdcd519ce937fbc9c6"
+    },
+    "starter_boxscores": {
+      "path": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlb-wt/data/research_cache/starter_workload",
+      "sha256": "b2775fa672d75f500a53e50ca8adca63b1b6188c3f3b82e351715abcad3e3f77"
+    },
+    "statcast": {
+      "path": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlb-wt/data/statcast_raw/games",
+      "sha256": "c5238663376c6da8fe8b12c8025a80268b617a6e6ab6f25852d6814aa2fc3055"
+    }
+  },
+  "verdict": "PASS_RUNTIME_NONLEAKAGE",
+  "workdir": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlb/pure_rerun"
+}

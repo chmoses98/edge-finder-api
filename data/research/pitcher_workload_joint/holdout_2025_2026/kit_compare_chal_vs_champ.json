@@ -1,0 +1,79 @@
+{
+  "conditional_dnp_excluded": 0,
+  "coverage": {
+    "challenger_only_without_champion": 0,
+    "champion_only_without_challenger": 0,
+    "matched_forecasts_without_outcome": 0,
+    "settled_with_both_forecasts": 27075
+  },
+  "metric_policy": "matched unique player-game-statistic; one closest-to-50% common ladder rung per player-game; bootstrap clustered by game",
+  "note": "Scores use outcomes and player-stat projections only. Market odds are never model inputs. Comparisons require a new untouched chronological holdout for promotion.",
+  "statistic_scorecards": {
+    "MLB:pitcher_batters_faced": {
+      "challenger_bias": 0.170853,
+      "challenger_brier": 0.240645,
+      "challenger_mae": 2.675787,
+      "challenger_p10_p90_coverage": 0.876233,
+      "challenger_rmse": 3.677294,
+      "champion_bias": 0.119951,
+      "champion_brier": 0.246238,
+      "champion_mae": 2.746628,
+      "champion_p10_p90_coverage": 0.95867,
+      "champion_rmse": 3.745063,
+      "delta_mae_challenger_minus_champion": -0.070841,
+      "delta_mae_game_cluster_bootstrap_95ci": [
+        -0.088658,
+        -0.054482
+      ],
+      "delta_mean_squared_error": -0.503005,
+      "n_common_thresholds_scored_one_per_player_game": 9025,
+      "n_games": 4839,
+      "n_player_games": 9025,
+      "status": "DESCRIPTIVE_ONLY_NOT_AUTOMATIC_PROMOTION"
+    },
+    "MLB:pitcher_outs": {
+      "challenger_bias": 0.077176,
+      "challenger_brier": 0.238599,
+      "challenger_mae": 2.748023,
+      "challenger_p10_p90_coverage": 0.872133,
+      "challenger_rmse": 3.628193,
+      "champion_bias": 0.129439,
+      "champion_brier": 0.247404,
+      "champion_mae": 2.806057,
+      "champion_p10_p90_coverage": 0.860388,
+      "champion_rmse": 3.703014,
+      "delta_mae_challenger_minus_champion": -0.058034,
+      "delta_mae_game_cluster_bootstrap_95ci": [
+        -0.073493,
+        -0.041987
+      ],
+      "delta_mean_squared_error": -0.548524,
+      "n_common_thresholds_scored_one_per_player_game": 9025,
+      "n_games": 4839,
+      "n_player_games": 9025,
+      "status": "DESCRIPTIVE_ONLY_NOT_AUTOMATIC_PROMOTION"
+    },
+    "MLB:pitcher_strikeouts": {
+      "challenger_bias": 0.085087,
+      "challenger_brier": 0.245502,
+      "challenger_mae": 1.790504,
+      "challenger_p10_p90_coverage": 0.86892,
+      "challenger_rmse": 2.243745,
+      "champion_bias": 0.097409,
+      "champion_brier": 0.246991,
+      "champion_mae": 1.800401,
+      "champion_p10_p90_coverage": 0.901274,
+      "champion_rmse": 2.252432,
+      "delta_mae_challenger_minus_champion": -0.009896,
+      "delta_mae_game_cluster_bootstrap_95ci": [
+        -0.014326,
+        -0.005863
+      ],
+      "delta_mean_squared_error": -0.039058,
+      "n_common_thresholds_scored_one_per_player_game": 9025,
+      "n_games": 4839,
+      "n_player_games": 9025,
+      "status": "DESCRIPTIVE_ONLY_NOT_AUTOMATIC_PROMOTION"
+    }
+  }
+}

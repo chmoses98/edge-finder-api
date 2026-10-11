@@ -21,8 +21,9 @@ name: Research - MLB Pitcher PURE Shadow Collection
 
 on:
   schedule:
-    # every 20 minutes from 12:00 to 05:40 UTC (morning-of and T-80..T-20 windows)
-    - cron: '7,27,47 0-5,12-23 * * *'
+    # every 30 minutes 13:17-04:47 UTC: the T-80..T-20 pregame window (60 min wide) is
+    # hit at least once even with typical schedule delay; morning-of from 08:00 ET
+    - cron: '17,47 0-4,13-23 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -72,23 +73,24 @@ jobs:
         if: env.DRY_RUN == 'true'
         run: |
           set -euo pipefail
-          STORE="$RUNNER_TEMP/shadow_dry"
-          mkdir -p "$STORE"
+          STORE="$RUNNER_TEMP/shadow_dry/store"
+          LOGS="$RUNNER_TEMP/shadow_dry/logs"
+          mkdir -p "$STORE" "$LOGS"
           TODAY=$(TZ=America/New_York date +%F)
           TOMORROW=$(TZ=America/New_York date -d tomorrow +%F)
           PAST=$(for i in 1 2 3; do TZ=America/New_York date -d "$i days ago" +%F; done | paste -sd, -)
           # capture every not-yet-started game today and tomorrow (ET) under a forced label
-          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" capture --force-window pregame --date "$TODAY" | tee "$STORE/capture_today.json"
-          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" capture --force-window pregame --date "$TOMORROW" | tee "$STORE/capture_tomorrow.json"
-          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" outcomes --all-starters-date "$TODAY,$PAST" | tee "$STORE/outcomes.json"
-          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" reconcile | tee "$STORE/reconcile.json"
-          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" evaluate --reps 200 | tee "$STORE/evaluate.json"
-          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" verify | tee "$STORE/verify.json"
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" capture --force-window pregame --date "$TODAY" | tee "$LOGS/capture_today.json"
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" capture --force-window pregame --date "$TOMORROW" | tee "$LOGS/capture_tomorrow.json"
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" outcomes --all-starters-date "$TODAY,$PAST" | tee "$LOGS/outcomes.json"
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" reconcile | tee "$LOGS/reconcile.json"
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" evaluate --reps 200 | tee "$LOGS/evaluate.json"
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" verify | tee "$LOGS/verify.json"
           for f in "$STORE"/projections/*/*.jsonl; do
             [ -e "$f" ] || continue
             python3 -I tools/pure_gate/pure_gate.py validate --require-v1 --forecasts "$f"
           done
-          python3 -m pytest tests/research/test_mlb_pitcher_shadow.py tests/research/test_shadow_pure_append_only.py -q
+          python3 -m pytest tests/research/test_mlb_pitcher_shadow.py tests/research/test_shadow_pure_append_only.py tests/research/test_vendored_pure_gate_pin.py -q
 
       - name: Upload dry-run artifact
         if: env.DRY_RUN == 'true' && always()

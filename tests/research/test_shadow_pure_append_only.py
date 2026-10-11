@@ -1,9 +1,7 @@
 """CI guard: nothing already committed under data/shadow_pure/ may be modified or deleted
 relative to origin/main (MANIFEST.jsonl may only be appended to), the manifest hash chain
-must verify, and the vendored pure_gate must match its pinned sha256."""
-import hashlib
+must verify (the vendored gate pin is checked in test_vendored_pure_gate_pin.py)."""
 import os
-import re
 import subprocess
 
 import pytest
@@ -53,10 +51,3 @@ def test_manifest_chains_verify():
         if os.path.exists(os.path.join(root, d, "MANIFEST.jsonl")):
             v = ShadowStore(os.path.join(root, d)).verify()
             assert v["ok"], v["problems"][:10]
-
-
-def test_vendored_pure_gate_matches_pin():
-    pin = open(os.path.join(ROOT, "tools", "pure_gate", "VENDORED_FROM"), encoding="utf-8").read()
-    for sha, rel in re.findall(r"([0-9a-f]{64})\s+(\S+)", pin):
-        with open(os.path.join(ROOT, "tools", "pure_gate", rel), "rb") as fh:
-            assert hashlib.sha256(fh.read()).hexdigest() == sha, rel

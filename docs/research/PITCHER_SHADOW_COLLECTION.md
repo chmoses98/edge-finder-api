@@ -31,7 +31,7 @@ joint distribution per arm. For the challenger the chain is outs â†’ BF | outs â
 
 ## Captures
 
-The scheduled job runs every 20 minutes from 12:00 to 05:40 UTC. Each game gets at most one capture per window:
+The scheduled job runs every 30 minutes from 13:17 to 04:47 UTC, so the 60-minute pregame window is always hit at least once. Each game gets at most one capture per window:
 
 | Window | When |
 |---|---|

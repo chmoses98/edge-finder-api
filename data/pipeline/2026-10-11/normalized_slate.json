@@ -10,15 +10,15 @@
       },
       {
         "path": "games[0].kalshi.markets[0].volume",
-        "value": 345460.5
+        "value": 560142.14
       },
       {
         "path": "games[0].kalshi.markets[1].volume",
-        "value": 361975.68
+        "value": 814671.85
       },
       {
         "path": "games[0].kalshi.ml.volume",
-        "value": 361975.68
+        "value": 814671.85
       }
     ],
     "bullpensLoaded": 30,
@@ -33,22 +33,35 @@
         "allEdges": [
           {
             "actionable": false,
-            "bestEdge": -1.39,
+            "betSize": 4.5,
+            "confidence": "MEDIUM",
+            "edgePct": -2.32,
+            "logForCLV": true,
+            "market": "RUN LINE",
+            "modelCoverPct": 25.3,
+            "pinVFpct": 34.4,
+            "price": 182,
+            "rlLine": -1.5,
+            "side": "AWAY"
+          },
+          {
+            "actionable": false,
+            "bestEdge": -1.21,
             "bestSide": "UNDER",
             "diff": 0,
             "logForCLV": true,
             "market": "TOTAL",
-            "overEdgePct": -2.71,
+            "overEdgePct": -2.88,
             "pOver": 39.4,
             "pUnder": 44.6,
             "paperOnly": true,
             "paperReason": "Game Total WR 41% \u2014 paper only per Rule 71 until WR\u226552% over N\u226530",
-            "pinVFover": 50,
-            "pinVFunder": 50,
+            "pinVFover": 50.7,
+            "pinVFunder": 49.3,
             "sizeOver": 1,
             "sizeUnder": 1,
             "totalProj": 6,
-            "underEdgePct": -1.39,
+            "underEdgePct": -1.21,
             "vegasLine": 6
           },
           {
@@ -178,26 +191,272 @@
         "awayTeamStats": {
           "abbr": "LAD",
           "avg": null,
+          "confirmedLineup": [
+            {
+              "batSide": null,
+              "name": "Mookie Betts",
+              "order": 1,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 8.9,
+                  "iso": 0.197,
+                  "kPct": 11,
+                  "pa": 528,
+                  "slg": 0.454,
+                  "woba": 0.341
+                },
+                "vsRHP": {
+                  "bbPct": 8.9,
+                  "iso": 0.197,
+                  "kPct": 11,
+                  "pa": 528,
+                  "slg": 0.454,
+                  "woba": 0.341
+                }
+              },
+              "playerId": "605141",
+              "position": "SS",
+              "seasonWOBA": 0.339
+            },
+            {
+              "batSide": null,
+              "name": "Freddie Freeman",
+              "order": 2,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 10,
+                  "iso": 0.142,
+                  "kPct": 17.7,
+                  "pa": 657,
+                  "slg": 0.43,
+                  "woba": 0.347
+                },
+                "vsRHP": {
+                  "bbPct": 10,
+                  "iso": 0.142,
+                  "kPct": 17.7,
+                  "pa": 657,
+                  "slg": 0.43,
+                  "woba": 0.347
+                }
+              },
+              "playerId": "518692",
+              "position": "1B",
+              "seasonWOBA": 0.363
+            },
+            {
+              "batSide": null,
+              "name": "Will Smith",
+              "order": 3,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 12.3,
+                  "iso": 0.166,
+                  "kPct": 16.3,
+                  "pa": 276,
+                  "slg": 0.426,
+                  "woba": 0.342
+                },
+                "vsRHP": {
+                  "bbPct": 12.3,
+                  "iso": 0.166,
+                  "kPct": 16.3,
+                  "pa": 276,
+                  "slg": 0.426,
+                  "woba": 0.342
+                }
+              },
+              "playerId": "669257",
+              "position": "C",
+              "seasonWOBA": 0.389
+            },
+            {
+              "batSide": null,
+              "name": "Shohei Ohtani",
+              "order": 4,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 13.1,
+                  "iso": 0.237,
+                  "kPct": 24.6,
+                  "pa": 618,
+                  "slg": 0.512,
+                  "woba": 0.383
+                },
+                "vsRHP": {
+                  "bbPct": 13.1,
+                  "iso": 0.237,
+                  "kPct": 24.6,
+                  "pa": 618,
+                  "slg": 0.512,
+                  "woba": 0.383
+                }
+              },
+              "playerId": "660271",
+              "position": "DH",
+              "seasonWOBA": 0.397
+            },
+            {
+              "batSide": null,
+              "name": "Teoscar Hern\u00e1ndez",
+              "order": 5,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 8.6,
+                  "iso": 0.158,
+                  "kPct": 27.5,
+                  "pa": 491,
+                  "slg": 0.425,
+                  "woba": 0.332
+                },
+                "vsRHP": {
+                  "bbPct": 8.6,
+                  "iso": 0.158,
+                  "kPct": 27.5,
+                  "pa": 491,
+                  "slg": 0.425,
+                  "woba": 0.332
+                }
+              },
+              "playerId": "606192",
+              "position": "LF",
+              "seasonWOBA": 0.332
+            },
+            {
+              "batSide": null,
+              "name": "Max Muncy",
+              "order": 6,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 11.6,
+                  "iso": 0.238,
+                  "kPct": 25,
+                  "pa": 561,
+                  "slg": 0.49,
+                  "woba": 0.362
+                },
+                "vsRHP": {
+                  "bbPct": 11.6,
+                  "iso": 0.238,
+                  "kPct": 25,
+                  "pa": 561,
+                  "slg": 0.49,
+                  "woba": 0.362
+                }
+              },
+              "playerId": "571970",
+              "position": "3B",
+              "seasonWOBA": 0.349
+            },
+            {
+              "batSide": null,
+              "name": "Andy Pages",
+              "order": 7,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 8.5,
+                  "iso": 0.194,
+                  "kPct": 19.7,
+                  "pa": 574,
+                  "slg": 0.468,
+                  "woba": 0.349
+                },
+                "vsRHP": {
+                  "bbPct": 8.5,
+                  "iso": 0.194,
+                  "kPct": 19.7,
+                  "pa": 574,
+                  "slg": 0.468,
+                  "woba": 0.349
+                }
+              },
+              "playerId": "681624",
+              "position": "CF",
+              "seasonWOBA": 0.343
+            },
+            {
+              "batSide": null,
+              "name": "Kyle Tucker",
+              "order": 8,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 12.4,
+                  "iso": 0.152,
+                  "kPct": 16.7,
+                  "pa": 627,
+                  "slg": 0.385,
+                  "woba": 0.318
+                },
+                "vsRHP": {
+                  "bbPct": 12.4,
+                  "iso": 0.152,
+                  "kPct": 16.7,
+                  "pa": 627,
+                  "slg": 0.385,
+                  "woba": 0.318
+                }
+              },
+              "playerId": "663656",
+              "position": "RF",
+              "seasonWOBA": 0.331
+            },
+            {
+              "batSide": null,
+              "name": "Enrique Hern\u00e1ndez",
+              "order": 9,
+              "platoonSplits": {
+                "vsLHP": {
+                  "bbPct": 6.3,
+                  "iso": 0.178,
+                  "kPct": 29.2,
+                  "pa": 96,
+                  "slg": 0.4,
+                  "woba": 0.295
+                },
+                "vsRHP": {
+                  "bbPct": 6.3,
+                  "iso": 0.178,
+                  "kPct": 29.2,
+                  "pa": 96,
+                  "slg": 0.4,
+                  "woba": 0.295
+                }
+              },
+              "playerId": "571771",
+              "position": "2B",
+              "seasonWOBA": 0.279
+            }
+          ],
           "gamesPlayed": 162,
           "last15RpG": 3.83,
           "last7RpG": 3,
-          "lineupAdj": null,
-          "lineupAdjApplied": false,
-          "lineupAdjAvailable": false,
+          "lineupAdj": 0.062,
+          "lineupAdjApplied": true,
+          "lineupAdjAvailable": true,
+          "lineupAvgWOBA": 0.347,
           "lineupBattersExpected": 9,
-          "lineupBattersFound": 0,
-          "lineupBattersResolved": 0,
-          "lineupConfirmed": false,
-          "lineupConfirmedOfficial": false,
-          "lineupDataQuality": "none",
-          "lineupNote": "lineup_not_posted",
-          "lineupPosted": false,
+          "lineupBattersFallback": 0,
+          "lineupBattersFound": 9,
+          "lineupBattersResolved": 9,
+          "lineupConfirmed": true,
+          "lineupConfirmedOfficial": true,
+          "lineupDataQuality": "full",
+          "lineupHandedness": {
+            "countL": 0,
+            "countR": 0,
+            "countS": 0,
+            "countUnknown": 9,
+            "lineupSize": 9,
+            "top3Handedness": "???",
+            "top3Resolved": 3
+          },
+          "lineupPosted": true,
           "lineupSource": "mlb_stats_api",
-          "lineupStatus": "missing",
-          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
-          "lineupWOBADelta": null,
+          "lineupStatus": "confirmed",
+          "lineupStatusReason": "Official lineup confirmed, 9/9 batters resolved for xwOBA adjustment",
+          "lineupWOBADelta": 0.0139,
           "obp": null,
-          "offenseBaselineAdj": 4.325,
+          "offenseBaselineAdj": 4.387,
           "offenseBaselineBayes": 4.296,
           "offenseBaselineOppAdj": 4.325,
           "offenseBaselineRaw": 4.025,
@@ -427,6 +686,7 @@
           "teamHardHit": null,
           "teamId": 119,
           "teamKPct": null,
+          "teamSeasonWOBA": 0.333,
           "teamWOBA": 0.333,
           "wrcPlus": 110
         },
@@ -806,7 +1066,7 @@
               "ticker": "KXMLBGAME-26OCT112000LADMIL-MIL",
               "timeStr": "2000",
               "title": "Milwaukee wins",
-              "volume": 345460.5,
+              "volume": 560142.14,
               "yesAsk": 51,
               "yesBid": 50
             },
@@ -815,14 +1075,14 @@
               "closeTime": "2026-10-15T00:00:00Z",
               "eventTicker": "KXMLBGAME-26OCT112000LADMIL",
               "homeAbbr": "MIL",
-              "impliedPct": 49.5,
-              "mid": 50,
+              "impliedPct": 50.5,
+              "mid": 51,
               "ticker": "KXMLBGAME-26OCT112000LADMIL-LAD",
               "timeStr": "2000",
               "title": "Los Angeles D wins",
-              "volume": 361975.68,
-              "yesAsk": 50,
-              "yesBid": 49
+              "volume": 814671.85,
+              "yesAsk": 51,
+              "yesBid": 50
             }
           ],
           "ml": {
@@ -830,54 +1090,54 @@
             "closeTime": "2026-10-15T00:00:00Z",
             "eventTicker": "KXMLBGAME-26OCT112000LADMIL",
             "homeAbbr": "MIL",
-            "impliedPct": 49.5,
-            "mid": 50,
+            "impliedPct": 50.5,
+            "mid": 51,
             "ticker": "KXMLBGAME-26OCT112000LADMIL-LAD",
             "timeStr": "2000",
             "title": "Los Angeles D wins",
-            "volume": 361975.68,
-            "yesAsk": 50,
-            "yesBid": 49
+            "volume": 814671.85,
+            "yesAsk": 51,
+            "yesBid": 50
           }
         },
         "kalshiEventTickerSuffix": "26OCT112000LADMIL",
         "kalshiF5VF": {
-          "away": 48.05,
-          "home": 51.95
+          "away": 47.44,
+          "home": 52.56
         },
         "kalshiGameTime": "8:00 PM ET",
         "kalshiKey": "LADMIL",
-        "kalshiSnapshotTs": "2026-10-11T13:26:42Z",
+        "kalshiSnapshotTs": "2026-10-11T20:18:28Z",
         "kalshiVF": {
-          "away": 49.5,
-          "home": 50.5
+          "away": 50.0,
+          "home": 50.0
         },
         "lineupAuditUsed": true,
-        "lineupCheckedAt": "2026-10-11T13:26:38Z",
+        "lineupCheckedAt": "2026-10-11T20:18:24Z",
         "lineupConfirmed": false,
-        "lineupSource": "unavailable",
-        "lineupStatus": "unconfirmed",
+        "lineupSource": "lineup_audit+rotowire",
+        "lineupStatus": "partial",
         "mlEdge": {
           "actionable": false,
-          "awayEdgePct": -0.26,
+          "awayEdgePct": -0.69,
           "awayProjRuns": 2.95,
-          "betEdgePct": 0.26,
+          "betEdgePct": 0.69,
           "betModelPct": 51.5,
-          "betPinVF": 50.5,
+          "betPinVF": 48.8,
           "betSide": "HOME",
           "betSize": 4.5,
           "betTeam": "Milwaukee Brewers",
           "confidence": "MEDIUM",
-          "homeEdgePct": 0.26,
+          "homeEdgePct": 0.69,
           "homeProjRuns": 3.04,
-          "kalshiAway": 49.5,
+          "kalshiAway": 50.5,
           "logForCLV": false,
           "market": "ML",
           "modelAwayPct": 48.5,
           "modelHomePct": 51.5,
-          "pinGap": 0,
-          "pinVfAway": 49.5,
-          "pinVfHome": 50.5,
+          "pinGap": 0.7,
+          "pinVfAway": 51.2,
+          "pinVfHome": 48.8,
           "totalProj": 6
         },
         "modelProb": {
@@ -921,8 +1181,8 @@
           "homeProjRuns": 3.04,
           "push": 16.7,
           "totalProj": 6,
-          "vsKalshi": -1,
-          "vsPin": -1
+          "vsKalshi": -2,
+          "vsPin": -2.7
         },
         "nrfi": {
           "lean": "NRFI",
@@ -954,7 +1214,7 @@
             "f5ml": {
               "away": 100,
               "home": -125,
-              "updated": "2026-10-11T13:25:00Z"
+              "updated": "2026-10-11T20:17:42Z"
             },
             "f5rl": {
               "away": -160,
@@ -963,21 +1223,21 @@
               "homePoint": -0.5
             },
             "ml": {
-              "away": -105,
-              "home": -115,
-              "updated": "2026-10-11T13:25:24Z"
+              "away": -115,
+              "home": -105,
+              "updated": "2026-10-11T20:17:10Z"
             },
             "rl": {
-              "away": 170,
+              "away": 165,
               "awayPoint": -1.5,
-              "home": -210,
+              "home": -200,
               "homePoint": 1.5
             },
             "teamTotals": {
               "away": {
                 "line": 2.5,
-                "over": -145,
-                "under": 110
+                "over": -155,
+                "under": 120
               },
               "home": {
                 "line": 2.5,
@@ -987,98 +1247,98 @@
             },
             "total": {
               "line": 6,
-              "over": -110,
-              "under": -110
+              "over": -115,
+              "under": -105
             }
           },
           "draftkings": {
             "f5ml": {
               "away": -105,
               "home": -125,
-              "updated": "2026-10-11T13:26:05Z"
+              "updated": "2026-10-11T20:18:01Z"
             },
             "ml": {
-              "away": -107,
-              "home": -113,
-              "updated": "2026-10-11T13:25:24Z"
+              "away": -112,
+              "home": -107,
+              "updated": "2026-10-11T20:17:54Z"
             },
             "rl": {
-              "away": 165,
+              "away": 155,
               "awayPoint": -1.5,
-              "home": -202,
+              "home": -188,
               "homePoint": 1.5
             },
             "teamTotals": {
               "away": {
                 "line": 2.5,
-                "over": -135,
-                "under": 105
+                "over": -145,
+                "under": 114
               },
               "home": {
                 "line": 2.5,
-                "over": -135,
-                "under": 105
+                "over": -130,
+                "under": 100
               }
             },
             "total": {
               "line": 6,
-              "over": -110,
-              "under": -109
+              "over": -113,
+              "under": -107
             }
           },
           "fanduel": {
             "f5ml": {
-              "away": -106,
-              "home": -118,
-              "updated": "2026-10-11T13:25:50Z"
+              "away": -110,
+              "home": -114,
+              "updated": "2026-10-11T20:17:45Z"
             },
             "f5rl": {
-              "away": -170,
+              "away": -178,
               "awayPoint": 0.5,
-              "home": 130,
+              "home": 134,
               "homePoint": -0.5
             },
             "ml": {
-              "away": -104,
-              "home": -112,
-              "updated": "2026-10-11T13:26:13Z"
+              "away": -112,
+              "home": -104,
+              "updated": "2026-10-11T20:17:39Z"
             },
             "rl": {
-              "away": 180,
+              "away": 150,
               "awayPoint": -1.5,
-              "home": -220,
+              "home": -182,
               "homePoint": 1.5
             },
             "teamTotals": {
               "away": {
                 "line": 2.5,
-                "over": -140,
-                "under": 110
+                "over": -156,
+                "under": 122
               },
               "home": {
                 "line": 2.5,
-                "over": -138,
-                "under": 108
+                "over": -130,
+                "under": 102
               }
             },
             "total": {
               "line": 6.5,
-              "over": 114,
-              "under": -140
+              "over": 104,
+              "under": -128
             }
           },
           "kalshi": {
             "f5_spread": {
               "all_lines": [
                 {
-                  "american": 344,
+                  "american": 326,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
-                  "implied_pct": 22.5,
-                  "last_price": 0.22,
-                  "mid": 0.225,
-                  "no_ask": 0.78,
-                  "no_bid": 0.77,
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 23.5,
+                  "last_price": 0.24,
+                  "mid": 0.235,
+                  "no_ask": 0.77,
+                  "no_bid": 0.76,
                   "price_level_structure": "linear_cent",
                   "price_ranges": [
                     {
@@ -1100,18 +1360,18 @@
                   "ticker": "KXMLBF5SPREAD-26OCT112000LADMIL-LAD2",
                   "unit": "dollars",
                   "win_by_over": 1.5,
-                  "yes_ask": 0.23,
-                  "yes_bid": 0.22
+                  "yes_ask": 0.24,
+                  "yes_bid": 0.23
                 },
                 {
-                  "american": 669,
+                  "american": 700,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
-                  "implied_pct": 13.0,
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 12.5,
                   "last_price": 0.13,
-                  "mid": 0.13,
+                  "mid": 0.125,
                   "no_ask": 0.88,
-                  "no_bid": 0.86,
+                  "no_bid": 0.87,
                   "price_level_structure": "linear_cent",
                   "price_ranges": [
                     {
@@ -1133,17 +1393,17 @@
                   "ticker": "KXMLBF5SPREAD-26OCT112000LADMIL-LAD3",
                   "unit": "dollars",
                   "win_by_over": 2.5,
-                  "yes_ask": 0.14,
+                  "yes_ask": 0.13,
                   "yes_bid": 0.12
                 },
                 {
-                  "american": 292,
+                  "american": 300,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
-                  "implied_pct": 25.5,
-                  "last_price": 0.26,
-                  "mid": 0.255,
-                  "no_ask": 0.75,
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 25.0,
+                  "last_price": 0.24,
+                  "mid": 0.25,
+                  "no_ask": 0.76,
                   "no_bid": 0.74,
                   "price_level_structure": "linear_cent",
                   "price_ranges": [
@@ -1167,12 +1427,12 @@
                   "unit": "dollars",
                   "win_by_over": 1.5,
                   "yes_ask": 0.26,
-                  "yes_bid": 0.25
+                  "yes_bid": 0.24
                 },
                 {
                   "american": 641,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
+                  "captured_at": "2026-10-11T20:18:28Z",
                   "implied_pct": 13.5,
                   "last_price": 0.15,
                   "mid": 0.135,
@@ -1203,18 +1463,244 @@
                   "yes_bid": 0.13
                 }
               ],
-              "american": 292,
+              "american": 300,
               "best_ticker": "KXMLBF5SPREAD-26OCT112000LADMIL-MIL2",
-              "implied_pct": 25.5,
+              "implied_pct": 25.0,
               "source": "kalshi_registry",
               "team": "MIL",
               "wins_by_over": 1.5
+            },
+            "f5_total": {
+              "all_lines": [
+                {
+                  "american": -852,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 89.5,
+                  "last_price": 0.9,
+                  "mid": 0.895,
+                  "no_ask": 0.11,
+                  "no_bid": 0.1,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBF5TOTAL-26OCT112000LADMIL-1",
+                  "total": 1,
+                  "unit": "dollars",
+                  "yes_ask": 0.9,
+                  "yes_bid": 0.89
+                },
+                {
+                  "american": -277,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 73.5,
+                  "last_price": 0.73,
+                  "mid": 0.735,
+                  "no_ask": 0.27,
+                  "no_bid": 0.26,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBF5TOTAL-26OCT112000LADMIL-2",
+                  "total": 2,
+                  "unit": "dollars",
+                  "yes_ask": 0.74,
+                  "yes_bid": 0.73
+                },
+                {
+                  "american": -120,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 54.5,
+                  "last_price": 0.54,
+                  "mid": 0.545,
+                  "no_ask": 0.46,
+                  "no_bid": 0.45,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBF5TOTAL-26OCT112000LADMIL-3",
+                  "total": 3,
+                  "unit": "dollars",
+                  "yes_ask": 0.55,
+                  "yes_bid": 0.54
+                },
+                {
+                  "american": 160,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 38.5,
+                  "last_price": 0.38,
+                  "mid": 0.385,
+                  "no_ask": 0.62,
+                  "no_bid": 0.61,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBF5TOTAL-26OCT112000LADMIL-4",
+                  "total": 4,
+                  "unit": "dollars",
+                  "yes_ask": 0.39,
+                  "yes_bid": 0.38
+                },
+                {
+                  "american": 277,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 26.5,
+                  "last_price": 0.26,
+                  "mid": 0.265,
+                  "no_ask": 0.74,
+                  "no_bid": 0.73,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBF5TOTAL-26OCT112000LADMIL-5",
+                  "total": 5,
+                  "unit": "dollars",
+                  "yes_ask": 0.27,
+                  "yes_bid": 0.26
+                },
+                {
+                  "american": 471,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 17.5,
+                  "last_price": 0.17,
+                  "mid": 0.175,
+                  "no_ask": 0.83,
+                  "no_bid": 0.82,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBF5TOTAL-26OCT112000LADMIL-6",
+                  "total": 6,
+                  "unit": "dollars",
+                  "yes_ask": 0.18,
+                  "yes_bid": 0.17
+                },
+                {
+                  "american": 733,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 12.0,
+                  "last_price": 0.11,
+                  "mid": 0.12,
+                  "no_ask": 0.89,
+                  "no_bid": 0.87,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBF5TOTAL-26OCT112000LADMIL-7",
+                  "total": 7,
+                  "unit": "dollars",
+                  "yes_ask": 0.13,
+                  "yes_bid": 0.11
+                }
+              ],
+              "american": -120,
+              "best_ticker": "KXMLBF5TOTAL-26OCT112000LADMIL-3",
+              "implied_pct": 54.5,
+              "line": 3,
+              "source": "kalshi_registry"
             },
             "f5ml": {
               "away": 167,
               "away_book": {
                 "book_state": "TWO_SIDED",
-                "captured_at": "2026-10-11T13:26:42Z",
+                "captured_at": "2026-10-11T20:18:28Z",
                 "no_ask": 0.63,
                 "no_bid": 0.62,
                 "price_level_structure": "linear_cent",
@@ -1240,12 +1726,12 @@
               },
               "away_ticker": "KXMLBF5-26OCT112000LADMIL-LAD",
               "eventTicker": "KXMLBF5-26OCT112000LADMIL",
-              "home": 147,
+              "home": 141,
               "home_book": {
                 "book_state": "TWO_SIDED",
-                "captured_at": "2026-10-11T13:26:42Z",
-                "no_ask": 0.6,
-                "no_bid": 0.59,
+                "captured_at": "2026-10-11T20:18:28Z",
+                "no_ask": 0.59,
+                "no_bid": 0.58,
                 "price_level_structure": "linear_cent",
                 "price_ranges": [
                   {
@@ -1264,21 +1750,21 @@
                 "status": "active",
                 "ticker": "KXMLBF5-26OCT112000LADMIL-MIL",
                 "unit": "dollars",
-                "yes_ask": 0.41,
-                "yes_bid": 0.4
+                "yes_ask": 0.42,
+                "yes_bid": 0.41
               },
               "home_ticker": "KXMLBF5-26OCT112000LADMIL-MIL",
               "seriesTicker": "KXMLBF5",
-              "snapshot_ts": "2026-10-11T13:26:42Z",
+              "snapshot_ts": "2026-10-11T20:18:28Z",
               "source": "kalshi_registry",
               "status": "active",
-              "tie": 388,
-              "tie_american": 388,
+              "tie": 365,
+              "tie_american": 365,
               "tie_book": {
                 "book_state": "TWO_SIDED",
-                "captured_at": "2026-10-11T13:26:42Z",
-                "no_ask": 0.8,
-                "no_bid": 0.79,
+                "captured_at": "2026-10-11T20:18:28Z",
+                "no_ask": 0.79,
+                "no_bid": 0.78,
                 "price_level_structure": "linear_cent",
                 "price_ranges": [
                   {
@@ -1297,10 +1783,21 @@
                 "status": "active",
                 "ticker": "KXMLBF5-26OCT112000LADMIL-TIE",
                 "unit": "dollars",
-                "yes_ask": 0.21,
-                "yes_bid": 0.2
+                "yes_ask": 0.22,
+                "yes_bid": 0.21
               },
               "tie_ticker": "KXMLBF5-26OCT112000LADMIL-TIE"
+            },
+            "f7ml": {
+              "away": 147,
+              "away_ticker": "KXMLBF7-26OCT112000LADMIL-LAD",
+              "home": 135,
+              "home_ticker": "KXMLBF7-26OCT112000LADMIL-MIL",
+              "note": "Three-way market (Away/Home/Tie). RESEARCH-ONLY \u2014 not part of marketLedger.",
+              "researchOnly": true,
+              "source": "kalshi_registry",
+              "tie": 590,
+              "tie_ticker": "KXMLBF7-26OCT112000LADMIL-TIE"
             },
             "hitter_hits_runs_rbis": {
               "family": "hitter_hits_runs_rbis",
@@ -1312,14 +1809,14 @@
                   "teamResolutionStatus": "RESOLVED",
                   "thresholds": [
                     {
-                      "american": -130,
+                      "american": -120,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 56.5,
-                      "last_price": 0.57,
-                      "mid": 0.565,
-                      "no_ask": 0.44,
-                      "no_bid": 0.43,
+                      "implied_pct": 54.5,
+                      "last_price": 0.55,
+                      "mid": 0.545,
+                      "no_ask": 0.46,
+                      "no_bid": 0.45,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1339,18 +1836,18 @@
                       "threshold": 1,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADAPAGES44-1",
                       "unit": "dollars",
-                      "yes_ask": 0.57,
-                      "yes_bid": 0.56
+                      "yes_ask": 0.55,
+                      "yes_bid": 0.54
                     },
                     {
-                      "american": 194,
+                      "american": 208,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 34.0,
-                      "last_price": 0.0,
-                      "mid": 0.34,
+                      "implied_pct": 32.5,
+                      "last_price": 0.33,
+                      "mid": 0.325,
                       "no_ask": 0.68,
-                      "no_bid": 0.64,
+                      "no_bid": 0.67,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1370,7 +1867,7 @@
                       "threshold": 2,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADAPAGES44-2",
                       "unit": "dollars",
-                      "yes_ask": 0.36,
+                      "yes_ask": 0.33,
                       "yes_bid": 0.32
                     },
                     {
@@ -1380,8 +1877,8 @@
                       "implied_pct": 18.5,
                       "last_price": 0.2,
                       "mid": 0.185,
-                      "no_ask": 0.83,
-                      "no_bid": 0.8,
+                      "no_ask": 0.82,
+                      "no_bid": 0.81,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1401,8 +1898,8 @@
                       "threshold": 3,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADAPAGES44-3",
                       "unit": "dollars",
-                      "yes_ask": 0.2,
-                      "yes_bid": 0.17
+                      "yes_ask": 0.19,
+                      "yes_bid": 0.18
                     },
                     {
                       "american": 852,
@@ -1411,8 +1908,8 @@
                       "implied_pct": 10.5,
                       "last_price": 0.0,
                       "mid": 0.105,
-                      "no_ask": 0.91,
-                      "no_bid": 0.88,
+                      "no_ask": 0.9,
+                      "no_bid": 0.89,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1432,8 +1929,8 @@
                       "threshold": 4,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADAPAGES44-4",
                       "unit": "dollars",
-                      "yes_ask": 0.12,
-                      "yes_bid": 0.09
+                      "yes_ask": 0.11,
+                      "yes_bid": 0.1
                     }
                   ]
                 },
@@ -1443,14 +1940,14 @@
                   "teamResolutionStatus": "RESOLVED",
                   "thresholds": [
                     {
-                      "american": -150,
+                      "american": -156,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 60.0,
+                      "implied_pct": 61.0,
                       "last_price": 0.62,
-                      "mid": 0.6,
-                      "no_ask": 0.41,
-                      "no_bid": 0.39,
+                      "mid": 0.61,
+                      "no_ask": 0.4,
+                      "no_bid": 0.38,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1470,17 +1967,17 @@
                       "threshold": 1,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADFFREEMAN5-1",
                       "unit": "dollars",
-                      "yes_ask": 0.61,
-                      "yes_bid": 0.59
+                      "yes_ask": 0.62,
+                      "yes_bid": 0.6
                     },
                     {
-                      "american": 178,
+                      "american": 174,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 36.0,
-                      "last_price": 0.36,
-                      "mid": 0.36,
-                      "no_ask": 0.65,
+                      "implied_pct": 36.5,
+                      "last_price": 0.37,
+                      "mid": 0.365,
+                      "no_ask": 0.64,
                       "no_bid": 0.63,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
@@ -1502,17 +1999,17 @@
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADFFREEMAN5-2",
                       "unit": "dollars",
                       "yes_ask": 0.37,
-                      "yes_bid": 0.35
+                      "yes_bid": 0.36
                     },
                     {
-                      "american": 400,
+                      "american": 365,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 20.0,
+                      "implied_pct": 21.5,
                       "last_price": 0.22,
-                      "mid": 0.2,
-                      "no_ask": 0.81,
-                      "no_bid": 0.79,
+                      "mid": 0.215,
+                      "no_ask": 0.79,
+                      "no_bid": 0.78,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1532,18 +2029,18 @@
                       "threshold": 3,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADFFREEMAN5-3",
                       "unit": "dollars",
-                      "yes_ask": 0.21,
-                      "yes_bid": 0.19
+                      "yes_ask": 0.22,
+                      "yes_bid": 0.21
                     },
                     {
                       "american": 770,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
                       "implied_pct": 11.5,
-                      "last_price": 0.13,
+                      "last_price": 0.11,
                       "mid": 0.115,
-                      "no_ask": 0.9,
-                      "no_bid": 0.87,
+                      "no_ask": 0.89,
+                      "no_bid": 0.88,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1563,17 +2060,17 @@
                       "threshold": 4,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADFFREEMAN5-4",
                       "unit": "dollars",
-                      "yes_ask": 0.13,
-                      "yes_bid": 0.1
+                      "yes_ask": 0.12,
+                      "yes_bid": 0.11
                     },
                     {
-                      "american": 1718,
+                      "american": 1567,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 5.5,
-                      "last_price": 0.04,
-                      "mid": 0.055,
-                      "no_ask": 0.96,
+                      "implied_pct": 6.0,
+                      "last_price": 0.07,
+                      "mid": 0.06,
+                      "no_ask": 0.95,
                       "no_bid": 0.93,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
@@ -1595,7 +2092,7 @@
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADFFREEMAN5-5",
                       "unit": "dollars",
                       "yes_ask": 0.07,
-                      "yes_bid": 0.04
+                      "yes_bid": 0.05
                     }
                   ]
                 },
@@ -1605,14 +2102,14 @@
                   "teamResolutionStatus": "RESOLVED",
                   "thresholds": [
                     {
-                      "american": -217,
+                      "american": -208,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 68.5,
-                      "last_price": 0.0,
-                      "mid": 0.685,
+                      "implied_pct": 67.5,
+                      "last_price": 0.68,
+                      "mid": 0.675,
                       "no_ask": 0.33,
-                      "no_bid": 0.3,
+                      "no_bid": 0.32,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1632,18 +2129,18 @@
                       "threshold": 1,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADMBETTS50-1",
                       "unit": "dollars",
-                      "yes_ask": 0.7,
+                      "yes_ask": 0.68,
                       "yes_bid": 0.67
                     },
                     {
-                      "american": 125,
+                      "american": 130,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 44.5,
-                      "last_price": 0.45,
-                      "mid": 0.445,
-                      "no_ask": 0.56,
-                      "no_bid": 0.55,
+                      "implied_pct": 43.5,
+                      "last_price": 0.44,
+                      "mid": 0.435,
+                      "no_ask": 0.57,
+                      "no_bid": 0.56,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1663,18 +2160,18 @@
                       "threshold": 2,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADMBETTS50-2",
                       "unit": "dollars",
-                      "yes_ask": 0.45,
-                      "yes_bid": 0.44
+                      "yes_ask": 0.44,
+                      "yes_bid": 0.43
                     },
                     {
-                      "american": 285,
+                      "american": 292,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 26.0,
-                      "last_price": 0.28,
-                      "mid": 0.26,
+                      "implied_pct": 25.5,
+                      "last_price": 0.26,
+                      "mid": 0.255,
                       "no_ask": 0.75,
-                      "no_bid": 0.73,
+                      "no_bid": 0.74,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1694,18 +2191,18 @@
                       "threshold": 3,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADMBETTS50-3",
                       "unit": "dollars",
-                      "yes_ask": 0.27,
+                      "yes_ask": 0.26,
                       "yes_bid": 0.25
                     },
                     {
-                      "american": 614,
+                      "american": 545,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 14.0,
+                      "implied_pct": 15.5,
                       "last_price": 0.15,
-                      "mid": 0.14,
-                      "no_ask": 0.87,
-                      "no_bid": 0.85,
+                      "mid": 0.155,
+                      "no_ask": 0.85,
+                      "no_bid": 0.84,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1725,17 +2222,17 @@
                       "threshold": 4,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADMBETTS50-4",
                       "unit": "dollars",
-                      "yes_ask": 0.15,
-                      "yes_bid": 0.13
+                      "yes_ask": 0.16,
+                      "yes_bid": 0.15
                     },
                     {
-                      "american": 1150,
+                      "american": 1076,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 8.0,
+                      "implied_pct": 8.5,
                       "last_price": 0.0,
-                      "mid": 0.08,
-                      "no_ask": 0.94,
+                      "mid": 0.085,
+                      "no_ask": 0.93,
                       "no_bid": 0.9,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
@@ -1757,7 +2254,7 @@
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADMBETTS50-5",
                       "unit": "dollars",
                       "yes_ask": 0.1,
-                      "yes_bid": 0.06
+                      "yes_bid": 0.07
                     }
                   ]
                 },
@@ -1798,14 +2295,14 @@
                       "yes_bid": 0.58
                     },
                     {
-                      "american": 178,
+                      "american": 167,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 36.0,
+                      "implied_pct": 37.5,
                       "last_price": 0.38,
-                      "mid": 0.36,
-                      "no_ask": 0.65,
-                      "no_bid": 0.63,
+                      "mid": 0.375,
+                      "no_ask": 0.63,
+                      "no_bid": 0.62,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1825,18 +2322,18 @@
                       "threshold": 2,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADSOHTANI17-2",
                       "unit": "dollars",
-                      "yes_ask": 0.37,
-                      "yes_bid": 0.35
+                      "yes_ask": 0.38,
+                      "yes_bid": 0.37
                     },
                     {
                       "american": 308,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
                       "implied_pct": 24.5,
-                      "last_price": 0.27,
+                      "last_price": 0.25,
                       "mid": 0.245,
-                      "no_ask": 0.77,
-                      "no_bid": 0.74,
+                      "no_ask": 0.76,
+                      "no_bid": 0.75,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1856,18 +2353,18 @@
                       "threshold": 3,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADSOHTANI17-3",
                       "unit": "dollars",
-                      "yes_ask": 0.26,
-                      "yes_bid": 0.23
+                      "yes_ask": 0.25,
+                      "yes_bid": 0.24
                     },
                     {
                       "american": 590,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
                       "implied_pct": 14.5,
-                      "last_price": 0.0,
+                      "last_price": 0.14,
                       "mid": 0.145,
-                      "no_ask": 0.87,
-                      "no_bid": 0.84,
+                      "no_ask": 0.86,
+                      "no_bid": 0.85,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1887,18 +2384,18 @@
                       "threshold": 4,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADSOHTANI17-4",
                       "unit": "dollars",
-                      "yes_ask": 0.16,
-                      "yes_bid": 0.13
+                      "yes_ask": 0.15,
+                      "yes_bid": 0.14
                     },
                     {
-                      "american": 1076,
+                      "american": 1150,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 8.5,
-                      "last_price": 0.1,
-                      "mid": 0.085,
+                      "implied_pct": 8.0,
+                      "last_price": 0.07,
+                      "mid": 0.08,
                       "no_ask": 0.93,
-                      "no_bid": 0.9,
+                      "no_bid": 0.91,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1918,7 +2415,7 @@
                       "threshold": 5,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-LADSOHTANI17-5",
                       "unit": "dollars",
-                      "yes_ask": 0.1,
+                      "yes_ask": 0.09,
                       "yes_bid": 0.07
                     }
                   ]
@@ -1929,14 +2426,14 @@
                   "teamResolutionStatus": "RESOLVED",
                   "thresholds": [
                     {
-                      "american": -167,
+                      "american": -163,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 62.5,
-                      "last_price": 0.65,
-                      "mid": 0.625,
+                      "implied_pct": 62.0,
+                      "last_price": 0.63,
+                      "mid": 0.62,
                       "no_ask": 0.39,
-                      "no_bid": 0.36,
+                      "no_bid": 0.37,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1956,18 +2453,18 @@
                       "threshold": 1,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-MILBTURANG2-1",
                       "unit": "dollars",
-                      "yes_ask": 0.64,
+                      "yes_ask": 0.63,
                       "yes_bid": 0.61
                     },
                     {
-                      "american": 156,
+                      "american": 163,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 39.0,
-                      "last_price": 0.41,
-                      "mid": 0.39,
-                      "no_ask": 0.62,
-                      "no_bid": 0.6,
+                      "implied_pct": 38.0,
+                      "last_price": 0.4,
+                      "mid": 0.38,
+                      "no_ask": 0.63,
+                      "no_bid": 0.61,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -1987,18 +2484,18 @@
                       "threshold": 2,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-MILBTURANG2-2",
                       "unit": "dollars",
-                      "yes_ask": 0.4,
-                      "yes_bid": 0.38
+                      "yes_ask": 0.39,
+                      "yes_bid": 0.37
                     },
                     {
-                      "american": 400,
+                      "american": 413,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 20.0,
+                      "implied_pct": 19.5,
                       "last_price": 0.22,
-                      "mid": 0.2,
+                      "mid": 0.195,
                       "no_ask": 0.81,
-                      "no_bid": 0.79,
+                      "no_bid": 0.8,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -2018,7 +2515,7 @@
                       "threshold": 3,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-MILBTURANG2-3",
                       "unit": "dollars",
-                      "yes_ask": 0.21,
+                      "yes_ask": 0.2,
                       "yes_bid": 0.19
                     },
                     {
@@ -2028,8 +2525,8 @@
                       "implied_pct": 10.0,
                       "last_price": 0.12,
                       "mid": 0.1,
-                      "no_ask": 0.92,
-                      "no_bid": 0.88,
+                      "no_ask": 0.91,
+                      "no_bid": 0.89,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -2049,15 +2546,15 @@
                       "threshold": 4,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-MILBTURANG2-4",
                       "unit": "dollars",
-                      "yes_ask": 0.12,
-                      "yes_bid": 0.08
+                      "yes_ask": 0.11,
+                      "yes_bid": 0.09
                     },
                     {
                       "american": 1718,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
                       "implied_pct": 5.5,
-                      "last_price": 0.0,
+                      "last_price": 0.04,
                       "mid": 0.055,
                       "no_ask": 0.96,
                       "no_bid": 0.93,
@@ -2091,14 +2588,14 @@
                   "teamResolutionStatus": "RESOLVED",
                   "thresholds": [
                     {
-                      "american": -208,
+                      "american": -213,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 67.5,
-                      "last_price": 0.68,
-                      "mid": 0.675,
+                      "implied_pct": 68.0,
+                      "last_price": 0.69,
+                      "mid": 0.68,
                       "no_ask": 0.33,
-                      "no_bid": 0.32,
+                      "no_bid": 0.31,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -2118,7 +2615,7 @@
                       "threshold": 1,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-MILJCHOURIO11-1",
                       "unit": "dollars",
-                      "yes_ask": 0.68,
+                      "yes_ask": 0.69,
                       "yes_bid": 0.67
                     },
                     {
@@ -2153,13 +2650,13 @@
                       "yes_bid": 0.46
                     },
                     {
-                      "american": 251,
+                      "american": 245,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 28.5,
+                      "implied_pct": 29.0,
                       "last_price": 0.3,
-                      "mid": 0.285,
-                      "no_ask": 0.73,
+                      "mid": 0.29,
+                      "no_ask": 0.72,
                       "no_bid": 0.7,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
@@ -2181,14 +2678,14 @@
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-MILJCHOURIO11-3",
                       "unit": "dollars",
                       "yes_ask": 0.3,
-                      "yes_bid": 0.27
+                      "yes_bid": 0.28
                     },
                     {
                       "american": 525,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
                       "implied_pct": 16.0,
-                      "last_price": 0.0,
+                      "last_price": 0.18,
                       "mid": 0.16,
                       "no_ask": 0.85,
                       "no_bid": 0.83,
@@ -2215,14 +2712,14 @@
                       "yes_bid": 0.15
                     },
                     {
-                      "american": 1076,
+                      "american": 953,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 8.5,
+                      "implied_pct": 9.5,
                       "last_price": 0.0,
-                      "mid": 0.085,
-                      "no_ask": 0.93,
-                      "no_bid": 0.9,
+                      "mid": 0.095,
+                      "no_ask": 0.92,
+                      "no_bid": 0.89,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -2242,8 +2739,8 @@
                       "threshold": 5,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-MILJCHOURIO11-5",
                       "unit": "dollars",
-                      "yes_ask": 0.1,
-                      "yes_bid": 0.07
+                      "yes_ask": 0.11,
+                      "yes_bid": 0.08
                     }
                   ]
                 },
@@ -2257,10 +2754,10 @@
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
                       "implied_pct": 64.5,
-                      "last_price": 0.66,
+                      "last_price": 0.65,
                       "mid": 0.645,
-                      "no_ask": 0.37,
-                      "no_bid": 0.34,
+                      "no_ask": 0.36,
+                      "no_bid": 0.35,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -2280,18 +2777,18 @@
                       "threshold": 1,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-MILWCONTRERAS24-1",
                       "unit": "dollars",
-                      "yes_ask": 0.66,
-                      "yes_bid": 0.63
+                      "yes_ask": 0.65,
+                      "yes_bid": 0.64
                     },
                     {
-                      "american": 147,
+                      "american": 153,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 40.5,
-                      "last_price": 0.41,
-                      "mid": 0.405,
-                      "no_ask": 0.6,
-                      "no_bid": 0.59,
+                      "implied_pct": 39.5,
+                      "last_price": 0.4,
+                      "mid": 0.395,
+                      "no_ask": 0.61,
+                      "no_bid": 0.6,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -2311,18 +2808,18 @@
                       "threshold": 2,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-MILWCONTRERAS24-2",
                       "unit": "dollars",
-                      "yes_ask": 0.41,
-                      "yes_bid": 0.4
+                      "yes_ask": 0.4,
+                      "yes_bid": 0.39
                     },
                     {
-                      "american": 308,
+                      "american": 326,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 24.5,
+                      "implied_pct": 23.5,
                       "last_price": 0.26,
-                      "mid": 0.245,
+                      "mid": 0.235,
                       "no_ask": 0.77,
-                      "no_bid": 0.74,
+                      "no_bid": 0.76,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -2342,18 +2839,18 @@
                       "threshold": 3,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-MILWCONTRERAS24-3",
                       "unit": "dollars",
-                      "yes_ask": 0.26,
+                      "yes_ask": 0.24,
                       "yes_bid": 0.23
                     },
                     {
-                      "american": 641,
+                      "american": 614,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 13.5,
+                      "implied_pct": 14.0,
                       "last_price": 0.16,
-                      "mid": 0.135,
+                      "mid": 0.14,
                       "no_ask": 0.87,
-                      "no_bid": 0.86,
+                      "no_bid": 0.85,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -2373,231 +2870,15 @@
                       "threshold": 4,
                       "ticker": "KXMLBHRR-26OCT112000LADMIL-MILWCONTRERAS24-4",
                       "unit": "dollars",
-                      "yes_ask": 0.14,
+                      "yes_ask": 0.15,
                       "yes_bid": 0.13
-                    },
-                    {
-                      "american": 1567,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 6.0,
-                      "last_price": 0.09,
-                      "mid": 0.06,
-                      "no_ask": 0.95,
-                      "no_bid": 0.93,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 5,
-                      "ticker": "KXMLBHRR-26OCT112000LADMIL-MILWCONTRERAS24-5",
-                      "unit": "dollars",
-                      "yes_ask": 0.07,
-                      "yes_bid": 0.05
-                    }
-                  ]
-                }
-              },
-              "researchOnly": true,
-              "source": "kalshi_registry",
-              "unparseableCount": 0
-            },
-            "hitter_rbis": {
-              "family": "hitter_rbis",
-              "note": "Per-player N+ threshold ladder. RESEARCH-ONLY \u2014 not part of marketLedger.",
-              "players": {
-                "LAD:Andy Pages": {
-                  "displayName": "Andy Pages",
-                  "team": "LAD",
-                  "teamResolutionStatus": "RESOLVED",
-                  "thresholds": [
-                    {
-                      "american": 388,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 20.5,
-                      "last_price": 0.21,
-                      "mid": 0.205,
-                      "no_ask": 0.8,
-                      "no_bid": 0.79,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 1,
-                      "ticker": "KXMLBRBI-26OCT112000LADMIL-LADAPAGES44-1",
-                      "unit": "dollars",
-                      "yes_ask": 0.21,
-                      "yes_bid": 0.2
-                    },
-                    {
-                      "american": 1567,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 6.0,
-                      "last_price": 0.0,
-                      "mid": 0.06,
-                      "no_ask": 0.95,
-                      "no_bid": 0.93,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 2,
-                      "ticker": "KXMLBRBI-26OCT112000LADMIL-LADAPAGES44-2",
-                      "unit": "dollars",
-                      "yes_ask": 0.07,
-                      "yes_bid": 0.05
-                    }
-                  ]
-                },
-                "LAD:Freddie Freeman": {
-                  "displayName": "Freddie Freeman",
-                  "team": "LAD",
-                  "teamResolutionStatus": "RESOLVED",
-                  "thresholds": [
-                    {
-                      "american": 376,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 21.0,
-                      "last_price": 0.22,
-                      "mid": 0.21,
-                      "no_ask": 0.8,
-                      "no_bid": 0.78,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 1,
-                      "ticker": "KXMLBRBI-26OCT112000LADMIL-LADFFREEMAN5-1",
-                      "unit": "dollars",
-                      "yes_ask": 0.22,
-                      "yes_bid": 0.2
-                    },
-                    {
-                      "american": 1567,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 6.0,
-                      "last_price": 0.0,
-                      "mid": 0.06,
-                      "no_ask": 0.95,
-                      "no_bid": 0.93,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 2,
-                      "ticker": "KXMLBRBI-26OCT112000LADMIL-LADFFREEMAN5-2",
-                      "unit": "dollars",
-                      "yes_ask": 0.07,
-                      "yes_bid": 0.05
-                    }
-                  ]
-                },
-                "LAD:Mookie Betts": {
-                  "displayName": "Mookie Betts",
-                  "team": "LAD",
-                  "teamResolutionStatus": "RESOLVED",
-                  "thresholds": [
-                    {
-                      "american": 326,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 23.5,
-                      "last_price": 0.26,
-                      "mid": 0.235,
-                      "no_ask": 0.78,
-                      "no_bid": 0.75,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 1,
-                      "ticker": "KXMLBRBI-26OCT112000LADMIL-LADMBETTS50-1",
-                      "unit": "dollars",
-                      "yes_ask": 0.25,
-                      "yes_bid": 0.22
                     },
                     {
                       "american": 1329,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
                       "implied_pct": 7.0,
-                      "last_price": 0.0,
+                      "last_price": 0.09,
                       "mid": 0.07,
                       "no_ask": 0.94,
                       "no_bid": 0.92,
@@ -2617,287 +2898,11 @@
                         "yes_bid": "yes_bid_dollars"
                       },
                       "status": "active",
-                      "threshold": 2,
-                      "ticker": "KXMLBRBI-26OCT112000LADMIL-LADMBETTS50-2",
+                      "threshold": 5,
+                      "ticker": "KXMLBHRR-26OCT112000LADMIL-MILWCONTRERAS24-5",
                       "unit": "dollars",
                       "yes_ask": 0.08,
                       "yes_bid": 0.06
-                    }
-                  ]
-                },
-                "LAD:Shohei Ohtani": {
-                  "displayName": "Shohei Ohtani",
-                  "team": "LAD",
-                  "teamResolutionStatus": "RESOLVED",
-                  "thresholds": [
-                    {
-                      "american": 277,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 26.5,
-                      "last_price": 0.28,
-                      "mid": 0.265,
-                      "no_ask": 0.74,
-                      "no_bid": 0.73,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 1,
-                      "ticker": "KXMLBRBI-26OCT112000LADMIL-LADSOHTANI17-1",
-                      "unit": "dollars",
-                      "yes_ask": 0.27,
-                      "yes_bid": 0.26
-                    },
-                    {
-                      "american": 953,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 9.5,
-                      "last_price": 0.98,
-                      "mid": 0.095,
-                      "no_ask": 0.91,
-                      "no_bid": 0.9,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 2,
-                      "ticker": "KXMLBRBI-26OCT112000LADMIL-LADSOHTANI17-2",
-                      "unit": "dollars",
-                      "yes_ask": 0.1,
-                      "yes_bid": 0.09
-                    }
-                  ]
-                },
-                "MIL:Brice Turang": {
-                  "displayName": "Brice Turang",
-                  "team": "MIL",
-                  "teamResolutionStatus": "RESOLVED",
-                  "thresholds": [
-                    {
-                      "american": 400,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 20.0,
-                      "last_price": 0.23,
-                      "mid": 0.2,
-                      "no_ask": 0.81,
-                      "no_bid": 0.79,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 1,
-                      "ticker": "KXMLBRBI-26OCT112000LADMIL-MILBTURANG2-1",
-                      "unit": "dollars",
-                      "yes_ask": 0.21,
-                      "yes_bid": 0.19
-                    },
-                    {
-                      "american": 1900,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 5.0,
-                      "last_price": 0.0,
-                      "mid": 0.05,
-                      "no_ask": 0.96,
-                      "no_bid": 0.94,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 2,
-                      "ticker": "KXMLBRBI-26OCT112000LADMIL-MILBTURANG2-2",
-                      "unit": "dollars",
-                      "yes_ask": 0.06,
-                      "yes_bid": 0.04
-                    }
-                  ]
-                },
-                "MIL:Jackson Chourio": {
-                  "displayName": "Jackson Chourio",
-                  "team": "MIL",
-                  "teamResolutionStatus": "RESOLVED",
-                  "thresholds": [
-                    {
-                      "american": 270,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 27.0,
-                      "last_price": 0.29,
-                      "mid": 0.27,
-                      "no_ask": 0.74,
-                      "no_bid": 0.72,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 1,
-                      "ticker": "KXMLBRBI-26OCT112000LADMIL-MILJCHOURIO11-1",
-                      "unit": "dollars",
-                      "yes_ask": 0.28,
-                      "yes_bid": 0.26
-                    },
-                    {
-                      "american": 1150,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 8.0,
-                      "last_price": 0.0,
-                      "mid": 0.08,
-                      "no_ask": 0.93,
-                      "no_bid": 0.91,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 2,
-                      "ticker": "KXMLBRBI-26OCT112000LADMIL-MILJCHOURIO11-2",
-                      "unit": "dollars",
-                      "yes_ask": 0.09,
-                      "yes_bid": 0.07
-                    }
-                  ]
-                },
-                "MIL:William Contreras": {
-                  "displayName": "William Contreras",
-                  "team": "MIL",
-                  "teamResolutionStatus": "RESOLVED",
-                  "thresholds": [
-                    {
-                      "american": 270,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 27.0,
-                      "last_price": 0.28,
-                      "mid": 0.27,
-                      "no_ask": 0.74,
-                      "no_bid": 0.72,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 1,
-                      "ticker": "KXMLBRBI-26OCT112000LADMIL-MILWCONTRERAS24-1",
-                      "unit": "dollars",
-                      "yes_ask": 0.28,
-                      "yes_bid": 0.26
-                    },
-                    {
-                      "american": 1011,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 9.0,
-                      "last_price": 0.11,
-                      "mid": 0.09,
-                      "no_ask": 0.92,
-                      "no_bid": 0.9,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 2,
-                      "ticker": "KXMLBRBI-26OCT112000LADMIL-MILWCONTRERAS24-2",
-                      "unit": "dollars",
-                      "yes_ask": 0.1,
-                      "yes_bid": 0.08
                     }
                   ]
                 }
@@ -2907,12 +2912,12 @@
               "unparseableCount": 0
             },
             "ml": {
-              "away": 102,
+              "away": -102,
               "away_book": {
                 "book_state": "TWO_SIDED",
-                "captured_at": "2026-10-11T13:26:42Z",
-                "no_ask": 0.51,
-                "no_bid": 0.5,
+                "captured_at": "2026-10-11T20:18:28Z",
+                "no_ask": 0.5,
+                "no_bid": 0.49,
                 "price_level_structure": "linear_cent",
                 "price_ranges": [
                   {
@@ -2931,14 +2936,14 @@
                 "status": "active",
                 "ticker": "KXMLBGAME-26OCT112000LADMIL-LAD",
                 "unit": "dollars",
-                "yes_ask": 0.5,
-                "yes_bid": 0.49
+                "yes_ask": 0.51,
+                "yes_bid": 0.5
               },
               "away_ticker": "KXMLBGAME-26OCT112000LADMIL-LAD",
               "home": -102,
               "home_book": {
                 "book_state": "TWO_SIDED",
-                "captured_at": "2026-10-11T13:26:42Z",
+                "captured_at": "2026-10-11T20:18:28Z",
                 "no_ask": 0.5,
                 "no_bid": 0.49,
                 "price_level_structure": "linear_cent",
@@ -2963,26 +2968,26 @@
                 "yes_bid": 0.5
               },
               "home_ticker": "KXMLBGAME-26OCT112000LADMIL-MIL",
-              "snapshot_ts": "2026-10-11T13:26:42Z",
+              "snapshot_ts": "2026-10-11T20:18:28Z",
               "source": "kalshi_registry"
             },
             "nrfi_yrfi": {
-              "captured_at": "2026-10-11T13:26:18.411Z",
-              "note": "Fallback: registry rfi block absent; prices from kalshi_search.json. YES=YRFI, NO=NRFI.",
-              "nrfi_american": -174,
-              "nrfi_ask": 0.64,
-              "nrfi_bid": 0.63,
-              "nrfi_implied": 63.5,
-              "source": "kalshi_search_fallback",
+              "captured_at": "2026-10-11T20:18:28Z",
+              "note": "Single binary market. YES=YRFI, NO=NRFI.",
+              "nrfi_american": -182,
+              "nrfi_ask": 0.65,
+              "nrfi_bid": 0.64,
+              "nrfi_implied": 64.5,
+              "source": "kalshi_registry",
               "ticker": "KXMLBRFI-26OCT112000LADMIL",
               "unit": "dollars",
-              "yrfi_american": 174,
-              "yrfi_ask": 0.37,
-              "yrfi_bid": 0.36,
-              "yrfi_implied": 36.5
+              "yrfi_american": 182,
+              "yrfi_ask": 0.36,
+              "yrfi_bid": 0.35,
+              "yrfi_implied": 35.5
             },
-            "pitcher_strikeouts": {
-              "family": "pitcher_strikeouts",
+            "pitcher_outs": {
+              "family": "pitcher_outs",
               "note": "Per-player N+ threshold ladder. RESEARCH-ONLY \u2014 not part of marketLedger.",
               "players": {
                 "LAD:Tarik Skubal": {
@@ -2991,14 +2996,14 @@
                   "teamResolutionStatus": "RESOLVED",
                   "thresholds": [
                     {
-                      "american": -1438,
+                      "american": -144,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 93.5,
-                      "last_price": 0.95,
-                      "mid": 0.935,
-                      "no_ask": 0.08,
-                      "no_bid": 0.05,
+                      "implied_pct": 59.0,
+                      "last_price": 0.61,
+                      "mid": 0.59,
+                      "no_ask": 0.43,
+                      "no_bid": 0.39,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -3015,290 +3020,11 @@
                         "yes_bid": "yes_bid_dollars"
                       },
                       "status": "active",
-                      "threshold": 4,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-LADTSKUBAL29-4",
+                      "threshold": 18,
+                      "ticker": "KXMLBOUTS-26OCT112000LADMIL-LADTSKUBAL29-18",
                       "unit": "dollars",
-                      "yes_ask": 0.95,
-                      "yes_bid": 0.92
-                    },
-                    {
-                      "american": -590,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 85.5,
-                      "last_price": 0.87,
-                      "mid": 0.855,
-                      "no_ask": 0.16,
-                      "no_bid": 0.13,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 5,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-LADTSKUBAL29-5",
-                      "unit": "dollars",
-                      "yes_ask": 0.87,
-                      "yes_bid": 0.84
-                    },
-                    {
-                      "american": -277,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 73.5,
-                      "last_price": 0.74,
-                      "mid": 0.735,
-                      "no_ask": 0.27,
-                      "no_bid": 0.26,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 6,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-LADTSKUBAL29-6",
-                      "unit": "dollars",
-                      "yes_ask": 0.74,
-                      "yes_bid": 0.73
-                    },
-                    {
-                      "american": -147,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 59.5,
-                      "last_price": 0.6,
-                      "mid": 0.595,
-                      "no_ask": 0.41,
-                      "no_bid": 0.4,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 7,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-LADTSKUBAL29-7",
-                      "unit": "dollars",
-                      "yes_ask": 0.6,
-                      "yes_bid": 0.59
-                    },
-                    {
-                      "american": 135,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 42.5,
-                      "last_price": 0.42,
-                      "mid": 0.425,
-                      "no_ask": 0.58,
-                      "no_bid": 0.57,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 8,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-LADTSKUBAL29-8",
-                      "unit": "dollars",
-                      "yes_ask": 0.43,
-                      "yes_bid": 0.42
-                    },
-                    {
-                      "american": 233,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 30.0,
-                      "last_price": 0.31,
-                      "mid": 0.3,
-                      "no_ask": 0.71,
-                      "no_bid": 0.69,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 9,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-LADTSKUBAL29-9",
-                      "unit": "dollars",
-                      "yes_ask": 0.31,
-                      "yes_bid": 0.29
-                    },
-                    {
-                      "american": 456,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 18.0,
-                      "last_price": 0.19,
-                      "mid": 0.18,
-                      "no_ask": 0.83,
-                      "no_bid": 0.81,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 10,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-LADTSKUBAL29-10",
-                      "unit": "dollars",
-                      "yes_ask": 0.19,
-                      "yes_bid": 0.17
-                    },
-                    {
-                      "american": 953,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 9.5,
-                      "last_price": 0.08,
-                      "mid": 0.095,
-                      "no_ask": 0.91,
-                      "no_bid": 0.9,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 11,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-LADTSKUBAL29-11",
-                      "unit": "dollars",
-                      "yes_ask": 0.1,
-                      "yes_bid": 0.09
-                    },
-                    {
-                      "american": 2122,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 4.5,
-                      "last_price": 0.06,
-                      "mid": 0.045,
-                      "no_ask": 0.96,
-                      "no_bid": 0.95,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 12,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-LADTSKUBAL29-12",
-                      "unit": "dollars",
-                      "yes_ask": 0.05,
-                      "yes_bid": 0.04
-                    },
-                    {
-                      "american": 3233,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 3.0,
-                      "last_price": 0.04,
-                      "mid": 0.03,
-                      "no_ask": 0.98,
-                      "no_bid": 0.96,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 13,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-LADTSKUBAL29-13",
-                      "unit": "dollars",
-                      "yes_ask": 0.04,
-                      "yes_bid": 0.02
+                      "yes_ask": 0.61,
+                      "yes_bid": 0.57
                     }
                   ]
                 },
@@ -3308,14 +3034,14 @@
                   "teamResolutionStatus": "RESOLVED",
                   "thresholds": [
                     {
-                      "american": -1150,
+                      "american": -106,
                       "book_state": "TWO_SIDED",
                       "captured_at": null,
-                      "implied_pct": 92.0,
-                      "last_price": 0.93,
-                      "mid": 0.92,
-                      "no_ask": 0.09,
-                      "no_bid": 0.07,
+                      "implied_pct": 51.5,
+                      "last_price": 0.51,
+                      "mid": 0.515,
+                      "no_ask": 0.49,
+                      "no_bid": 0.48,
                       "price_level_structure": "linear_cent",
                       "price_ranges": [
                         {
@@ -3332,259 +3058,11 @@
                         "yes_bid": "yes_bid_dollars"
                       },
                       "status": "active",
-                      "threshold": 4,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-MILJMISIOROWSKI32-4",
+                      "threshold": 17,
+                      "ticker": "KXMLBOUTS-26OCT112000LADMIL-MILJMISIOROWSKI32-17",
                       "unit": "dollars",
-                      "yes_ask": 0.93,
-                      "yes_bid": 0.91
-                    },
-                    {
-                      "american": -567,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 85.0,
-                      "last_price": 0.85,
-                      "mid": 0.85,
-                      "no_ask": 0.16,
-                      "no_bid": 0.14,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 5,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-MILJMISIOROWSKI32-5",
-                      "unit": "dollars",
-                      "yes_ask": 0.86,
-                      "yes_bid": 0.84
-                    },
-                    {
-                      "american": -292,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 74.5,
-                      "last_price": 0.75,
-                      "mid": 0.745,
-                      "no_ask": 0.26,
-                      "no_bid": 0.25,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 6,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-MILJMISIOROWSKI32-6",
-                      "unit": "dollars",
-                      "yes_ask": 0.75,
-                      "yes_bid": 0.74
-                    },
-                    {
-                      "american": -167,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 62.5,
-                      "last_price": 0.63,
-                      "mid": 0.625,
-                      "no_ask": 0.38,
-                      "no_bid": 0.37,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 7,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-MILJMISIOROWSKI32-7",
-                      "unit": "dollars",
-                      "yes_ask": 0.63,
-                      "yes_bid": 0.62
-                    },
-                    {
-                      "american": 120,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 45.5,
-                      "last_price": 0.45,
-                      "mid": 0.455,
-                      "no_ask": 0.55,
-                      "no_bid": 0.54,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 8,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-MILJMISIOROWSKI32-8",
-                      "unit": "dollars",
-                      "yes_ask": 0.46,
-                      "yes_bid": 0.45
-                    },
-                    {
-                      "american": 245,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 29.0,
-                      "last_price": 0.3,
-                      "mid": 0.29,
-                      "no_ask": 0.72,
-                      "no_bid": 0.7,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 9,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-MILJMISIOROWSKI32-9",
-                      "unit": "dollars",
-                      "yes_ask": 0.3,
-                      "yes_bid": 0.28
-                    },
-                    {
-                      "american": 456,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 18.0,
-                      "last_price": 0.19,
-                      "mid": 0.18,
-                      "no_ask": 0.83,
-                      "no_bid": 0.81,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 10,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-MILJMISIOROWSKI32-10",
-                      "unit": "dollars",
-                      "yes_ask": 0.19,
-                      "yes_bid": 0.17
-                    },
-                    {
-                      "american": 809,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 11.0,
-                      "last_price": 0.1,
-                      "mid": 0.11,
-                      "no_ask": 0.9,
-                      "no_bid": 0.88,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 11,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-MILJMISIOROWSKI32-11",
-                      "unit": "dollars",
-                      "yes_ask": 0.12,
-                      "yes_bid": 0.1
-                    },
-                    {
-                      "american": 1567,
-                      "book_state": "TWO_SIDED",
-                      "captured_at": null,
-                      "implied_pct": 6.0,
-                      "last_price": 0.07,
-                      "mid": 0.06,
-                      "no_ask": 0.95,
-                      "no_bid": 0.93,
-                      "price_level_structure": "linear_cent",
-                      "price_ranges": [
-                        {
-                          "end": "1.0000",
-                          "start": "0.0000",
-                          "step": "0.0100"
-                        }
-                      ],
-                      "price_source_fields": {
-                        "last_price": "last_price_dollars",
-                        "no_ask": "no_ask_dollars",
-                        "no_bid": "no_bid_dollars",
-                        "yes_ask": "yes_ask_dollars",
-                        "yes_bid": "yes_bid_dollars"
-                      },
-                      "status": "active",
-                      "threshold": 12,
-                      "ticker": "KXMLBKS-26OCT112000LADMIL-MILJMISIOROWSKI32-12",
-                      "unit": "dollars",
-                      "yes_ask": 0.07,
-                      "yes_bid": 0.05
+                      "yes_ask": 0.52,
+                      "yes_bid": 0.51
                     }
                   ]
                 }
@@ -3596,14 +3074,14 @@
             "rl": {
               "all_lines": [
                 {
-                  "american": 190,
+                  "american": 182,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
-                  "implied_pct": 34.5,
-                  "last_price": 0.35,
-                  "mid": 0.345,
-                  "no_ask": 0.66,
-                  "no_bid": 0.65,
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 35.5,
+                  "last_price": 0.36,
+                  "mid": 0.355,
+                  "no_ask": 0.65,
+                  "no_bid": 0.64,
                   "price_level_structure": "linear_cent",
                   "price_ranges": [
                     {
@@ -3625,18 +3103,18 @@
                   "ticker": "KXMLBSPREAD-26OCT112000LADMIL-LAD2",
                   "unit": "dollars",
                   "win_by_over": 1.5,
-                  "yes_ask": 0.35,
-                  "yes_bid": 0.34
+                  "yes_ask": 0.36,
+                  "yes_bid": 0.35
                 },
                 {
-                  "american": 326,
+                  "american": 308,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
-                  "implied_pct": 23.5,
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 24.5,
                   "last_price": 0.24,
-                  "mid": 0.235,
-                  "no_ask": 0.77,
-                  "no_bid": 0.76,
+                  "mid": 0.245,
+                  "no_ask": 0.76,
+                  "no_bid": 0.75,
                   "price_level_structure": "linear_cent",
                   "price_ranges": [
                     {
@@ -3658,15 +3136,15 @@
                   "ticker": "KXMLBSPREAD-26OCT112000LADMIL-LAD3",
                   "unit": "dollars",
                   "win_by_over": 2.5,
-                  "yes_ask": 0.24,
-                  "yes_bid": 0.23
+                  "yes_ask": 0.25,
+                  "yes_bid": 0.24
                 },
                 {
                   "american": 545,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
+                  "captured_at": "2026-10-11T20:18:28Z",
                   "implied_pct": 15.5,
-                  "last_price": 0.16,
+                  "last_price": 0.15,
                   "mid": 0.155,
                   "no_ask": 0.85,
                   "no_bid": 0.84,
@@ -3697,9 +3175,9 @@
                 {
                   "american": 228,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
+                  "captured_at": "2026-10-11T20:18:28Z",
                   "implied_pct": 30.5,
-                  "last_price": 0.3,
+                  "last_price": 0.31,
                   "mid": 0.305,
                   "no_ask": 0.7,
                   "no_bid": 0.69,
@@ -3730,9 +3208,9 @@
                 {
                   "american": 413,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
+                  "captured_at": "2026-10-11T20:18:28Z",
                   "implied_pct": 19.5,
-                  "last_price": 0.21,
+                  "last_price": 0.2,
                   "mid": 0.195,
                   "no_ask": 0.81,
                   "no_bid": 0.8,
@@ -3763,7 +3241,7 @@
                 {
                   "american": 641,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
+                  "captured_at": "2026-10-11T20:18:28Z",
                   "implied_pct": 13.5,
                   "last_price": 0.14,
                   "mid": 0.135,
@@ -3794,12 +3272,12 @@
                   "yes_bid": 0.13
                 }
               ],
-              "american": 190,
+              "american": 182,
               "best_book": {
                 "book_state": "TWO_SIDED",
-                "captured_at": "2026-10-11T13:26:42Z",
-                "no_ask": 0.66,
-                "no_bid": 0.65,
+                "captured_at": "2026-10-11T20:18:28Z",
+                "no_ask": 0.65,
+                "no_bid": 0.64,
                 "price_level_structure": "linear_cent",
                 "price_ranges": [
                   {
@@ -3818,13 +3296,13 @@
                 "status": "active",
                 "ticker": "KXMLBSPREAD-26OCT112000LADMIL-LAD2",
                 "unit": "dollars",
-                "yes_ask": 0.35,
-                "yes_bid": 0.34
+                "yes_ask": 0.36,
+                "yes_bid": 0.35
               },
               "best_ticker": "KXMLBSPREAD-26OCT112000LADMIL-LAD2",
-              "implied_pct": 34.5,
+              "implied_pct": 35.5,
               "note": "Spread is win-margin markets. best_line = line closest to 50% implied.",
-              "snapshot_ts": "2026-10-11T13:26:42Z",
+              "snapshot_ts": "2026-10-11T20:18:28Z",
               "source": "kalshi_registry",
               "team": "LAD",
               "wins_by_over": 1.5
@@ -3833,14 +3311,14 @@
               "away": {
                 "all_lines": [
                   {
-                    "american": -292,
+                    "american": -277,
                     "book_state": "TWO_SIDED",
-                    "captured_at": "2026-10-11T13:26:42Z",
-                    "implied_pct": 74.5,
-                    "last_price": 0.75,
-                    "mid": 0.745,
-                    "no_ask": 0.26,
-                    "no_bid": 0.25,
+                    "captured_at": "2026-10-11T20:18:28Z",
+                    "implied_pct": 73.5,
+                    "last_price": 0.74,
+                    "mid": 0.735,
+                    "no_ask": 0.27,
+                    "no_bid": 0.26,
                     "over_n": 2,
                     "price_level_structure": "linear_cent",
                     "price_ranges": [
@@ -3861,18 +3339,18 @@
                     "team": "LAD",
                     "ticker": "KXMLBTEAMTOTAL-26OCT112000LADMIL-LAD2",
                     "unit": "dollars",
-                    "yes_ask": 0.75,
-                    "yes_bid": 0.74
+                    "yes_ask": 0.74,
+                    "yes_bid": 0.73
                   },
                   {
-                    "american": -127,
+                    "american": -138,
                     "book_state": "TWO_SIDED",
-                    "captured_at": "2026-10-11T13:26:42Z",
-                    "implied_pct": 56.0,
-                    "last_price": 0.57,
-                    "mid": 0.56,
-                    "no_ask": 0.45,
-                    "no_bid": 0.43,
+                    "captured_at": "2026-10-11T20:18:28Z",
+                    "implied_pct": 58.0,
+                    "last_price": 0.59,
+                    "mid": 0.58,
+                    "no_ask": 0.43,
+                    "no_bid": 0.41,
                     "over_n": 3,
                     "price_level_structure": "linear_cent",
                     "price_ranges": [
@@ -3893,18 +3371,18 @@
                     "team": "LAD",
                     "ticker": "KXMLBTEAMTOTAL-26OCT112000LADMIL-LAD3",
                     "unit": "dollars",
-                    "yes_ask": 0.57,
-                    "yes_bid": 0.55
+                    "yes_ask": 0.59,
+                    "yes_bid": 0.57
                   },
                   {
-                    "american": 147,
+                    "american": 141,
                     "book_state": "TWO_SIDED",
-                    "captured_at": "2026-10-11T13:26:42Z",
-                    "implied_pct": 40.5,
-                    "last_price": 0.42,
-                    "mid": 0.405,
-                    "no_ask": 0.6,
-                    "no_bid": 0.59,
+                    "captured_at": "2026-10-11T20:18:28Z",
+                    "implied_pct": 41.5,
+                    "last_price": 0.41,
+                    "mid": 0.415,
+                    "no_ask": 0.59,
+                    "no_bid": 0.58,
                     "over_n": 4,
                     "price_level_structure": "linear_cent",
                     "price_ranges": [
@@ -3925,13 +3403,13 @@
                     "team": "LAD",
                     "ticker": "KXMLBTEAMTOTAL-26OCT112000LADMIL-LAD4",
                     "unit": "dollars",
-                    "yes_ask": 0.41,
-                    "yes_bid": 0.4
+                    "yes_ask": 0.42,
+                    "yes_bid": 0.41
                   },
                   {
                     "american": 264,
                     "book_state": "TWO_SIDED",
-                    "captured_at": "2026-10-11T13:26:42Z",
+                    "captured_at": "2026-10-11T20:18:28Z",
                     "implied_pct": 27.5,
                     "last_price": 0.28,
                     "mid": 0.275,
@@ -3961,14 +3439,14 @@
                     "yes_bid": 0.27
                   },
                   {
-                    "american": 471,
+                    "american": 441,
                     "book_state": "TWO_SIDED",
-                    "captured_at": "2026-10-11T13:26:42Z",
-                    "implied_pct": 17.5,
-                    "last_price": 0.18,
-                    "mid": 0.175,
-                    "no_ask": 0.83,
-                    "no_bid": 0.82,
+                    "captured_at": "2026-10-11T20:18:28Z",
+                    "implied_pct": 18.5,
+                    "last_price": 0.19,
+                    "mid": 0.185,
+                    "no_ask": 0.82,
+                    "no_bid": 0.81,
                     "over_n": 6,
                     "price_level_structure": "linear_cent",
                     "price_ranges": [
@@ -3989,13 +3467,13 @@
                     "team": "LAD",
                     "ticker": "KXMLBTEAMTOTAL-26OCT112000LADMIL-LAD6",
                     "unit": "dollars",
-                    "yes_ask": 0.18,
-                    "yes_bid": 0.17
+                    "yes_ask": 0.19,
+                    "yes_bid": 0.18
                   },
                   {
                     "american": 700,
                     "book_state": "TWO_SIDED",
-                    "captured_at": "2026-10-11T13:26:42Z",
+                    "captured_at": "2026-10-11T20:18:28Z",
                     "implied_pct": 12.5,
                     "last_price": 0.0,
                     "mid": 0.125,
@@ -4025,14 +3503,14 @@
                     "yes_bid": 0.12
                   },
                   {
-                    "american": 1329,
+                    "american": 1150,
                     "book_state": "TWO_SIDED",
-                    "captured_at": "2026-10-11T13:26:42Z",
-                    "implied_pct": 7.0,
+                    "captured_at": "2026-10-11T20:18:28Z",
+                    "implied_pct": 8.0,
                     "last_price": 0.0,
-                    "mid": 0.07,
-                    "no_ask": 0.94,
-                    "no_bid": 0.92,
+                    "mid": 0.08,
+                    "no_ask": 0.93,
+                    "no_bid": 0.91,
                     "over_n": 8,
                     "price_level_structure": "linear_cent",
                     "price_ranges": [
@@ -4053,16 +3531,16 @@
                     "team": "LAD",
                     "ticker": "KXMLBTEAMTOTAL-26OCT112000LADMIL-LAD8",
                     "unit": "dollars",
-                    "yes_ask": 0.08,
-                    "yes_bid": 0.06
+                    "yes_ask": 0.09,
+                    "yes_bid": 0.07
                   }
                 ],
-                "american": -127,
+                "american": -138,
                 "best_book": {
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
-                  "no_ask": 0.45,
-                  "no_bid": 0.43,
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "no_ask": 0.43,
+                  "no_bid": 0.41,
                   "price_level_structure": "linear_cent",
                   "price_ranges": [
                     {
@@ -4081,13 +3559,13 @@
                   "status": "active",
                   "ticker": "KXMLBTEAMTOTAL-26OCT112000LADMIL-LAD3",
                   "unit": "dollars",
-                  "yes_ask": 0.57,
-                  "yes_bid": 0.55
+                  "yes_ask": 0.59,
+                  "yes_bid": 0.57
                 },
                 "best_ticker": "KXMLBTEAMTOTAL-26OCT112000LADMIL-LAD3",
-                "implied_pct": 56.0,
+                "implied_pct": 58.0,
                 "line": 3,
-                "snapshot_ts": "2026-10-11T13:26:42Z",
+                "snapshot_ts": "2026-10-11T20:18:28Z",
                 "source": "kalshi_registry",
                 "team": "LAD"
               },
@@ -4096,7 +3574,7 @@
                   {
                     "american": -277,
                     "book_state": "TWO_SIDED",
-                    "captured_at": "2026-10-11T13:26:42Z",
+                    "captured_at": "2026-10-11T20:18:28Z",
                     "implied_pct": 73.5,
                     "last_price": 0.74,
                     "mid": 0.735,
@@ -4128,9 +3606,9 @@
                   {
                     "american": -120,
                     "book_state": "TWO_SIDED",
-                    "captured_at": "2026-10-11T13:26:42Z",
+                    "captured_at": "2026-10-11T20:18:28Z",
                     "implied_pct": 54.5,
-                    "last_price": 0.54,
+                    "last_price": 0.55,
                     "mid": 0.545,
                     "no_ask": 0.46,
                     "no_bid": 0.45,
@@ -4158,13 +3636,13 @@
                     "yes_bid": 0.54
                   },
                   {
-                    "american": 160,
+                    "american": 163,
                     "book_state": "TWO_SIDED",
-                    "captured_at": "2026-10-11T13:26:42Z",
-                    "implied_pct": 38.5,
+                    "captured_at": "2026-10-11T20:18:28Z",
+                    "implied_pct": 38.0,
                     "last_price": 0.39,
-                    "mid": 0.385,
-                    "no_ask": 0.62,
+                    "mid": 0.38,
+                    "no_ask": 0.63,
                     "no_bid": 0.61,
                     "over_n": 4,
                     "price_level_structure": "linear_cent",
@@ -4187,17 +3665,17 @@
                     "ticker": "KXMLBTEAMTOTAL-26OCT112000LADMIL-MIL4",
                     "unit": "dollars",
                     "yes_ask": 0.39,
-                    "yes_bid": 0.38
+                    "yes_bid": 0.37
                   },
                   {
-                    "american": 326,
+                    "american": 308,
                     "book_state": "TWO_SIDED",
-                    "captured_at": "2026-10-11T13:26:42Z",
-                    "implied_pct": 23.5,
-                    "last_price": 0.24,
-                    "mid": 0.235,
-                    "no_ask": 0.77,
-                    "no_bid": 0.76,
+                    "captured_at": "2026-10-11T20:18:28Z",
+                    "implied_pct": 24.5,
+                    "last_price": 0.25,
+                    "mid": 0.245,
+                    "no_ask": 0.76,
+                    "no_bid": 0.75,
                     "over_n": 5,
                     "price_level_structure": "linear_cent",
                     "price_ranges": [
@@ -4218,18 +3696,18 @@
                     "team": "MIL",
                     "ticker": "KXMLBTEAMTOTAL-26OCT112000LADMIL-MIL5",
                     "unit": "dollars",
-                    "yes_ask": 0.24,
-                    "yes_bid": 0.23
+                    "yes_ask": 0.25,
+                    "yes_bid": 0.24
                   },
                   {
-                    "american": 590,
+                    "american": 545,
                     "book_state": "TWO_SIDED",
-                    "captured_at": "2026-10-11T13:26:42Z",
-                    "implied_pct": 14.5,
+                    "captured_at": "2026-10-11T20:18:28Z",
+                    "implied_pct": 15.5,
                     "last_price": 0.17,
-                    "mid": 0.145,
-                    "no_ask": 0.86,
-                    "no_bid": 0.85,
+                    "mid": 0.155,
+                    "no_ask": 0.85,
+                    "no_bid": 0.84,
                     "over_n": 6,
                     "price_level_structure": "linear_cent",
                     "price_ranges": [
@@ -4250,17 +3728,17 @@
                     "team": "MIL",
                     "ticker": "KXMLBTEAMTOTAL-26OCT112000LADMIL-MIL6",
                     "unit": "dollars",
-                    "yes_ask": 0.15,
-                    "yes_bid": 0.14
+                    "yes_ask": 0.16,
+                    "yes_bid": 0.15
                   },
                   {
-                    "american": 852,
+                    "american": 900,
                     "book_state": "TWO_SIDED",
-                    "captured_at": "2026-10-11T13:26:42Z",
-                    "implied_pct": 10.5,
+                    "captured_at": "2026-10-11T20:18:28Z",
+                    "implied_pct": 10.0,
                     "last_price": 0.11,
-                    "mid": 0.105,
-                    "no_ask": 0.9,
+                    "mid": 0.1,
+                    "no_ask": 0.91,
                     "no_bid": 0.89,
                     "over_n": 7,
                     "price_level_structure": "linear_cent",
@@ -4283,17 +3761,17 @@
                     "ticker": "KXMLBTEAMTOTAL-26OCT112000LADMIL-MIL7",
                     "unit": "dollars",
                     "yes_ask": 0.11,
-                    "yes_bid": 0.1
+                    "yes_bid": 0.09
                   },
                   {
-                    "american": 1567,
+                    "american": 1718,
                     "book_state": "TWO_SIDED",
-                    "captured_at": "2026-10-11T13:26:42Z",
-                    "implied_pct": 6.0,
+                    "captured_at": "2026-10-11T20:18:28Z",
+                    "implied_pct": 5.5,
                     "last_price": 0.05,
-                    "mid": 0.06,
+                    "mid": 0.055,
                     "no_ask": 0.95,
-                    "no_bid": 0.93,
+                    "no_bid": 0.94,
                     "over_n": 8,
                     "price_level_structure": "linear_cent",
                     "price_ranges": [
@@ -4314,14 +3792,14 @@
                     "team": "MIL",
                     "ticker": "KXMLBTEAMTOTAL-26OCT112000LADMIL-MIL8",
                     "unit": "dollars",
-                    "yes_ask": 0.07,
+                    "yes_ask": 0.06,
                     "yes_bid": 0.05
                   }
                 ],
                 "american": -120,
                 "best_book": {
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
+                  "captured_at": "2026-10-11T20:18:28Z",
                   "no_ask": 0.46,
                   "no_bid": 0.45,
                   "price_level_structure": "linear_cent",
@@ -4348,7 +3826,7 @@
                 "best_ticker": "KXMLBTEAMTOTAL-26OCT112000LADMIL-MIL3",
                 "implied_pct": 54.5,
                 "line": 3,
-                "snapshot_ts": "2026-10-11T13:26:42Z",
+                "snapshot_ts": "2026-10-11T20:18:28Z",
                 "source": "kalshi_registry",
                 "team": "MIL"
               }
@@ -4356,13 +3834,13 @@
             "total": {
               "all_lines": [
                 {
-                  "american": -1567,
+                  "american": -1718,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
-                  "implied_pct": 94.0,
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 94.5,
                   "last_price": 0.95,
-                  "mid": 0.94,
-                  "no_ask": 0.07,
+                  "mid": 0.945,
+                  "no_ask": 0.06,
                   "no_bid": 0.05,
                   "over_threshold": 2,
                   "price_level_structure": "linear_cent",
@@ -4385,14 +3863,14 @@
                   "total": 2,
                   "unit": "dollars",
                   "yes_ask": 0.95,
-                  "yes_bid": 0.93
+                  "yes_bid": 0.94
                 },
                 {
                   "american": -852,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
+                  "captured_at": "2026-10-11T20:18:28Z",
                   "implied_pct": 89.5,
-                  "last_price": 0.89,
+                  "last_price": 0.9,
                   "mid": 0.895,
                   "no_ask": 0.11,
                   "no_bid": 0.1,
@@ -4420,14 +3898,14 @@
                   "yes_bid": 0.89
                 },
                 {
-                  "american": -344,
+                  "american": -355,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
-                  "implied_pct": 77.5,
-                  "last_price": 0.77,
-                  "mid": 0.775,
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 78.0,
+                  "last_price": 0.79,
+                  "mid": 0.78,
                   "no_ask": 0.23,
-                  "no_bid": 0.22,
+                  "no_bid": 0.21,
                   "over_threshold": 4,
                   "price_level_structure": "linear_cent",
                   "price_ranges": [
@@ -4448,15 +3926,15 @@
                   "ticker": "KXMLBTOTAL-26OCT112000LADMIL-4",
                   "total": 4,
                   "unit": "dollars",
-                  "yes_ask": 0.78,
+                  "yes_ask": 0.79,
                   "yes_bid": 0.77
                 },
                 {
                   "american": -228,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
+                  "captured_at": "2026-10-11T20:18:28Z",
                   "implied_pct": 69.5,
-                  "last_price": 0.7,
+                  "last_price": 0.69,
                   "mid": 0.695,
                   "no_ask": 0.31,
                   "no_bid": 0.3,
@@ -4484,14 +3962,14 @@
                   "yes_bid": 0.69
                 },
                 {
-                  "american": -120,
+                  "american": -125,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
-                  "implied_pct": 54.5,
-                  "last_price": 0.55,
-                  "mid": 0.545,
-                  "no_ask": 0.46,
-                  "no_bid": 0.45,
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 55.5,
+                  "last_price": 0.56,
+                  "mid": 0.555,
+                  "no_ask": 0.45,
+                  "no_bid": 0.44,
                   "over_threshold": 6,
                   "price_level_structure": "linear_cent",
                   "price_ranges": [
@@ -4512,18 +3990,18 @@
                   "ticker": "KXMLBTOTAL-26OCT112000LADMIL-6",
                   "total": 6,
                   "unit": "dollars",
-                  "yes_ask": 0.55,
-                  "yes_bid": 0.54
+                  "yes_ask": 0.56,
+                  "yes_bid": 0.55
                 },
                 {
-                  "american": 120,
+                  "american": 115,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
-                  "implied_pct": 45.5,
-                  "last_price": 0.45,
-                  "mid": 0.455,
-                  "no_ask": 0.55,
-                  "no_bid": 0.54,
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 46.5,
+                  "last_price": 0.46,
+                  "mid": 0.465,
+                  "no_ask": 0.54,
+                  "no_bid": 0.53,
                   "over_threshold": 7,
                   "price_level_structure": "linear_cent",
                   "price_ranges": [
@@ -4544,18 +4022,18 @@
                   "ticker": "KXMLBTOTAL-26OCT112000LADMIL-7",
                   "total": 7,
                   "unit": "dollars",
-                  "yes_ask": 0.46,
-                  "yes_bid": 0.45
+                  "yes_ask": 0.47,
+                  "yes_bid": 0.46
                 },
                 {
-                  "american": 208,
+                  "american": 199,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
-                  "implied_pct": 32.5,
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 33.5,
                   "last_price": 0.33,
-                  "mid": 0.325,
-                  "no_ask": 0.68,
-                  "no_bid": 0.67,
+                  "mid": 0.335,
+                  "no_ask": 0.67,
+                  "no_bid": 0.66,
                   "over_threshold": 8,
                   "price_level_structure": "linear_cent",
                   "price_ranges": [
@@ -4576,18 +4054,18 @@
                   "ticker": "KXMLBTOTAL-26OCT112000LADMIL-8",
                   "total": 8,
                   "unit": "dollars",
-                  "yes_ask": 0.33,
-                  "yes_bid": 0.32
+                  "yes_ask": 0.34,
+                  "yes_bid": 0.33
                 },
                 {
-                  "american": 292,
+                  "american": 277,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
-                  "implied_pct": 25.5,
-                  "last_price": 0.25,
-                  "mid": 0.255,
-                  "no_ask": 0.75,
-                  "no_bid": 0.74,
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 26.5,
+                  "last_price": 0.26,
+                  "mid": 0.265,
+                  "no_ask": 0.74,
+                  "no_bid": 0.73,
                   "over_threshold": 9,
                   "price_level_structure": "linear_cent",
                   "price_ranges": [
@@ -4608,18 +4086,18 @@
                   "ticker": "KXMLBTOTAL-26OCT112000LADMIL-9",
                   "total": 9,
                   "unit": "dollars",
-                  "yes_ask": 0.26,
-                  "yes_bid": 0.25
+                  "yes_ask": 0.27,
+                  "yes_bid": 0.26
                 },
                 {
-                  "american": 441,
+                  "american": 426,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
-                  "implied_pct": 18.5,
+                  "captured_at": "2026-10-11T20:18:28Z",
+                  "implied_pct": 19.0,
                   "last_price": 0.18,
-                  "mid": 0.185,
+                  "mid": 0.19,
                   "no_ask": 0.82,
-                  "no_bid": 0.81,
+                  "no_bid": 0.8,
                   "over_threshold": 10,
                   "price_level_structure": "linear_cent",
                   "price_ranges": [
@@ -4640,13 +4118,13 @@
                   "ticker": "KXMLBTOTAL-26OCT112000LADMIL-10",
                   "total": 10,
                   "unit": "dollars",
-                  "yes_ask": 0.19,
+                  "yes_ask": 0.2,
                   "yes_bid": 0.18
                 },
                 {
                   "american": 590,
                   "book_state": "TWO_SIDED",
-                  "captured_at": "2026-10-11T13:26:42Z",
+                  "captured_at": "2026-10-11T20:18:28Z",
                   "implied_pct": 14.5,
                   "last_price": 0.14,
                   "mid": 0.145,
@@ -4676,12 +4154,12 @@
                   "yes_bid": 0.14
                 }
               ],
-              "american": -120,
+              "american": 115,
               "best_book": {
                 "book_state": "TWO_SIDED",
-                "captured_at": "2026-10-11T13:26:42Z",
-                "no_ask": 0.46,
-                "no_bid": 0.45,
+                "captured_at": "2026-10-11T20:18:28Z",
+                "no_ask": 0.54,
+                "no_bid": 0.53,
                 "price_level_structure": "linear_cent",
                 "price_ranges": [
                   {
@@ -4698,47 +4176,47 @@
                   "yes_bid": "yes_bid_dollars"
                 },
                 "status": "active",
-                "ticker": "KXMLBTOTAL-26OCT112000LADMIL-6",
+                "ticker": "KXMLBTOTAL-26OCT112000LADMIL-7",
                 "unit": "dollars",
-                "yes_ask": 0.55,
-                "yes_bid": 0.54
+                "yes_ask": 0.47,
+                "yes_bid": 0.46
               },
-              "best_ticker": "KXMLBTOTAL-26OCT112000LADMIL-6",
-              "implied_pct": 54.5,
-              "line": 6,
+              "best_ticker": "KXMLBTOTAL-26OCT112000LADMIL-7",
+              "implied_pct": 46.5,
+              "line": 7,
               "note": "Integer total lines. best_line = line closest to 50%.",
-              "snapshot_ts": "2026-10-11T13:26:42Z",
+              "snapshot_ts": "2026-10-11T20:18:28Z",
               "source": "kalshi_registry"
             }
           },
           "pinnacle": {
             "f5rl": {
-              "away": 105,
+              "away": 107,
               "awayPoint": 0,
-              "home": -121,
+              "home": -123,
               "homePoint": 0
             },
             "ml": {
-              "away": -101,
-              "home": -108,
-              "updated": "2026-10-11T13:26:12Z"
+              "away": -106,
+              "home": -102,
+              "updated": "2026-10-11T20:17:38Z"
             },
             "rl": {
-              "away": -244,
+              "away": -253,
               "awayPoint": 1.5,
-              "home": 214,
+              "home": 221,
               "homePoint": -1.5
             },
             "teamTotals": {
               "away": {
                 "line": 2.5,
-                "over": -143,
-                "under": 122
+                "over": -148,
+                "under": 126
               },
               "home": {
                 "line": 2.5,
-                "over": -135,
-                "under": 115
+                "over": -131,
+                "under": 112
               }
             },
             "total": {
@@ -4756,14 +4234,14 @@
           "parkFactor": 100
         },
         "pinnacleF5VF": {
-          "away": 48.73,
-          "home": 51.27,
+          "away": 49.58,
+          "home": 50.42,
           "source": "fanduel"
         },
         "pinnacleVF": {
           "available": true,
-          "away": 49.18,
-          "home": 50.82,
+          "away": 50.47,
+          "home": 49.53,
           "source": "pinnacle"
         },
         "runLineEval": {
@@ -4771,38 +4249,38 @@
             "actionable": false,
             "betSize": 4.5,
             "confidence": "MEDIUM",
-            "edgePct": -0.87,
-            "logForCLV": false,
-            "modelCoverPct": 27.7,
-            "pinVFpct": 31.1,
-            "price": 212,
+            "edgePct": -2.32,
+            "logForCLV": true,
+            "modelCoverPct": 25.3,
+            "pinVFpct": 34.4,
+            "price": 182,
             "rlLine": -1.5,
-            "side": "HOME"
+            "side": "AWAY"
           },
           "both": [
             {
               "actionable": false,
               "betSize": 4.5,
               "confidence": "MEDIUM",
-              "edgePct": -0.87,
-              "logForCLV": false,
-              "modelCoverPct": 27.7,
-              "pinVFpct": 31.1,
-              "price": 212,
+              "edgePct": -2.32,
+              "logForCLV": true,
+              "modelCoverPct": 25.3,
+              "pinVFpct": 34.4,
+              "price": 182,
               "rlLine": -1.5,
-              "side": "HOME"
+              "side": "AWAY"
             },
             {
               "actionable": false,
               "betSize": 4.5,
               "confidence": "MEDIUM",
-              "edgePct": -11.12,
+              "edgePct": -9.67,
               "logForCLV": true,
-              "modelCoverPct": 25.3,
-              "pinVFpct": 68.9,
-              "price": -245,
+              "modelCoverPct": 27.7,
+              "pinVFpct": 65.6,
+              "price": -209,
               "rlLine": 1.5,
-              "side": "AWAY"
+              "side": "HOME"
             }
           ]
         },
@@ -4810,7 +4288,7 @@
         "seriesDescription": "NL Championship Series",
         "seriesGameNumber": 1,
         "startTime": "2026-10-12T00:00:00Z",
-        "status": "Scheduled",
+        "status": "Pre-Game",
         "teamTotals": {
           "awayActionable": false,
           "awayEdgePct": -4.55,
@@ -4832,21 +4310,21 @@
         },
         "totalEval": {
           "actionable": false,
-          "bestEdge": -1.39,
+          "bestEdge": -1.21,
           "bestSide": "UNDER",
           "diff": 0,
           "logForCLV": true,
-          "overEdgePct": -2.71,
+          "overEdgePct": -2.88,
           "pOver": 39.4,
           "pUnder": 44.6,
           "paperOnly": true,
           "paperReason": "Game Total WR 41% \u2014 paper only per Rule 71 until WR\u226552% over N\u226530",
-          "pinVFover": 50,
-          "pinVFunder": 50,
+          "pinVFover": 50.7,
+          "pinVFunder": 49.3,
           "sizeOver": 1,
           "sizeUnder": 1,
           "totalProj": 6,
-          "underEdgePct": -1.39,
+          "underEdgePct": -1.21,
           "vegasLine": 6
         },
         "venue": "American Family Field"
@@ -4854,12 +4332,12 @@
     ],
     "kalshiDate": "26OCT11",
     "kalshiMarketsFound": 2,
-    "requestsRemaining": "18911",
+    "requestsRemaining": "18834",
     "savantPitchersLoaded": 814,
     "scheduleSource": "statsapi"
   },
   "meta": {
-    "createdAt": "2026-10-11T13:26:56Z",
+    "createdAt": "2026-10-11T20:18:39Z",
     "producedBy": "scripts/enrich_data.py",
     "schemaVersion": "1.0",
     "slateDate": "2026-10-11",

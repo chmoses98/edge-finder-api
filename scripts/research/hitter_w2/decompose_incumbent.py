@@ -31,9 +31,10 @@ from collections import defaultdict
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 _HERE = os.path.dirname(os.path.abspath(__file__))
-for p in (_ROOT, _HERE):
-    if p not in sys.path:
-        sys.path.insert(0, p)
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
 
 
 def boot_ci(rows, f, reps=1000, seed=7):

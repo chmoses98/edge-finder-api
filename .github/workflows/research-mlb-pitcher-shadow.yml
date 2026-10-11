@@ -74,9 +74,13 @@ jobs:
           set -euo pipefail
           STORE="$RUNNER_TEMP/shadow_dry"
           mkdir -p "$STORE"
-          YDAY=$(python3 -c "from datetime import datetime,timedelta,timezone;print((datetime.now(timezone.utc)-timedelta(hours=28)).strftime('%Y-%m-%d'))")
-          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" capture --force-window pregame | tee "$STORE/capture.json"
-          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" outcomes --all-starters-date "$YDAY" | tee "$STORE/outcomes.json"
+          TODAY=$(TZ=America/New_York date +%F)
+          TOMORROW=$(TZ=America/New_York date -d tomorrow +%F)
+          PAST=$(for i in 1 2 3; do TZ=America/New_York date -d "$i days ago" +%F; done | paste -sd, -)
+          # capture every not-yet-started game today and tomorrow (ET) under a forced label
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" capture --force-window pregame --date "$TODAY" | tee "$STORE/capture_today.json"
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" capture --force-window pregame --date "$TOMORROW" | tee "$STORE/capture_tomorrow.json"
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" outcomes --all-starters-date "$TODAY,$PAST" | tee "$STORE/outcomes.json"
           python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" reconcile | tee "$STORE/reconcile.json"
           python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" evaluate --reps 200 | tee "$STORE/evaluate.json"
           python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" verify | tee "$STORE/verify.json"

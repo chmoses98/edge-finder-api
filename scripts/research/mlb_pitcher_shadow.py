@@ -527,8 +527,10 @@ def cmd_outcomes(a):
     for r in all_projections(store):
         wanted[r["game_id"]].add(r["player_id"])
         kick[r["game_id"]] = r["kickoff"]
-    if a.all_starters_date:  # dry-run exercise: outcomes for every final game of one date
-        doc = fetch_json(SCHEDULE_URL.format(date=a.all_starters_date))
+    for d in (a.all_starters_date or "").split(","):  # dry-run exercise: every final game of these dates
+        if not d.strip():
+            continue
+        doc = fetch_json(SCHEDULE_URL.format(date=d.strip()))
         for g in parse_schedule(doc, iso(now)):
             if g["detailed"] in FINAL:
                 wanted.setdefault(g["pk"], set())
@@ -702,7 +704,7 @@ def main(argv=None):
     c.add_argument("--force-window", choices=("morning", "pregame"),
                    help="DRY-RUN ONLY: capture every not-started game now under this window label")
     o = sub.add_parser("outcomes")
-    o.add_argument("--all-starters-date", help="DRY-RUN exercise: outcomes for every final game of this date")
+    o.add_argument("--all-starters-date", help="DRY-RUN exercise: outcomes for every final game of these comma-separated dates")
     sub.add_parser("reconcile")
     e = sub.add_parser("evaluate")
     e.add_argument("--reps", type=int, default=1000)

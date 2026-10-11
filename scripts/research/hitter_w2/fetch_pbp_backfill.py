@@ -227,23 +227,42 @@ def _write_csv_gz(path, fields, rows):
             gz.write(buf.getvalue().encode())
 
 
-def run_season(season, out_root, workers=6, max_games=None, spacing=0.05):
+def _read_csv_gz(path):
+    if not os.path.exists(path):
+        return []
+    with gzip.open(path, "rt", newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def run_season(season, out_root, workers=6, max_games=None, spacing=0.05, deadline=None):
+    """Resumable: games already extracted (games.csv.gz) are kept and never re-fetched; fetching
+    stops at `deadline` (epoch seconds) and the season is marked complete only when every
+    scheduled game is extracted or recorded as not final. Returns True when complete."""
     out_dir = os.path.join(out_root, str(season))
     manifest_path = os.path.join(out_dir, "manifest.json")
+    old = {}
     if os.path.exists(manifest_path):
         with open(manifest_path) as f:
-            if json.load(f).get("complete"):
-                print(f"[{season}] already complete -- skipping (idempotent)")
-                return
+            old = json.load(f)
+        if old.get("complete"):
+            print(f"[{season}] already complete -- skipping (idempotent)")
+            return True
     os.makedirs(out_dir, exist_ok=True)
+    games = _read_csv_gz(os.path.join(out_dir, "games.csv.gz"))
+    bats = _read_csv_gz(os.path.join(out_dir, "batting.csv.gz"))
+    pits = _read_csv_gz(os.path.join(out_dir, "pitching.csv.gz"))
+    pas = _read_csv_gz(os.path.join(out_dir, "pa.csv.gz"))
+    done = {int(g["gamePk"]) for g in games}
+    skipped = {int(k): v for k, v in (old.get("skippedNotFinal") or {}).items()}
     pks = game_pks_for_season(season)
-    todo = sorted(pks)
+    todo = [pk for pk in sorted(pks) if pk not in done and pk not in skipped]
     if max_games:
         todo = todo[: int(max_games)]
-    games, bats, pits, pas = [], [], [], []
-    skipped, failed = {}, {}
+    failed = {}
 
     def work(pk):
+        if deadline and time.time() > deadline:
+            return pk, "DEADLINE", None
         time.sleep(spacing)
         body, fetched_at = _fetch(pk)
         feed = json.loads(body)
@@ -252,6 +271,7 @@ def run_season(season, out_root, workers=6, max_games=None, spacing=0.05):
             return pk, None, state
         return pk, extract_game(feed, season, fetched_at, hashlib.sha1(body).hexdigest()), state
 
+    deferred = 0
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futs = {ex.submit(work, pk): pk for pk in todo}
         for n, fut in enumerate(as_completed(futs), 1):
@@ -260,6 +280,9 @@ def run_season(season, out_root, workers=6, max_games=None, spacing=0.05):
                 _pk, out, state = fut.result()
             except Exception as e:  # noqa: BLE001
                 failed[pk] = str(e)[:200]
+                continue
+            if out == "DEADLINE":
+                deferred += 1
                 continue
             if out is None:
                 skipped[pk] = state
@@ -270,40 +293,47 @@ def run_season(season, out_root, workers=6, max_games=None, spacing=0.05):
             pits.extend(p)
             pas.extend(a)
             if n % 250 == 0:
-                print(f"[{season}] {n}/{len(todo)} fetched")
-    games.sort(key=lambda r: r["gamePk"])
-    bats.sort(key=lambda r: (r["gamePk"], r["side"], str(r["battingOrder"])))
-    pits.sort(key=lambda r: (r["gamePk"], r["side"], r["order"]))
-    pas.sort(key=lambda r: (r["gamePk"], int(r["atBatIndex"] or 0)))
+                print(f"[{season}] {n}/{len(todo)} processed", flush=True)
+    games.sort(key=lambda r: int(r["gamePk"]))
+    bats.sort(key=lambda r: (int(r["gamePk"]), r["side"], str(r["battingOrder"])))
+    pits.sort(key=lambda r: (int(r["gamePk"]), r["side"], int(r["order"])))
+    pas.sort(key=lambda r: (int(r["gamePk"]), int(r["atBatIndex"] or 0)))
     _write_csv_gz(os.path.join(out_dir, "games.csv.gz"), GAME_FIELDS, games)
     _write_csv_gz(os.path.join(out_dir, "batting.csv.gz"), BAT_FIELDS, bats)
     _write_csv_gz(os.path.join(out_dir, "pitching.csv.gz"), PIT_FIELDS, pits)
     _write_csv_gz(os.path.join(out_dir, "pa.csv.gz"), PA_FIELDS, pas)
     fetched = sorted(g["fetchedAt"] for g in games)
+    remaining = len([pk for pk in pks if pk not in {int(g["gamePk"]) for g in games} and pk not in skipped])
     manifest = {
         "season": season, "source": "MLB Stats API feed/live (statsapi.mlb.com /api/v1.1/game/<pk>/feed/live)",
         "gamePkUniverse": "data/research_cache/bullpen_backtest/<season>/schedules/*.json (gameType=R)",
-        "scheduled": len(pks), "attempted": len(todo), "extracted": len(games),
+        "scheduled": len(pks), "extracted": len(games), "remaining": remaining,
         "skippedNotFinal": {str(k): v for k, v in sorted(skipped.items())},
-        "failed": {str(k): v for k, v in sorted(failed.items())},
+        "failedLastRun": {str(k): v for k, v in sorted(failed.items())},
         "rows": {"batting": len(bats), "pitching": len(pits), "pa": len(pas)},
         "fetchedAtMin": fetched[0] if fetched else None, "fetchedAtMax": fetched[-1] if fetched else None,
-        "complete": (not failed) and not max_games,
+        "complete": remaining == 0 and not max_games,
     }
     with open(manifest_path, "w") as f:
         json.dump(manifest, f, indent=1, sort_keys=True)
-    print(json.dumps({k: v for k, v in manifest.items() if k not in ("skippedNotFinal", "failed")}))
-    print(f"[{season}] skipped={len(skipped)} failed={len(failed)}")
+    print(json.dumps({k: v for k, v in manifest.items() if k not in ("skippedNotFinal", "failedLastRun")}))
+    print(f"[{season}] skipped={len(skipped)} failed={len(failed)} deferred={deferred}")
+    return manifest["complete"]
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--season", type=int, required=True)
+    ap.add_argument("--seasons", default="2026,2025,2024")
     ap.add_argument("--out-root", default=os.path.join(_ROOT, "data", "research", "hitter_w2", "mlb_feed"))
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--max-games", type=int, default=None)
+    ap.add_argument("--budget-seconds", type=int, default=1080)
     args = ap.parse_args(argv)
-    run_season(args.season, args.out_root, workers=args.workers, max_games=args.max_games)
+    deadline = time.time() + args.budget_seconds
+    for season in [int(s) for s in args.seasons.split(",")]:
+        if time.time() > deadline:
+            break
+        run_season(season, args.out_root, workers=args.workers, max_games=args.max_games, deadline=deadline)
 
 
 if __name__ == "__main__":

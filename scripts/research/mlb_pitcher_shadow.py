@@ -23,7 +23,7 @@ Subcommands
 
 Record families under data/shadow_pure/mlb_pitcher/ (append-only, write-once, named by
 captured_at, hash-chained in MANIFEST.jsonl):
-  projections/<date>/<captured_at>_<window>.jsonl   pure_forecast.v1 rows (validated by the
+  projections/<date>/<captured_at>_<window>__<arm>.jsonl  pure_forecast.v1 rows, one file per arm (validated by the
                                                     vendored pure_gate --require-v1 before write)
   market/<date>/<captured_at>.jsonl                 listing + quote snapshot COPIED read-only from
                                                     data/edgelab/{markets,observations}
@@ -306,7 +306,7 @@ def build_rows(arms, game, side, window, as_of, proj, run_id):
 def existing_windows(store, date):
     done = defaultdict(set)
     for f in glob.glob(os.path.join(store.root, "projections", date, "*.jsonl")):
-        w = os.path.basename(f).rsplit("_", 1)[-1][:-6]
+        w = os.path.basename(f).split("__")[0].rsplit("_", 1)[-1]
         for r in _jsonl(f):
             done[r["game_id"]].add(w)
     return done
@@ -458,7 +458,9 @@ def cmd_capture(a):
                 gate.validate_file_summary([r for r in rows if r["x_arm"] == arm], require_v1=True)
             run_doc["gate_validate"] = {arm: gate.validate_file_summary([r for r in rows if r["x_arm"] == arm], require_v1=True)["n"]
                                         for arm in ARMS}
-            written.append(store.write_once(f"projections/{date}/{stamp(as_of_t)}_{w}.jsonl", rows, as_of)["path"])
+            for arm in ARMS:  # one file per arm: each validates on its own with pure_gate's CLI
+                written.append(store.write_once(f"projections/{date}/{stamp(as_of_t)}_{w}__{arm}.jsonl",
+                                                [r for r in rows if r["x_arm"] == arm], as_of)["path"])
             mk = market_snapshot(a.data_root, gs, as_of, captured)
             written.append(store.write_once(f"market/{date}/{stamp(as_of_t)}_{w}.jsonl", mk, as_of)["path"])
             run_doc["listing_rows"] = len(mk)

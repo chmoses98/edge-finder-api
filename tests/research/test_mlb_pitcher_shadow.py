@@ -175,3 +175,40 @@ def test_store_write_once_and_hash_chain(tmp_path):
 def test_force_window_refuses_committed_store():
     with pytest.raises(SystemExit):
         SH.main(["capture", "--force-window", "pregame"])
+
+
+def test_existing_windows_reads_per_arm_files(tmp_path):
+    st = ShadowStore(str(tmp_path / "s"))
+    for arm in SH.ARMS:
+        st.write_once(f"projections/2026-10-11/20261011T120000Z_morning__{arm}.jsonl", [{"game_id": "5", "x": arm}])
+    assert SH.existing_windows(st, "2026-10-11")["5"] == {"morning"}
+
+
+def test_capture_end_to_end_with_offline_schedule(tmp_path, monkeypatch):
+    doc = {"dates": [{"date": "2026-10-11", "games": [{
+        "gamePk": 849809, "gameType": "L", "officialDate": "2026-10-11", "gameDate": "2026-10-12T00:00:00Z",
+        "status": {"abstractGameState": "Preview", "detailedState": "Scheduled"},
+        "teams": {"away": {"team": {"id": 133}, "probablePitcher": {"id": int(PID), "fullName": "Test Starter"}},
+                  "home": {"team": {"id": 117}}}}]}]}
+    clock = [datetime(2026, 10, 11, 20, 0, 0, tzinfo=timezone.utc)]
+
+    def now():
+        clock[0] += timedelta(seconds=1)
+        return clock[0]
+    monkeypatch.setattr(SH, "fetch_json", lambda url, timeout=30: doc)
+    monkeypatch.setattr(SH, "utcnow", now)
+    monkeypatch.setattr(SH.time, "sleep", lambda s: None)
+    store = str(tmp_path / "s")
+    assert SH.main(["--store", store, "capture", "--date", "2026-10-11", "--force-window", "pregame"]) == 0
+    st = ShadowStore(store)
+    files = st.files()
+    assert sorted(f.rsplit("__", 1)[-1] for f in files if f.startswith("projections/")) == \
+        ["baseline.jsonl", "challenger.jsonl", "champion.jsonl"]
+    assert any(f.startswith("market/") for f in files) and any(f.startswith("runs/") for f in files)
+    assert st.verify()["ok"]
+    gate = SH.load_gate()
+    for f in files:
+        if f.startswith("projections/"):
+            rows = [json.loads(x) for x in open(os.path.join(store, f))]
+            assert gate.validate_file_summary(rows, require_v1=True)["n"] == 3
+            assert {r["x_validation_status"] for r in rows} == {"BLOCKED_NOT_VALIDATED_POSTSEASON"}

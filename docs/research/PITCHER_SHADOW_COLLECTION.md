@@ -56,7 +56,7 @@ and hash-chained in `MANIFEST.jsonl`.
 
 | Family | Contents |
 |---|---|
-| `projections/<date>/<ts>_<window>.jsonl` | `pure_forecast.v1` rows for every arm. They pass `pure_gate validate --require-v1` before they are written. |
+| `projections/<date>/<ts>_<window>__<arm>.jsonl` | `pure_forecast.v1` rows, one file per arm. They pass `pure_gate validate --require-v1` before they are written. |
 | `market/<date>/<ts>_<window>.jsonl` | Contract listing (first-seen time) and the latest quote at or before `as_of`, **copied read-only** from `data/edgelab/{markets,observations}`. This file is never read by any arm. |
 | `runs/<date>/<ts>_<window>.json` | Probable-starter source and timestamps, window decisions, and exclusions (the population accounting). |
 | `outcomes/<date>/<ts>.jsonl` | One sports outcome row per player-game-stat, from StatsAPI `feed/live`, in the `pure_gate` outcome format. `played` means the pitcher started; the arms are conditional on starting. |

@@ -1,0 +1,19 @@
+{
+  "mode": "in_place",
+  "cwd": "../..",
+  "market_inputs": {
+    "kalshi_settled_pitcher_props": {
+      "path": "data/edgelab/settlements",
+      "randomizer_cmd": "python3 scripts/research/mlb_pitcher_workload_randomize_market.py {src} {dst} {seed}"
+    }
+  },
+  "sports_inputs": {
+    "starter_boxscores": "data/research_cache/starter_workload",
+    "schedules": "data/research_cache/bullpen_backtest",
+    "statcast": "data/statcast_raw/games",
+    "pipeline_schedule_snapshots": "data/pipeline"
+  },
+  "outputs": ["rerun.jsonl"],
+  "compare": "bytes",
+  "env": {"OMP_NUM_THREADS": "1"}
+}

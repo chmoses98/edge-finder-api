@@ -1,0 +1,12 @@
+Vendored, unmodified copy of the shared PURE forecast gate. Do not edit here.
+
+repo:    chmoses98/sift-sports-intelligence
+commit:  558c592 (Merge PR #54: shared PURE forecast contract and acceptance gate)
+path:    pure-contract/pure_gate.py                          -> tools/pure_gate/pure_gate.py
+         pure-contract/schema/pure_forecast.v1.schema.json   -> tools/pure_gate/schema/pure_forecast.v1.schema.json
+sha256:  36b52d07531c01a5ec70675a8544cbebc540a2d72d7cd7c2e4172796f4a90885  pure_gate.py
+         7caea6c382d34b8ecf3cde831d944495110f2eff8c179bd569ae9dfb77f2e630  schema/pure_forecast.v1.schema.json
+gate:    pure_gate 1.0.0
+
+Usage: python3 -I tools/pure_gate/pure_gate.py validate --require-v1 --forecasts F
+       python3 -I tools/pure_gate/pure_gate.py compare --champion A --challenger B --outcomes O

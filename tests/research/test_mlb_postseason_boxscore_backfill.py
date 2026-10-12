@@ -95,7 +95,9 @@ def test_workflow_is_pr_branch_only_and_guarded():
     with open(WORKFLOW) as fh:
         wf = yaml.safe_load(fh)
     on = wf.get(True) or wf.get("on")
-    assert set(on) == {"pull_request", "workflow_dispatch"}  # never a schedule
+    # dispatch only: never a schedule, and never pull_request (an auto-commit on PR sync drifts the cache
+    # behind the frozen evaluation and leaves a bot-pushed head with no PR checks)
+    assert set(on) == {"workflow_dispatch"}
     steps = wf["jobs"]["backfill"]["steps"]
     assert "protected branch" in steps[0]["name"].lower()
     assert any("checkout" in (s.get("name") or "").lower() for s in steps[1:2])

@@ -12,21 +12,25 @@ name: Research - MLB Postseason Box Score Backfill (PR branch only)
 # statsapi.mlb.com; Actions runners can reach it.
 #
 # Safety:
-#   * never runs on a schedule; never targets main/master/the default branch
-#     (hard guard before checkout);
+#   * never runs on a schedule or on pull_request; never targets
+#     main/master/the default branch (hard guard before checkout);
 #   * idempotent: an already-cached gamePk is never re-fetched or rewritten;
 #   * reads no market, odds or settlement file; touches only the postseason_*
 #     cache files under data/research_cache/starter_workload/;
 #   * commits through scripts/ci/git_data_commit.py like every other data
 #     workflow; a GITHUB_TOKEN push does not retrigger workflows.
 
+#
+# Trigger: workflow_dispatch on a research branch ONLY. It used to run on every
+# pull_request synchronize that touched these paths, which (a) appended newly
+# final games to the cache behind the coverage report and the frozen
+# evaluation, and (b) pushed a bot commit as the PR head on which, because a
+# GITHUB_TOKEN push does not retrigger workflows, no PR check ever ran. Once on
+# main it would also have committed cache files into any unrelated PR that
+# edited these scripts. Dispatch it deliberately (e.g. after the World Series)
+# with `ref` set to a research branch, then regenerate the coverage report.
+
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - ".github/workflows/research-mlb-postseason-boxscore-backfill.yml"
-      - "scripts/research/mlb_postseason_boxscore_backfill.py"
-      - "scripts/research/mlb_postseason_coverage_report.py"
   workflow_dispatch:
     inputs:
       seasons:

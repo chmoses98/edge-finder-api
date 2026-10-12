@@ -31,7 +31,9 @@ joint distribution per arm. For the challenger the chain is outs → BF | outs �
 
 ## Captures
 
-The scheduled job runs every 30 minutes from 13:17 to 04:47 UTC, so the 60-minute pregame window is always hit at least once. Each game gets at most one capture per window:
+A cheap gate runs every 10 minutes from 12:07 to 04:57 UTC (see *Workflow modes*), so the pregame window
+(60 minutes, or 25 minutes when lineups are late) gets several chances even with the usual schedule delay.
+Each game gets at most one capture per window:
 
 | Window | When |
 |---|---|
@@ -67,15 +69,32 @@ and hash-chained in `MANIFEST.jsonl`.
 **Pregame market-listed cohort.** These are player-game-stats whose contract was first seen in the edgelab
 capture outputs at or before that projection's `as_of`. The cohort is defined pregame, never from resolution.
 
+**Missed windows.** Once collection has started (the first non-dry-run capture), every window that closes
+with no capture is written once to `missed/<date>/<detected_at>.jsonl` (`reason = NO_CAPTURE_IN_WINDOW`, with
+the window's close time and the game status at detection). It is never captured late or back-filled. A
+postponed, cancelled or suspended game is not a miss, and neither is the morning window of a game that already
+has its pregame capture. A failed run shows up the same way once the window it should have taken has closed.
+
 **Append-only CI.** `tests/research/test_shadow_pure_append_only.py` fails if any file under `data/shadow_pure/`
 that exists on `origin/main` is modified or deleted. `MANIFEST.jsonl` may only grow by appending. The test also
 fails if a manifest chain does not verify, or if the vendored gate's sha256 drifts.
 
 ## Workflow modes
 
-**Scheduled, or `workflow_dispatch` with `dry_run=false`:**
+**Scheduled gate.** `gate` checks out only `lib/research`, `scripts/research` and the store (sparse and
+blobless, no install) and runs `scripts/research/mlb_pitcher_shadow_gate.py`. It uses the collector's own
+window logic (`lib/research/mlb_pitcher_shadow_plan.py`, standard library only) on the live StatsAPI schedule
+and says `work=true` only when a capture window is due, a missed window needs recording, a captured game's
+outcome is pending (kickoff 3 h to 7 days ago), or the daily 15:xx UTC evaluation has not been written. If the
+schedule fetch or the gate itself fails, the full job runs anyway (fail open). Off-window gate runs take about
+20 s.
 
-1. The job runs capture → outcomes → reconcile → evaluate (at 15 UTC) → verify.
+**Full job checkout.** Sparse and blobless: only the paths the collector, its tests and the commit helper
+read (traced with an audit hook) — about 0.36 GB instead of the ~3 GB full tree.
+
+**Scheduled (when the gate says there is work), or `workflow_dispatch` with `dry_run=false`:**
+
+1. The job runs capture → outcomes → reconcile → evaluate (once a day, 15:xx UTC) → verify.
 2. It commits `data/shadow_pure/mlb_pitcher/` only, through `scripts/ci/git_data_commit.py`.
 3. It runs in its own concurrency group and never cancels a run in progress.
 

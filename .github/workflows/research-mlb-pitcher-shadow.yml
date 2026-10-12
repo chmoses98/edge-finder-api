@@ -14,16 +14,21 @@ name: Research - MLB Pitcher PURE Shadow Collection
 # Postseason rows are labelled BLOCKED_NOT_VALIDATED_POSTSEASON.
 #
 # Modes:
-#   schedule / workflow_dispatch (dry_run=false): capture -> outcomes -> reconcile ->
+#   schedule: a cheap `gate` job (sparse blobless checkout, stdlib only, no install) runs every
+#     10 minutes and decides from the live StatsAPI schedule and the store whether anything is
+#     due: a capture window, a missed window to record, a pending outcome, or the daily
+#     evaluation. Only then does the full `shadow` job run.
+#   schedule (gated) / workflow_dispatch (dry_run=false): capture -> outcomes -> reconcile ->
 #     evaluate -> verify -> commit via scripts/ci/git_data_commit.py (main).
 #   pull_request (and workflow_dispatch dry_run=true): DRY RUN -- fetch live, build,
 #     validate, upload an artifact, NO commit. The PR proves the job works on Actions.
 
 on:
   schedule:
-    # every 30 minutes 13:17-04:47 UTC: the T-80..T-20 pregame window (60 min wide) is
-    # hit at least once even with typical schedule delay; morning-of from 08:00 ET
-    - cron: '17,47 0-4,13-23 * * *'
+    # Gate every 10 minutes 12:07-04:57 UTC (08:07 EDT onward). The pregame window is T-80..T-20
+    # (T-45..T-20 when lineups are late), so a 10-minute gate gets several chances even with the
+    # usual schedule delay. Off-window gate runs end in ~20 s without installing anything.
+    - cron: '7,17,27,37,47,57 0-4,12-23 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -35,6 +40,8 @@ on:
     paths:
       - ".github/workflows/research-mlb-pitcher-shadow.yml"
       - "scripts/research/mlb_pitcher_shadow.py"
+      - "scripts/research/mlb_pitcher_shadow_gate.py"
+      - "lib/research/mlb_pitcher_shadow_plan.py"
       - "lib/research/shadow_pure_store.py"
       - "tools/pure_gate/**"
 
@@ -47,16 +54,62 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  gate:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      work: ${{ steps.gate.outputs.work }}
+      evaluate: ${{ steps.gate.outputs.evaluate }}
+    steps:
+      - name: Checkout (sparse, blobless; the gate and the store only)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            lib/research
+            scripts/research
+            data/shadow_pure/mlb_pitcher
+      - name: Is anything due?
+        id: gate
+        run: python3 -I scripts/research/mlb_pitcher_shadow_gate.py --github-output "$GITHUB_OUTPUT"
+
   shadow:
+    needs: gate
+    # Runs for pull_request / workflow_dispatch (gate skipped), when the gate says there is work,
+    # and also if the gate itself failed (fail open: a broken gate must not silently stop collection).
+    if: ${{ !cancelled() && (needs.gate.result != 'success' || needs.gate.outputs.work == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       DRY_RUN: ${{ (github.event_name == 'pull_request' || github.event.inputs.dry_run == 'true') && 'true' || 'false' }}
+      EVALUATE: ${{ needs.gate.outputs.evaluate }}
     steps:
-      - name: Checkout
+      # Only what the collector, its tests and the commit helper read (traced with an audit hook:
+      # ~0.3 GB of a ~3 GB tree). Blobless + sparse, so nothing else is downloaded.
+      - name: Checkout (sparse, blobless)
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            lib
+            scripts/research
+            scripts/ci
+            tools/pure_gate
+            tests/research
+            docs
+            data/research_cache/starter_workload
+            data/research_cache/bullpen_backtest
+            data/statcast_raw/games
+            data/research/pitcher_workload_joint
+            data/edgelab/analytics
+            data/edgelab/markets
+            data/edgelab/observations
+            data/edgelab/settlements
+            data/edgelab/bets
+            data/shadow_pure/mlb_pitcher
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -108,7 +161,9 @@ jobs:
           python3 scripts/research/mlb_pitcher_shadow.py outcomes
           python3 scripts/research/mlb_pitcher_shadow.py reconcile
           HOUR=$(date -u +%H)
-          if [ "$HOUR" = "15" ]; then python3 scripts/research/mlb_pitcher_shadow.py evaluate; fi
+          if [ "$EVALUATE" = "true" ] || { [ -z "$EVALUATE" ] && [ "$HOUR" = "15" ]; }; then
+            python3 scripts/research/mlb_pitcher_shadow.py evaluate
+          fi
           python3 scripts/research/mlb_pitcher_shadow.py verify
 
       - name: Commit shadow records (append-only paths only)

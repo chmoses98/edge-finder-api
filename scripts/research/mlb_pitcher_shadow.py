@@ -44,7 +44,6 @@ from __future__ import annotations
 
 import argparse
 import glob
-import gzip
 import hashlib
 import importlib.util
 import json
@@ -54,7 +53,7 @@ import sys
 import time
 import unicodedata
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if ROOT not in sys.path:
@@ -66,21 +65,19 @@ if _RESEARCH_SCRIPTS not in sys.path:
 import mlb_pitcher_workload_joint as W  # noqa: E402  (frozen #283 harness, unchanged)
 from lib.research import pitcher_workload_joint as J  # noqa: E402
 from lib.research import pitcher_workload_sources as S  # noqa: E402
+from lib.research.mlb_pitcher_shadow_plan import (  # noqa: E402  (stdlib-only; shared with the workflow gate)
+    FINAL, NOT_PLAYED, SCHEDULE_URL, capture_dates, iso, missed_windows, parse, parse_schedule, stamp, utcnow,
+    window_for)
+from lib.research.mlb_pitcher_shadow_plan import existing_windows as _existing_windows  # noqa: E402
+from lib.research.mlb_pitcher_shadow_plan import jsonl as _jsonl  # noqa: E402
 from lib.research.shadow_pure_store import ShadowStore  # noqa: E402
 
 SHADOW_ROOT = os.path.join(ROOT, "data", "shadow_pure", "mlb_pitcher")
-SCHEDULE_URL = ("https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={date}"
-                "&gameType=R,F,D,L,W&hydrate=probablePitcher,lineups")
 FEED_URL = "https://statsapi.mlb.com/api/v1.1/game/{pk}/feed/live"
 POSTSEASON_TYPES = ("F", "D", "L", "W")
 STATS = W.STATS
 ARMS = ("champion", "challenger", "baseline")
-PREGAME_OPEN_MIN, PREGAME_FORCE_MIN, PREGAME_CLOSE_MIN = 80, 45, 20
-MORNING_LATEST_MIN = 120
-MORNING_EARLIEST_ET_HOUR = 8
 STALE_HISTORY_DAYS = 3
-FINAL = {"Final", "Game Over", "Completed Early"}
-NOT_PLAYED = {"Postponed", "Cancelled", "Suspended"}
 EVAL_PAIRS = (("champion", "challenger"), ("baseline", "challenger"), ("baseline", "champion"))
 EVENT_RE = re.compile(r"-(\d{2})([A-Z]{3})(\d{2})(\d{4})([A-Z]+)$")
 MONTHS = {"MAR": 3, "APR": 4, "MAY": 5, "JUN": 6, "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11}
@@ -92,30 +89,6 @@ SRC_SCHEDULE = "mlb_statsapi_schedule_probable_pitcher"
 
 # ----------------------------------------------------------------------------- utils
 
-def utcnow():
-    return datetime.now(timezone.utc).replace(microsecond=0)
-
-
-def iso(t):
-    return t.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def parse(s):
-    return datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(timezone.utc)
-
-
-def stamp(t):
-    return t.strftime("%Y%m%dT%H%M%SZ")
-
-
-def et_now(now):
-    try:
-        from zoneinfo import ZoneInfo
-        return now.astimezone(ZoneInfo("America/New_York"))
-    except Exception:  # pragma: no cover - tz database missing
-        return now - timedelta(hours=4)
-
-
 def sha256_obj(obj):
     return hashlib.sha256(json.dumps(obj, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
@@ -123,14 +96,6 @@ def sha256_obj(obj):
 def norm_name(s):
     s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode().lower()
     return " ".join(s.replace(".", " ").replace("-", " ").split())
-
-
-def _jsonl(path):
-    op = gzip.open if path.endswith(".gz") else open
-    with op(path, "rt", encoding="utf-8") as fh:
-        for line in fh:
-            if line.strip():
-                yield json.loads(line)
 
 
 def load_gate():
@@ -147,51 +112,6 @@ def fetch_json(url, timeout=30):
 
 
 # ----------------------------------------------------------------------------- schedule (pure)
-
-def parse_schedule(doc, fetched_at):
-    games = []
-    for day in (doc or {}).get("dates") or []:
-        for g in day.get("games") or []:
-            t = g.get("teams") or {}
-            lu = g.get("lineups") or {}
-            row = {"pk": str(g["gamePk"]), "game_type": g.get("gameType"), "official_date": g.get("officialDate") or day.get("date"),
-                   "kickoff": iso(parse(g["gameDate"])) if g.get("gameDate") else None,
-                   "abstract": (g.get("status") or {}).get("abstractGameState"),
-                   "detailed": (g.get("status") or {}).get("detailedState"),
-                   "schedule_fetched_at": fetched_at}
-            for side in ("away", "home"):
-                tb = t.get(side) or {}
-                pp = tb.get("probablePitcher") or {}
-                row[side] = {"team_id": (tb.get("team") or {}).get("id"),
-                             "probable_id": str(pp["id"]) if pp.get("id") else None,
-                             "probable_name": pp.get("fullName"),
-                             "lineup_posted": bool(lu.get(f"{side}Players"))}
-            games.append(row)
-    return games
-
-
-def window_for(game, now, done):
-    """Pure. Which capture window (if any) this run should take for `game` at `now`.
-    `done` is the set of windows already captured for this game."""
-    if not game.get("kickoff"):
-        return None, "no_scheduled_start"
-    k = parse(game["kickoff"])
-    if now >= k:
-        return None, "at_or_after_kickoff"
-    if game.get("abstract") not in ("Preview",) or game.get("detailed") in NOT_PLAYED:
-        return None, f"status_{game.get('detailed')}"
-    mins = (k - now).total_seconds() / 60
-    if "pregame" not in done and PREGAME_CLOSE_MIN <= mins <= PREGAME_OPEN_MIN:
-        lineups = game["away"]["lineup_posted"] and game["home"]["lineup_posted"]
-        if lineups or mins <= PREGAME_FORCE_MIN:
-            return "pregame", "lineups_posted" if lineups else "lineups_not_posted_final_window"
-        return None, "pregame_waiting_for_lineups"
-    et = et_now(now)
-    if ("morning" not in done and "pregame" not in done and mins > MORNING_LATEST_MIN
-            and et.strftime("%Y-%m-%d") == game["official_date"] and et.hour >= MORNING_EARLIEST_ET_HOUR):
-        return "morning", "morning_of"
-    return None, "outside_windows"
-
 
 # ----------------------------------------------------------------------------- arms
 
@@ -304,12 +224,7 @@ def build_rows(arms, game, side, window, as_of, proj, run_id):
 # ----------------------------------------------------------------------------- existing state
 
 def existing_windows(store, date):
-    done = defaultdict(set)
-    for f in glob.glob(os.path.join(store.root, "projections", date, "*.jsonl")):
-        w = os.path.basename(f).split("__")[0].rsplit("_", 1)[-1]
-        for r in _jsonl(f):
-            done[r["game_id"]].add(w)
-    return done
+    return defaultdict(set, _existing_windows(store.root, date))
 
 
 # ----------------------------------------------------------------------------- market (read-only reuse)
@@ -391,11 +306,7 @@ def cmd_capture(a):
     store = ShadowStore(a.store)
     gate = load_gate()
     now = utcnow()
-    et = et_now(now)
-    dates = {et.strftime("%Y-%m-%d")}
-    if et.hour < 4:  # a game that began before midnight ET keeps the previous officialDate
-        dates.add((et - timedelta(days=1)).strftime("%Y-%m-%d"))
-    dates = sorted(dates)
+    dates = capture_dates(now)
     if a.date:
         dates = [a.date]
     games = []
@@ -465,8 +376,11 @@ def cmd_capture(a):
             written.append(store.write_once(f"market/{date}/{stamp(as_of_t)}_{w}.jsonl", mk, as_of)["path"])
             run_doc["listing_rows"] = len(mk)
         written.append(store.write_once(f"runs/{date}/{stamp(as_of_t)}_{w}.json", run_doc, as_of)["path"])
+    missed = [] if a.force_window or a.date else missed_windows(games, utcnow(), store.root)
+    if missed:  # a window that closed with no capture: recorded once, never back-filled
+        written.append(store.write_once(f"missed/{dates[-1]}/{stamp(utcnow())}.jsonl", missed)["path"])
     print(json.dumps({"now": iso(now), "dates": dates, "games": len(games), "windows": {w: len(v) for w, v in by_window.items()},
-                      "written": written, "decisions": accounting["window_decisions"]}, indent=1))
+                      "missed": missed, "written": written, "decisions": accounting["window_decisions"]}, indent=1))
     return 0
 
 

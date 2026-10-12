@@ -6,27 +6,25 @@ EXECUTION SLIP — 2026-10-11
 === REAL-MONEY BETS (0) ===
   (none)
 
-=== PRICE-MOVED PASSES (1) ===
-  LAD@MIL | TT_Home_Over
-    REASON: Rule 50: lineupConfirmedOfficial=False → TT Paper only; Executable EV: price 55.0¢ exceeds fee-aware bet-up-to 52.06¢ (gross ceiling was 53.8¢) -- PRICE_MOVED_BEYOND_MAX
-    Exec: 55.0¢ | MaxBet: 52.06¢ or better
+=== PRICE-MOVED PASSES (0) ===
+  (none)
 
-
-=== PAPER-ONLY (9) ===
-  LAD@MIL | NRFI | Cal Edge: -3.50% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  LAD@MIL | YRFI | Cal Edge: +3.24% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  LAD@MIL | F5_ML_Away | Cal Edge: +0.01% | Rule 53: F5 requires confirmed lineups for both teams — home unconfirmed (lineup
-  LAD@MIL | F5_ML_Home | Cal Edge: -1.08% | Rule 53: F5 requires confirmed lineups for both teams — home unconfirmed (lineup
-  LAD@MIL | ML_Away | Cal Edge: -0.22% | Rule 51: lineupConfirmedOfficial=False (home) — ML downgraded to PAPER
-  LAD@MIL | ML_Home | Cal Edge: -0.29% | Rule 51: lineupConfirmedOfficial=False (home) — ML downgraded to PAPER
+=== PAPER-ONLY (5) ===
+  LAD@MIL | NRFI | Cal Edge: -3.56% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  LAD@MIL | YRFI | Cal Edge: +3.31% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   LAD@MIL | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   LAD@MIL | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   LAD@MIL | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
 
-=== REJECTED / BLOCKED (1) ===
-  LAD@MIL | TT_Away_Over | Raw Edge: -1.12% | edge -0.717% below 1.0% floor
+=== REJECTED / BLOCKED (6) ===
+  LAD@MIL | F5_ML_Away | Raw Edge: +0.81% | edge -0.214% below threshold
+  LAD@MIL | F5_ML_Home | Raw Edge: -2.89% | edge -1.166% below threshold
+  LAD@MIL | TT_Away_Over | Raw Edge: +1.06% | edge -0.165% below 1.0% floor
+  LAD@MIL | TT_Home_Over | Raw Edge: +1.50% | edge -0.057% below 1.0% floor
+  LAD@MIL | ML_Away | Raw Edge: +0.20% | edge -0.396% below 1.0% floor
+  LAD@MIL | ML_Home | Raw Edge: -1.20% | edge -0.752% below 1.0% floor
 
 ======================================================================
-SLIP SUMMARY: Real=0 PriceMoved=1 Paper=9 Rejected=1
+SLIP SUMMARY: Real=0 PriceMoved=0 Paper=5 Rejected=6
 ======================================================================
 ======================================================================

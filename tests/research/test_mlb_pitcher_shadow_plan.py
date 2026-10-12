@@ -99,3 +99,39 @@ def test_plan_and_gate_are_standard_library_only():
         mods |= {a.name.split(".")[0] for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names}
         assert not mods & {"pandas", "numpy", "scipy", "polars", "pyarrow", "requests"}, rel
         assert mods - {"__future__", "glob", "gzip", "json", "os", "datetime", "zoneinfo", "argparse", "sys", "urllib", "lib"} == set(), rel
+
+
+# ----------------------------------------------------------------------------- 2026-10-12 duplicate-capture incident
+
+def test_adopt_manifests_an_orphaned_file_by_append_only(tmp_path):
+    from lib.research.shadow_pure_store import WriteOnceError
+    st = _store(tmp_path, captured=(("A", "pregame"),))
+    before = open(st.manifest_path, encoding="utf-8").read()
+    orphan = os.path.join(st.root, "runs", DATE, "20261012T122604Z_morning.json")
+    with open(orphan, "w", encoding="utf-8") as fh:
+        fh.write('{"as_of": "2026-07-01T14:01:00Z"}\n')
+    assert not st.verify()["ok"]                                        # unmanifested file
+    e = st.adopt(f"runs/{DATE}/20261012T122604Z_morning.json", "2026-07-01T14:01:00Z", "test")
+    assert e["adopted"] == "test" and st.verify()["ok"]
+    assert open(st.manifest_path, encoding="utf-8").read().startswith(before)   # only appended
+    for bad in (f"runs/{DATE}/20261012T122604Z_morning.json", "nope.json", "MANIFEST.jsonl"):
+        try:
+            st.adopt(bad, "2026-07-01T14:01:00Z", "test")
+            raise AssertionError(bad)
+        except WriteOnceError:
+            pass
+
+
+def test_the_shadow_workflow_reads_current_main_and_refuses_a_stale_store():
+    import yaml
+    wf = yaml.safe_load(open(os.path.join(ROOT, ".github", "workflows", "research-mlb-pitcher-shadow.yml")))
+    gate = wf["jobs"]["gate"]["steps"][0]["with"]
+    assert gate["ref"] == "main"
+    shadow = wf["jobs"]["shadow"]["steps"]
+    ref = shadow[0]["with"]["ref"]
+    # schedule/dispatch -> 'main'; pull_request -> its own merge ref (an `&& '' ||` form would always be 'main')
+    assert ref.replace(" ", "") == "${{github.event_name!='pull_request'&&'main'||github.ref}}" 
+    names = [s.get("name", "") for s in shadow]
+    guard = next(i for i, n in enumerate(names) if n.startswith("Refuse to commit if the store moved"))
+    commit = next(i for i, n in enumerate(names) if n.startswith("Commit shadow records"))
+    assert guard == commit - 1 and "FETCH_HEAD:data/shadow_pure/mlb_pitcher" in shadow[guard]["run"]

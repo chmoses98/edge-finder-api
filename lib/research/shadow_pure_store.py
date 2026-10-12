@@ -90,6 +90,24 @@ class ShadowStore:
             fh.write(json.dumps(entry, sort_keys=True, separators=(",", ":")) + "\n")
         return entry
 
+    def adopt(self, rel, written_at, note):
+        """Append a manifest entry for a file that EXISTS in the store but was never manifested (a writer whose
+        manifest lines were lost). Append-only: it never rewrites a file or an existing entry, refuses a file that
+        is already listed or absent, and records why in `adopted`. The file's bytes are hashed as they are."""
+        path = os.path.join(self.root, rel)
+        if rel == MANIFEST or rel.startswith(("/", "..")) or not os.path.isfile(path):
+            raise WriteOnceError(f"cannot adopt {rel!r}: not an existing store file")
+        man = self.manifest()
+        if any(e["path"] == rel for e in man):
+            raise WriteOnceError(f"cannot adopt {rel!r}: already manifested")
+        sha = _sha256_file(path)
+        prev = man[-1]["chain"] if man else GENESIS
+        entry = {"seq": len(man), "path": rel, "sha256": sha, "bytes": os.path.getsize(path), "written_at": written_at,
+                 "prev_chain": prev, "chain": chain_hash(prev, rel, sha), "adopted": note}
+        with open(self.manifest_path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(entry, sort_keys=True, separators=(",", ":")) + "\n")
+        return entry
+
     def files(self):
         out = []
         for d, _sub, names in os.walk(self.root):

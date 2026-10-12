@@ -212,3 +212,18 @@ def test_capture_end_to_end_with_offline_schedule(tmp_path, monkeypatch):
             rows = [json.loads(x) for x in open(os.path.join(store, f))]
             assert gate.validate_file_summary(rows, require_v1=True)["n"] == 3
             assert {r["x_validation_status"] for r in rows} == {"BLOCKED_NOT_VALIDATED_POSTSEASON"}
+
+
+def test_only_the_first_capture_of_a_window_is_scored(tmp_path):
+    """2026-10-12: a second run re-captured the same morning window; both stay in the store, one is scored."""
+    st = ShadowStore(str(tmp_path / "store"))
+    for stamp_, rid in (("20261012T122519Z", "r1"), ("20261012T122604Z", "r2")):
+        st.write_once(f"projections/2026-10-12/{stamp_}_morning__champion.jsonl",
+                      [{"game_id": "g", "player_id": "p", "statistic": "pitcher_outs", "x_arm": "champion",
+                        "x_capture_window": "morning", "x_run_id": rid, "mean": 1.0}])
+    st.write_once("projections/2026-10-12/20261012T193000Z_pregame__champion.jsonl",
+                  [{"game_id": "g", "player_id": "p", "statistic": "pitcher_outs", "x_arm": "champion",
+                    "x_capture_window": "pregame", "x_run_id": "r3", "mean": 1.0}])
+    rows = SH.all_projections(st)
+    assert sorted(r["x_run_id"] for r in rows) == ["r1", "r3"]
+

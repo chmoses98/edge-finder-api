@@ -1,0 +1,2850 @@
+{
+ "bootstrap": {
+  "cluster": "gamePk",
+  "reps": 1000,
+  "seed": 20261012
+ },
+ "development_in_sample": {
+  "decomposition": {
+   "depth": {
+    "15_18_outs": {
+     "actual_mean": {
+      "bf": 22.882,
+      "k": 5.061,
+      "outs": 16.271
+     },
+     "bf_bias": {
+      "ci95": [
+       -0.2684,
+       -0.1019
+      ],
+      "games": 5317,
+      "n": 7200,
+      "point": -0.1888
+     },
+     "k_bias": {
+      "ci95": [
+       -0.0042,
+       0.1057
+      ],
+      "games": 5317,
+      "n": 7200,
+      "point": 0.0481
+     },
+     "k_bias_given_actual_bf": {
+      "ci95": [
+       0.0767,
+       0.179
+      ],
+      "games": 5317,
+      "n": 7200,
+      "point": 0.1254
+     },
+     "kernel_mean_minus_latent_mu": {
+      "ci95": [
+       -0.0497,
+       -0.0413
+      ],
+      "games": 5317,
+      "n": 7200,
+      "point": -0.0457
+     },
+     "latent_mu_minus_actual_outs": {
+      "ci95": [
+       -0.0212,
+       0.1476
+      ],
+      "games": 5317,
+      "n": 7200,
+      "point": 0.0546
+     },
+     "nonout_bias_given_actual_outs": {
+      "ci95": [
+       -0.2499,
+       -0.151
+      ],
+      "games": 5317,
+      "n": 7200,
+      "point": -0.2018
+     },
+     "outs_bias": {
+      "ci95": [
+       -0.0687,
+       0.1032
+      ],
+      "games": 5317,
+      "n": 7200,
+      "point": 0.009
+     }
+    },
+    "ge18_outs": {
+     "actual_mean": {
+      "bf": 24.298,
+      "k": 5.79,
+      "outs": 17.68
+     },
+     "bf_bias": {
+      "ci95": [
+       -1.051,
+       -0.7327
+      ],
+      "games": 1929,
+      "n": 2097,
+      "point": -0.8999
+     },
+     "k_bias": {
+      "ci95": [
+       -0.263,
+       -0.0654
+      ],
+      "games": 1929,
+      "n": 2097,
+      "point": -0.162
+     },
+     "k_bias_given_actual_bf": {
+      "ci95": [
+       -0.0267,
+       0.1699
+      ],
+      "games": 1929,
+      "n": 2097,
+      "point": 0.0756
+     },
+     "kernel_mean_minus_latent_mu": {
+      "ci95": [
+       -0.3264,
+       -0.3113
+      ],
+      "games": 1929,
+      "n": 2097,
+      "point": -0.3186
+     },
+     "latent_mu_minus_actual_outs": {
+      "ci95": [
+       -0.152,
+       0.177
+      ],
+      "games": 1929,
+      "n": 2097,
+      "point": 0.0156
+     },
+     "nonout_bias_given_actual_outs": {
+      "ci95": [
+       -0.761,
+       -0.5827
+      ],
+      "games": 1929,
+      "n": 2097,
+      "point": -0.671
+     },
+     "outs_bias": {
+      "ci95": [
+       -0.4724,
+       -0.1414
+      ],
+      "games": 1929,
+      "n": 2097,
+      "point": -0.303
+     }
+    },
+    "lt15_outs": {
+     "actual_mean": {
+      "bf": 20.508,
+      "k": 4.231,
+      "outs": 14.339
+     },
+     "bf_bias": {
+      "ci95": [
+       0.4635,
+       0.7075
+      ],
+      "games": 3172,
+      "n": 3661,
+      "point": 0.5842
+     },
+     "k_bias": {
+      "ci95": [
+       0.1655,
+       0.3031
+      ],
+      "games": 3172,
+      "n": 3661,
+      "point": 0.2345
+     },
+     "k_bias_given_actual_bf": {
+      "ci95": [
+       0.0804,
+       0.206
+      ],
+      "games": 3172,
+      "n": 3661,
+      "point": 0.1427
+     },
+     "kernel_mean_minus_latent_mu": {
+      "ci95": [
+       0.2332,
+       0.265
+      ],
+      "games": 3172,
+      "n": 3661,
+      "point": 0.2494
+     },
+     "latent_mu_minus_actual_outs": {
+      "ci95": [
+       -0.3205,
+       -0.0826
+      ],
+      "games": 3172,
+      "n": 3661,
+      "point": -0.1966
+     },
+     "nonout_bias_given_actual_outs": {
+      "ci95": [
+       0.485,
+       0.6271
+      ],
+      "games": 3172,
+      "n": 3661,
+      "point": 0.5601
+     },
+     "outs_bias": {
+      "ci95": [
+       -0.0703,
+       0.1687
+      ],
+      "games": 3172,
+      "n": 3661,
+      "point": 0.0528
+     }
+    }
+   },
+   "pitch_leash": {
+    "long_ge95": {
+     "actual_mean": {
+      "bf": 24.168,
+      "k": 6.011,
+      "outs": 17.496
+     },
+     "bf_bias": {
+      "ci95": [
+       -0.9211,
+       -0.6419
+      ],
+      "games": 1958,
+      "n": 2167,
+      "point": -0.7778
+     },
+     "k_bias": {
+      "ci95": [
+       -0.2882,
+       -0.0894
+      ],
+      "games": 1958,
+      "n": 2167,
+      "point": -0.1928
+     },
+     "k_bias_given_actual_bf": {
+      "ci95": [
+       -0.069,
+       0.1215
+      ],
+      "games": 1958,
+      "n": 2167,
+      "point": 0.0234
+     },
+     "kernel_mean_minus_latent_mu": {
+      "ci95": [
+       -0.2969,
+       -0.2822
+      ],
+      "games": 1958,
+      "n": 2167,
+      "point": -0.2899
+     },
+     "latent_mu_minus_actual_outs": {
+      "ci95": [
+       -0.1049,
+       0.2026
+      ],
+      "games": 1958,
+      "n": 2167,
+      "point": 0.0487
+     },
+     "nonout_bias_given_actual_outs": {
+      "ci95": [
+       -0.6835,
+       -0.4927
+      ],
+      "games": 1958,
+      "n": 2167,
+      "point": -0.5824
+     },
+     "outs_bias": {
+      "ci95": [
+       -0.394,
+       -0.0898
+      ],
+      "games": 1958,
+      "n": 2167,
+      "point": -0.2412
+     }
+    },
+    "mid_80_95": {
+     "actual_mean": {
+      "bf": 22.676,
+      "k": 4.912,
+      "outs": 16.078
+     },
+     "bf_bias": {
+      "ci95": [
+       -0.1707,
+       -0.0174
+      ],
+      "games": 5931,
+      "n": 8659,
+      "point": -0.0933
+     },
+     "k_bias": {
+      "ci95": [
+       0.0308,
+       0.1279
+      ],
+      "games": 5931,
+      "n": 8659,
+      "point": 0.0807
+     },
+     "k_bias_given_actual_bf": {
+      "ci95": [
+       0.0876,
+       0.1829
+      ],
+      "games": 5931,
+      "n": 8659,
+      "point": 0.1356
+     },
+     "kernel_mean_minus_latent_mu": {
+      "ci95": [
+       -0.0073,
+       0.0019
+      ],
+      "games": 5931,
+      "n": 8659,
+      "point": -0.0027
+     },
+     "latent_mu_minus_actual_outs": {
+      "ci95": [
+       -0.0367,
+       0.1202
+      ],
+      "games": 5931,
+      "n": 8659,
+      "point": 0.0403
+     },
+     "nonout_bias_given_actual_outs": {
+      "ci95": [
+       -0.1747,
+       -0.0832
+      ],
+      "games": 5931,
+      "n": 8659,
+      "point": -0.1282
+     },
+     "outs_bias": {
+      "ci95": [
+       -0.0398,
+       0.1164
+      ],
+      "games": 5931,
+      "n": 8659,
+      "point": 0.0376
+     }
+    },
+    "short_lt80": {
+     "actual_mean": {
+      "bf": 19.727,
+      "k": 3.992,
+      "outs": 13.88
+     },
+     "bf_bias": {
+      "ci95": [
+       0.464,
+       0.8153
+      ],
+      "games": 1961,
+      "n": 2132,
+      "point": 0.65
+     },
+     "k_bias": {
+      "ci95": [
+       0.1866,
+       0.3606
+      ],
+      "games": 1961,
+      "n": 2132,
+      "point": 0.274
+     },
+     "k_bias_given_actual_bf": {
+      "ci95": [
+       0.0857,
+       0.2477
+      ],
+      "games": 1961,
+      "n": 2132,
+      "point": 0.1683
+     },
+     "kernel_mean_minus_latent_mu": {
+      "ci95": [
+       0.2393,
+       0.2928
+      ],
+      "games": 1961,
+      "n": 2132,
+      "point": 0.2664
+     },
+     "latent_mu_minus_actual_outs": {
+      "ci95": [
+       -0.5151,
+       -0.1972
+      ],
+      "games": 1961,
+      "n": 2132,
+      "point": -0.3509
+     },
+     "nonout_bias_given_actual_outs": {
+      "ci95": [
+       0.6273,
+       0.8388
+      ],
+      "games": 1961,
+      "n": 2132,
+      "point": 0.733
+     },
+     "outs_bias": {
+      "ci95": [
+       -0.2419,
+       0.0721
+      ],
+      "games": 1961,
+      "n": 2132,
+      "point": -0.0846
+     }
+    }
+   }
+  },
+  "nonout_residual_by_outs_band": {
+   "00-02|long_ge95": {
+    "mean": 4.831,
+    "n": 3
+   },
+   "00-02|mid_80_95": {
+    "mean": 2.113,
+    "n": 34
+   },
+   "00-02|short_lt80": {
+    "mean": 0.719,
+    "n": 27
+   },
+   "03-05|long_ge95": {
+    "mean": 2.368,
+    "n": 13
+   },
+   "03-05|mid_80_95": {
+    "mean": 2.247,
+    "n": 92
+   },
+   "03-05|short_lt80": {
+    "mean": -1.153,
+    "n": 123
+   },
+   "06-08|long_ge95": {
+    "mean": 0.552,
+    "n": 33
+   },
+   "06-08|mid_80_95": {
+    "mean": 1.232,
+    "n": 228
+   },
+   "06-08|short_lt80": {
+    "mean": -1.247,
+    "n": 117
+   },
+   "09-11|long_ge95": {
+    "mean": 1.136,
+    "n": 84
+   },
+   "09-11|mid_80_95": {
+    "mean": 0.309,
+    "n": 532
+   },
+   "09-11|short_lt80": {
+    "mean": -0.56,
+    "n": 208
+   },
+   "12-14|long_ge95": {
+    "mean": 1.26,
+    "n": 172
+   },
+   "12-14|mid_80_95": {
+    "mean": 0.438,
+    "n": 1308
+   },
+   "12-14|short_lt80": {
+    "mean": -0.678,
+    "n": 457
+   },
+   "15-17|long_ge95": {
+    "mean": 1.036,
+    "n": 552
+   },
+   "15-17|mid_80_95": {
+    "mean": 0.151,
+    "n": 2685
+   },
+   "15-17|short_lt80": {
+    "mean": -0.846,
+    "n": 663
+   },
+   "18-20|long_ge95": {
+    "mean": 0.395,
+    "n": 763
+   },
+   "18-20|mid_80_95": {
+    "mean": -0.078,
+    "n": 2582
+   },
+   "18-20|short_lt80": {
+    "mean": -0.52,
+    "n": 423
+   },
+   "21-23|long_ge95": {
+    "mean": 0.132,
+    "n": 430
+   },
+   "21-23|mid_80_95": {
+    "mean": -0.245,
+    "n": 1021
+   },
+   "21-23|short_lt80": {
+    "mean": -0.676,
+    "n": 100
+   },
+   "24-26|long_ge95": {
+    "mean": -0.375,
+    "n": 117
+   },
+   "24-26|mid_80_95": {
+    "mean": -0.788,
+    "n": 177
+   },
+   "24-26|short_lt80": {
+    "mean": -1.407,
+    "n": 14
+   }
+  },
+  "note": "frozen v1 params were fitted on these seasons: in-sample, used only to show the mechanism replicates where no held-out outcome is involved",
+  "rows": 12958,
+  "seasons": [
+   "2022",
+   "2023",
+   "2024"
+  ]
+ },
+ "frozen_reproduction": {
+  "mismatches": 0,
+  "ok": true,
+  "rows_checked": 27075,
+  "sidecar_rows": 27075
+ },
+ "holdout": {
+  "bias": {
+   "depth": {
+    "15_18_outs": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        0.1779,
+        0.3735
+       ],
+       "games": 3762,
+       "n": 5132,
+       "point": 0.2748
+      },
+      "challenger": {
+       "ci95": [
+        -0.1479,
+        0.0429
+       ],
+       "games": 3762,
+       "n": 5132,
+       "point": -0.0531
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.1367,
+        -0.1037
+       ],
+       "games": 3762,
+       "n": 5132,
+       "point": -0.1203
+      },
+      "champion": {
+       "ci95": [
+        -0.0273,
+        0.1636
+       ],
+       "games": 3762,
+       "n": 5132,
+       "point": 0.0672
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        0.2533,
+        0.4554
+       ],
+       "games": 3762,
+       "n": 5132,
+       "point": 0.3593
+      },
+      "challenger": {
+       "ci95": [
+        -0.0344,
+        0.1612
+       ],
+       "games": 3762,
+       "n": 5132,
+       "point": 0.0668
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0855,
+        -0.0509
+       ],
+       "games": 3762,
+       "n": 5132,
+       "point": -0.0681
+      },
+      "champion": {
+       "ci95": [
+        0.0344,
+        0.2314
+       ],
+       "games": 3762,
+       "n": 5132,
+       "point": 0.1349
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        0.0657,
+        0.1964
+       ],
+       "games": 3762,
+       "n": 5132,
+       "point": 0.1303
+      },
+      "challenger": {
+       "ci95": [
+        0.0162,
+        0.1384
+       ],
+       "games": 3762,
+       "n": 5132,
+       "point": 0.0766
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.052,
+        -0.044
+       ],
+       "games": 3762,
+       "n": 5132,
+       "point": -0.0479
+      },
+      "champion": {
+       "ci95": [
+        0.0621,
+        0.1861
+       ],
+       "games": 3762,
+       "n": 5132,
+       "point": 0.1245
+      }
+     }
+    },
+    "all": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        0.0103,
+        0.1694
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0886
+      },
+      "challenger": {
+       "ci95": [
+        0.0964,
+        0.2472
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.1709
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        0.0316,
+        0.0696
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0509
+      },
+      "champion": {
+       "ci95": [
+        0.0432,
+        0.1963
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.12
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        0.0226,
+        0.184
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.1025
+      },
+      "challenger": {
+       "ci95": [
+        0.0025,
+        0.1552
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0772
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0706,
+        -0.0351
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": -0.0523
+      },
+      "champion": {
+       "ci95": [
+        0.0543,
+        0.2091
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.1294
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        -0.0038,
+        0.0942
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0447
+      },
+      "challenger": {
+       "ci95": [
+        0.0384,
+        0.1317
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0851
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0171,
+        -0.0076
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": -0.0123
+      },
+      "champion": {
+       "ci95": [
+        0.0502,
+        0.1431
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0974
+      }
+     }
+    },
+    "ge18_outs": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        0.8315,
+        1.2413
+       ],
+       "games": 991,
+       "n": 1049,
+       "point": 1.0321
+      },
+      "challenger": {
+       "ci95": [
+        -0.9001,
+        -0.483
+       ],
+       "games": 991,
+       "n": 1049,
+       "point": -0.6952
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.6832,
+        -0.6021
+       ],
+       "games": 991,
+       "n": 1049,
+       "point": -0.6442
+      },
+      "champion": {
+       "ci95": [
+        -0.2481,
+        0.1603
+       ],
+       "games": 991,
+       "n": 1049,
+       "point": -0.051
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        1.3776,
+        1.8416
+       ],
+       "games": 991,
+       "n": 1049,
+       "point": 1.604
+      },
+      "challenger": {
+       "ci95": [
+        -0.5153,
+        -0.0605
+       ],
+       "games": 991,
+       "n": 1049,
+       "point": -0.2863
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.4674,
+        -0.3957
+       ],
+       "games": 991,
+       "n": 1049,
+       "point": -0.4314
+      },
+      "champion": {
+       "ci95": [
+        -0.0836,
+        0.3761
+       ],
+       "games": 991,
+       "n": 1049,
+       "point": 0.145
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        0.2585,
+        0.5648
+       ],
+       "games": 991,
+       "n": 1049,
+       "point": 0.4119
+      },
+      "challenger": {
+       "ci95": [
+        -0.3241,
+        -0.0393
+       ],
+       "games": 991,
+       "n": 1049,
+       "point": -0.1805
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.2107,
+        -0.1883
+       ],
+       "games": 991,
+       "n": 1049,
+       "point": -0.1995
+      },
+      "champion": {
+       "ci95": [
+        -0.1242,
+        0.1589
+       ],
+       "games": 991,
+       "n": 1049,
+       "point": 0.0191
+      }
+     }
+    },
+    "lt15_outs": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        -0.7565,
+        -0.4423
+       ],
+       "games": 2408,
+       "n": 2844,
+       "point": -0.5952
+      },
+      "challenger": {
+       "ci95": [
+        0.7429,
+        1.0485
+       ],
+       "games": 2408,
+       "n": 2844,
+       "point": 0.8945
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        0.5746,
+        0.6557
+       ],
+       "games": 2408,
+       "n": 2844,
+       "point": 0.6163
+      },
+      "champion": {
+       "ci95": [
+        0.1174,
+        0.4378
+       ],
+       "games": 2408,
+       "n": 2844,
+       "point": 0.2782
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        -1.0633,
+        -0.7655
+       ],
+       "games": 2408,
+       "n": 2844,
+       "point": -0.9148
+      },
+      "challenger": {
+       "ci95": [
+        0.0936,
+        0.3718
+       ],
+       "games": 2408,
+       "n": 2844,
+       "point": 0.2301
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        0.0743,
+        0.1538
+       ],
+       "games": 2408,
+       "n": 2844,
+       "point": 0.1162
+      },
+      "champion": {
+       "ci95": [
+        -0.0269,
+        0.2615
+       ],
+       "games": 2408,
+       "n": 2844,
+       "point": 0.1139
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        -0.3307,
+        -0.1611
+       ],
+       "games": 2408,
+       "n": 2844,
+       "point": -0.2452
+      },
+      "challenger": {
+       "ci95": [
+        0.1213,
+        0.274
+       ],
+       "games": 2408,
+       "n": 2844,
+       "point": 0.1984
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        0.1111,
+        0.1298
+       ],
+       "games": 2408,
+       "n": 2844,
+       "point": 0.1209
+      },
+      "champion": {
+       "ci95": [
+        -0.001,
+        0.1555
+       ],
+       "games": 2408,
+       "n": 2844,
+       "point": 0.0775
+      }
+     }
+    }
+   },
+   "pitch_leash": {
+    "all": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        0.0103,
+        0.1694
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0886
+      },
+      "challenger": {
+       "ci95": [
+        0.0964,
+        0.2472
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.1709
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        0.0316,
+        0.0696
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0509
+      },
+      "champion": {
+       "ci95": [
+        0.0432,
+        0.1963
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.12
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        0.0226,
+        0.184
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.1025
+      },
+      "challenger": {
+       "ci95": [
+        0.0025,
+        0.1552
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0772
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0706,
+        -0.0351
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": -0.0523
+      },
+      "champion": {
+       "ci95": [
+        0.0543,
+        0.2091
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.1294
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        -0.0038,
+        0.0942
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0447
+      },
+      "challenger": {
+       "ci95": [
+        0.0384,
+        0.1317
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0851
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0171,
+        -0.0076
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": -0.0123
+      },
+      "champion": {
+       "ci95": [
+        0.0502,
+        0.1431
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0974
+      }
+     }
+    },
+    "long_ge95": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        0.5394,
+        0.9118
+       ],
+       "games": 862,
+       "n": 912,
+       "point": 0.722
+      },
+      "challenger": {
+       "ci95": [
+        -0.8266,
+        -0.4669
+       ],
+       "games": 862,
+       "n": 912,
+       "point": -0.651
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.4832,
+        -0.3895
+       ],
+       "games": 862,
+       "n": 912,
+       "point": -0.4348
+      },
+      "champion": {
+       "ci95": [
+        -0.3895,
+        -0.0241
+       ],
+       "games": 862,
+       "n": 912,
+       "point": -0.2162
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        0.451,
+        0.8908
+       ],
+       "games": 862,
+       "n": 912,
+       "point": 0.6763
+      },
+      "challenger": {
+       "ci95": [
+        -0.4744,
+        -0.0353
+       ],
+       "games": 862,
+       "n": 912,
+       "point": -0.2575
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0962,
+        -0.0081
+       ],
+       "games": 862,
+       "n": 912,
+       "point": -0.0529
+      },
+      "champion": {
+       "ci95": [
+        -0.4242,
+        0.0168
+       ],
+       "games": 862,
+       "n": 912,
+       "point": -0.2047
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        0.2209,
+        0.5628
+       ],
+       "games": 862,
+       "n": 912,
+       "point": 0.3833
+      },
+      "challenger": {
+       "ci95": [
+        -0.3569,
+        -0.0383
+       ],
+       "games": 862,
+       "n": 912,
+       "point": -0.2007
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.1759,
+        -0.1505
+       ],
+       "games": 862,
+       "n": 912,
+       "point": -0.1627
+      },
+      "champion": {
+       "ci95": [
+        -0.1975,
+        0.1236
+       ],
+       "games": 862,
+       "n": 912,
+       "point": -0.038
+      }
+     }
+    },
+    "mid_80_95": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        0.1261,
+        0.319
+       ],
+       "games": 4312,
+       "n": 6592,
+       "point": 0.2239
+      },
+      "challenger": {
+       "ci95": [
+        -0.0076,
+        0.1677
+       ],
+       "games": 4312,
+       "n": 6592,
+       "point": 0.0799
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0282,
+        0.006
+       ],
+       "games": 4312,
+       "n": 6592,
+       "point": -0.011
+      },
+      "champion": {
+       "ci95": [
+        0.0015,
+        0.1787
+       ],
+       "games": 4312,
+       "n": 6592,
+       "point": 0.0909
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        0.1141,
+        0.3064
+       ],
+       "games": 4312,
+       "n": 6592,
+       "point": 0.2068
+      },
+      "challenger": {
+       "ci95": [
+        0.0301,
+        0.2125
+       ],
+       "games": 4312,
+       "n": 6592,
+       "point": 0.1153
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0236,
+        0.0093
+       ],
+       "games": 4312,
+       "n": 6592,
+       "point": -0.0073
+      },
+      "champion": {
+       "ci95": [
+        0.0379,
+        0.2217
+       ],
+       "games": 4312,
+       "n": 6592,
+       "point": 0.1226
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        0.0295,
+        0.1438
+       ],
+       "games": 4312,
+       "n": 6592,
+       "point": 0.0865
+      },
+      "challenger": {
+       "ci95": [
+        0.0452,
+        0.156
+       ],
+       "games": 4312,
+       "n": 6592,
+       "point": 0.0989
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0258,
+        -0.0174
+       ],
+       "games": 4312,
+       "n": 6592,
+       "point": -0.0218
+      },
+      "champion": {
+       "ci95": [
+        0.0669,
+        0.1775
+       ],
+       "games": 4312,
+       "n": 6592,
+       "point": 0.1207
+      }
+     }
+    },
+    "short_lt80": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        -1.1065,
+        -0.6308
+       ],
+       "games": 1393,
+       "n": 1521,
+       "point": -0.8772
+      },
+      "challenger": {
+       "ci95": [
+        0.8409,
+        1.2854
+       ],
+       "games": 1393,
+       "n": 1521,
+       "point": 1.058
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        0.5333,
+        0.6718
+       ],
+       "games": 1393,
+       "n": 1521,
+       "point": 0.6106
+      },
+      "champion": {
+       "ci95": [
+        0.2068,
+        0.6868
+       ],
+       "games": 1393,
+       "n": 1521,
+       "point": 0.4474
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        -0.8882,
+        -0.484
+       ],
+       "games": 1393,
+       "n": 1521,
+       "point": -0.6938
+      },
+      "challenger": {
+       "ci95": [
+        -0.0766,
+        0.3021
+       ],
+       "games": 1393,
+       "n": 1521,
+       "point": 0.1127
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.3156,
+        -0.1896
+       ],
+       "games": 1393,
+       "n": 1521,
+       "point": -0.2466
+      },
+      "champion": {
+       "ci95": [
+        0.1581,
+        0.5716
+       ],
+       "games": 1393,
+       "n": 1521,
+       "point": 0.3592
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        -0.4503,
+        -0.2267
+       ],
+       "games": 1393,
+       "n": 1521,
+       "point": -0.3394
+      },
+      "challenger": {
+       "ci95": [
+        0.0912,
+        0.3087
+       ],
+       "games": 1393,
+       "n": 1521,
+       "point": 0.1966
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        0.1014,
+        0.1331
+       ],
+       "games": 1393,
+       "n": 1521,
+       "point": 0.1191
+      },
+      "champion": {
+       "ci95": [
+        -0.0301,
+        0.188
+       ],
+       "games": 1393,
+       "n": 1521,
+       "point": 0.0775
+      }
+     }
+    }
+   },
+   "pitch_leash_fine": {
+    "75_85": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        -0.5665,
+        -0.2737
+       ],
+       "games": 2267,
+       "n": 2627,
+       "point": -0.4258
+      },
+      "challenger": {
+       "ci95": [
+        0.364,
+        0.6451
+       ],
+       "games": 2267,
+       "n": 2627,
+       "point": 0.4988
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        0.3087,
+        0.3674
+       ],
+       "games": 2267,
+       "n": 2627,
+       "point": 0.3389
+      },
+      "champion": {
+       "ci95": [
+        0.0173,
+        0.3144
+       ],
+       "games": 2267,
+       "n": 2627,
+       "point": 0.1599
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        -0.5193,
+        -0.2138
+       ],
+       "games": 2267,
+       "n": 2627,
+       "point": -0.3669
+      },
+      "challenger": {
+       "ci95": [
+        0.0125,
+        0.287
+       ],
+       "games": 2267,
+       "n": 2627,
+       "point": 0.1461
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0445,
+        0.0138
+       ],
+       "games": 2267,
+       "n": 2627,
+       "point": -0.0161
+      },
+      "champion": {
+       "ci95": [
+        0.0197,
+        0.3098
+       ],
+       "games": 2267,
+       "n": 2627,
+       "point": 0.1623
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        -0.2167,
+        -0.0362
+       ],
+       "games": 2267,
+       "n": 2627,
+       "point": -0.1275
+      },
+      "challenger": {
+       "ci95": [
+        0.12,
+        0.286
+       ],
+       "games": 2267,
+       "n": 2627,
+       "point": 0.2072
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        0.0611,
+        0.0754
+       ],
+       "games": 2267,
+       "n": 2627,
+       "point": 0.0683
+      },
+      "champion": {
+       "ci95": [
+        0.0516,
+        0.2195
+       ],
+       "games": 2267,
+       "n": 2627,
+       "point": 0.1389
+      }
+     }
+    },
+    "85_90": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        -0.0113,
+        0.2725
+       ],
+       "games": 2344,
+       "n": 2713,
+       "point": 0.1264
+      },
+      "challenger": {
+       "ci95": [
+        -0.1469,
+        0.1244
+       ],
+       "games": 2344,
+       "n": 2713,
+       "point": -0.0109
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0337,
+        0.0137
+       ],
+       "games": 2344,
+       "n": 2713,
+       "point": -0.0108
+      },
+      "champion": {
+       "ci95": [
+        -0.1404,
+        0.1368
+       ],
+       "games": 2344,
+       "n": 2713,
+       "point": -0.0001
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        -0.0188,
+        0.2727
+       ],
+       "games": 2344,
+       "n": 2713,
+       "point": 0.1238
+      },
+      "challenger": {
+       "ci95": [
+        -0.0718,
+        0.2
+       ],
+       "games": 2344,
+       "n": 2713,
+       "point": 0.0615
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0334,
+        0.0195
+       ],
+       "games": 2344,
+       "n": 2713,
+       "point": -0.005
+      },
+      "champion": {
+       "ci95": [
+        -0.0634,
+        0.2099
+       ],
+       "games": 2344,
+       "n": 2713,
+       "point": 0.0665
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        -0.0572,
+        0.1191
+       ],
+       "games": 2344,
+       "n": 2713,
+       "point": 0.0326
+      },
+      "challenger": {
+       "ci95": [
+        -0.0036,
+        0.1578
+       ],
+       "games": 2344,
+       "n": 2713,
+       "point": 0.0758
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0242,
+        -0.0124
+       ],
+       "games": 2344,
+       "n": 2713,
+       "point": -0.0183
+      },
+      "champion": {
+       "ci95": [
+        0.0115,
+        0.1757
+       ],
+       "games": 2344,
+       "n": 2713,
+       "point": 0.0941
+      }
+     }
+    },
+    "90_95": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        0.5541,
+        0.8626
+       ],
+       "games": 1896,
+       "n": 2126,
+       "point": 0.7045
+      },
+      "challenger": {
+       "ci95": [
+        -0.2492,
+        0.0493
+       ],
+       "games": 1896,
+       "n": 2126,
+       "point": -0.104
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.2532,
+        -0.2031
+       ],
+       "games": 1896,
+       "n": 2126,
+       "point": -0.2275
+      },
+      "champion": {
+       "ci95": [
+        -0.0204,
+        0.2796
+       ],
+       "games": 1896,
+       "n": 2126,
+       "point": 0.1235
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        0.5402,
+        0.8592
+       ],
+       "games": 1896,
+       "n": 2126,
+       "point": 0.6967
+      },
+      "challenger": {
+       "ci95": [
+        -0.0028,
+        0.3128
+       ],
+       "games": 1896,
+       "n": 2126,
+       "point": 0.1543
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0512,
+        0.001
+       ],
+       "games": 1896,
+       "n": 2126,
+       "point": -0.0244
+      },
+      "champion": {
+       "ci95": [
+        0.027,
+        0.342
+       ],
+       "games": 1896,
+       "n": 2126,
+       "point": 0.1787
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        0.1629,
+        0.3744
+       ],
+       "games": 1896,
+       "n": 2126,
+       "point": 0.2644
+      },
+      "challenger": {
+       "ci95": [
+        -0.0681,
+        0.1267
+       ],
+       "games": 1896,
+       "n": 2126,
+       "point": 0.027
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0917,
+        -0.0786
+       ],
+       "games": 1896,
+       "n": 2126,
+       "point": -0.0851
+      },
+      "champion": {
+       "ci95": [
+        0.0163,
+        0.21
+       ],
+       "games": 1896,
+       "n": 2126,
+       "point": 0.1121
+      }
+     }
+    },
+    "95_100": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        0.5243,
+        0.9429
+       ],
+       "games": 800,
+       "n": 838,
+       "point": 0.7304
+      },
+      "challenger": {
+       "ci95": [
+        -0.812,
+        -0.4015
+       ],
+       "games": 800,
+       "n": 838,
+       "point": -0.6037
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.4567,
+        -0.3621
+       ],
+       "games": 800,
+       "n": 838,
+       "point": -0.4093
+      },
+      "champion": {
+       "ci95": [
+        -0.4009,
+        0.0097
+       ],
+       "games": 800,
+       "n": 838,
+       "point": -0.1944
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        0.4521,
+        0.9411
+       ],
+       "games": 800,
+       "n": 838,
+       "point": 0.6913
+      },
+      "challenger": {
+       "ci95": [
+        -0.423,
+        0.0307
+       ],
+       "games": 800,
+       "n": 838,
+       "point": -0.1959
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0808,
+        0.0053
+       ],
+       "games": 800,
+       "n": 838,
+       "point": -0.0379
+      },
+      "champion": {
+       "ci95": [
+        -0.384,
+        0.0709
+       ],
+       "games": 800,
+       "n": 838,
+       "point": -0.158
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        0.2101,
+        0.551
+       ],
+       "games": 800,
+       "n": 838,
+       "point": 0.3835
+      },
+      "challenger": {
+       "ci95": [
+        -0.3323,
+        -0.0277
+       ],
+       "games": 800,
+       "n": 838,
+       "point": -0.1812
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.1682,
+        -0.142
+       ],
+       "games": 800,
+       "n": 838,
+       "point": -0.1551
+      },
+      "champion": {
+       "ci95": [
+        -0.1822,
+        0.1273
+       ],
+       "games": 800,
+       "n": 838,
+       "point": -0.0261
+      }
+     }
+    },
+    "all": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        0.0103,
+        0.1694
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0886
+      },
+      "challenger": {
+       "ci95": [
+        0.0964,
+        0.2472
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.1709
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        0.0316,
+        0.0696
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0509
+      },
+      "champion": {
+       "ci95": [
+        0.0432,
+        0.1963
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.12
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        0.0226,
+        0.184
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.1025
+      },
+      "challenger": {
+       "ci95": [
+        0.0025,
+        0.1552
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0772
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0706,
+        -0.0351
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": -0.0523
+      },
+      "champion": {
+       "ci95": [
+        0.0543,
+        0.2091
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.1294
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        -0.0038,
+        0.0942
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0447
+      },
+      "challenger": {
+       "ci95": [
+        0.0384,
+        0.1317
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0851
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.0171,
+        -0.0076
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": -0.0123
+      },
+      "champion": {
+       "ci95": [
+        0.0502,
+        0.1431
+       ],
+       "games": 4839,
+       "n": 9025,
+       "point": 0.0974
+      }
+     }
+    },
+    "ge100": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        -0.0459,
+        1.3351
+       ],
+       "games": 74,
+       "n": 74,
+       "point": 0.627
+      },
+      "challenger": {
+       "ci95": [
+        -1.8087,
+        -0.5163
+       ],
+       "games": 74,
+       "n": 74,
+       "point": -1.1861
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.9056,
+        -0.5331
+       ],
+       "games": 74,
+       "n": 74,
+       "point": -0.723
+      },
+      "champion": {
+       "ci95": [
+        -1.107,
+        0.2201
+       ],
+       "games": 74,
+       "n": 74,
+       "point": -0.4632
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        -0.2838,
+        1.2865
+       ],
+       "games": 74,
+       "n": 74,
+       "point": 0.5054
+      },
+      "challenger": {
+       "ci95": [
+        -1.7048,
+        -0.2194
+       ],
+       "games": 74,
+       "n": 74,
+       "point": -0.9551
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.3836,
+        -0.0693
+       ],
+       "games": 74,
+       "n": 74,
+       "point": -0.2225
+      },
+      "champion": {
+       "ci95": [
+        -1.5017,
+        0.016
+       ],
+       "games": 74,
+       "n": 74,
+       "point": -0.7326
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        -0.0919,
+        0.873
+       ],
+       "games": 74,
+       "n": 74,
+       "point": 0.3811
+      },
+      "challenger": {
+       "ci95": [
+        -0.9199,
+        0.0905
+       ],
+       "games": 74,
+       "n": 74,
+       "point": -0.4219
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.2958,
+        -0.2047
+       ],
+       "games": 74,
+       "n": 74,
+       "point": -0.2491
+      },
+      "champion": {
+       "ci95": [
+        -0.6727,
+        0.3381
+       ],
+       "games": 74,
+       "n": 74,
+       "point": -0.1728
+      }
+     }
+    },
+    "lt75": {
+     "pitcher_batters_faced": {
+      "baseline": {
+       "ci95": [
+        -1.293,
+        -0.4792
+       ],
+       "games": 618,
+       "n": 647,
+       "point": -0.8975
+      },
+      "challenger": {
+       "ci95": [
+        1.3196,
+        2.0369
+       ],
+       "games": 618,
+       "n": 647,
+       "point": 1.6633
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        0.585,
+        0.8902
+       ],
+       "games": 618,
+       "n": 647,
+       "point": 0.7396
+      },
+      "champion": {
+       "ci95": [
+        0.5306,
+        1.3277
+       ],
+       "games": 618,
+       "n": 647,
+       "point": 0.9237
+      }
+     },
+     "pitcher_outs": {
+      "baseline": {
+       "ci95": [
+        -1.171,
+        -0.5391
+       ],
+       "games": 618,
+       "n": 647,
+       "point": -0.8424
+      },
+      "challenger": {
+       "ci95": [
+        -0.2194,
+        0.3737
+       ],
+       "games": 618,
+       "n": 647,
+       "point": 0.0813
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        -0.6195,
+        -0.3586
+       ],
+       "games": 618,
+       "n": 647,
+       "point": -0.4881
+      },
+      "champion": {
+       "ci95": [
+        0.2447,
+        0.8889
+       ],
+       "games": 618,
+       "n": 647,
+       "point": 0.5694
+      }
+     },
+     "pitcher_strikeouts": {
+      "baseline": {
+       "ci95": [
+        -0.5596,
+        -0.2385
+       ],
+       "games": 618,
+       "n": 647,
+       "point": -0.4048
+      },
+      "challenger": {
+       "ci95": [
+        0.0705,
+        0.3775
+       ],
+       "games": 618,
+       "n": 647,
+       "point": 0.2221
+      },
+      "challenger_minus_champion": {
+       "ci95": [
+        0.1013,
+        0.1701
+       ],
+       "games": 618,
+       "n": 647,
+       "point": 0.1364
+      },
+      "champion": {
+       "ci95": [
+        -0.0721,
+        0.2499
+       ],
+       "games": 618,
+       "n": 647,
+       "point": 0.0858
+      }
+     }
+    }
+   }
+  },
+  "decomposition": {
+   "depth": {
+    "15_18_outs": {
+     "actual_mean": {
+      "bf": 22.669,
+      "k": 4.939,
+      "outs": 16.09
+     },
+     "bf_bias": {
+      "ci95": [
+       -0.1479,
+       0.0429
+      ],
+      "games": 3762,
+      "n": 5132,
+      "point": -0.0531
+     },
+     "k_bias": {
+      "ci95": [
+       0.0162,
+       0.1384
+      ],
+      "games": 3762,
+      "n": 5132,
+      "point": 0.0766
+     },
+     "k_bias_given_actual_bf": {
+      "ci95": [
+       0.0596,
+       0.1771
+      ],
+      "games": 3762,
+      "n": 5132,
+      "point": 0.1192
+     },
+     "kernel_mean_minus_latent_mu": {
+      "ci95": [
+       -0.0202,
+       -0.0096
+      ],
+      "games": 3762,
+      "n": 5132,
+      "point": -0.015
+     },
+     "latent_mu_minus_actual_outs": {
+      "ci95": [
+       -0.0201,
+       0.1768
+      ],
+      "games": 3762,
+      "n": 5132,
+      "point": 0.0818
+     },
+     "nonout_bias_given_actual_outs": {
+      "ci95": [
+       -0.1449,
+       -0.0189
+      ],
+      "games": 3762,
+      "n": 5132,
+      "point": -0.0878
+     },
+     "outs_bias": {
+      "ci95": [
+       -0.0344,
+       0.1612
+      ],
+      "games": 3762,
+      "n": 5132,
+      "point": 0.0668
+     }
+    },
+    "ge18_outs": {
+     "actual_mean": {
+      "bf": 23.954,
+      "k": 5.717,
+      "outs": 17.484
+     },
+     "bf_bias": {
+      "ci95": [
+       -0.9001,
+       -0.483
+      ],
+      "games": 991,
+      "n": 1049,
+      "point": -0.6952
+     },
+     "k_bias": {
+      "ci95": [
+       -0.3241,
+       -0.0393
+      ],
+      "games": 991,
+      "n": 1049,
+      "point": -0.1805
+     },
+     "k_bias_given_actual_bf": {
+      "ci95": [
+       -0.1236,
+       0.1531
+      ],
+      "games": 991,
+      "n": 1049,
+      "point": 0.015
+     },
+     "kernel_mean_minus_latent_mu": {
+      "ci95": [
+       -0.2813,
+       -0.2613
+      ],
+      "games": 991,
+      "n": 1049,
+      "point": -0.2708
+     },
+     "latent_mu_minus_actual_outs": {
+      "ci95": [
+       -0.2415,
+       0.2104
+      ],
+      "games": 991,
+      "n": 1049,
+      "point": -0.0155
+     },
+     "nonout_bias_given_actual_outs": {
+      "ci95": [
+       -0.5688,
+       -0.315
+      ],
+      "games": 991,
+      "n": 1049,
+      "point": -0.443
+     },
+     "outs_bias": {
+      "ci95": [
+       -0.5153,
+       -0.0605
+      ],
+      "games": 991,
+      "n": 1049,
+      "point": -0.2863
+     }
+    },
+    "lt15_outs": {
+     "actual_mean": {
+      "bf": 20.051,
+      "k": 4.263,
+      "outs": 14.022
+     },
+     "bf_bias": {
+      "ci95": [
+       0.7429,
+       1.0485
+      ],
+      "games": 2408,
+      "n": 2844,
+      "point": 0.8945
+     },
+     "k_bias": {
+      "ci95": [
+       0.1213,
+       0.274
+      ],
+      "games": 2408,
+      "n": 2844,
+      "point": 0.1984
+     },
+     "k_bias_given_actual_bf": {
+      "ci95": [
+       -0.0291,
+       0.1173
+      ],
+      "games": 2408,
+      "n": 2844,
+      "point": 0.0425
+     },
+     "kernel_mean_minus_latent_mu": {
+      "ci95": [
+       0.2062,
+       0.2441
+      ],
+      "games": 2408,
+      "n": 2844,
+      "point": 0.2252
+     },
+     "latent_mu_minus_actual_outs": {
+      "ci95": [
+       -0.134,
+       0.1492
+      ],
+      "games": 2408,
+      "n": 2844,
+      "point": 0.0048
+     },
+     "nonout_bias_given_actual_outs": {
+      "ci95": [
+       0.6127,
+       0.7796
+      ],
+      "games": 2408,
+      "n": 2844,
+      "point": 0.6997
+     },
+     "outs_bias": {
+      "ci95": [
+       0.0936,
+       0.3718
+      ],
+      "games": 2408,
+      "n": 2844,
+      "point": 0.2301
+     }
+    }
+   },
+   "pitch_leash": {
+    "long_ge95": {
+     "actual_mean": {
+      "bf": 23.94,
+      "k": 5.901,
+      "outs": 17.353
+     },
+     "bf_bias": {
+      "ci95": [
+       -0.8266,
+       -0.4669
+      ],
+      "games": 862,
+      "n": 912,
+      "point": -0.651
+     },
+     "k_bias": {
+      "ci95": [
+       -0.3569,
+       -0.0383
+      ],
+      "games": 862,
+      "n": 912,
+      "point": -0.2007
+     },
+     "k_bias_given_actual_bf": {
+      "ci95": [
+       -0.1714,
+       0.1379
+      ],
+      "games": 862,
+      "n": 912,
+      "point": -0.0124
+     },
+     "kernel_mean_minus_latent_mu": {
+      "ci95": [
+       -0.2579,
+       -0.2363
+      ],
+      "games": 862,
+      "n": 912,
+      "point": -0.2468
+     },
+     "latent_mu_minus_actual_outs": {
+      "ci95": [
+       -0.2251,
+       0.2129
+      ],
+      "games": 862,
+      "n": 912,
+      "point": -0.0107
+     },
+     "nonout_bias_given_actual_outs": {
+      "ci95": [
+       -0.5549,
+       -0.2722
+      ],
+      "games": 862,
+      "n": 912,
+      "point": -0.4022
+     },
+     "outs_bias": {
+      "ci95": [
+       -0.4744,
+       -0.0353
+      ],
+      "games": 862,
+      "n": 912,
+      "point": -0.2575
+     }
+    },
+    "mid_80_95": {
+     "actual_mean": {
+      "bf": 22.438,
+      "k": 4.855,
+      "outs": 15.895
+     },
+     "bf_bias": {
+      "ci95": [
+       -0.0076,
+       0.1677
+      ],
+      "games": 4312,
+      "n": 6592,
+      "point": 0.0799
+     },
+     "k_bias": {
+      "ci95": [
+       0.0452,
+       0.156
+      ],
+      "games": 4312,
+      "n": 6592,
+      "point": 0.0989
+     },
+     "k_bias_given_actual_bf": {
+      "ci95": [
+       0.0617,
+       0.1688
+      ],
+      "games": 4312,
+      "n": 6592,
+      "point": 0.1134
+     },
+     "kernel_mean_minus_latent_mu": {
+      "ci95": [
+       0.0184,
+       0.0297
+      ],
+      "games": 4312,
+      "n": 6592,
+      "point": 0.024
+     },
+     "latent_mu_minus_actual_outs": {
+      "ci95": [
+       0.0065,
+       0.1866
+      ],
+      "games": 4312,
+      "n": 6592,
+      "point": 0.0913
+     },
+     "nonout_bias_given_actual_outs": {
+      "ci95": [
+       -0.0517,
+       0.0534
+      ],
+      "games": 4312,
+      "n": 6592,
+      "point": -0.0005
+     },
+     "outs_bias": {
+      "ci95": [
+       0.0301,
+       0.2125
+      ],
+      "games": 4312,
+      "n": 6592,
+      "point": 0.1153
+     }
+    },
+    "short_lt80": {
+     "actual_mean": {
+      "bf": 18.896,
+      "k": 3.999,
+      "outs": 13.274
+     },
+     "bf_bias": {
+      "ci95": [
+       0.8409,
+       1.2854
+      ],
+      "games": 1393,
+      "n": 1521,
+      "point": 1.058
+     },
+     "k_bias": {
+      "ci95": [
+       0.0912,
+       0.3087
+      ],
+      "games": 1393,
+      "n": 1521,
+      "point": 0.1966
+     },
+     "k_bias_given_actual_bf": {
+      "ci95": [
+       -0.0927,
+       0.1053
+      ],
+      "games": 1393,
+      "n": 1521,
+      "point": 0.0077
+     },
+     "kernel_mean_minus_latent_mu": {
+      "ci95": [
+       0.1922,
+       0.2616
+      ],
+      "games": 1393,
+      "n": 1521,
+      "point": 0.2279
+     },
+     "latent_mu_minus_actual_outs": {
+      "ci95": [
+       -0.3032,
+       0.0798
+      ],
+      "games": 1393,
+      "n": 1521,
+      "point": -0.1152
+     },
+     "nonout_bias_given_actual_outs": {
+      "ci95": [
+       0.83,
+       1.074
+      ],
+      "games": 1393,
+      "n": 1521,
+      "point": 0.95
+     },
+     "outs_bias": {
+      "ci95": [
+       -0.0766,
+       0.3021
+      ],
+      "games": 1393,
+      "n": 1521,
+      "point": 0.1127
+     }
+    }
+   }
+  },
+  "eligible": 9203,
+  "exclusions": {
+   "champion_history_has_game_completed_after_as_of": 178
+  },
+  "games": 4839,
+  "nonout_residual_by_outs_band": {
+   "00-02|mid_80_95": {
+    "mean": 3.249,
+    "n": 22
+   },
+   "00-02|short_lt80": {
+    "mean": 0.532,
+    "n": 24
+   },
+   "03-05|long_ge95": {
+    "mean": 2.502,
+    "n": 4
+   },
+   "03-05|mid_80_95": {
+    "mean": 1.561,
+    "n": 71
+   },
+   "03-05|short_lt80": {
+    "mean": -1.444,
+    "n": 127
+   },
+   "06-08|long_ge95": {
+    "mean": 3.99,
+    "n": 9
+   },
+   "06-08|mid_80_95": {
+    "mean": 1.336,
+    "n": 155
+   },
+   "06-08|short_lt80": {
+    "mean": -2.03,
+    "n": 96
+   },
+   "09-11|long_ge95": {
+    "mean": 0.738,
+    "n": 33
+   },
+   "09-11|mid_80_95": {
+    "mean": 0.334,
+    "n": 420
+   },
+   "09-11|short_lt80": {
+    "mean": -1.345,
+    "n": 146
+   },
+   "12-14|long_ge95": {
+    "mean": 1.13,
+    "n": 91
+   },
+   "12-14|mid_80_95": {
+    "mean": 0.203,
+    "n": 1056
+   },
+   "12-14|short_lt80": {
+    "mean": -0.608,
+    "n": 347
+   },
+   "15-17|long_ge95": {
+    "mean": 0.643,
+    "n": 246
+   },
+   "15-17|mid_80_95": {
+    "mean": 0.008,
+    "n": 2220
+   },
+   "15-17|short_lt80": {
+    "mean": -0.758,
+    "n": 456
+   },
+   "18-20|long_ge95": {
+    "mean": 0.292,
+    "n": 322
+   },
+   "18-20|mid_80_95": {
+    "mean": -0.214,
+    "n": 1879
+   },
+   "18-20|short_lt80": {
+    "mean": -1.049,
+    "n": 263
+   },
+   "21-23|long_ge95": {
+    "mean": -0.213,
+    "n": 166
+   },
+   "21-23|mid_80_95": {
+    "mean": -0.373,
+    "n": 661
+   },
+   "21-23|short_lt80": {
+    "mean": -0.824,
+    "n": 50
+   },
+   "24-26|long_ge95": {
+    "mean": -0.563,
+    "n": 41
+   },
+   "24-26|mid_80_95": {
+    "mean": -1.017,
+    "n": 108
+   },
+   "24-26|short_lt80": {
+    "mean": -0.801,
+    "n": 12
+   }
+  },
+  "scored": 9025,
+  "seasons": [
+   "2025",
+   "2026"
+  ]
+ }
+}

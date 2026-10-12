@@ -1,0 +1,177 @@
+name: Research - MLB Pitcher PURE Shadow Collection
+
+# W2 Phase 2 prospective shadow collection for MLB starting pitchers. RESEARCH ONLY.
+#
+# Arms: frozen champion (lib/research/pitcher_prop_projection.py), challenger
+# mlb_pitcher_workload_joint_v1, naive_recent5 baseline. Outs, BF, K with the ladder
+# inside each pure_forecast.v1 row. Captures: morning-of and ~T-60m after lineups.
+# Writes ONLY under data/shadow_pure/mlb_pitcher/ (append-only, write-once,
+# hash-chained manifest). Reads data/edgelab/{markets,observations,settlements}
+# READ-ONLY for the separate listing family and the resolution-mismatch check;
+# no model input ever comes from them.
+#
+# No promotion, no authority, no staking, no publication to production SIFT data.
+# Postseason rows are labelled BLOCKED_NOT_VALIDATED_POSTSEASON.
+#
+# Modes:
+#   schedule: a cheap `gate` job (sparse blobless checkout, stdlib only, no install) runs every
+#     10 minutes and decides from the live StatsAPI schedule and the store whether anything is
+#     due: a capture window, a missed window to record, a pending outcome, or the daily
+#     evaluation. Only then does the full `shadow` job run.
+#   schedule (gated) / workflow_dispatch (dry_run=false): capture -> outcomes -> reconcile ->
+#     evaluate -> verify -> commit via scripts/ci/git_data_commit.py (main).
+#   pull_request (and workflow_dispatch dry_run=true): DRY RUN -- fetch live, build,
+#     validate, upload an artifact, NO commit. The PR proves the job works on Actions.
+
+on:
+  schedule:
+    # Gate every 10 minutes 12:07-04:57 UTC (08:07 EDT onward). The pregame window is T-80..T-20
+    # (T-45..T-20 when lineups are late), so a 10-minute gate gets several chances even with the
+    # usual schedule delay. Off-window gate runs end in ~20 s without installing anything.
+    - cron: '7,17,27,37,47,57 0-4,12-23 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: build + validate + artifact, no commit'
+        required: false
+        default: 'true'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/workflows/research-mlb-pitcher-shadow.yml"
+      - "scripts/research/mlb_pitcher_shadow.py"
+      - "scripts/research/mlb_pitcher_shadow_gate.py"
+      - "lib/research/mlb_pitcher_shadow_plan.py"
+      - "lib/research/shadow_pure_store.py"
+      - "tools/pure_gate/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  # One shadow run at a time (the manifest is a hash chain); never cancels a run.
+  group: research-mlb-pitcher-shadow-${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      work: ${{ steps.gate.outputs.work }}
+      evaluate: ${{ steps.gate.outputs.evaluate }}
+    steps:
+      - name: Checkout (sparse, blobless; the gate and the store only)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            lib/research
+            scripts/research
+            data/shadow_pure/mlb_pitcher
+      - name: Is anything due?
+        id: gate
+        run: python3 -I scripts/research/mlb_pitcher_shadow_gate.py --github-output "$GITHUB_OUTPUT"
+
+  shadow:
+    needs: gate
+    # Runs for pull_request / workflow_dispatch (gate skipped), when the gate says there is work,
+    # and also if the gate itself failed (fail open: a broken gate must not silently stop collection).
+    if: ${{ !cancelled() && (needs.gate.result != 'success' || needs.gate.outputs.work == 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DRY_RUN: ${{ (github.event_name == 'pull_request' || github.event.inputs.dry_run == 'true') && 'true' || 'false' }}
+      EVALUATE: ${{ needs.gate.outputs.evaluate }}
+    steps:
+      # Only what the collector, its tests and the commit helper read (traced with an audit hook:
+      # ~0.3 GB of a ~3 GB tree). Blobless + sparse, so nothing else is downloaded.
+      - name: Checkout (sparse, blobless)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            lib
+            scripts/research
+            scripts/ci
+            tools/pure_gate
+            tests/research
+            docs
+            data/research_cache/starter_workload
+            data/research_cache/bullpen_backtest
+            data/statcast_raw/games
+            data/research/pitcher_workload_joint
+            data/edgelab/analytics
+            data/edgelab/markets
+            data/edgelab/observations
+            data/edgelab/settlements
+            data/edgelab/bets
+            data/shadow_pure/mlb_pitcher
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install pytest
+          pip install -r requirements-ci.txt
+
+      - name: Dry run (live fetch, build, validate; no commit)
+        if: env.DRY_RUN == 'true'
+        run: |
+          set -euo pipefail
+          STORE="$RUNNER_TEMP/shadow_dry/store"
+          LOGS="$RUNNER_TEMP/shadow_dry/logs"
+          mkdir -p "$STORE" "$LOGS"
+          TODAY=$(TZ=America/New_York date +%F)
+          TOMORROW=$(TZ=America/New_York date -d tomorrow +%F)
+          PAST=$(for i in 1 2 3; do TZ=America/New_York date -d "$i days ago" +%F; done | paste -sd, -)
+          # capture every not-yet-started game today and tomorrow (ET) under a forced label
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" capture --force-window pregame --date "$TODAY" | tee "$LOGS/capture_today.json"
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" capture --force-window pregame --date "$TOMORROW" | tee "$LOGS/capture_tomorrow.json"
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" outcomes --all-starters-date "$TODAY,$PAST" | tee "$LOGS/outcomes.json"
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" reconcile | tee "$LOGS/reconcile.json"
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" evaluate --reps 200 | tee "$LOGS/evaluate.json"
+          python3 scripts/research/mlb_pitcher_shadow.py --store "$STORE" verify | tee "$LOGS/verify.json"
+          for f in "$STORE"/projections/*/*.jsonl; do
+            [ -e "$f" ] || continue
+            python3 -I tools/pure_gate/pure_gate.py validate --require-v1 --forecasts "$f"
+          done
+          python3 -m pytest tests/research/test_mlb_pitcher_shadow.py tests/research/test_shadow_pure_append_only.py tests/research/test_vendored_pure_gate_pin.py -q
+
+      - name: Upload dry-run artifact
+        if: env.DRY_RUN == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-pitcher-shadow-dry-run
+          path: ${{ runner.temp }}/shadow_dry
+          if-no-files-found: warn
+
+      - name: Capture, outcomes, reconcile, evaluate (committed store)
+        if: env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          python3 scripts/research/mlb_pitcher_shadow.py capture
+          python3 scripts/research/mlb_pitcher_shadow.py outcomes
+          python3 scripts/research/mlb_pitcher_shadow.py reconcile
+          HOUR=$(date -u +%H)
+          if [ "$EVALUATE" = "true" ] || { [ -z "$EVALUATE" ] && [ "$HOUR" = "15" ]; }; then
+            python3 scripts/research/mlb_pitcher_shadow.py evaluate
+          fi
+          python3 scripts/research/mlb_pitcher_shadow.py verify
+
+      - name: Commit shadow records (append-only paths only)
+        if: env.DRY_RUN != 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "mlb pitcher PURE shadow $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --branch main \
+            data/shadow_pure/mlb_pitcher/

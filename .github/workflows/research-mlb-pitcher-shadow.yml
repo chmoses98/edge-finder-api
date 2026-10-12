@@ -95,7 +95,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           # schedule/dispatch: the CURRENT main (see the gate); pull_request: the default merge ref
-          ref: ${{ github.event_name == 'pull_request' && '' || 'main' }}
+          # (not `== 'pull_request' && '' || 'main'`: '' is falsy, so that form always yields 'main')
+          ref: ${{ github.event_name != 'pull_request' && 'main' || github.ref }}
           fetch-depth: 1
           filter: blob:none
           sparse-checkout: |

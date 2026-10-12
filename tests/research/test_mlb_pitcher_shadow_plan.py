@@ -128,7 +128,9 @@ def test_the_shadow_workflow_reads_current_main_and_refuses_a_stale_store():
     gate = wf["jobs"]["gate"]["steps"][0]["with"]
     assert gate["ref"] == "main"
     shadow = wf["jobs"]["shadow"]["steps"]
-    assert "'main'" in shadow[0]["with"]["ref"]
+    ref = shadow[0]["with"]["ref"]
+    # schedule/dispatch -> 'main'; pull_request -> its own merge ref (an `&& '' ||` form would always be 'main')
+    assert ref.replace(" ", "") == "${{github.event_name!='pull_request'&&'main'||github.ref}}" 
     names = [s.get("name", "") for s in shadow]
     guard = next(i for i, n in enumerate(names) if n.startswith("Refuse to commit if the store moved"))
     commit = next(i for i, n in enumerate(names) if n.startswith("Commit shadow records"))

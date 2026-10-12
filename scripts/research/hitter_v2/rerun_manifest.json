@@ -1,0 +1,17 @@
+{
+  "mode": "placeholder",
+  "cwd": "../../..",
+  "market_inputs": {
+    "totals": "data/research/hitter_w2/rerun_inputs/totals.json",
+    "hitter_quotes": "data/research/hitter_w2/rerun_inputs/hitter_quotes.jsonl"
+  },
+  "sports_inputs": {
+    "mlb_feed": "data/research/hitter_w2/mlb_feed",
+    "params_v2": "data/research/hitter_v2/params_v2.json",
+    "params_w2": "data/research/hitter_w2/params_v1.json",
+    "pregame_lineups": "data/research/hitter_v2/pregame_lineups_2026.csv.gz"
+  },
+  "outputs": ["v2.jsonl"],
+  "compare": "bytes",
+  "env": {"OMP_NUM_THREADS": "1"}
+}

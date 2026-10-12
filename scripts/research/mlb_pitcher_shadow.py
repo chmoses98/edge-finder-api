@@ -390,9 +390,15 @@ def cmd_capture(a):
 # ----------------------------------------------------------------------------- outcomes
 
 def all_projections(store):
-    rows = []
+    """Every projection row, keeping only the FIRST capture of each (game, window, arm): files are named by
+    capture time, so sorted order is capture order. A later capture of the same window (e.g. the duplicate of
+    2026-10-12, see duplicates/) stays in the append-only store but is never scored twice."""
+    rows, first = [], {}
     for f in sorted(glob.glob(os.path.join(store.root, "projections", "*", "*.jsonl"))):
-        rows += list(_jsonl(f))
+        for r in _jsonl(f):
+            k = (r["game_id"], r.get("x_capture_window"), r.get("x_arm"))
+            if first.setdefault(k, r.get("x_run_id")) == r.get("x_run_id"):
+                rows.append(r)
     return rows
 
 

@@ -65,6 +65,9 @@ jobs:
       - name: Checkout (sparse, blobless; the gate and the store only)
         uses: actions/checkout@v4
         with:
+          # the CURRENT main, not the commit that queued this run: a run queued behind another one must see the
+          # captures that one just committed (2026-10-12: two runs fired together and both captured the morning)
+          ref: main
           fetch-depth: 1
           filter: blob:none
           sparse-checkout: |
@@ -91,6 +94,8 @@ jobs:
       - name: Checkout (sparse, blobless)
         uses: actions/checkout@v4
         with:
+          # schedule/dispatch: the CURRENT main (see the gate); pull_request: the default merge ref
+          ref: ${{ github.event_name == 'pull_request' && '' || 'main' }}
           fetch-depth: 1
           filter: blob:none
           sparse-checkout: |
@@ -165,6 +170,18 @@ jobs:
             python3 scripts/research/mlb_pitcher_shadow.py evaluate
           fi
           python3 scripts/research/mlb_pitcher_shadow.py verify
+
+      - name: Refuse to commit if the store moved on main since checkout
+        if: env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          BASE=$(git rev-parse HEAD:data/shadow_pure/mlb_pitcher 2>/dev/null || echo none)
+          git fetch -q --depth=1 origin main
+          NOW=$(git rev-parse FETCH_HEAD:data/shadow_pure/mlb_pitcher 2>/dev/null || echo none)
+          if [ "$BASE" != "$NOW" ]; then
+            echo "::error::data/shadow_pure/mlb_pitcher changed on main since checkout ($BASE -> $NOW); refusing to commit a capture built on a stale store"
+            exit 1
+          fi
 
       - name: Commit shadow records (append-only paths only)
         if: env.DRY_RUN != 'true'

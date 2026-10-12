@@ -139,3 +139,20 @@ read (traced with an audit hook) — about 0.36 GB instead of the ~3 GB full tre
 2. Optionally remove `data/shadow_pure/mlb_pitcher/`.
 
 No production flow depends on any of these files.
+
+## Incident 2026-10-12: duplicate morning capture (fixed)
+
+Two scheduled runs fired together (38248859165 at 12:24:46Z, 38248895049 at 12:25:07Z). The concurrency group
+serialised them, but the second checked out the commit that had queued it rather than current `main`, so it did not
+see the first run's morning capture of games 849812 and 849820 and captured them again (12:26:04Z). When it committed,
+`git_data_commit.py` reconciled `MANIFEST.jsonl` against the first run's commit and dropped the second run's five
+manifest lines, leaving five unmanifested files; `verify` and `test_manifest_chains_verify` then failed.
+
+Repair, append-only (no file rewritten or deleted):
+- the five files were adopted into `MANIFEST.jsonl` by `ShadowStore.adopt` (seq 5–9, bytes unchanged, an
+  `adopted` note on each entry), continuing the hash chain;
+- `duplicates/2026-10-12/20261012T122604Z_morning.jsonl` records the duplicate and which run is kept;
+- scoring keeps only the first capture of each (game, window, arm) (`all_projections`).
+
+Prevention: both jobs check out current `main` on schedule/dispatch, and the full job refuses to commit if
+`data/shadow_pure/mlb_pitcher` changed on `main` between its checkout and its commit.

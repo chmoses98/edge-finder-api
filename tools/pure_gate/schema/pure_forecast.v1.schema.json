@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/chmoses98/sift-sports-intelligence/pure-contract/schema/pure_forecast.v1.schema.json",
+  "title": "PURE independent player-stat forecast (one JSONL line)",
+  "description": "One market-independent forecast per (sport, game_id, player_id, statistic) at one as_of cutoff. Rows with schema_version 'pure_forecast.v1' follow the v1 branch; unversioned rows are the Wave 1 kit interim format, read as pure_forecast.v0. Structural rules only: cross-field rules (timestamp ordering source_max_observed_at <= as_of < kickoff, lineage observed_at <= cutoff, ladder monotonicity, quantile ordering, declared sources, unconditional ladder <= participation, market vocabulary anywhere in keys/lineage/sources, ladder-rung rows) are enforced by pure_gate.py, which is the normative validator.",
+  "oneOf": [
+    { "$ref": "#/$defs/v1" },
+    { "$ref": "#/$defs/v0_kit_interim" }
+  ],
+  "$defs": {
+    "nonempty": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO-8601 with an explicit UTC offset or Z.",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "probability": { "type": "number", "minimum": 0, "maximum": 1 },
+    "threshold": {
+      "type": "object",
+      "required": ["at_least", "probability"],
+      "properties": {
+        "at_least": { "type": "number", "description": "Strike t; probability is P(stat >= t)." },
+        "probability": { "$ref": "#/$defs/probability" }
+      }
+    },
+    "projection_v1": {
+      "type": "object",
+      "required": ["mean", "median", "p10", "p90", "thresholds"],
+      "additionalProperties": false,
+      "properties": {
+        "mean": { "type": "number" },
+        "median": { "type": "number" },
+        "p10": { "type": "number" },
+        "p90": { "type": "number" },
+        "quantiles": {
+          "type": "array",
+          "description": "Optional extra quantiles, q strictly ascending in (0,1), values non-decreasing; used for the CRPS approximation.",
+          "items": {
+            "type": "object",
+            "required": ["q", "value"],
+            "additionalProperties": false,
+            "properties": {
+              "q": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 },
+              "value": { "type": "number" }
+            }
+          }
+        },
+        "thresholds": {
+          "type": "array",
+          "description": "Ladder inside the row (never one row per rung): at_least strictly ascending, probability non-increasing.",
+          "items": { "allOf": [{ "$ref": "#/$defs/threshold" }, { "type": "object", "additionalProperties": false, "properties": { "at_least": true, "probability": true } }] }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["source_id", "class", "max_observed_at"],
+      "additionalProperties": false,
+      "properties": {
+        "source_id": { "$ref": "#/$defs/nonempty" },
+        "class": { "const": "sports_only" },
+        "max_observed_at": { "$ref": "#/$defs/timestamp" },
+        "uri": { "type": "string" },
+        "snapshot_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "description": { "type": "string" }
+      }
+    },
+    "feature": {
+      "type": "object",
+      "required": ["name", "value", "source", "observed_at", "class"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/nonempty" },
+        "value": { "type": ["number", "string", "boolean", "null"] },
+        "source": { "$ref": "#/$defs/nonempty", "description": "Must equal a sources[].source_id." },
+        "observed_at": { "$ref": "#/$defs/timestamp", "description": "Must be <= source_max_observed_at and <= its source's max_observed_at." },
+        "class": { "const": "sports_only" }
+      }
+    },
+    "v1": {
+      "type": "object",
+      "required": ["schema_version", "sport", "game_id", "player_id", "statistic", "as_of", "kickoff",
+                   "source_max_observed_at", "projection_mode", "model_version", "model_frozen_hash",
+                   "conditional_on_playing", "participation_probability", "projection", "sources",
+                   "feature_lineage"],
+      "properties": {
+        "schema_version": { "const": "pure_forecast.v1" },
+        "sport": { "$ref": "#/$defs/nonempty" },
+        "game_id": { "$ref": "#/$defs/nonempty" },
+        "player_id": { "$ref": "#/$defs/nonempty" },
+        "statistic": { "$ref": "#/$defs/nonempty", "description": "One statistic; never a ladder rung (no '_over_50', '50+', 'at_least')." },
+        "as_of": { "$ref": "#/$defs/timestamp", "description": "Forecast cutoff." },
+        "kickoff": { "$ref": "#/$defs/timestamp", "description": "Scheduled game start; must be after as_of." },
+        "source_max_observed_at": { "$ref": "#/$defs/timestamp", "description": "Latest observation time of any sports input (source cutoff); <= as_of." },
+        "projection_mode": { "const": "PURE_INDEPENDENT" },
+        "model_version": { "$ref": "#/$defs/nonempty" },
+        "model_frozen_hash": { "type": "string", "pattern": "^(sha256:[0-9a-f]{64}|git:[0-9a-f]{7,40})$", "description": "Hash of the frozen parameters/code that produced the row." },
+        "conditional_on_playing": { "type": "boolean", "description": "true: distribution is conditional on the player playing; DNP outcomes are excluded from scoring. false: unconditional (DNP counts as the realised value)." },
+        "participation_probability": { "oneOf": [{ "$ref": "#/$defs/probability" }, { "type": "null" }], "description": "P(player plays). null = explicitly not modeled." },
+        "projection": { "$ref": "#/$defs/projection_v1" },
+        "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/source" } },
+        "feature_lineage": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/feature" } }
+      },
+      "patternProperties": { "^x_": { "description": "Producer metadata (run id, notes). Not model-owned; excluded from rerun signatures; keys still scanned for market vocabulary." } },
+      "additionalProperties": false
+    },
+    "v0_kit_interim": {
+      "type": "object",
+      "description": "Wave 1 kit interim format (scripts/prop_projection_gate.py). Accepted for compatibility; lineage (per-feature source and time), frozen hash and participation probability are absent and therefore unverified.",
+      "required": ["sport", "game_id", "player_id", "statistic", "as_of", "kickoff", "source_max_observed_at",
+                   "projection_mode", "model_version", "conditional_on_playing", "projection", "model_features"],
+      "additionalProperties": false,
+      "properties": {
+        "sport": { "$ref": "#/$defs/nonempty" },
+        "game_id": { "$ref": "#/$defs/nonempty" },
+        "player_id": { "$ref": "#/$defs/nonempty" },
+        "statistic": { "$ref": "#/$defs/nonempty" },
+        "as_of": { "$ref": "#/$defs/timestamp" },
+        "kickoff": { "$ref": "#/$defs/timestamp" },
+        "source_max_observed_at": { "$ref": "#/$defs/timestamp" },
+        "projection_mode": { "const": "PURE_INDEPENDENT" },
+        "model_version": { "$ref": "#/$defs/nonempty" },
+        "conditional_on_playing": { "type": "boolean" },
+        "projection": {
+          "type": "object",
+          "required": ["mean", "median", "p10", "p90", "thresholds"],
+          "properties": {
+            "mean": { "type": "number" },
+            "median": { "type": "number" },
+            "p10": { "type": "number" },
+            "p90": { "type": "number" },
+            "thresholds": { "type": "array", "items": { "$ref": "#/$defs/threshold" } }
+          }
+        },
+        "model_features": { "type": "object", "description": "Sports-only feature values keyed by name; keys are scanned for market vocabulary." }
+      }
+    }
+  }
+}

@@ -480,12 +480,17 @@ def _minimum_from_title(title):
 
 
 def _archived_contracts():
+    """Archived discovery contracts, NEWEST day first.
+
+    The caller stops once its evidence is complete. A fixed "last 3 days" window made the evidence test fail
+    on the calendar rather than on Kalshi's wording: late in the postseason the newest discovery days list no
+    first-inning (RFI) markets at all (2026-10-08 .. 10-11), so the RFI family went uncovered on every PR."""
     files = sorted(glob.glob(os.path.join(ROOT, "data", "kalshi", "discovery",
                                           "2026-*.json")))
     files = [f for f in files if re.search(r"\d{4}-\d{2}-\d{2}\.json$", f)]
     if not files:
         pytest.skip("no archived Kalshi discovery evidence in this tree")
-    for path in files[-3:]:
+    for path in reversed(files):
         with open(path) as handle:
             try:
                 doc = json.load(handle)
@@ -503,8 +508,14 @@ def test_the_parsed_condition_matches_the_archived_kalshi_wording():
     than a repository belief -- and it is where a Kalshi wording change would
     surface, loudly, instead of silently repricing a ladder.
     """
+    required = {kmcp.CONDITION_COMBINED_RUNS_AT_LEAST,
+                kmcp.CONDITION_TEAM_RUNS_AT_LEAST,
+                kmcp.CONDITION_TEAM_WIN_MARGIN_AT_LEAST,
+                kmcp.CONDITION_FIRST_INNING_RUNS_AT_LEAST}
     checked, families = 0, set()
     for contract in _archived_contracts():
+        if checked >= 30 and required <= families:
+            break             # newest evidence first; stop once every family is covered
         ticker = contract.get("ticker")
         expected = _minimum_from_title(contract.get("marketTitle"))
         if expected is None or not ticker:
@@ -521,10 +532,7 @@ def test_the_parsed_condition_matches_the_archived_kalshi_wording():
     assert checked >= 30, (
         "only %d archived markets carried a stated threshold -- this test "
         "would pass vacuously" % checked)
-    assert {kmcp.CONDITION_COMBINED_RUNS_AT_LEAST,
-            kmcp.CONDITION_TEAM_RUNS_AT_LEAST,
-            kmcp.CONDITION_TEAM_WIN_MARGIN_AT_LEAST,
-            kmcp.CONDITION_FIRST_INNING_RUNS_AT_LEAST} <= families, (
+    assert required <= families, (
         "the evidence must cover game total, team total, run line and RFI; "
         "covered: %s" % sorted(families))
 

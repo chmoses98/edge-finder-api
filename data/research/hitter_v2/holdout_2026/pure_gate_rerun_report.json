@@ -1,0 +1,265 @@
+{
+  "certified": true,
+  "checks": {
+    "control_deterministic": true,
+    "control_normal_ok": true,
+    "control_responds_to_every_mutation": true,
+    "market_inputs_restored_unchanged": true,
+    "model_deterministic": true,
+    "model_identical_under_all_mutations": true,
+    "model_normal_ok": true,
+    "randomization_effective": true,
+    "sports_inputs_unchanged": true
+  },
+  "compare": "bytes",
+  "control_command": [
+    "python3",
+    "scripts/research/hitter_v2/run_v2.py",
+    "forecast",
+    "--population",
+    "PIT",
+    "--start",
+    "2026-09-12",
+    "--end",
+    "2026-09-13",
+    "--n-sims",
+    "100",
+    "--seed",
+    "{seed}",
+    "--feed-root",
+    "{sports[mlb_feed]}",
+    "--arms",
+    "v2",
+    "--market-file",
+    "{market[totals]}",
+    "--quotes-file",
+    "{market[hitter_quotes]}",
+    "--out",
+    "{out}/v2.jsonl",
+    "--control-read-market"
+  ],
+  "gate": "pure_gate 1.0.0",
+  "market_inputs": {
+    "hitter_quotes": {
+      "path": "/home/user/wt/mlb-hitter-v2/data/research/hitter_w2/rerun_inputs/hitter_quotes.jsonl",
+      "sha256": "873450568bf0baf898c6a7cae41b758aa50304a14ef18e4035156a157f091b42"
+    },
+    "totals": {
+      "path": "/home/user/wt/mlb-hitter-v2/data/research/hitter_w2/rerun_inputs/totals.json",
+      "sha256": "9c7707f8a9e563f6e48488ce65f87b0c5e2525ac2969254128e2205d33a70edd"
+    }
+  },
+  "mode": "placeholder",
+  "model_command": [
+    "python3",
+    "scripts/research/hitter_v2/run_v2.py",
+    "forecast",
+    "--population",
+    "PIT",
+    "--start",
+    "2026-09-12",
+    "--end",
+    "2026-09-13",
+    "--n-sims",
+    "100",
+    "--seed",
+    "{seed}",
+    "--feed-root",
+    "{sports[mlb_feed]}",
+    "--arms",
+    "v2",
+    "--market-file",
+    "{market[totals]}",
+    "--quotes-file",
+    "{market[hitter_quotes]}",
+    "--out",
+    "{out}/v2.jsonl"
+  ],
+  "mutation_seed": 20261012,
+  "note": "Each arm ran the actual command at identical seed, sports inputs and command-line paths. Model-owned outputs must be bit-identical with market inputs deleted or randomized; the market-reading negative control must change, proving the mutation reaches readers. This cannot detect market information baked into the sports snapshot itself or into frozen parameters; pair it with the source/dependency audit.",
+  "passed": true,
+  "per_arm": {
+    "control_responded": {
+      "deleted": "failed_or_invalid",
+      "randomized_0": "output_changed",
+      "randomized_1": "output_changed"
+    },
+    "model_identical": {
+      "deleted": true,
+      "randomized_0": true,
+      "randomized_1": true
+    }
+  },
+  "random_draws": 2,
+  "randomization_effective_by_input": {
+    "hitter_quotes@20261012": true,
+    "hitter_quotes@20261013": true,
+    "totals@20261012": true,
+    "totals@20261013": true
+  },
+  "runs": {
+    "control": {
+      "deleted": {
+        "arm": "deleted",
+        "exit_code": 1,
+        "kept_outputs": "/tmp/pure_gate_rerun_p7dzolt9/results/control-deleted",
+        "ok": false,
+        "output_problem": null,
+        "outputs_sha256": {},
+        "role": "control",
+        "seconds": 7.026,
+        "stderr_tail": "  a.control_read_market, tuple(a.arms.split(\",\")))\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/user/wt/mlb-hitter-v2/scripts/research/hitter_v2/run_v2.py\", line 395, in stage_forecast\n    with open(market_file) as f:\n         ~~~~^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: '/tmp/pure_gate_rerun_p7dzolt9/run/market/totals/totals.json'\n",
+        "stdout_tail": ""
+      },
+      "normal": {
+        "arm": "normal",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_p7dzolt9/results/control-normal",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "v2.jsonl": "f261d8d172bacda34e90f44df6bac37c574593bbeea431a8729247bdaa412cd0"
+        },
+        "role": "control",
+        "seconds": 7.984,
+        "stderr_tail": "",
+        "stdout_tail": ""
+      },
+      "normal_repeat": {
+        "arm": "normal_repeat",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_p7dzolt9/results/control-normal_repeat",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "v2.jsonl": "f261d8d172bacda34e90f44df6bac37c574593bbeea431a8729247bdaa412cd0"
+        },
+        "role": "control",
+        "seconds": 7.62,
+        "stderr_tail": "",
+        "stdout_tail": ""
+      },
+      "randomized_0": {
+        "arm": "randomized_0",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_p7dzolt9/results/control-randomized_0",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "v2.jsonl": "86e0e3af96e752100147975336b915acded76769ac73ac5cec9083814d439e65"
+        },
+        "role": "control",
+        "seconds": 9.902,
+        "stderr_tail": "",
+        "stdout_tail": ""
+      },
+      "randomized_1": {
+        "arm": "randomized_1",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_p7dzolt9/results/control-randomized_1",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "v2.jsonl": "6efaf697c96886a46779cc54e05035fcfcd16f9efaf24bbbdc27ca3a76e9e0b9"
+        },
+        "role": "control",
+        "seconds": 7.759,
+        "stderr_tail": "",
+        "stdout_tail": ""
+      }
+    },
+    "model": {
+      "deleted": {
+        "arm": "deleted",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_p7dzolt9/results/model-deleted",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "v2.jsonl": "1a2eb4a95e0914d64f3bf29502122c821797e3733ff0fc5e5664da3affbefca5"
+        },
+        "role": "model",
+        "seconds": 7.524,
+        "stderr_tail": "",
+        "stdout_tail": ""
+      },
+      "normal": {
+        "arm": "normal",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_p7dzolt9/results/model-normal",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "v2.jsonl": "1a2eb4a95e0914d64f3bf29502122c821797e3733ff0fc5e5664da3affbefca5"
+        },
+        "role": "model",
+        "seconds": 9.781,
+        "stderr_tail": "",
+        "stdout_tail": ""
+      },
+      "normal_repeat": {
+        "arm": "normal_repeat",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_p7dzolt9/results/model-normal_repeat",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "v2.jsonl": "1a2eb4a95e0914d64f3bf29502122c821797e3733ff0fc5e5664da3affbefca5"
+        },
+        "role": "model",
+        "seconds": 7.25,
+        "stderr_tail": "",
+        "stdout_tail": ""
+      },
+      "randomized_0": {
+        "arm": "randomized_0",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_p7dzolt9/results/model-randomized_0",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "v2.jsonl": "1a2eb4a95e0914d64f3bf29502122c821797e3733ff0fc5e5664da3affbefca5"
+        },
+        "role": "model",
+        "seconds": 8.009,
+        "stderr_tail": "",
+        "stdout_tail": ""
+      },
+      "randomized_1": {
+        "arm": "randomized_1",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_p7dzolt9/results/model-randomized_1",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "v2.jsonl": "1a2eb4a95e0914d64f3bf29502122c821797e3733ff0fc5e5664da3affbefca5"
+        },
+        "role": "model",
+        "seconds": 7.569,
+        "stderr_tail": "",
+        "stdout_tail": ""
+      }
+    }
+  },
+  "seed": 20261012,
+  "sports_inputs": {
+    "mlb_feed": {
+      "path": "/home/user/wt/mlb-hitter-v2/data/research/hitter_w2/mlb_feed",
+      "sha256": "a5b0d85ae5f0f53565288d98cf57ec02d5fda8289669133f98bd52d08b4a3725"
+    },
+    "params_v2": {
+      "path": "/home/user/wt/mlb-hitter-v2/data/research/hitter_v2/params_v2.json",
+      "sha256": "b016ea53eb9708817810147e06aedebd198909fe8c58c4a284013e6ca497f934"
+    },
+    "params_w2": {
+      "path": "/home/user/wt/mlb-hitter-v2/data/research/hitter_w2/params_v1.json",
+      "sha256": "e34c413e9d96727f581090710d43c54bc515276479176e8286d3b6e4d73c73e5"
+    },
+    "pregame_lineups": {
+      "path": "/home/user/wt/mlb-hitter-v2/data/research/hitter_v2/pregame_lineups_2026.csv.gz",
+      "sha256": "197b881a81d99d91eb8b88618c2d0b11cfbe72ad0b253267e8467cd239e8f298"
+    }
+  },
+  "verdict": "PASS_RUNTIME_NONLEAKAGE",
+  "workdir": null
+}

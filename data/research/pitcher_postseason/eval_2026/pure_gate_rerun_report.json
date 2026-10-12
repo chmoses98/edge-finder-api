@@ -1,0 +1,201 @@
+{
+  "certified": true,
+  "checks": {
+    "control_deterministic": true,
+    "control_normal_ok": true,
+    "control_responds_to_every_mutation": true,
+    "market_inputs_restored_unchanged": true,
+    "model_deterministic": true,
+    "model_identical_under_all_mutations": true,
+    "model_normal_ok": true,
+    "randomization_effective": true,
+    "sports_inputs_unchanged": true
+  },
+  "compare": "bytes",
+  "control_command": [
+    "python3",
+    "scripts/research/mlb_pitcher_postseason_eval.py",
+    "rerun",
+    "--arm",
+    "champion_deployed_path",
+    "--data-root",
+    "data",
+    "--out",
+    "{out}/rerun.jsonl"
+  ],
+  "gate": "pure_gate 1.0.0",
+  "market_inputs": {
+    "kalshi_settled_pitcher_props": {
+      "path": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlbops-wt/data/edgelab/settlements",
+      "sha256": "da3eeced98cd017e28d02cca0f344e644ea2801e7bf4ab8cf85825466e032f39"
+    }
+  },
+  "mode": "in_place",
+  "model_command": [
+    "python3",
+    "scripts/research/mlb_pitcher_postseason_eval.py",
+    "rerun",
+    "--arm",
+    "pure_arms",
+    "--data-root",
+    "data",
+    "--out",
+    "{out}/rerun.jsonl"
+  ],
+  "mutation_seed": 20261010,
+  "note": "Each arm ran the actual command at identical seed, sports inputs and command-line paths. Model-owned outputs must be bit-identical with market inputs deleted or randomized; the market-reading negative control must change, proving the mutation reaches readers. This cannot detect market information baked into the sports snapshot itself or into frozen parameters; pair it with the source/dependency audit.",
+  "passed": true,
+  "per_arm": {
+    "control_responded": {
+      "deleted": "output_changed",
+      "randomized_0": "output_changed"
+    },
+    "model_identical": {
+      "deleted": true,
+      "randomized_0": true
+    }
+  },
+  "random_draws": 1,
+  "randomization_effective_by_input": {
+    "kalshi_settled_pitcher_props@20261010": true
+  },
+  "runs": {
+    "control": {
+      "deleted": {
+        "arm": "deleted",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_ji_g33e8/results/control-deleted",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "b0285b3e8153ebe7272188c87cfaefcddba80e6a4963910f3d3be930d3cd74d1"
+        },
+        "role": "control",
+        "seconds": 2.697,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"champion_deployed_path\", \"rows\": 132, \"sha256\": \"b0285b3e8153ebe7272188c87cfaefcddba80e6a4963910f3d3be930d3cd74d1\"}\n"
+      },
+      "normal": {
+        "arm": "normal",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_ji_g33e8/results/control-normal",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "35f7bb2587341046d44a42a1413bfac2710daf980373d5e096f600a84a79802c"
+        },
+        "role": "control",
+        "seconds": 2.899,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"champion_deployed_path\", \"rows\": 132, \"sha256\": \"35f7bb2587341046d44a42a1413bfac2710daf980373d5e096f600a84a79802c\"}\n"
+      },
+      "normal_repeat": {
+        "arm": "normal_repeat",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_ji_g33e8/results/control-normal_repeat",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "35f7bb2587341046d44a42a1413bfac2710daf980373d5e096f600a84a79802c"
+        },
+        "role": "control",
+        "seconds": 2.954,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"champion_deployed_path\", \"rows\": 132, \"sha256\": \"35f7bb2587341046d44a42a1413bfac2710daf980373d5e096f600a84a79802c\"}\n"
+      },
+      "randomized_0": {
+        "arm": "randomized_0",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_ji_g33e8/results/control-randomized_0",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "9127440f3cb8717a158849f01ba36cfd85390e15d37fb9fe5a2762ca1fe50c23"
+        },
+        "role": "control",
+        "seconds": 2.821,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"champion_deployed_path\", \"rows\": 132, \"sha256\": \"9127440f3cb8717a158849f01ba36cfd85390e15d37fb9fe5a2762ca1fe50c23\"}\n"
+      }
+    },
+    "model": {
+      "deleted": {
+        "arm": "deleted",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_ji_g33e8/results/model-deleted",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "fde1c6f6d4c60b724b0d299ed2120279b936a6ec9ce7163460d609a6e9bee3e8"
+        },
+        "role": "model",
+        "seconds": 5.556,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"pure_arms\", \"rows\": 564, \"sha256\": \"fde1c6f6d4c60b724b0d299ed2120279b936a6ec9ce7163460d609a6e9bee3e8\"}\n"
+      },
+      "normal": {
+        "arm": "normal",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_ji_g33e8/results/model-normal",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "fde1c6f6d4c60b724b0d299ed2120279b936a6ec9ce7163460d609a6e9bee3e8"
+        },
+        "role": "model",
+        "seconds": 5.532,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"pure_arms\", \"rows\": 564, \"sha256\": \"fde1c6f6d4c60b724b0d299ed2120279b936a6ec9ce7163460d609a6e9bee3e8\"}\n"
+      },
+      "normal_repeat": {
+        "arm": "normal_repeat",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_ji_g33e8/results/model-normal_repeat",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "fde1c6f6d4c60b724b0d299ed2120279b936a6ec9ce7163460d609a6e9bee3e8"
+        },
+        "role": "model",
+        "seconds": 5.446,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"pure_arms\", \"rows\": 564, \"sha256\": \"fde1c6f6d4c60b724b0d299ed2120279b936a6ec9ce7163460d609a6e9bee3e8\"}\n"
+      },
+      "randomized_0": {
+        "arm": "randomized_0",
+        "exit_code": 0,
+        "kept_outputs": "/tmp/pure_gate_rerun_ji_g33e8/results/model-randomized_0",
+        "ok": true,
+        "output_problem": null,
+        "outputs_sha256": {
+          "rerun.jsonl": "fde1c6f6d4c60b724b0d299ed2120279b936a6ec9ce7163460d609a6e9bee3e8"
+        },
+        "role": "model",
+        "seconds": 5.14,
+        "stderr_tail": "",
+        "stdout_tail": "{\"arm\": \"pure_arms\", \"rows\": 564, \"sha256\": \"fde1c6f6d4c60b724b0d299ed2120279b936a6ec9ce7163460d609a6e9bee3e8\"}\n"
+      }
+    }
+  },
+  "seed": 7,
+  "sports_inputs": {
+    "regime_params": {
+      "path": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlbops-wt/data/research/pitcher_postseason/regime_params.json",
+      "sha256": "a93cfb3600028e0d1bc1de3e2274f6721b8f2237737c72038ada85e5db6d80c7"
+    },
+    "schedules": {
+      "path": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlbops-wt/data/research_cache/bullpen_backtest",
+      "sha256": "2d9c0f5f54dfcbc1fa5ccb84fdc9ef58799fe53a86f3b1bdcd519ce937fbc9c6"
+    },
+    "starter_boxscores_and_postseason_cache": {
+      "path": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlbops-wt/data/research_cache/starter_workload",
+      "sha256": "a786f55672d001e474545051f3f9d9d89f8b606bcd86eec8639525bd9a4761e4"
+    },
+    "statcast": {
+      "path": "/tmp/claude-0/-home-user/4128528f-e3c2-5e3a-aa08-a19f8744ad74/scratchpad/mlbops-wt/data/statcast_raw/games",
+      "sha256": "c5238663376c6da8fe8b12c8025a80268b617a6e6ab6f25852d6814aa2fc3055"
+    }
+  },
+  "verdict": "PASS_RUNTIME_NONLEAKAGE",
+  "workdir": null
+}

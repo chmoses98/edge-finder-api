@@ -8,5 +8,14 @@ sha256:  36b52d07531c01a5ec70675a8544cbebc540a2d72d7cd7c2e4172796f4a90885  pure_
          7caea6c382d34b8ecf3cde831d944495110f2eff8c179bd569ae9dfb77f2e630  schema/pure_forecast.v1.schema.json
 gate:    pure_gate 1.0.0
 
+commit:  e9cca49d561464fc152a4a4e1de19f5fc16ca3dd (Merge PR #77: accuracy and betting-value scorecards; pure_gate.py and the schema unchanged)
+path:    pure-contract/accuracy_scorecard.py   -> tools/pure_gate/accuracy_scorecard.py
+         pure-contract/value_scorecard.py      -> tools/pure_gate/value_scorecard.py
+         pure-contract/SCORECARDS.md           -> tools/pure_gate/SCORECARDS.md
+sha256:  5558309263a877e96a18f888be8a8212346c9c8a2c8bb6ca14ff4bf2a4770928  accuracy_scorecard.py
+         0988713b1c2b8595750685c335726388a20659bdef2c87feffa2a94bfe97e588  value_scorecard.py
+         1b4adb7ac4e423eb7915d9ad8dac2cde39578d4fb92a88f95a1651e99ba8c572  SCORECARDS.md
+accuracy_scorecard.py loads pure_gate.py from this directory.
+
 Usage: python3 -I tools/pure_gate/pure_gate.py validate --require-v1 --forecasts F
        python3 -I tools/pure_gate/pure_gate.py compare --champion A --challenger B --outcomes O

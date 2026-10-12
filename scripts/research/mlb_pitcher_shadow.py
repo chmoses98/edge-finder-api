@@ -18,7 +18,8 @@ Subcommands
   outcomes   StatsAPI box-score outcomes for captured games that have finished
   reconcile  projection <-> outcome join + exchange-resolution vs sports-outcome mismatch flags
   evaluate   pure_gate compare on matured rows: full eligible population and the pregame
-             market-listed cohort, per capture window, clustered by game
+             market-listed cohort, per capture window, clustered by game; alongside it the vendored
+             accuracy_scorecard and a DRY-RUN value_scorecard (lib/research/mlb_pitcher_shadow_scorecards.py)
   verify     manifest hash chain + write-once check
 
 Record families under data/shadow_pure/mlb_pitcher/ (append-only, write-once, named by
@@ -33,6 +34,7 @@ captured_at, hash-chained in MANIFEST.jsonl):
   outcome_provenance/<date>/<captured_at>.jsonl     URL, fetched_at, payload sha256, starters
   reconciliation/<date>/<captured_at>.jsonl
   evaluations/<evaluated_at>.json
+  scorecards/<evaluated_at>.accuracy_scorecard.json, .value_scorecard.json   (same evaluation run)
 
 Postseason (gameType F/D/L/W): rows are produced but labelled
 x_validation_status = BLOCKED_NOT_VALIDATED_POSTSEASON (the challenger is validated for the
@@ -64,6 +66,7 @@ if _RESEARCH_SCRIPTS not in sys.path:
 
 import mlb_pitcher_workload_joint as W  # noqa: E402  (frozen #283 harness, unchanged)
 from lib.research import pitcher_workload_joint as J  # noqa: E402
+from lib.research import mlb_pitcher_shadow_scorecards as SC  # noqa: E402  (stdlib-only; vendored scorecards)
 from lib.research import pitcher_workload_sources as S  # noqa: E402
 from lib.research.mlb_pitcher_shadow_plan import (  # noqa: E402  (stdlib-only; shared with the workflow gate)
     FINAL, NOT_PLAYED, SCHEDULE_URL, capture_dates, iso, missed_windows, parse, parse_schedule, stamp, utcnow,
@@ -599,8 +602,17 @@ def cmd_evaluate(a):
     rep = {"evaluated_at": iso(now), "projection_rows": len(uniq), "matured_rows": len(matured),
            "note": "research shadow only; no promotion, authority or staking. Postseason rows BLOCKED_NOT_VALIDATED.",
            "results": evaluate_rows(gate, matured, outc, cohort, a.reps) if matured else {}}
-    path = store.write_once(f"evaluations/{stamp(now)}.json", rep)["path"] if not a.print_only else None
-    print(json.dumps({"matured_rows": len(matured), "written": path}))
+    runs = [json.load(open(f, encoding="utf-8")) for f in sorted(glob.glob(os.path.join(store.root, "runs", "*", "*.json")))]
+    acc, val = SC.build_safe(uniq, outc, all_rows(store, "market"), runs, all_rows(store, "missed"),
+                             all_rows(store, "outcome_provenance"), now=now, run_id=f"mlb_pitcher_shadow_eval_{stamp(now)}",
+                             reps=a.reps)
+    path, written = None, []
+    if not a.print_only:
+        path = store.write_once(f"evaluations/{stamp(now)}.json", rep)["path"]
+        written = [store.write_once(f"scorecards/{stamp(now)}.accuracy_scorecard.json", acc)["path"],
+                   store.write_once(f"scorecards/{stamp(now)}.value_scorecard.json", val)["path"]]
+    print(json.dumps({"matured_rows": len(matured), "written": path, "scorecards_written": written,
+                      "scorecards": SC.summary_safe(acc, val)}))
     return 0
 
 

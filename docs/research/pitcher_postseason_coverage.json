@@ -1,0 +1,1553 @@
+{
+ "complete_all_seasons": true,
+ "generated_from": "data/research_cache/starter_workload/<season>/postseason_{schedule.json,boxscores.jsonl.gz}",
+ "identity": {
+  "2022": {
+   "counts": {
+    "id_found": 381,
+    "pitcher_lines": 381
+   },
+   "issues": []
+  },
+  "2023": {
+   "counts": {
+    "id_found": 412,
+    "pitcher_lines": 412
+   },
+   "issues": []
+  },
+  "2024": {
+   "counts": {
+    "id_found": 451,
+    "pitcher_lines": 451
+   },
+   "issues": []
+  },
+  "2025": {
+   "counts": {
+    "id_found": 476,
+    "pitcher_lines": 476
+   },
+   "issues": []
+  },
+  "2026": {
+   "counts": {
+    "found_in_statcast_only": 1,
+    "id_found": 244,
+    "not_in_regular_season_cache": 2,
+    "pitcher_lines": 246,
+    "team_mismatch_vs_last_box_appearance": 5
+   },
+   "issues": [
+    {
+     "gamePk": 849823,
+     "issue": "team_differs_from_last_regular_box",
+     "pid": "663460",
+     "postseason_team": 119,
+     "regular_last_date": "2026-05-14",
+     "regular_team": 118
+    },
+    {
+     "gamePk": 849825,
+     "issue": "team_differs_from_last_regular_box",
+     "pid": "668941",
+     "postseason_team": 158,
+     "regular_last_date": "2026-07-12",
+     "regular_team": 138
+    },
+    {
+     "gamePk": 849826,
+     "issue": "team_differs_from_last_regular_box",
+     "pid": "668941",
+     "postseason_team": 158,
+     "regular_last_date": "2026-07-12",
+     "regular_team": 138
+    },
+    {
+     "gamePk": 849827,
+     "issue": "absent_from_regular_season_cache",
+     "name": "Joe Musgrove",
+     "pid": "605397",
+     "seen_in_other_regular_seasons": [
+      2022,
+      2023,
+      2024
+     ]
+    },
+    {
+     "gamePk": 849839,
+     "issue": "team_differs_from_last_regular_box",
+     "pid": "670167",
+     "postseason_team": 147,
+     "regular_last_date": "2026-08-25",
+     "regular_team": 118
+    },
+    {
+     "gamePk": 849843,
+     "issue": "absent_from_regular_season_cache",
+     "name": "Joe Musgrove",
+     "pid": "605397",
+     "seen_in_other_regular_seasons": [
+      2022,
+      2023,
+      2024
+     ]
+    },
+    {
+     "gamePk": 849851,
+     "issue": "team_differs_from_last_regular_box",
+     "pid": "670167",
+     "postseason_team": 147,
+     "regular_last_date": "2026-08-25",
+     "regular_team": 118
+    }
+   ]
+  }
+ },
+ "kalshi_crosscheck": {
+  "by_family": {
+   "pitcher_outs": {
+    "agree": 39,
+    "in_cache": 39,
+    "n": 39
+   },
+   "pitcher_strikeouts": {
+    "agree": 40,
+    "in_cache": 40,
+    "n": 40
+   }
+  },
+  "disagreements": [],
+  "in_cache": 40,
+  "note": "CHECK ONLY: settlement evidence is never a model input or label here",
+  "pitcher_games": 40,
+  "roles": {
+   "starter": 40
+  },
+  "rows": [
+   {
+    "gamePk": 849819,
+    "in_cache": true,
+    "pid": "519242",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 15,
+     "settlement": 15
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 7,
+     "settlement": 7
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-07T13:07:51Z",
+    "settlement_file": "2026-10-06.jsonl.gz"
+   },
+   {
+    "gamePk": 849819,
+    "in_cache": true,
+    "pid": "808967",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 21,
+     "settlement": 21
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 10,
+     "settlement": 10
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-07T13:07:51Z",
+    "settlement_file": "2026-10-06.jsonl.gz"
+   },
+   {
+    "gamePk": 849822,
+    "in_cache": true,
+    "pid": "607192",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 14,
+     "settlement": 14
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 5,
+     "settlement": 5
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-08T13:15:04Z",
+    "settlement_file": "2026-10-07.jsonl.gz"
+   },
+   {
+    "gamePk": 849822,
+    "in_cache": true,
+    "pid": "641816",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 19,
+     "settlement": 19
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 4,
+     "settlement": 4
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-08T13:15:04Z",
+    "settlement_file": "2026-10-07.jsonl.gz"
+   },
+   {
+    "gamePk": 849823,
+    "in_cache": true,
+    "pid": "605483",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 11,
+     "settlement": 11
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 5,
+     "settlement": 5
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-05T14:19:16Z",
+    "settlement_file": "2026-10-04.jsonl.gz"
+   },
+   {
+    "gamePk": 849825,
+    "in_cache": true,
+    "pid": "650633",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 15,
+     "settlement": 15
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 6,
+     "settlement": 6
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-05T14:19:16Z",
+    "settlement_file": "2026-10-04.jsonl.gz"
+   },
+   {
+    "gamePk": 849825,
+    "in_cache": true,
+    "pid": "701656",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 15,
+     "settlement": 15
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 4,
+     "settlement": 4
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-05T14:19:16Z",
+    "settlement_file": "2026-10-04.jsonl.gz"
+   },
+   {
+    "gamePk": 849826,
+    "in_cache": true,
+    "pid": "601713",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 13,
+     "settlement": 13
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 4,
+     "settlement": 4
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-07T13:07:51Z",
+    "settlement_file": "2026-10-06.jsonl.gz"
+   },
+   {
+    "gamePk": 849826,
+    "in_cache": true,
+    "pid": "669160",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 9,
+     "settlement": 9
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 3,
+     "settlement": 3
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-07T13:07:51Z",
+    "settlement_file": "2026-10-06.jsonl.gz"
+   },
+   {
+    "gamePk": 849827,
+    "in_cache": true,
+    "pid": "621111",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 9,
+     "settlement": 9
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 0,
+     "settlement": 0
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-08T13:15:04Z",
+    "settlement_file": "2026-10-07.jsonl.gz"
+   },
+   {
+    "gamePk": 849827,
+    "in_cache": true,
+    "pid": "688107",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 12,
+     "settlement": 12
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 3,
+     "settlement": 3
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-08T13:15:04Z",
+    "settlement_file": "2026-10-07.jsonl.gz"
+   },
+   {
+    "gamePk": 849828,
+    "in_cache": true,
+    "pid": "669373",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 18,
+     "settlement": 18
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 7,
+     "settlement": 7
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-08T07:04:18Z",
+    "settlement_file": "2026-10-03.jsonl.gz"
+   },
+   {
+    "gamePk": 849829,
+    "in_cache": true,
+    "pid": "696146",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 8,
+     "settlement": 8
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 4,
+     "settlement": 4
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-08T07:04:19Z",
+    "settlement_file": "2026-10-03.jsonl.gz"
+   },
+   {
+    "gamePk": 849829,
+    "in_cache": true,
+    "pid": "800048",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 13,
+     "settlement": 13
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 6,
+     "settlement": 6
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-08T07:04:19Z",
+    "settlement_file": "2026-10-03.jsonl.gz"
+   },
+   {
+    "gamePk": 849830,
+    "in_cache": true,
+    "pid": "592662",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 8,
+     "settlement": 8
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 1,
+     "settlement": 1
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-08T07:04:19Z",
+    "settlement_file": "2026-10-03.jsonl.gz"
+   },
+   {
+    "gamePk": 849830,
+    "in_cache": true,
+    "pid": "694819",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 12,
+     "settlement": 12
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 6,
+     "settlement": 6
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-08T07:04:19Z",
+    "settlement_file": "2026-10-03.jsonl.gz"
+   },
+   {
+    "gamePk": 849832,
+    "in_cache": true,
+    "pid": "696146",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 2,
+     "settlement": 2
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 0,
+     "settlement": 0
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-09T13:04:05Z",
+    "settlement_file": "2026-10-08.jsonl.gz"
+   },
+   {
+    "gamePk": 849832,
+    "in_cache": true,
+    "pid": "800048",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 7,
+     "settlement": 7
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 5,
+     "settlement": 5
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-09T13:04:05Z",
+    "settlement_file": "2026-10-08.jsonl.gz"
+   },
+   {
+    "gamePk": 849834,
+    "in_cache": true,
+    "pid": "668909",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 15,
+     "settlement": 15
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 11,
+     "settlement": 11
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-06T13:16:33Z",
+    "settlement_file": "2026-10-05.jsonl.gz"
+   },
+   {
+    "gamePk": 849835,
+    "in_cache": true,
+    "pid": "543037",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 15,
+     "settlement": 15
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 5,
+     "settlement": 5
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-08T07:04:19Z",
+    "settlement_file": "2026-10-03.jsonl.gz"
+   },
+   {
+    "gamePk": 849835,
+    "in_cache": true,
+    "pid": "656876",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 24,
+     "settlement": 24
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 10,
+     "settlement": 10
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-08T07:04:19Z",
+    "settlement_file": "2026-10-03.jsonl.gz"
+   },
+   {
+    "gamePk": 849838,
+    "in_cache": true,
+    "pid": "607259",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 11,
+     "settlement": 11
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 3,
+     "settlement": 3
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-08T13:15:04Z",
+    "settlement_file": "2026-10-07.jsonl.gz"
+   },
+   {
+    "gamePk": 849838,
+    "in_cache": true,
+    "pid": "608331",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 17,
+     "settlement": 17
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 7,
+     "settlement": 7
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-08T13:15:04Z",
+    "settlement_file": "2026-10-07.jsonl.gz"
+   },
+   {
+    "gamePk": 849839,
+    "in_cache": true,
+    "pid": "642547",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 14,
+     "settlement": 14
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 3,
+     "settlement": 3
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-06T13:16:32Z",
+    "settlement_file": "2026-10-05.jsonl.gz"
+   },
+   {
+    "gamePk": 849839,
+    "in_cache": true,
+    "pid": "693645",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 13,
+     "settlement": 13
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 2,
+     "settlement": 2
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-06T13:16:32Z",
+    "settlement_file": "2026-10-05.jsonl.gz"
+   },
+   {
+    "gamePk": 849841,
+    "in_cache": true,
+    "pid": "641816",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 21,
+     "settlement": 21
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 6,
+     "settlement": 6
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-01T12:58:12Z",
+    "settlement_file": "2026-09-30.jsonl.gz"
+   },
+   {
+    "gamePk": 849841,
+    "in_cache": true,
+    "pid": "650911",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 20,
+     "settlement": 20
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 6,
+     "settlement": 6
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-01T12:58:12Z",
+    "settlement_file": "2026-09-30.jsonl.gz"
+   },
+   {
+    "gamePk": 849842,
+    "in_cache": true,
+    "pid": "592332",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 10,
+     "settlement": 10
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 1,
+     "settlement": 1
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-01T12:58:13Z",
+    "settlement_file": "2026-09-30.jsonl.gz"
+   },
+   {
+    "gamePk": 849842,
+    "in_cache": true,
+    "pid": "601713",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 10,
+     "settlement": 10
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 4,
+     "settlement": 4
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-01T12:58:13Z",
+    "settlement_file": "2026-09-30.jsonl.gz"
+   },
+   {
+    "gamePk": 849843,
+    "in_cache": true,
+    "pid": "571510",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 12,
+     "settlement": 12
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 4,
+     "settlement": 4
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-09-30T12:24:49Z",
+    "settlement_file": "2026-09-29.jsonl.gz"
+   },
+   {
+    "gamePk": 849843,
+    "in_cache": true,
+    "pid": "650633",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 21,
+     "settlement": 21
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 8,
+     "settlement": 8
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-09-30T12:24:49Z",
+    "settlement_file": "2026-09-29.jsonl.gz"
+   },
+   {
+    "gamePk": 849844,
+    "in_cache": true,
+    "pid": "605400",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 5,
+     "settlement": 5
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 1,
+     "settlement": 1
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-02T12:20:11Z",
+    "settlement_file": "2026-10-01.jsonl.gz"
+   },
+   {
+    "gamePk": 849845,
+    "in_cache": true,
+    "pid": "519242",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 19,
+     "settlement": 19
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 9,
+     "settlement": 9
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-09-30T12:24:48Z",
+    "settlement_file": "2026-09-29.jsonl.gz"
+   },
+   {
+    "gamePk": 849845,
+    "in_cache": true,
+    "pid": "666200",
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 6,
+     "settlement": 6
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-09-30T12:24:48Z",
+    "settlement_file": "2026-09-29.jsonl.gz"
+   },
+   {
+    "gamePk": 849846,
+    "in_cache": true,
+    "pid": "680732",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 12,
+     "settlement": 12
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 8,
+     "settlement": 8
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-01T12:58:13Z",
+    "settlement_file": "2026-09-30.jsonl.gz"
+   },
+   {
+    "gamePk": 849846,
+    "in_cache": true,
+    "pid": "686613",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 2,
+     "settlement": 2
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 2,
+     "settlement": 2
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-01T12:58:13Z",
+    "settlement_file": "2026-09-30.jsonl.gz"
+   },
+   {
+    "gamePk": 849848,
+    "in_cache": true,
+    "pid": "543243",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 14,
+     "settlement": 14
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 5,
+     "settlement": 5
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-01T12:58:13Z",
+    "settlement_file": "2026-09-30.jsonl.gz"
+   },
+   {
+    "gamePk": 849848,
+    "in_cache": true,
+    "pid": "608331",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 18,
+     "settlement": 18
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 6,
+     "settlement": 6
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-10-01T12:58:13Z",
+    "settlement_file": "2026-09-30.jsonl.gz"
+   },
+   {
+    "gamePk": 849851,
+    "in_cache": true,
+    "pid": "693645",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 19,
+     "settlement": 19
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 10,
+     "settlement": 10
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-09-30T12:24:48Z",
+    "settlement_file": "2026-09-29.jsonl.gz"
+   },
+   {
+    "gamePk": 849851,
+    "in_cache": true,
+    "pid": "801139",
+    "pitcher_outs": {
+     "agree": true,
+     "boxscore": 14,
+     "settlement": 14
+    },
+    "pitcher_strikeouts": {
+     "agree": true,
+     "boxscore": 4,
+     "settlement": 4
+    },
+    "role": "starter",
+    "settlement_fetchedAt": "2026-09-30T12:24:48Z",
+    "settlement_file": "2026-09-29.jsonl.gz"
+   }
+  ]
+ },
+ "seasons": {
+  "2022": {
+   "by_game_type": {
+    "D": {
+     "cached": 16,
+     "final": 16
+    },
+    "F": {
+     "cached": 9,
+     "final": 9
+    },
+    "L": {
+     "cached": 9,
+     "final": 9
+    },
+    "W": {
+     "cached": 6,
+     "final": 6
+    }
+   },
+   "cached_games": 40,
+   "cached_not_in_final_schedule": [],
+   "complete": true,
+   "integrity": {
+    "endpoint_agree": 40,
+    "pitcher_lines": 381,
+    "starter_complete": 80
+   },
+   "latest_final_game_date": "2022-11-05",
+   "missing_final_games": [],
+   "schedule_by_state": {
+    "Final": 40
+   },
+   "schedule_fetched_at": "2026-10-11T02:11:53Z",
+   "schedule_final": 40,
+   "schedule_games": 40,
+   "schedule_source_url": "https://statsapi.mlb.com/api/v1/schedule?sportId=1&season=2022&gameType=F,D,L,W&startDate=2022-09-01&endDate=2022-11-30",
+   "series": {
+    "D:AL Division Series:114-147": {
+     "cached": 5,
+     "dates": [
+      "2022-10-11",
+      "2022-10-18"
+     ],
+     "not_final": 0,
+     "schedule_final": 5
+    },
+    "D:AL Division Series:117-136": {
+     "cached": 3,
+     "dates": [
+      "2022-10-11",
+      "2022-10-15"
+     ],
+     "not_final": 0,
+     "schedule_final": 3
+    },
+    "D:NL Division Series:119-135": {
+     "cached": 4,
+     "dates": [
+      "2022-10-11",
+      "2022-10-15"
+     ],
+     "not_final": 0,
+     "schedule_final": 4
+    },
+    "D:NL Division Series:143-144": {
+     "cached": 4,
+     "dates": [
+      "2022-10-11",
+      "2022-10-15"
+     ],
+     "not_final": 0,
+     "schedule_final": 4
+    },
+    "F:AL Wild Card Series:114-139": {
+     "cached": 2,
+     "dates": [
+      "2022-10-07",
+      "2022-10-08"
+     ],
+     "not_final": 0,
+     "schedule_final": 2
+    },
+    "F:AL Wild Card Series:136-141": {
+     "cached": 2,
+     "dates": [
+      "2022-10-07",
+      "2022-10-08"
+     ],
+     "not_final": 0,
+     "schedule_final": 2
+    },
+    "F:NL Wild Card Series:121-135": {
+     "cached": 3,
+     "dates": [
+      "2022-10-07",
+      "2022-10-09"
+     ],
+     "not_final": 0,
+     "schedule_final": 3
+    },
+    "F:NL Wild Card Series:138-143": {
+     "cached": 2,
+     "dates": [
+      "2022-10-07",
+      "2022-10-08"
+     ],
+     "not_final": 0,
+     "schedule_final": 2
+    },
+    "L:AL Championship Series:117-147": {
+     "cached": 4,
+     "dates": [
+      "2022-10-19",
+      "2022-10-23"
+     ],
+     "not_final": 0,
+     "schedule_final": 4
+    },
+    "L:NL Championship Series:135-143": {
+     "cached": 5,
+     "dates": [
+      "2022-10-18",
+      "2022-10-23"
+     ],
+     "not_final": 0,
+     "schedule_final": 5
+    },
+    "W:World Series:117-143": {
+     "cached": 6,
+     "dates": [
+      "2022-10-28",
+      "2022-11-05"
+     ],
+     "not_final": 0,
+     "schedule_final": 6
+    }
+   },
+   "team_outs_lt24_anomalies": []
+  },
+  "2023": {
+   "by_game_type": {
+    "D": {
+     "cached": 14,
+     "final": 14
+    },
+    "F": {
+     "cached": 8,
+     "final": 8
+    },
+    "L": {
+     "cached": 14,
+     "final": 14
+    },
+    "W": {
+     "cached": 5,
+     "final": 5
+    }
+   },
+   "cached_games": 41,
+   "cached_not_in_final_schedule": [],
+   "complete": true,
+   "integrity": {
+    "endpoint_agree": 41,
+    "pitcher_lines": 412,
+    "starter_complete": 82
+   },
+   "latest_final_game_date": "2023-11-01",
+   "missing_final_games": [],
+   "schedule_by_state": {
+    "Final": 41
+   },
+   "schedule_fetched_at": "2026-10-11T02:12:40Z",
+   "schedule_final": 41,
+   "schedule_games": 41,
+   "schedule_source_url": "https://statsapi.mlb.com/api/v1/schedule?sportId=1&season=2023&gameType=F,D,L,W&startDate=2023-09-01&endDate=2023-11-30",
+   "series": {
+    "D:AL Division Series:110-140": {
+     "cached": 3,
+     "dates": [
+      "2023-10-07",
+      "2023-10-10"
+     ],
+     "not_final": 0,
+     "schedule_final": 3
+    },
+    "D:AL Division Series:117-142": {
+     "cached": 4,
+     "dates": [
+      "2023-10-07",
+      "2023-10-11"
+     ],
+     "not_final": 0,
+     "schedule_final": 4
+    },
+    "D:NL Division Series:109-119": {
+     "cached": 3,
+     "dates": [
+      "2023-10-07",
+      "2023-10-11"
+     ],
+     "not_final": 0,
+     "schedule_final": 3
+    },
+    "D:NL Division Series:143-144": {
+     "cached": 4,
+     "dates": [
+      "2023-10-07",
+      "2023-10-12"
+     ],
+     "not_final": 0,
+     "schedule_final": 4
+    },
+    "F:AL Wild Card Series:139-140": {
+     "cached": 2,
+     "dates": [
+      "2023-10-03",
+      "2023-10-04"
+     ],
+     "not_final": 0,
+     "schedule_final": 2
+    },
+    "F:AL Wild Card Series:141-142": {
+     "cached": 2,
+     "dates": [
+      "2023-10-03",
+      "2023-10-04"
+     ],
+     "not_final": 0,
+     "schedule_final": 2
+    },
+    "F:NL Wild Card Series:109-158": {
+     "cached": 2,
+     "dates": [
+      "2023-10-03",
+      "2023-10-04"
+     ],
+     "not_final": 0,
+     "schedule_final": 2
+    },
+    "F:NL Wild Card Series:143-146": {
+     "cached": 2,
+     "dates": [
+      "2023-10-03",
+      "2023-10-04"
+     ],
+     "not_final": 0,
+     "schedule_final": 2
+    },
+    "L:AL Championship Series:117-140": {
+     "cached": 7,
+     "dates": [
+      "2023-10-15",
+      "2023-10-23"
+     ],
+     "not_final": 0,
+     "schedule_final": 7
+    },
+    "L:NL Championship Series:109-143": {
+     "cached": 7,
+     "dates": [
+      "2023-10-16",
+      "2023-10-24"
+     ],
+     "not_final": 0,
+     "schedule_final": 7
+    },
+    "W:World Series:109-140": {
+     "cached": 5,
+     "dates": [
+      "2023-10-27",
+      "2023-11-01"
+     ],
+     "not_final": 0,
+     "schedule_final": 5
+    }
+   },
+   "team_outs_lt24_anomalies": []
+  },
+  "2024": {
+   "by_game_type": {
+    "D": {
+     "cached": 18,
+     "final": 18
+    },
+    "F": {
+     "cached": 9,
+     "final": 9
+    },
+    "L": {
+     "cached": 11,
+     "final": 11
+    },
+    "W": {
+     "cached": 5,
+     "final": 5
+    }
+   },
+   "cached_games": 43,
+   "cached_not_in_final_schedule": [],
+   "complete": true,
+   "integrity": {
+    "endpoint_agree": 43,
+    "pitcher_lines": 451,
+    "starter_complete": 86
+   },
+   "latest_final_game_date": "2024-10-30",
+   "missing_final_games": [],
+   "schedule_by_state": {
+    "Final": 43
+   },
+   "schedule_fetched_at": "2026-10-11T02:13:27Z",
+   "schedule_final": 43,
+   "schedule_games": 43,
+   "schedule_source_url": "https://statsapi.mlb.com/api/v1/schedule?sportId=1&season=2024&gameType=F,D,L,W&startDate=2024-09-01&endDate=2024-11-30",
+   "series": {
+    "D:AL Division Series:114-116": {
+     "cached": 5,
+     "dates": [
+      "2024-10-05",
+      "2024-10-12"
+     ],
+     "not_final": 0,
+     "schedule_final": 5
+    },
+    "D:AL Division Series:118-147": {
+     "cached": 4,
+     "dates": [
+      "2024-10-05",
+      "2024-10-10"
+     ],
+     "not_final": 0,
+     "schedule_final": 4
+    },
+    "D:NL Division Series:119-135": {
+     "cached": 5,
+     "dates": [
+      "2024-10-05",
+      "2024-10-11"
+     ],
+     "not_final": 0,
+     "schedule_final": 5
+    },
+    "D:NL Division Series:121-143": {
+     "cached": 4,
+     "dates": [
+      "2024-10-05",
+      "2024-10-09"
+     ],
+     "not_final": 0,
+     "schedule_final": 4
+    },
+    "F:AL Wild Card Series:110-118": {
+     "cached": 2,
+     "dates": [
+      "2024-10-01",
+      "2024-10-02"
+     ],
+     "not_final": 0,
+     "schedule_final": 2
+    },
+    "F:AL Wild Card Series:116-117": {
+     "cached": 2,
+     "dates": [
+      "2024-10-01",
+      "2024-10-02"
+     ],
+     "not_final": 0,
+     "schedule_final": 2
+    },
+    "F:NL Wild Card Series:121-158": {
+     "cached": 3,
+     "dates": [
+      "2024-10-01",
+      "2024-10-03"
+     ],
+     "not_final": 0,
+     "schedule_final": 3
+    },
+    "F:NL Wild Card Series:135-144": {
+     "cached": 2,
+     "dates": [
+      "2024-10-01",
+      "2024-10-02"
+     ],
+     "not_final": 0,
+     "schedule_final": 2
+    },
+    "L:AL Championship Series:114-147": {
+     "cached": 5,
+     "dates": [
+      "2024-10-14",
+      "2024-10-19"
+     ],
+     "not_final": 0,
+     "schedule_final": 5
+    },
+    "L:NL Championship Series:119-121": {
+     "cached": 6,
+     "dates": [
+      "2024-10-13",
+      "2024-10-20"
+     ],
+     "not_final": 0,
+     "schedule_final": 6
+    },
+    "W:World Series:119-147": {
+     "cached": 5,
+     "dates": [
+      "2024-10-25",
+      "2024-10-30"
+     ],
+     "not_final": 0,
+     "schedule_final": 5
+    }
+   },
+   "team_outs_lt24_anomalies": []
+  },
+  "2025": {
+   "by_game_type": {
+    "D": {
+     "cached": 18,
+     "final": 18
+    },
+    "F": {
+     "cached": 11,
+     "final": 11
+    },
+    "L": {
+     "cached": 11,
+     "final": 11
+    },
+    "W": {
+     "cached": 7,
+     "final": 7
+    }
+   },
+   "cached_games": 47,
+   "cached_not_in_final_schedule": [],
+   "complete": true,
+   "integrity": {
+    "endpoint_agree": 47,
+    "pitcher_lines": 476,
+    "starter_complete": 94
+   },
+   "latest_final_game_date": "2025-11-01",
+   "missing_final_games": [],
+   "schedule_by_state": {
+    "Final": 47
+   },
+   "schedule_fetched_at": "2026-10-11T02:14:20Z",
+   "schedule_final": 47,
+   "schedule_games": 47,
+   "schedule_source_url": "https://statsapi.mlb.com/api/v1/schedule?sportId=1&season=2025&gameType=F,D,L,W&startDate=2025-09-01&endDate=2025-11-30",
+   "series": {
+    "D:AL Division Series:116-136": {
+     "cached": 5,
+     "dates": [
+      "2025-10-04",
+      "2025-10-10"
+     ],
+     "not_final": 0,
+     "schedule_final": 5
+    },
+    "D:AL Division Series:141-147": {
+     "cached": 4,
+     "dates": [
+      "2025-10-04",
+      "2025-10-08"
+     ],
+     "not_final": 0,
+     "schedule_final": 4
+    },
+    "D:NL Division Series:112-158": {
+     "cached": 5,
+     "dates": [
+      "2025-10-04",
+      "2025-10-11"
+     ],
+     "not_final": 0,
+     "schedule_final": 5
+    },
+    "D:NL Division Series:119-143": {
+     "cached": 4,
+     "dates": [
+      "2025-10-04",
+      "2025-10-09"
+     ],
+     "not_final": 0,
+     "schedule_final": 4
+    },
+    "F:AL Wild Card Series:111-147": {
+     "cached": 3,
+     "dates": [
+      "2025-09-30",
+      "2025-10-02"
+     ],
+     "not_final": 0,
+     "schedule_final": 3
+    },
+    "F:AL Wild Card Series:114-116": {
+     "cached": 3,
+     "dates": [
+      "2025-09-30",
+      "2025-10-02"
+     ],
+     "not_final": 0,
+     "schedule_final": 3
+    },
+    "F:NL Wild Card Series:112-135": {
+     "cached": 3,
+     "dates": [
+      "2025-09-30",
+      "2025-10-02"
+     ],
+     "not_final": 0,
+     "schedule_final": 3
+    },
+    "F:NL Wild Card Series:113-119": {
+     "cached": 2,
+     "dates": [
+      "2025-09-30",
+      "2025-10-01"
+     ],
+     "not_final": 0,
+     "schedule_final": 2
+    },
+    "L:AL Championship Series:136-141": {
+     "cached": 7,
+     "dates": [
+      "2025-10-12",
+      "2025-10-20"
+     ],
+     "not_final": 0,
+     "schedule_final": 7
+    },
+    "L:NL Championship Series:119-158": {
+     "cached": 4,
+     "dates": [
+      "2025-10-13",
+      "2025-10-17"
+     ],
+     "not_final": 0,
+     "schedule_final": 4
+    },
+    "W:World Series:119-141": {
+     "cached": 7,
+     "dates": [
+      "2025-10-24",
+      "2025-11-01"
+     ],
+     "not_final": 0,
+     "schedule_final": 7
+    }
+   },
+   "team_outs_lt24_anomalies": []
+  },
+  "2026": {
+   "by_game_type": {
+    "D": {
+     "cached": 16,
+     "final": 16
+    },
+    "F": {
+     "cached": 9,
+     "final": 9
+    },
+    "L": {
+     "cached": 0,
+     "final": 0
+    },
+    "W": {
+     "cached": 0,
+     "final": 0
+    }
+   },
+   "cached_games": 25,
+   "cached_not_in_final_schedule": [],
+   "complete": true,
+   "integrity": {
+    "endpoint_agree": 25,
+    "pitcher_lines": 246,
+    "starter_complete": 50
+   },
+   "latest_final_game_date": "2026-10-10",
+   "missing_final_games": [],
+   "schedule_by_state": {
+    "Final": 25,
+    "Scheduled": 21
+   },
+   "schedule_fetched_at": "2026-10-11T03:28:49Z",
+   "schedule_final": 25,
+   "schedule_games": 46,
+   "schedule_source_url": "https://statsapi.mlb.com/api/v1/schedule?sportId=1&season=2026&gameType=F,D,L,W&startDate=2026-09-01&endDate=2026-11-30",
+   "series": {
+    "D:AL Division Series:114-145": {
+     "cached": 5,
+     "dates": [
+      "2026-10-03",
+      "2026-10-10"
+     ],
+     "not_final": 0,
+     "schedule_final": 5
+    },
+    "D:AL Division Series:139-147": {
+     "cached": 3,
+     "dates": [
+      "2026-10-03",
+      "2026-10-07"
+     ],
+     "not_final": 0,
+     "schedule_final": 3
+    },
+    "D:NL Division Series:119-144": {
+     "cached": 4,
+     "dates": [
+      "2026-10-03",
+      "2026-10-07"
+     ],
+     "not_final": 0,
+     "schedule_final": 4
+    },
+    "D:NL Division Series:135-158": {
+     "cached": 4,
+     "dates": [
+      "2026-10-03",
+      "2026-10-07"
+     ],
+     "not_final": 0,
+     "schedule_final": 4
+    },
+    "F:AL Wild Card Series:111-147": {
+     "cached": 2,
+     "dates": [
+      "2026-09-29",
+      "2026-09-30"
+     ],
+     "not_final": 0,
+     "schedule_final": 2
+    },
+    "F:AL Wild Card Series:117-145": {
+     "cached": 2,
+     "dates": [
+      "2026-09-29",
+      "2026-09-30"
+     ],
+     "not_final": 0,
+     "schedule_final": 2
+    },
+    "F:NL Wild Card Series:112-135": {
+     "cached": 2,
+     "dates": [
+      "2026-09-29",
+      "2026-09-30"
+     ],
+     "not_final": 0,
+     "schedule_final": 2
+    },
+    "F:NL Wild Card Series:143-144": {
+     "cached": 3,
+     "dates": [
+      "2026-09-29",
+      "2026-10-01"
+     ],
+     "not_final": 0,
+     "schedule_final": 3
+    },
+    "L:AL Championship Series:114-139": {
+     "cached": 0,
+     "dates": [],
+     "not_final": 7,
+     "schedule_final": 0
+    },
+    "L:NL Championship Series:119-158": {
+     "cached": 0,
+     "dates": [],
+     "not_final": 7,
+     "schedule_final": 0
+    },
+    "W:World Series:21-31": {
+     "cached": 0,
+     "dates": [],
+     "not_final": 7,
+     "schedule_final": 0
+    }
+   },
+   "team_outs_lt24_anomalies": []
+  }
+ },
+ "timestamps": {
+  "as_of_rule": "a cached line may enter a projection only if gameEnd < projection cutoff (as_of); fetched_at is the archive time, not an availability time (a backfill fetches long after the game)",
+  "counts": {
+   "end_after_first_pitch": 196,
+   "fetched_after_game_end": 196,
+   "fetched_not_after_game_end": 0,
+   "sources_with_url_and_fetched_at": 392
+  },
+  "fetch_lag_hours_after_end": {
+   "max": 35143.78,
+   "min": 0.73
+  },
+  "game_minutes_first_pitch_to_end": {
+   "max": 399.6,
+   "median": 185.3,
+   "min": 129.1
+  },
+  "records": 196
+ }
+}

@@ -99,6 +99,7 @@ def test_eff_hand_switch_hitters():
 
 
 def test_scoring_crps_equals_full_ladder_brier_sum():
+    pytest.importorskip("numpy")               # analysis modules need numpy; CI is numpy-free
     import scoring_v2 as S
     rng = random.Random(0)
     pmf = {0: 0.3, 1: 0.4, 2: 0.2, 3: 0.1}
@@ -112,6 +113,7 @@ def test_scoring_crps_equals_full_ladder_brier_sum():
 
 
 def test_hazard_logistic_recovers_rates():
+    pytest.importorskip("numpy")               # analysis modules need numpy; CI is numpy-free
     import model_v2 as MV
     rng = random.Random(1)
     rows = []

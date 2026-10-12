@@ -1,0 +1,1402 @@
+{
+ "candidates": {
+  "A_B2": {
+   "pitcher_batters_faced": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": 0.6739,
+      "games": 550,
+      "log_loss": 2.579,
+      "mae": 2.4824,
+      "median_abs_error": 1.86,
+      "median_signed_error": 0.288,
+      "n": 592,
+      "p10_p90_coverage": 0.8716,
+      "rmse": 3.6101,
+      "threshold_brier": 0.25174
+     },
+     "mid_80_95": {
+      "bias": 0.028,
+      "games": 2161,
+      "log_loss": 2.5854,
+      "mae": 2.5157,
+      "median_abs_error": 1.9459,
+      "median_signed_error": -0.1473,
+      "n": 3321,
+      "p10_p90_coverage": 0.872,
+      "rmse": 3.4483,
+      "threshold_brier": 0.24669
+     },
+     "short_lt80": {
+      "bias": -0.0694,
+      "games": 613,
+      "log_loss": 2.6895,
+      "mae": 2.9146,
+      "median_abs_error": 2.3299,
+      "median_signed_error": -0.2652,
+      "n": 651,
+      "p10_p90_coverage": 0.851,
+      "rmse": 3.9054,
+      "threshold_brier": 0.21614
+     }
+    },
+    "minus_v1_refit": {
+     "delta_bias": {
+      "ci95": [
+       0.03349,
+       0.06694
+      ],
+      "point": 0.05046
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.01969,
+       -0.00906
+      ],
+      "point": -0.01453
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.05285,
+       -0.02209
+      ],
+      "point": -0.03798
+     },
+     "delta_mse": {
+      "ci95": [
+       -0.32996,
+       -0.07298
+      ],
+      "point": -0.19699
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.02496,
+       -0.01554
+      ],
+      "point": -0.01994
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.00424,
+       -0.00052
+      ],
+      "point": -0.00238
+     }
+    },
+    "overall": {
+     "bias": 0.0979,
+     "games": 2415,
+     "log_loss": 2.5994,
+     "mae": 2.5683,
+     "median_abs_error": 1.9661,
+     "median_signed_error": -0.1077,
+     "n": 4564,
+     "p10_p90_coverage": 0.869,
+     "rmse": 3.5382,
+     "threshold_brier": 0.24299
+    }
+   },
+   "pitcher_outs": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": 0.3546,
+      "games": 550,
+      "log_loss": 2.3675,
+      "mae": 2.738,
+      "median_abs_error": 2.1929,
+      "median_signed_error": -0.1482,
+      "n": 592,
+      "p10_p90_coverage": 0.875,
+      "rmse": 3.7443,
+      "threshold_brier": 0.24191
+     },
+     "mid_80_95": {
+      "bias": 0.0059,
+      "games": 2161,
+      "log_loss": 2.4348,
+      "mae": 2.7588,
+      "median_abs_error": 2.0723,
+      "median_signed_error": -0.3982,
+      "n": 3321,
+      "p10_p90_coverage": 0.8759,
+      "rmse": 3.6648,
+      "threshold_brier": 0.24673
+     },
+     "short_lt80": {
+      "bias": -0.0734,
+      "games": 613,
+      "log_loss": 2.4437,
+      "mae": 2.7447,
+      "median_abs_error": 2.2294,
+      "median_signed_error": -0.2796,
+      "n": 651,
+      "p10_p90_coverage": 0.8587,
+      "rmse": 3.5424,
+      "threshold_brier": 0.23355
+     }
+    },
+    "minus_v1_refit": {
+     "delta_bias": {
+      "ci95": [
+       0.00784,
+       0.01514
+      ],
+      "point": 0.01128
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.00055,
+       0.00298
+      ],
+      "point": 0.00128
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.00711,
+       0.00021
+      ],
+      "point": -0.00336
+     },
+     "delta_mse": {
+      "ci95": [
+       -0.00886,
+       0.04698
+      ],
+      "point": 0.01943
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.00525,
+       -0.00022
+      ],
+      "point": -0.00263
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.0005,
+       0.00029
+      ],
+      "point": -0.00011
+     }
+    },
+    "overall": {
+     "bias": 0.0398,
+     "games": 2415,
+     "log_loss": 2.4273,
+     "mae": 2.7541,
+     "median_abs_error": 2.1055,
+     "median_signed_error": -0.3408,
+     "n": 4564,
+     "p10_p90_coverage": 0.8734,
+     "rmse": 3.6581,
+     "threshold_brier": 0.24422
+    }
+   },
+   "pitcher_strikeouts": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": 0.1623,
+      "games": 550,
+      "log_loss": 2.236,
+      "mae": 1.8205,
+      "median_abs_error": 1.5107,
+      "median_signed_error": 0.2963,
+      "n": 592,
+      "p10_p90_coverage": 0.8834,
+      "rmse": 2.2743,
+      "threshold_brier": 0.24634
+     },
+     "mid_80_95": {
+      "bias": 0.0862,
+      "games": 2161,
+      "log_loss": 2.2268,
+      "mae": 1.8399,
+      "median_abs_error": 1.5668,
+      "median_signed_error": 0.174,
+      "n": 3321,
+      "p10_p90_coverage": 0.8672,
+      "rmse": 2.286,
+      "threshold_brier": 0.2482
+     },
+     "short_lt80": {
+      "bias": 0.0907,
+      "games": 613,
+      "log_loss": 2.0976,
+      "mae": 1.684,
+      "median_abs_error": 1.4509,
+      "median_signed_error": 0.2682,
+      "n": 651,
+      "p10_p90_coverage": 0.8648,
+      "rmse": 2.075,
+      "threshold_brier": 0.24785
+     }
+    },
+    "minus_v1_refit": {
+     "delta_bias": {
+      "ci95": [
+       0.01804,
+       0.0257
+      ],
+      "point": 0.02191
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.00327,
+       0.00028
+      ],
+      "point": -0.0015
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.00644,
+       0.00109
+      ],
+      "point": -0.00245
+     },
+     "delta_mse": {
+      "ci95": [
+       -0.03024,
+       0.00417
+      ],
+      "point": -0.01294
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.0044,
+       0.00153
+      ],
+      "point": -0.00153
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.00131,
+       7e-05
+      ],
+      "point": -0.00059
+     }
+    },
+    "overall": {
+     "bias": 0.0967,
+     "games": 2415,
+     "log_loss": 2.2095,
+     "mae": 1.8152,
+     "median_abs_error": 1.5503,
+     "median_signed_error": 0.1961,
+     "n": 4564,
+     "p10_p90_coverage": 0.869,
+     "rmse": 2.2555,
+     "threshold_brier": 0.24791
+    }
+   }
+  },
+  "A_bin_normalized_kernel": {
+   "pitcher_batters_faced": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": -0.0224,
+      "games": 550,
+      "log_loss": 2.572,
+      "mae": 2.482,
+      "median_abs_error": 1.8855,
+      "median_signed_error": -0.4025,
+      "n": 592,
+      "p10_p90_coverage": 0.8986,
+      "rmse": 3.5351,
+      "threshold_brier": 0.24598
+     },
+     "mid_80_95": {
+      "bias": -0.0766,
+      "games": 2161,
+      "log_loss": 2.5948,
+      "mae": 2.5289,
+      "median_abs_error": 1.9548,
+      "median_signed_error": -0.3083,
+      "n": 3321,
+      "p10_p90_coverage": 0.891,
+      "rmse": 3.4503,
+      "threshold_brier": 0.24669
+     },
+     "short_lt80": {
+      "bias": 0.803,
+      "games": 613,
+      "log_loss": 2.7356,
+      "mae": 3.04,
+      "median_abs_error": 2.3916,
+      "median_signed_error": 0.572,
+      "n": 651,
+      "p10_p90_coverage": 0.8725,
+      "rmse": 4.077,
+      "threshold_brier": 0.22943
+     }
+    },
+    "minus_v1_refit": {
+     "delta_bias": {
+      "ci95": [
+       0.00558,
+       0.01173
+      ],
+      "point": 0.00851
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.0029,
+       -0.00126
+      ],
+      "point": -0.00209
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.01362,
+       -0.00768
+      ],
+      "point": -0.01055
+     },
+     "delta_mse": {
+      "ci95": [
+       -0.08401,
+       -0.03806
+      ],
+      "point": -0.06117
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.00153,
+       0.0024
+      ],
+      "point": 0.00044
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.00152,
+       -0.00095
+      ],
+      "point": -0.00123
+     }
+    },
+    "overall": {
+     "bias": 0.0559,
+     "games": 2415,
+     "log_loss": 2.6119,
+     "mae": 2.5957,
+     "median_abs_error": 1.9922,
+     "median_signed_error": -0.2051,
+     "n": 4564,
+     "p10_p90_coverage": 0.8894,
+     "rmse": 3.5573,
+     "threshold_brier": 0.24414
+    }
+   },
+   "pitcher_outs": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": 0.3546,
+      "games": 550,
+      "log_loss": 2.3675,
+      "mae": 2.738,
+      "median_abs_error": 2.1929,
+      "median_signed_error": -0.1482,
+      "n": 592,
+      "p10_p90_coverage": 0.875,
+      "rmse": 3.7443,
+      "threshold_brier": 0.24191
+     },
+     "mid_80_95": {
+      "bias": 0.0059,
+      "games": 2161,
+      "log_loss": 2.4348,
+      "mae": 2.7588,
+      "median_abs_error": 2.0723,
+      "median_signed_error": -0.3982,
+      "n": 3321,
+      "p10_p90_coverage": 0.8759,
+      "rmse": 3.6648,
+      "threshold_brier": 0.24673
+     },
+     "short_lt80": {
+      "bias": -0.0734,
+      "games": 613,
+      "log_loss": 2.4437,
+      "mae": 2.7447,
+      "median_abs_error": 2.2294,
+      "median_signed_error": -0.2796,
+      "n": 651,
+      "p10_p90_coverage": 0.8587,
+      "rmse": 3.5424,
+      "threshold_brier": 0.23355
+     }
+    },
+    "minus_v1_refit": {
+     "delta_bias": {
+      "ci95": [
+       0.00784,
+       0.01514
+      ],
+      "point": 0.01128
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.00055,
+       0.00298
+      ],
+      "point": 0.00128
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.00711,
+       0.00021
+      ],
+      "point": -0.00336
+     },
+     "delta_mse": {
+      "ci95": [
+       -0.00886,
+       0.04698
+      ],
+      "point": 0.01943
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.00525,
+       -0.00022
+      ],
+      "point": -0.00263
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.0005,
+       0.00029
+      ],
+      "point": -0.00011
+     }
+    },
+    "overall": {
+     "bias": 0.0398,
+     "games": 2415,
+     "log_loss": 2.4273,
+     "mae": 2.7541,
+     "median_abs_error": 2.1055,
+     "median_signed_error": -0.3408,
+     "n": 4564,
+     "p10_p90_coverage": 0.8734,
+     "rmse": 3.6581,
+     "threshold_brier": 0.24422
+    }
+   },
+   "pitcher_strikeouts": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": -0.0169,
+      "games": 550,
+      "log_loss": 2.2346,
+      "mae": 1.8098,
+      "median_abs_error": 1.4874,
+      "median_signed_error": 0.0693,
+      "n": 592,
+      "p10_p90_coverage": 0.8784,
+      "rmse": 2.2671,
+      "threshold_brier": 0.24641
+     },
+     "mid_80_95": {
+      "bias": 0.0567,
+      "games": 2161,
+      "log_loss": 2.2267,
+      "mae": 1.8388,
+      "median_abs_error": 1.5622,
+      "median_signed_error": 0.149,
+      "n": 3321,
+      "p10_p90_coverage": 0.8684,
+      "rmse": 2.2862,
+      "threshold_brier": 0.24819
+     },
+     "short_lt80": {
+      "bias": 0.272,
+      "games": 613,
+      "log_loss": 2.1076,
+      "mae": 1.7136,
+      "median_abs_error": 1.474,
+      "median_signed_error": 0.435,
+      "n": 651,
+      "p10_p90_coverage": 0.871,
+      "rmse": 2.0976,
+      "threshold_brier": 0.25117
+     }
+    },
+    "minus_v1_refit": {
+     "delta_bias": {
+      "ci95": [
+       0.00235,
+       0.00382
+      ],
+      "point": 0.00305
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.00064,
+       -0.0
+      ],
+      "point": -0.00033
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.00115,
+       0.00022
+      ],
+      "point": -0.00045
+     },
+     "delta_mse": {
+      "ci95": [
+       -0.00636,
+       0.00012
+      ],
+      "point": -0.00308
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.00153,
+       0.00066
+      ],
+      "point": -0.00044
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.00023,
+       1e-05
+      ],
+      "point": -0.00011
+     }
+    },
+    "overall": {
+     "bias": 0.0778,
+     "games": 2415,
+     "log_loss": 2.2107,
+     "mae": 1.8172,
+     "median_abs_error": 1.5399,
+     "median_signed_error": 0.1765,
+     "n": 4564,
+     "p10_p90_coverage": 0.8701,
+     "rmse": 2.2577,
+     "threshold_brier": 0.24838
+    }
+   }
+  },
+  "B1_leash_nonout_const": {
+   "pitcher_batters_faced": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": 0.6735,
+      "games": 550,
+      "log_loss": 2.5831,
+      "mae": 2.4932,
+      "median_abs_error": 1.8433,
+      "median_signed_error": 0.2812,
+      "n": 592,
+      "p10_p90_coverage": 0.8733,
+      "rmse": 3.6164,
+      "threshold_brier": 0.25338
+     },
+     "mid_80_95": {
+      "bias": -0.0027,
+      "games": 2161,
+      "log_loss": 2.5869,
+      "mae": 2.5222,
+      "median_abs_error": 1.9556,
+      "median_signed_error": -0.1876,
+      "n": 3321,
+      "p10_p90_coverage": 0.8708,
+      "rmse": 3.4503,
+      "threshold_brier": 0.24733
+     },
+     "short_lt80": {
+      "bias": -0.0553,
+      "games": 613,
+      "log_loss": 2.6947,
+      "mae": 2.9287,
+      "median_abs_error": 2.3752,
+      "median_signed_error": -0.2389,
+      "n": 651,
+      "p10_p90_coverage": 0.8402,
+      "rmse": 3.9244,
+      "threshold_brier": 0.21583
+     }
+    },
+    "minus_v1_refit": {
+     "delta_bias": {
+      "ci95": [
+       0.01277,
+       0.0465
+      ],
+      "point": 0.03006
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.0176,
+       -0.0066
+      ],
+      "point": -0.01221
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.04415,
+       -0.01441
+      ],
+      "point": -0.02981
+     },
+     "delta_mse": {
+      "ci95": [
+       -0.28671,
+       -0.03948
+      ],
+      "point": -0.16022
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.02728,
+       -0.01744
+      ],
+      "point": -0.02213
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.00369,
+       0.00019
+      ],
+      "point": -0.00175
+     }
+    },
+    "overall": {
+     "bias": 0.0775,
+     "games": 2415,
+     "log_loss": 2.6018,
+     "mae": 2.5764,
+     "median_abs_error": 1.9786,
+     "median_signed_error": -0.1178,
+     "n": 4564,
+     "p10_p90_coverage": 0.8668,
+     "rmse": 3.5434,
+     "threshold_brier": 0.24362
+    }
+   },
+   "pitcher_outs": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": 0.1832,
+      "games": 550,
+      "log_loss": 2.3586,
+      "mae": 2.751,
+      "median_abs_error": 2.1772,
+      "median_signed_error": -0.3727,
+      "n": 592,
+      "p10_p90_coverage": 0.875,
+      "rmse": 3.728,
+      "threshold_brier": 0.24173
+     },
+     "mid_80_95": {
+      "bias": 0.0003,
+      "games": 2161,
+      "log_loss": 2.4338,
+      "mae": 2.7633,
+      "median_abs_error": 2.0445,
+      "median_signed_error": -0.4351,
+      "n": 3321,
+      "p10_p90_coverage": 0.8799,
+      "rmse": 3.6635,
+      "threshold_brier": 0.24676
+     },
+     "short_lt80": {
+      "bias": 0.0319,
+      "games": 613,
+      "log_loss": 2.4477,
+      "mae": 2.7338,
+      "median_abs_error": 2.228,
+      "median_signed_error": -0.1462,
+      "n": 651,
+      "p10_p90_coverage": 0.8571,
+      "rmse": 3.5461,
+      "threshold_brier": 0.2343
+     }
+    },
+    "minus_v1_refit": {
+     "delta_bias": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     },
+     "delta_log_loss": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     },
+     "delta_mae": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     },
+     "delta_mse": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     }
+    },
+    "overall": {
+     "bias": 0.0285,
+     "games": 2415,
+     "log_loss": 2.4261,
+     "mae": 2.7575,
+     "median_abs_error": 2.0761,
+     "median_signed_error": -0.3685,
+     "n": 4564,
+     "p10_p90_coverage": 0.876,
+     "rmse": 3.6554,
+     "threshold_brier": 0.24433
+    }
+   },
+   "pitcher_strikeouts": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": 0.1599,
+      "games": 550,
+      "log_loss": 2.2361,
+      "mae": 1.8201,
+      "median_abs_error": 1.5222,
+      "median_signed_error": 0.3118,
+      "n": 592,
+      "p10_p90_coverage": 0.8818,
+      "rmse": 2.2738,
+      "threshold_brier": 0.24626
+     },
+     "mid_80_95": {
+      "bias": 0.0785,
+      "games": 2161,
+      "log_loss": 2.2265,
+      "mae": 1.8392,
+      "median_abs_error": 1.5631,
+      "median_signed_error": 0.1664,
+      "n": 3321,
+      "p10_p90_coverage": 0.8669,
+      "rmse": 2.2854,
+      "threshold_brier": 0.24817
+     },
+     "short_lt80": {
+      "bias": 0.0951,
+      "games": 613,
+      "log_loss": 2.0988,
+      "mae": 1.6872,
+      "median_abs_error": 1.4696,
+      "median_signed_error": 0.2719,
+      "n": 651,
+      "p10_p90_coverage": 0.8664,
+      "rmse": 2.077,
+      "threshold_brier": 0.24833
+     }
+    },
+    "minus_v1_refit": {
+     "delta_bias": {
+      "ci95": [
+       0.01281,
+       0.02036
+      ],
+      "point": 0.01663
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.00319,
+       0.00011
+      ],
+      "point": -0.00154
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.00645,
+       0.00085
+      ],
+      "point": -0.00257
+     },
+     "delta_mse": {
+      "ci95": [
+       -0.03056,
+       0.00248
+      ],
+      "point": -0.01397
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.00459,
+       0.0011
+      ],
+      "point": -0.00175
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.00127,
+       0.0001
+      ],
+      "point": -0.00055
+     }
+    },
+    "overall": {
+     "bias": 0.0914,
+     "games": 2415,
+     "log_loss": 2.2095,
+     "mae": 1.8151,
+     "median_abs_error": 1.5488,
+     "median_signed_error": 0.1853,
+     "n": 4564,
+     "p10_p90_coverage": 0.8688,
+     "rmse": 2.2553,
+     "threshold_brier": 0.24795
+    }
+   }
+  },
+  "B2_leash_nonout_by_outs": {
+   "pitcher_batters_faced": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": 0.5481,
+      "games": 550,
+      "log_loss": 2.5723,
+      "mae": 2.4819,
+      "median_abs_error": 1.8791,
+      "median_signed_error": 0.157,
+      "n": 592,
+      "p10_p90_coverage": 0.875,
+      "rmse": 3.594,
+      "threshold_brier": 0.25134
+     },
+     "mid_80_95": {
+      "bias": 0.0255,
+      "games": 2161,
+      "log_loss": 2.5863,
+      "mae": 2.5203,
+      "median_abs_error": 1.9403,
+      "median_signed_error": -0.1395,
+      "n": 3321,
+      "p10_p90_coverage": 0.8738,
+      "rmse": 3.4509,
+      "threshold_brier": 0.24727
+     },
+     "short_lt80": {
+      "bias": 0.022,
+      "games": 613,
+      "log_loss": 2.6894,
+      "mae": 2.9037,
+      "median_abs_error": 2.3383,
+      "median_signed_error": -0.1697,
+      "n": 651,
+      "p10_p90_coverage": 0.8541,
+      "rmse": 3.9086,
+      "threshold_brier": 0.21666
+     }
+    },
+    "minus_v1_refit": {
+     "delta_bias": {
+      "ci95": [
+       0.03004,
+       0.06016
+      ],
+      "point": 0.04537
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.01955,
+       -0.01
+      ],
+      "point": -0.01478
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.04997,
+       -0.0219
+      ],
+      "point": -0.03627
+     },
+     "delta_mse": {
+      "ci95": [
+       -0.31139,
+       -0.08398
+      ],
+      "point": -0.19579
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.02254,
+       -0.01338
+      ],
+      "point": -0.01775
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.00358,
+       -0.00023
+      ],
+      "point": -0.00194
+     }
+    },
+    "overall": {
+     "bias": 0.0928,
+     "games": 2415,
+     "log_loss": 2.5992,
+     "mae": 2.57,
+     "median_abs_error": 1.9574,
+     "median_signed_error": -0.1003,
+     "n": 4564,
+     "p10_p90_coverage": 0.8712,
+     "rmse": 3.5383,
+     "threshold_brier": 0.24343
+    }
+   },
+   "pitcher_outs": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": 0.1832,
+      "games": 550,
+      "log_loss": 2.3586,
+      "mae": 2.751,
+      "median_abs_error": 2.1772,
+      "median_signed_error": -0.3727,
+      "n": 592,
+      "p10_p90_coverage": 0.875,
+      "rmse": 3.728,
+      "threshold_brier": 0.24173
+     },
+     "mid_80_95": {
+      "bias": 0.0003,
+      "games": 2161,
+      "log_loss": 2.4338,
+      "mae": 2.7633,
+      "median_abs_error": 2.0445,
+      "median_signed_error": -0.4351,
+      "n": 3321,
+      "p10_p90_coverage": 0.8799,
+      "rmse": 3.6635,
+      "threshold_brier": 0.24676
+     },
+     "short_lt80": {
+      "bias": 0.0319,
+      "games": 613,
+      "log_loss": 2.4477,
+      "mae": 2.7338,
+      "median_abs_error": 2.228,
+      "median_signed_error": -0.1462,
+      "n": 651,
+      "p10_p90_coverage": 0.8571,
+      "rmse": 3.5461,
+      "threshold_brier": 0.2343
+     }
+    },
+    "minus_v1_refit": {
+     "delta_bias": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     },
+     "delta_log_loss": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     },
+     "delta_mae": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     },
+     "delta_mse": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     }
+    },
+    "overall": {
+     "bias": 0.0285,
+     "games": 2415,
+     "log_loss": 2.4261,
+     "mae": 2.7575,
+     "median_abs_error": 2.0761,
+     "median_signed_error": -0.3685,
+     "n": 4564,
+     "p10_p90_coverage": 0.876,
+     "rmse": 3.6554,
+     "threshold_brier": 0.24433
+    }
+   },
+   "pitcher_strikeouts": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": 0.1308,
+      "games": 550,
+      "log_loss": 2.2346,
+      "mae": 1.8166,
+      "median_abs_error": 1.493,
+      "median_signed_error": 0.2651,
+      "n": 592,
+      "p10_p90_coverage": 0.8801,
+      "rmse": 2.2708,
+      "threshold_brier": 0.24606
+     },
+     "mid_80_95": {
+      "bias": 0.0851,
+      "games": 2161,
+      "log_loss": 2.2268,
+      "mae": 1.84,
+      "median_abs_error": 1.5663,
+      "median_signed_error": 0.168,
+      "n": 3321,
+      "p10_p90_coverage": 0.8669,
+      "rmse": 2.286,
+      "threshold_brier": 0.24822
+     },
+     "short_lt80": {
+      "bias": 0.1097,
+      "games": 613,
+      "log_loss": 2.0992,
+      "mae": 1.6867,
+      "median_abs_error": 1.4735,
+      "median_signed_error": 0.2893,
+      "n": 651,
+      "p10_p90_coverage": 0.8679,
+      "rmse": 2.0777,
+      "threshold_brier": 0.24821
+     }
+    },
+    "minus_v1_refit": {
+     "delta_bias": {
+      "ci95": [
+       0.01632,
+       0.02302
+      ],
+      "point": 0.0197
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.00303,
+       0.00026
+      ],
+      "point": -0.00141
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.00604,
+       0.00067
+      ],
+      "point": -0.00255
+     },
+     "delta_mse": {
+      "ci95": [
+       -0.02819,
+       0.00178
+      ],
+      "point": -0.01307
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.0044,
+       0.00109
+      ],
+      "point": -0.00175
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.00121,
+       7e-05
+      ],
+      "point": -0.00056
+     }
+    },
+    "overall": {
+     "bias": 0.0945,
+     "games": 2415,
+     "log_loss": 2.2096,
+     "mae": 1.8151,
+     "median_abs_error": 1.5438,
+     "median_signed_error": 0.1903,
+     "n": 4564,
+     "p10_p90_coverage": 0.8688,
+     "rmse": 2.2555,
+     "threshold_brier": 0.24794
+    }
+   }
+  },
+  "v1_refit": {
+   "pitcher_batters_faced": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": -0.1636,
+      "games": 550,
+      "log_loss": 2.5723,
+      "mae": 2.507,
+      "median_abs_error": 1.9432,
+      "median_signed_error": -0.5456,
+      "n": 592,
+      "p10_p90_coverage": 0.897,
+      "rmse": 3.5442,
+      "threshold_brier": 0.24787
+     },
+     "mid_80_95": {
+      "bias": -0.0802,
+      "games": 2161,
+      "log_loss": 2.5966,
+      "mae": 2.5378,
+      "median_abs_error": 1.9622,
+      "median_signed_error": -0.3165,
+      "n": 3321,
+      "p10_p90_coverage": 0.8913,
+      "rmse": 3.4565,
+      "threshold_brier": 0.24761
+     },
+     "short_lt80": {
+      "bias": 0.8902,
+      "games": 613,
+      "log_loss": 2.7407,
+      "mae": 3.046,
+      "median_abs_error": 2.3485,
+      "median_signed_error": 0.6212,
+      "n": 651,
+      "p10_p90_coverage": 0.8694,
+      "rmse": 4.0957,
+      "threshold_brier": 0.23165
+     }
+    },
+    "overall": {
+     "bias": 0.0474,
+     "games": 2415,
+     "log_loss": 2.614,
+     "mae": 2.6063,
+     "median_abs_error": 2.0123,
+     "median_signed_error": -0.2315,
+     "n": 4564,
+     "p10_p90_coverage": 0.8889,
+     "rmse": 3.5659,
+     "threshold_brier": 0.24537
+    }
+   },
+   "pitcher_outs": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": 0.1832,
+      "games": 550,
+      "log_loss": 2.3586,
+      "mae": 2.751,
+      "median_abs_error": 2.1772,
+      "median_signed_error": -0.3727,
+      "n": 592,
+      "p10_p90_coverage": 0.875,
+      "rmse": 3.728,
+      "threshold_brier": 0.24173
+     },
+     "mid_80_95": {
+      "bias": 0.0003,
+      "games": 2161,
+      "log_loss": 2.4338,
+      "mae": 2.7633,
+      "median_abs_error": 2.0445,
+      "median_signed_error": -0.4351,
+      "n": 3321,
+      "p10_p90_coverage": 0.8799,
+      "rmse": 3.6635,
+      "threshold_brier": 0.24676
+     },
+     "short_lt80": {
+      "bias": 0.0319,
+      "games": 613,
+      "log_loss": 2.4477,
+      "mae": 2.7338,
+      "median_abs_error": 2.228,
+      "median_signed_error": -0.1462,
+      "n": 651,
+      "p10_p90_coverage": 0.8571,
+      "rmse": 3.5461,
+      "threshold_brier": 0.2343
+     }
+    },
+    "overall": {
+     "bias": 0.0285,
+     "games": 2415,
+     "log_loss": 2.4261,
+     "mae": 2.7575,
+     "median_abs_error": 2.0761,
+     "median_signed_error": -0.3685,
+     "n": 4564,
+     "p10_p90_coverage": 0.876,
+     "rmse": 3.6554,
+     "threshold_brier": 0.24433
+    }
+   },
+   "pitcher_strikeouts": {
+    "by_pitch_leash": {
+     "long_ge95": {
+      "bias": -0.0523,
+      "games": 550,
+      "log_loss": 2.2342,
+      "mae": 1.808,
+      "median_abs_error": 1.4758,
+      "median_signed_error": 0.0306,
+      "n": 592,
+      "p10_p90_coverage": 0.8801,
+      "rmse": 2.2659,
+      "threshold_brier": 0.24641
+     },
+     "mid_80_95": {
+      "bias": 0.0552,
+      "games": 2161,
+      "log_loss": 2.2268,
+      "mae": 1.8391,
+      "median_abs_error": 1.5583,
+      "median_signed_error": 0.1492,
+      "n": 3321,
+      "p10_p90_coverage": 0.869,
+      "rmse": 2.2866,
+      "threshold_brier": 0.24825
+     },
+     "short_lt80": {
+      "bias": 0.2902,
+      "games": 613,
+      "log_loss": 2.1094,
+      "mae": 1.7169,
+      "median_abs_error": 1.4742,
+      "median_signed_error": 0.444,
+      "n": 651,
+      "p10_p90_coverage": 0.8694,
+      "rmse": 2.1016,
+      "threshold_brier": 0.25165
+     }
+    },
+    "overall": {
+     "bias": 0.0748,
+     "games": 2415,
+     "log_loss": 2.211,
+     "mae": 1.8176,
+     "median_abs_error": 1.5359,
+     "median_signed_error": 0.1699,
+     "n": 4564,
+     "p10_p90_coverage": 0.8705,
+     "rmse": 2.2584,
+     "threshold_brier": 0.2485
+    }
+   }
+  }
+ },
+ "fit_seasons": [
+  "2022",
+  "2023"
+ ],
+ "fitted": {
+  "A_B2": {
+   "k_bf_prior": 100.0,
+   "k_nonout_prior": 500.0,
+   "k_resid_slope": -0.01,
+   "kernel_mode": "bin_normalized",
+   "leash_gamma": 0.15,
+   "leash_gamma_slope": -0.05,
+   "nonout_mode": "leash_gamma_by_outs",
+   "nonout_var_ratio": 0.6,
+   "opp_alpha_k": 1.25,
+   "opp_alpha_o": 0.0,
+   "phi_k": 100.0,
+   "pitcher_alpha_r": 0.5
+  },
+  "A_bin_normalized_kernel": {
+   "k_bf_prior": 100.0,
+   "k_nonout_prior": 500.0,
+   "k_resid_slope": -0.01,
+   "kernel_mode": "bin_normalized",
+   "leash_gamma": 0.0,
+   "leash_gamma_slope": 0.0,
+   "nonout_mode": "frozen",
+   "nonout_var_ratio": 0.7,
+   "opp_alpha_k": 1.25,
+   "opp_alpha_o": 0.5,
+   "phi_k": 100.0,
+   "pitcher_alpha_r": 0.5
+  },
+  "B1_leash_nonout_const": {
+   "k_bf_prior": 100.0,
+   "k_nonout_prior": 500.0,
+   "k_resid_slope": -0.01,
+   "kernel_mode": "frozen",
+   "leash_gamma": 0.2,
+   "leash_gamma_slope": 0.0,
+   "nonout_mode": "leash_gamma",
+   "nonout_var_ratio": 0.6,
+   "opp_alpha_k": 1.25,
+   "opp_alpha_o": 0.5,
+   "phi_k": 100.0,
+   "pitcher_alpha_r": 0.5
+  },
+  "B2_leash_nonout_by_outs": {
+   "k_bf_prior": 100.0,
+   "k_nonout_prior": 500.0,
+   "k_resid_slope": -0.01,
+   "kernel_mode": "frozen",
+   "leash_gamma": 0.15,
+   "leash_gamma_slope": -0.05,
+   "nonout_mode": "leash_gamma_by_outs",
+   "nonout_var_ratio": 0.6,
+   "opp_alpha_k": 1.25,
+   "opp_alpha_o": 0.0,
+   "phi_k": 100.0,
+   "pitcher_alpha_r": 0.5
+  },
+  "v1_refit": {
+   "k_bf_prior": 100.0,
+   "k_nonout_prior": 500.0,
+   "k_resid_slope": -0.01,
+   "kernel_mode": null,
+   "leash_gamma": null,
+   "leash_gamma_slope": null,
+   "nonout_mode": null,
+   "nonout_var_ratio": 0.7,
+   "opp_alpha_k": 1.25,
+   "opp_alpha_o": 0.5,
+   "phi_k": 100.0,
+   "pitcher_alpha_r": 0.5
+  }
+ },
+ "n_validation": 4564,
+ "validation_seasons": [
+  "2024"
+ ]
+}

@@ -1,0 +1,118 @@
+name: Research - MLB Postseason Box Score Backfill (PR branch only)
+
+# W2 Phase 3 data repair. RESEARCH ONLY.
+#
+# Fetches official MLB StatsAPI postseason schedules and per-game pitcher
+# box scores (feed/live + boxscore endpoints, cross-checked) for the 2022-2026
+# postseasons into data/research_cache/starter_workload/<season>/postseason_*
+# via scripts/research/mlb_postseason_boxscore_backfill.py, and commits them to
+# the SAME pull-request branch that triggered the run (never main).
+#
+# Why on Actions: the research sandbox's network policy blocks
+# statsapi.mlb.com; Actions runners can reach it.
+#
+# Safety:
+#   * never runs on a schedule or on pull_request; never targets
+#     main/master/the default branch (hard guard before checkout);
+#   * idempotent: an already-cached gamePk is never re-fetched or rewritten;
+#   * reads no market, odds or settlement file; touches only the postseason_*
+#     cache files under data/research_cache/starter_workload/;
+#   * commits through scripts/ci/git_data_commit.py like every other data
+#     workflow; a GITHUB_TOKEN push does not retrigger workflows.
+
+#
+# Trigger: workflow_dispatch on a research branch ONLY. It used to run on every
+# pull_request synchronize that touched these paths, which (a) appended newly
+# final games to the cache behind the coverage report and the frozen
+# evaluation, and (b) pushed a bot commit as the PR head on which, because a
+# GITHUB_TOKEN push does not retrigger workflows, no PR check ever ran. Once on
+# main it would also have committed cache files into any unrelated PR that
+# edited these scripts. Dispatch it deliberately (e.g. after the World Series)
+# with `ref` set to a research branch, then regenerate the coverage report.
+
+on:
+  workflow_dispatch:
+    inputs:
+      seasons:
+        description: 'Comma-separated postseason seasons'
+        required: false
+        default: '2022,2023,2024,2025,2026'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-mlb-postseason-boxscore-backfill-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Refuse to run against a protected branch
+        env:
+          TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ -z "$TARGET_BRANCH" ] || [ "$TARGET_BRANCH" = "main" ] || [ "$TARGET_BRANCH" = "master" ] || [ "$TARGET_BRANCH" = "$DEFAULT_BRANCH" ]; then
+            echo "::error::Refusing to run against protected branch '$TARGET_BRANCH'." >&2
+            exit 1
+          fi
+          echo "Target branch '$TARGET_BRANCH' is a research branch -- proceeding."
+
+      - name: Checkout research branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install pytest
+          pip install -r requirements-ci.txt
+
+      - name: Fetch postseason schedules + box scores (idempotent)
+        id: fetch
+        env:
+          SEASONS: ${{ github.event.inputs.seasons || '2022,2023,2024,2025,2026' }}
+        run: |
+          python3 scripts/research/mlb_postseason_boxscore_backfill.py --seasons "$SEASONS" | tee fetch_result.json
+
+      - name: Coverage report (completeness, identity, cross-check, timestamps)
+        run: |
+          python3 scripts/research/mlb_postseason_coverage_report.py --out "$RUNNER_TEMP/pitcher_postseason_coverage.json"
+
+      - name: Run focused tests (network-free)
+        run: |
+          python3 -m pytest tests/research/test_mlb_postseason_boxscore_backfill.py -q
+
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "### MLB postseason box score backfill" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat fetch_result.json >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit cache (research branch only, never main)
+        if: steps.fetch.outcome == 'success'
+        env:
+          TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "W2 MLB postseason box score backfill $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --branch "$TARGET_BRANCH" \
+            data/research_cache/starter_workload/2022/ \
+            data/research_cache/starter_workload/2023/ \
+            data/research_cache/starter_workload/2024/ \
+            data/research_cache/starter_workload/2025/ \
+            data/research_cache/starter_workload/2026/ \
+            || { echo "ERROR: cache commit could not be pushed" >&2; exit 1; }

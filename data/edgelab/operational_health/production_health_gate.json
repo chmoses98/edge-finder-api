@@ -1,10 +1,12 @@
 {
-  "checkedAt": "2026-10-11T17:52:21Z",
+  "checkedAt": "2026-10-12T21:30:38Z",
   "summary": {
-    "overall": "HEALTHY",
-    "criticalFailureCount": 0,
+    "overall": "CRITICAL",
+    "criticalFailureCount": 1,
     "researchDegradationCount": 0,
-    "criticalFailureIds": [],
+    "criticalFailureIds": [
+      "PROD-9"
+    ],
     "researchDegradationIds": []
   },
   "assertions": [
@@ -12,9 +14,9 @@
       "id": "PROD-1",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Slate pipeline active: last slate 2026-10-11 (0 day(s) old)",
+      "summary": "Slate pipeline active: last slate 2026-10-12 (0 day(s) old)",
       "detail": {
-        "slateDate": "2026-10-11",
+        "slateDate": "2026-10-12",
         "lagDays": 0
       }
     },
@@ -22,10 +24,10 @@
       "id": "PROD-2",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Settlement corpus current: latest partition 2026-10-10 (0 day(s) old)",
+      "summary": "Settlement corpus current: latest partition 2026-10-11 (1 day(s) old)",
       "detail": {
-        "latestPartition": "2026-10-10",
-        "lagDays": 0,
+        "latestPartition": "2026-10-11",
+        "lagDays": 1,
         "maxLagDays": 2
       }
     },
@@ -33,10 +35,10 @@
       "id": "PROD-3",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Recommendation ledger current: latest partition 2026-10-10 (0 day(s) old)",
+      "summary": "Recommendation ledger current: latest partition 2026-10-11 (1 day(s) old)",
       "detail": {
-        "latestPartition": "2026-10-10",
-        "lagDays": 0,
+        "latestPartition": "2026-10-11",
+        "lagDays": 1,
         "maxLagDays": 2
       }
     },
@@ -44,9 +46,9 @@
       "id": "PROD-4",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Prediction and settlement partitions are in step (evaluations 2026-10-10, settlements 2026-10-10)",
+      "summary": "Prediction and settlement partitions are in step (evaluations 2026-10-12, settlements 2026-10-11)",
       "detail": {
-        "divergenceDays": 0
+        "divergenceDays": 1
       }
     },
     {
@@ -63,9 +65,9 @@
       "id": "PROD-6",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Model-evaluation corpus current: latest partition 2026-10-10 (0 day(s) old)",
+      "summary": "Model-evaluation corpus current: latest partition 2026-10-12 (0 day(s) old)",
       "detail": {
-        "latestPartition": "2026-10-10",
+        "latestPartition": "2026-10-12",
         "lagDays": 0,
         "maxLagDays": 2
       }
@@ -90,21 +92,21 @@
     {
       "id": "PROD-9",
       "severity": "CRITICAL_PRODUCTION",
-      "status": "PASS",
-      "summary": "Every authenticated MLB wager the router holds is on the canonical ledger (router newest game date 2026-10-07, canonical 2026-10-07, 115 eligible)",
+      "status": "FAIL",
+      "summary": "ROUTER/LEDGER DIVERGENCE: router has authenticated MLB fills for game date 2026-10-11, newer than the newest canonical router-delivered MLB wager (2026-10-07); 1 router-eligible MLB wager(s) not on main (proposed not merged 1, refused 0, unaccounted 0)",
       "detail": {
-        "latestRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/38159177420",
-        "judgedRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/38145366209",
+        "latestRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/38308504102",
+        "judgedRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/38287066971",
         "routerCoverage": {
-          "eligible": 115,
-          "newestFirstFillUtc": "2026-10-08",
-          "newestGameDate": "2026-10-07",
+          "eligible": 116,
+          "newestFirstFillUtc": "2026-10-11",
+          "newestGameDate": "2026-10-11",
           "refusedProvably": 0
         },
         "routerReconciliation": {
-          "eligible": 115,
+          "eligible": 116,
           "on_ledger": 115,
-          "proposed_not_merged": 0,
+          "proposed_not_merged": 1,
           "refused": 0,
           "unaccounted": 0
         },
@@ -116,7 +118,7 @@
       "id": "RSCH-1",
       "severity": "RESEARCH_DEGRADATION",
       "status": "PASS",
-      "summary": "Research heartbeat current (latest 2026-10-10)",
+      "summary": "Research heartbeat current (latest 2026-10-11)",
       "detail": {}
     }
   ],

@@ -65,6 +65,7 @@ and hash-chained in `MANIFEST.jsonl`.
 | `outcome_provenance/<date>/<ts>.jsonl` | URL, `fetched_at`, payload sha256, game end, actual starters, projected-but-not-starting, unprojected starters. |
 | `reconciliation/<date>/<ts>.jsonl` | Projection ↔ outcome join. Also flags any mismatch between the exchange resolution value and the sports value. That flag is a check only. |
 | `evaluations/<ts>.json` | `pure_gate compare` on the full eligible population and on the pregame market-listed cohort, per window and per season phase, clustered by game. |
+| `scorecards/<ts>.accuracy_scorecard.json`, `scorecards/<ts>.value_scorecard.json` | Written by the same `evaluate` run, beside the compare file (see *Scorecards* below). |
 
 **Pregame market-listed cohort.** These are player-game-stats whose contract was first seen in the edgelab
 capture outputs at or before that projection's `as_of`. The cohort is defined pregame, never from resolution.
@@ -78,6 +79,33 @@ has its pregame capture. A failed run shows up the same way once the window it s
 **Append-only CI.** `tests/research/test_shadow_pure_append_only.py` fails if any file under `data/shadow_pure/`
 that exists on `origin/main` is modified or deleted. `MANIFEST.jsonl` may only grow by appending. The test also
 fails if a manifest chain does not verify, or if the vendored gate's sha256 drifts.
+
+**Scorecards.** `lib/research/mlb_pitcher_shadow_scorecards.py` is stdlib only. It runs the vendored, unmodified
+`tools/pure_gate/accuracy_scorecard.py` and `value_scorecard.py` (see `tools/pure_gate/SCORECARDS.md`). The
+`pure_gate compare` output is unchanged.
+
+* `accuracy_scorecard` compares the challenger with the `production_champion` champion and the
+  `statistical_baseline` baseline. There is one scorecard per season phase, and postseason scorecards are labelled
+  `BLOCKED_NOT_VALIDATED_POSTSEASON`.
+  * **Full eligible population:** projected starters plus probable starters the capture excluded. An excluded
+    starter is a failed capture and is counted as a missing forecast.
+  * **Pregame market-listed cohort:** the listing's `first_listed_at` must be at or before as_of. This is the
+    collector's own rule. The snapshots carry no venue `open_time`.
+  * **Counted alongside:** missing outcomes, did-not-start exclusions, missed windows and unprojected actual
+    starters.
+  * **Maturity:** a game is matured when it has outcomes, or when kickoff + 6 h has passed and the game wasn't
+    postponed, cancelled or suspended.
+  * **Small samples:** fewer than 20 game clusters reads `INSUFFICIENT_SAMPLE`. That includes zero matured rows.
+* `value_scorecard` runs in `DRY_RUN_DIAGNOSTIC` mode under
+  [`PITCHER_SHADOW_VALUE_PREREG.md`](PITCHER_SHADOW_VALUE_PREREG.md). The sha256 of the JSON copy is written into
+  every record.
+  * **Strike mapping:** `AT_LEAST` K maps to the `at_least` K rung. Prices are in dollars, and only quotes at or
+    before as_of are used.
+  * **DNP:** `void`. This repository has no Kalshi rule evidence for a non-starter, so a decision whose pitcher
+    doesn't start is excluded.
+  * **Verdicts:** only the challenger at `pregame` in the regular season is eligible for an independent-value
+    verdict.
+* If a scorecard fails, it writes an `ERROR` record and never blocks the evaluation.
 
 ## Workflow modes
 

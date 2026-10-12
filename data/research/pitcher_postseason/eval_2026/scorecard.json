@@ -1,0 +1,1893 @@
+{
+ "decision": {
+  "challenger": {
+   "n_starts": 46,
+   "postseason_status": "BLOCKED",
+   "reasons": [
+    "significant worsening: pitcher_outs:delta_mae:vs_champion, pitcher_batters_faced:delta_mae:vs_champion, pitcher_batters_faced:delta_threshold_brier:vs_champion, pitcher_batters_faced:delta_log_loss:vs_champion, pitcher_batters_faced:delta_mae:vs_baseline, pitcher_batters_faced:delta_threshold_brier:vs_baseline, pitcher_strikeouts:delta_mae:vs_champion",
+    "does not beat baseline MAE on outs and K",
+    "no outs/K MAE or Brier improvement vs champion with CI below 0"
+   ],
+   "rule1_improvement": false,
+   "rule2_no_significant_worsening": false,
+   "rule3_coverage": true,
+   "rule4_beats_baseline": false,
+   "verdict": "REJECTED"
+  },
+  "challenger_regime": {
+   "n_starts": 46,
+   "postseason_status": "BLOCKED",
+   "reasons": [
+    "significant worsening: pitcher_batters_faced:delta_mae:vs_champion, pitcher_batters_faced:delta_threshold_brier:vs_champion, pitcher_batters_faced:delta_threshold_brier:vs_baseline, pitcher_strikeouts:delta_mae:vs_champion, pitcher_strikeouts:delta_threshold_brier:vs_champion",
+    "does not beat baseline MAE on outs and K",
+    "no outs/K MAE or Brier improvement vs champion with CI below 0"
+   ],
+   "rule1_improvement": false,
+   "rule2_no_significant_worsening": false,
+   "rule3_coverage": true,
+   "rule4_beats_baseline": false,
+   "verdict": "REJECTED"
+  }
+ },
+ "eligible_starts": 50,
+ "exclusions": {
+  "challenger_lt3_prior_starts": 3,
+  "champion_history_has_game_completed_after_as_of": 1
+ },
+ "frozen_hashes": {
+  "baseline": "sha256:c08f0de9bca6fff6e7774e5af6260fcdd4c2d4b1f8a0804ba2951dca5119a352",
+  "challenger": "sha256:e740efbd547e4ffe17f26b66cae278554fb6c4db8fdc7eb99d64c2fc34fb4ad1",
+  "challenger_regime": "sha256:6535874c83e7db9ac5dca66c4b8dda1739054b6be6156443e732bcc52bc9c2bd",
+  "champion": "sha256:5741820dd9e71fb129b0c650008ceda3c4eea2e8941823b3d604710ffb7546d9"
+ },
+ "population": "every final 2026 postseason game's two actual starters (sports-source cache), not market-selected",
+ "prereg": "b42beb1fa",
+ "regime": {
+  "delta": -0.2,
+  "file": "data/research/pitcher_postseason/regime_params.json"
+ },
+ "stats": {
+  "pitcher_batters_faced": {
+   "deltas": {
+    "challenger_minus_baseline": {
+     "delta_bias": {
+      "ci95": [
+       -0.54291,
+       0.90468
+      ],
+      "point": 0.13497
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.38115,
+       0.24254
+      ],
+      "point": -0.05648
+     },
+     "delta_mae": {
+      "ci95": [
+       0.03374,
+       1.04345
+      ],
+      "point": 0.5188
+     },
+     "delta_mse": {
+      "ci95": [
+       -0.46404,
+       12.69229
+      ],
+      "point": 5.75302
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.23404,
+       0.0
+      ],
+      "point": -0.1087
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       0.01858,
+       0.13648
+      ],
+      "point": 0.0773
+     }
+    },
+    "challenger_minus_champion": {
+     "delta_bias": {
+      "ci95": [
+       0.70769,
+       1.62074
+      ],
+      "point": 1.13532
+     },
+     "delta_log_loss": {
+      "ci95": [
+       0.00318,
+       0.43205
+      ],
+      "point": 0.21282
+     },
+     "delta_mae": {
+      "ci95": [
+       0.26757,
+       1.23107
+      ],
+      "point": 0.72191
+     },
+     "delta_mse": {
+      "ci95": [
+       4.42748,
+       17.15692
+      ],
+      "point": 10.00237
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.39583,
+       -0.10417
+      ],
+      "point": -0.23913
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       0.04213,
+       0.13911
+      ],
+      "point": 0.08772
+     }
+    },
+    "challenger_regime_minus_baseline": {
+     "delta_bias": {
+      "ci95": [
+       -0.67966,
+       0.75305
+      ],
+      "point": -0.00545
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.41256,
+       0.2181
+      ],
+      "point": -0.08224
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.02767,
+       0.96404
+      ],
+      "point": 0.44781
+     },
+     "delta_mse": {
+      "ci95": [
+       -1.31121,
+       11.23971
+      ],
+      "point": 4.69046
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.23404,
+       0.0
+      ],
+      "point": -0.1087
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       0.01216,
+       0.12589
+      ],
+      "point": 0.069
+     }
+    },
+    "challenger_regime_minus_challenger": {
+     "delta_bias": {
+      "ci95": [
+       -0.16186,
+       -0.12382
+      ],
+      "point": -0.14041
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.04739,
+       -0.00376
+      ],
+      "point": -0.02577
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.113,
+       -0.02856
+      ],
+      "point": -0.07099
+     },
+     "delta_mse": {
+      "ci95": [
+       -1.69095,
+       -0.55377
+      ],
+      "point": -1.06256
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.01282,
+       -0.00372
+      ],
+      "point": -0.0083
+     }
+    },
+    "challenger_regime_minus_champion": {
+     "delta_bias": {
+      "ci95": [
+       0.57448,
+       1.47142
+      ],
+      "point": 0.9949
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.01893,
+       0.39911
+      ],
+      "point": 0.18705
+     },
+     "delta_mae": {
+      "ci95": [
+       0.21482,
+       1.13661
+      ],
+      "point": 0.65093
+     },
+     "delta_mse": {
+      "ci95": [
+       3.78112,
+       15.46786
+      ],
+      "point": 8.93981
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.39583,
+       -0.10417
+      ],
+      "point": -0.23913
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       0.03781,
+       0.12614
+      ],
+      "point": 0.07942
+     }
+    },
+    "champion_minus_baseline": {
+     "delta_bias": {
+      "ci95": [
+       -1.47753,
+       -0.41334
+      ],
+      "point": -1.00035
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.6199,
+       0.04653
+      ],
+      "point": -0.26929
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.6412,
+       0.26784
+      ],
+      "point": -0.20312
+     },
+     "delta_mse": {
+      "ci95": [
+       -9.17891,
+       0.42234
+      ],
+      "point": -4.24935
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       0.04255,
+       0.23256
+      ],
+      "point": 0.13043
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.04762,
+       0.02921
+      ],
+      "point": -0.01042
+     }
+    }
+   },
+   "games": 25,
+   "n": 46,
+   "overall": {
+    "baseline": {
+     "bias": 3.329,
+     "games": 25,
+     "log_loss": 3.352,
+     "mae": 4.2594,
+     "median_abs_error": 3.4,
+     "median_signed_error": 2.5,
+     "n": 46,
+     "p10_p90_coverage": 0.7609,
+     "rmse": 5.7692,
+     "threshold_brier": 0.21395
+    },
+    "challenger": {
+     "bias": 3.464,
+     "games": 25,
+     "log_loss": 3.2955,
+     "mae": 4.7782,
+     "median_abs_error": 3.7784,
+     "median_signed_error": 3.0925,
+     "n": 46,
+     "p10_p90_coverage": 0.6522,
+     "rmse": 6.248,
+     "threshold_brier": 0.29125
+    },
+    "challenger_regime": {
+     "bias": 3.3235,
+     "games": 25,
+     "log_loss": 3.2698,
+     "mae": 4.7072,
+     "median_abs_error": 3.7407,
+     "median_signed_error": 2.9608,
+     "n": 46,
+     "p10_p90_coverage": 0.6522,
+     "rmse": 6.1623,
+     "threshold_brier": 0.28295
+    },
+    "champion": {
+     "bias": 2.3286,
+     "games": 25,
+     "log_loss": 3.0827,
+     "mae": 4.0563,
+     "median_abs_error": 3.2515,
+     "median_signed_error": 2.083,
+     "n": 46,
+     "p10_p90_coverage": 0.8913,
+     "rmse": 5.3884,
+     "threshold_brier": 0.20353
+    }
+   },
+   "reference_champion_deployed_path": {
+    "bias": 2.0873,
+    "mae": 3.9254,
+    "n": 43,
+    "note": "NOT PURE (reads settlement evidence as history); reference only, never a gate comparator"
+   },
+   "subgroups": {
+    "game_type_D": {
+     "challenger_minus_champion": {
+      "delta_bias": {
+       "ci95": [
+        0.34312,
+        1.55769
+       ],
+       "point": 0.91745
+      },
+      "delta_log_loss": {
+       "ci95": [
+        -0.17196,
+        0.26226
+       ],
+       "point": 0.05169
+      },
+      "delta_mae": {
+       "ci95": [
+        0.07907,
+        1.17898
+       ],
+       "point": 0.59238
+      },
+      "delta_mse": {
+       "ci95": [
+        1.6542,
+        10.1259
+       ],
+       "point": 5.80385
+      },
+      "delta_p10_p90_coverage": {
+       "ci95": [
+        -0.3,
+        0.0
+       ],
+       "point": -0.13333
+      },
+      "delta_threshold_brier": {
+       "ci95": [
+        0.02575,
+        0.13969
+       ],
+       "point": 0.07854
+      }
+     },
+     "challenger_regime_minus_champion": {
+      "delta_bias": {
+       "ci95": [
+        0.22186,
+        1.3997
+       ],
+       "point": 0.77653
+      },
+      "delta_log_loss": {
+       "ci95": [
+        -0.18719,
+        0.23726
+       ],
+       "point": 0.02831
+      },
+      "delta_mae": {
+       "ci95": [
+        0.03489,
+        1.04729
+       ],
+       "point": 0.51517
+      },
+      "delta_mse": {
+       "ci95": [
+        1.13913,
+        8.78943
+       ],
+       "point": 4.87648
+      },
+      "delta_p10_p90_coverage": {
+       "ci95": [
+        -0.3,
+        0.0
+       ],
+       "point": -0.13333
+      },
+      "delta_threshold_brier": {
+       "ci95": [
+        0.02087,
+        0.12588
+       ],
+       "point": 0.0695
+      }
+     },
+     "games": 16,
+     "n": 30,
+     "summary": {
+      "baseline": {
+       "bias": 3.0689,
+       "games": 16,
+       "log_loss": 3.169,
+       "mae": 3.6556,
+       "median_abs_error": 2.2,
+       "median_signed_error": 2.2,
+       "n": 30,
+       "p10_p90_coverage": 0.8,
+       "rmse": 5.2505,
+       "threshold_brier": 0.21833
+      },
+      "challenger": {
+       "bias": 3.1452,
+       "games": 16,
+       "log_loss": 3.0291,
+       "mae": 3.9498,
+       "median_abs_error": 2.9489,
+       "median_signed_error": 2.8057,
+       "n": 30,
+       "p10_p90_coverage": 0.8,
+       "rmse": 5.4096,
+       "threshold_brier": 0.27641
+      },
+      "challenger_regime": {
+       "bias": 3.0043,
+       "games": 16,
+       "log_loss": 3.0057,
+       "mae": 3.8726,
+       "median_abs_error": 2.9546,
+       "median_signed_error": 2.686,
+       "n": 30,
+       "p10_p90_coverage": 0.8,
+       "rmse": 5.3232,
+       "threshold_brier": 0.26737
+      },
+      "champion": {
+       "bias": 2.2278,
+       "games": 16,
+       "log_loss": 2.9774,
+       "mae": 3.3575,
+       "median_abs_error": 2.1868,
+       "median_signed_error": 1.3296,
+       "n": 30,
+       "p10_p90_coverage": 0.9333,
+       "rmse": 4.8435,
+       "threshold_brier": 0.19787
+      }
+     }
+    },
+    "game_type_F": {
+     "challenger_minus_champion": {
+      "delta_bias": {
+       "ci95": [
+        0.93529,
+        2.17521
+       ],
+       "point": 1.54381
+      },
+      "delta_log_loss": {
+       "ci95": [
+        0.14812,
+        0.82892
+       ],
+       "point": 0.51493
+      },
+      "delta_mae": {
+       "ci95": [
+        0.10337,
+        1.90131
+       ],
+       "point": 0.9648
+      },
+      "delta_mse": {
+       "ci95": [
+        4.8141,
+        34.3111
+       ],
+       "point": 17.8746
+      },
+      "delta_p10_p90_coverage": {
+       "ci95": [
+        -0.6875,
+        -0.1875
+       ],
+       "point": -0.4375
+      },
+      "delta_threshold_brier": {
+       "ci95": [
+        0.01466,
+        0.19501
+       ],
+       "point": 0.10495
+      }
+     },
+     "challenger_regime_minus_champion": {
+      "delta_bias": {
+       "ci95": [
+        0.80888,
+        2.0157
+       ],
+       "point": 1.40436
+      },
+      "delta_log_loss": {
+       "ci95": [
+        0.11398,
+        0.80969
+       ],
+       "point": 0.48468
+      },
+      "delta_mae": {
+       "ci95": [
+        0.07747,
+        1.77505
+       ],
+       "point": 0.90547
+      },
+      "delta_mse": {
+       "ci95": [
+        4.43931,
+        31.82167
+       ],
+       "point": 16.55855
+      },
+      "delta_p10_p90_coverage": {
+       "ci95": [
+        -0.6875,
+        -0.1875
+       ],
+       "point": -0.4375
+      },
+      "delta_threshold_brier": {
+       "ci95": [
+        0.01479,
+        0.18166
+       ],
+       "point": 0.09804
+      }
+     },
+     "games": 9,
+     "n": 16,
+     "summary": {
+      "baseline": {
+       "bias": 3.8167,
+       "games": 9,
+       "log_loss": 3.6952,
+       "mae": 5.3917,
+       "median_abs_error": 4.9,
+       "median_signed_error": 4.5,
+       "n": 16,
+       "p10_p90_coverage": 0.6875,
+       "rmse": 6.6333,
+       "threshold_brier": 0.20574
+      },
+      "challenger": {
+       "bias": 4.0616,
+       "games": 9,
+       "log_loss": 3.7952,
+       "mae": 6.3314,
+       "median_abs_error": 6.0197,
+       "median_signed_error": 5.0922,
+       "n": 16,
+       "p10_p90_coverage": 0.375,
+       "rmse": 7.5737,
+       "threshold_brier": 0.31907
+      },
+      "challenger_regime": {
+       "bias": 3.9221,
+       "games": 9,
+       "log_loss": 3.7649,
+       "mae": 6.2721,
+       "median_abs_error": 5.8858,
+       "median_signed_error": 4.96,
+       "n": 16,
+       "p10_p90_coverage": 0.375,
+       "rmse": 7.4864,
+       "threshold_brier": 0.31216
+      },
+      "champion": {
+       "bias": 2.5178,
+       "games": 9,
+       "log_loss": 3.2803,
+       "mae": 5.3666,
+       "median_abs_error": 3.9286,
+       "median_signed_error": 3.1472,
+       "n": 16,
+       "p10_p90_coverage": 0.8125,
+       "rmse": 6.2839,
+       "threshold_brier": 0.21412
+      }
+     }
+    }
+   }
+  },
+  "pitcher_outs": {
+   "deltas": {
+    "challenger_minus_baseline": {
+     "delta_bias": {
+      "ci95": [
+       -1.29921,
+       -0.25522
+      ],
+      "point": -0.80224
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.14949,
+       0.31879
+      ],
+      "point": 0.07245
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.12793,
+       0.5845
+      ],
+      "point": 0.23916
+     },
+     "delta_mse": {
+      "ci95": [
+       -2.06252,
+       4.38938
+      ],
+      "point": 1.2164
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.11111,
+       0.06522
+      ],
+      "point": -0.02174
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.01926,
+       0.06221
+      ],
+      "point": 0.02285
+     }
+    },
+    "challenger_minus_champion": {
+     "delta_bias": {
+      "ci95": [
+       -0.27789,
+       0.43004
+      ],
+      "point": 0.07116
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.04913,
+       0.29154
+      ],
+      "point": 0.10377
+     },
+     "delta_mae": {
+      "ci95": [
+       0.04972,
+       0.47137
+      ],
+      "point": 0.2492
+     },
+     "delta_mse": {
+      "ci95": [
+       0.14423,
+       4.81447
+      ],
+      "point": 2.05385
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.06667,
+       0.0
+      ],
+      "point": -0.02174
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.00086,
+       0.05935
+      ],
+      "point": 0.02933
+     }
+    },
+    "challenger_regime_minus_baseline": {
+     "delta_bias": {
+      "ci95": [
+       -1.46209,
+       -0.41926
+      ],
+      "point": -0.96385
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.15666,
+       0.29632
+      ],
+      "point": 0.05947
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.21337,
+       0.5388
+      ],
+      "point": 0.1665
+     },
+     "delta_mse": {
+      "ci95": [
+       -2.65133,
+       3.79397
+      ],
+      "point": 0.63282
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.11111,
+       0.06522
+      ],
+      "point": -0.02174
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.02727,
+       0.05262
+      ],
+      "point": 0.01472
+     }
+    },
+    "challenger_regime_minus_challenger": {
+     "delta_bias": {
+      "ci95": [
+       -0.179,
+       -0.14594
+      ],
+      "point": -0.16161
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.0405,
+       0.01493
+      ],
+      "point": -0.01299
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.11733,
+       -0.02566
+      ],
+      "point": -0.07266
+     },
+     "delta_mse": {
+      "ci95": [
+       -1.06011,
+       -0.1629
+      ],
+      "point": -0.58358
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.0135,
+       -0.00256
+      ],
+      "point": -0.00813
+     }
+    },
+    "challenger_regime_minus_champion": {
+     "delta_bias": {
+      "ci95": [
+       -0.42637,
+       0.2608
+      ],
+      "point": -0.09044
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.05428,
+       0.26807
+      ],
+      "point": 0.09078
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.01469,
+       0.38397
+      ],
+      "point": 0.17654
+     },
+     "delta_mse": {
+      "ci95": [
+       -0.22016,
+       3.78823
+      ],
+      "point": 1.47026
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.06667,
+       0.0
+      ],
+      "point": -0.02174
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.00622,
+       0.04772
+      ],
+      "point": 0.0212
+     }
+    },
+    "champion_minus_baseline": {
+     "delta_bias": {
+      "ci95": [
+       -1.26894,
+       -0.4211
+      ],
+      "point": -0.8734
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.24072,
+       0.1721
+      ],
+      "point": -0.03131
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.30808,
+       0.30889
+      ],
+      "point": -0.01004
+     },
+     "delta_mse": {
+      "ci95": [
+       -3.65434,
+       2.05374
+      ],
+      "point": -0.83745
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.08696,
+       0.07317
+      ],
+      "point": 0.0
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.03329,
+       0.02068
+      ],
+      "point": -0.00647
+     }
+    }
+   },
+   "games": 25,
+   "n": 46,
+   "overall": {
+    "baseline": {
+     "bias": 2.642,
+     "games": 25,
+     "log_loss": 2.9914,
+     "mae": 3.5899,
+     "median_abs_error": 2.5,
+     "median_signed_error": 2.2,
+     "n": 46,
+     "p10_p90_coverage": 0.8261,
+     "rmse": 4.733,
+     "threshold_brier": 0.22433
+    },
+    "challenger": {
+     "bias": 1.8398,
+     "games": 25,
+     "log_loss": 3.0639,
+     "mae": 3.829,
+     "median_abs_error": 3.0409,
+     "median_signed_error": 2.159,
+     "n": 46,
+     "p10_p90_coverage": 0.8043,
+     "rmse": 4.8598,
+     "threshold_brier": 0.24718
+    },
+    "challenger_regime": {
+     "bias": 1.6782,
+     "games": 25,
+     "log_loss": 3.0509,
+     "mae": 3.7564,
+     "median_abs_error": 3.0308,
+     "median_signed_error": 1.9562,
+     "n": 46,
+     "p10_p90_coverage": 0.8043,
+     "rmse": 4.7994,
+     "threshold_brier": 0.23905
+    },
+    "champion": {
+     "bias": 1.7686,
+     "games": 25,
+     "log_loss": 2.9601,
+     "mae": 3.5798,
+     "median_abs_error": 2.8222,
+     "median_signed_error": 1.7444,
+     "n": 46,
+     "p10_p90_coverage": 0.8261,
+     "rmse": 4.6437,
+     "threshold_brier": 0.21785
+    }
+   },
+   "reference_champion_deployed_path": {
+    "bias": 1.6987,
+    "mae": 3.6362,
+    "n": 43,
+    "note": "NOT PURE (reads settlement evidence as history); reference only, never a gate comparator"
+   },
+   "subgroups": {
+    "game_type_D": {
+     "challenger_minus_champion": {
+      "delta_bias": {
+       "ci95": [
+        -0.69766,
+        0.1596
+       ],
+       "point": -0.27902
+      },
+      "delta_log_loss": {
+       "ci95": [
+        -0.22549,
+        0.17435
+       ],
+       "point": -0.04072
+      },
+      "delta_mae": {
+       "ci95": [
+        -0.12106,
+        0.29931
+       ],
+       "point": 0.09224
+      },
+      "delta_mse": {
+       "ci95": [
+        -1.12257,
+        1.47663
+       ],
+       "point": 0.13719
+      },
+      "delta_p10_p90_coverage": {
+       "ci95": [
+        -0.10345,
+        0.0
+       ],
+       "point": -0.03333
+      },
+      "delta_threshold_brier": {
+       "ci95": [
+        -0.02805,
+        0.05247
+       ],
+       "point": 0.01135
+      }
+     },
+     "challenger_regime_minus_champion": {
+      "delta_bias": {
+       "ci95": [
+        -0.84611,
+        -0.02179
+       ],
+       "point": -0.43922
+      },
+      "delta_log_loss": {
+       "ci95": [
+        -0.2263,
+        0.16492
+       ],
+       "point": -0.04236
+      },
+      "delta_mae": {
+       "ci95": [
+        -0.21169,
+        0.21995
+       ],
+       "point": 0.00429
+      },
+      "delta_mse": {
+       "ci95": [
+        -1.51429,
+        0.99803
+       ],
+       "point": -0.29387
+      },
+      "delta_p10_p90_coverage": {
+       "ci95": [
+        -0.10345,
+        0.0
+       ],
+       "point": -0.03333
+      },
+      "delta_threshold_brier": {
+       "ci95": [
+        -0.03658,
+        0.03951
+       ],
+       "point": 0.00182
+      }
+     },
+     "games": 16,
+     "n": 30,
+     "summary": {
+      "baseline": {
+       "bias": 2.4156,
+       "games": 16,
+       "log_loss": 2.7998,
+       "mae": 3.1756,
+       "median_abs_error": 2.3,
+       "median_signed_error": 2.2,
+       "n": 30,
+       "p10_p90_coverage": 0.9,
+       "rmse": 4.0353,
+       "threshold_brier": 0.24038
+      },
+      "challenger": {
+       "bias": 1.4011,
+       "games": 16,
+       "log_loss": 2.7886,
+       "mae": 3.1512,
+       "median_abs_error": 2.3881,
+       "median_signed_error": 1.5875,
+       "n": 30,
+       "p10_p90_coverage": 0.8333,
+       "rmse": 4.0554,
+       "threshold_brier": 0.23185
+      },
+      "challenger_regime": {
+       "bias": 1.2409,
+       "games": 16,
+       "log_loss": 2.787,
+       "mae": 3.0632,
+       "median_abs_error": 2.3341,
+       "median_signed_error": 1.4202,
+       "n": 30,
+       "p10_p90_coverage": 0.8333,
+       "rmse": 4.0019,
+       "threshold_brier": 0.22232
+      },
+      "champion": {
+       "bias": 1.6801,
+       "games": 16,
+       "log_loss": 2.8293,
+       "mae": 3.059,
+       "median_abs_error": 2.2316,
+       "median_signed_error": 1.5209,
+       "n": 30,
+       "p10_p90_coverage": 0.8667,
+       "rmse": 4.0385,
+       "threshold_brier": 0.22051
+      }
+     }
+    },
+    "game_type_F": {
+     "challenger_minus_champion": {
+      "delta_bias": {
+       "ci95": [
+        0.46081,
+        1.00935
+       ],
+       "point": 0.72776
+      },
+      "delta_log_loss": {
+       "ci95": [
+        0.12019,
+        0.62151
+       ],
+       "point": 0.37469
+      },
+      "delta_mae": {
+       "ci95": [
+        0.18361,
+        0.92553
+       ],
+       "point": 0.5435
+      },
+      "delta_mse": {
+       "ci95": [
+        0.90655,
+        11.77403
+       ],
+       "point": 5.64759
+      },
+      "delta_p10_p90_coverage": {
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "point": 0.0
+      },
+      "delta_threshold_brier": {
+       "ci95": [
+        0.0237,
+        0.0995
+       ],
+       "point": 0.06304
+      }
+     },
+     "challenger_regime_minus_champion": {
+      "delta_bias": {
+       "ci95": [
+        0.29377,
+        0.84311
+       ],
+       "point": 0.56352
+      },
+      "delta_log_loss": {
+       "ci95": [
+        0.10594,
+        0.57587
+       ],
+       "point": 0.34042
+      },
+      "delta_mae": {
+       "ci95": [
+        0.20593,
+        0.80701
+       ],
+       "point": 0.49952
+      },
+      "delta_mse": {
+       "ci95": [
+        0.80703,
+        10.00182
+       ],
+       "point": 4.77801
+      },
+      "delta_p10_p90_coverage": {
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "point": 0.0
+      },
+      "delta_threshold_brier": {
+       "ci95": [
+        0.02741,
+        0.08526
+       ],
+       "point": 0.05754
+      }
+     },
+     "games": 9,
+     "n": 16,
+     "summary": {
+      "baseline": {
+       "bias": 3.0667,
+       "games": 9,
+       "log_loss": 3.3506,
+       "mae": 4.3667,
+       "median_abs_error": 3.1,
+       "median_signed_error": 2.1,
+       "n": 16,
+       "p10_p90_coverage": 0.6875,
+       "rmse": 5.82,
+       "threshold_brier": 0.19422
+      },
+      "challenger": {
+       "bias": 2.6623,
+       "games": 9,
+       "log_loss": 3.58,
+       "mae": 5.0999,
+       "median_abs_error": 3.7704,
+       "median_signed_error": 3.145,
+       "n": 16,
+       "p10_p90_coverage": 0.75,
+       "rmse": 6.0881,
+       "threshold_brier": 0.27592
+      },
+      "challenger_regime": {
+       "bias": 2.4981,
+       "games": 9,
+       "log_loss": 3.5457,
+       "mae": 5.0559,
+       "median_abs_error": 3.6267,
+       "median_signed_error": 2.9583,
+       "n": 16,
+       "p10_p90_coverage": 0.75,
+       "rmse": 6.0162,
+       "threshold_brier": 0.27042
+      },
+      "champion": {
+       "bias": 1.9346,
+       "games": 9,
+       "log_loss": 3.2053,
+       "mae": 4.5564,
+       "median_abs_error": 3.2463,
+       "median_signed_error": 2.0696,
+       "n": 16,
+       "p10_p90_coverage": 0.75,
+       "rmse": 5.6051,
+       "threshold_brier": 0.21288
+      }
+     }
+    }
+   }
+  },
+  "pitcher_strikeouts": {
+   "deltas": {
+    "challenger_minus_baseline": {
+     "delta_bias": {
+      "ci95": [
+       -0.36719,
+       0.05528
+      ],
+      "point": -0.14372
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.16545,
+       0.08989
+      ],
+      "point": -0.02856
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.13529,
+       0.27286
+      ],
+      "point": 0.07256
+     },
+     "delta_mse": {
+      "ci95": [
+       -1.78071,
+       1.35468
+      ],
+      "point": -0.0971
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.08889,
+       0.08696
+      ],
+      "point": 0.0
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.02379,
+       0.04875
+      ],
+      "point": 0.01188
+     }
+    },
+    "challenger_minus_champion": {
+     "delta_bias": {
+      "ci95": [
+       0.07706,
+       0.32785
+      ],
+      "point": 0.19625
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.0311,
+       0.15398
+      ],
+      "point": 0.04731
+     },
+     "delta_mae": {
+      "ci95": [
+       0.01818,
+       0.25446
+      ],
+      "point": 0.12263
+     },
+     "delta_mse": {
+      "ci95": [
+       0.04756,
+       1.24479
+      ],
+      "point": 0.56389
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.1087,
+       0.0
+      ],
+      "point": -0.04348
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.00018,
+       0.04909
+      ],
+      "point": 0.0212
+     }
+    },
+    "challenger_regime_minus_baseline": {
+     "delta_bias": {
+      "ci95": [
+       -0.40476,
+       0.02018
+      ],
+      "point": -0.17948
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.17424,
+       0.08605
+      ],
+      "point": -0.03417
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.14465,
+       0.26668
+      ],
+      "point": 0.06559
+     },
+     "delta_mse": {
+      "ci95": [
+       -1.83157,
+       1.32594
+      ],
+      "point": -0.13862
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.08889,
+       0.08696
+      ],
+      "point": 0.0
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.02592,
+       0.04824
+      ],
+      "point": 0.01054
+     }
+    },
+    "challenger_regime_minus_challenger": {
+     "delta_bias": {
+      "ci95": [
+       -0.04113,
+       -0.03143
+      ],
+      "point": -0.03576
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.01528,
+       0.0007
+      ],
+      "point": -0.0056
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.01952,
+       0.00473
+      ],
+      "point": -0.00697
+     },
+     "delta_mse": {
+      "ci95": [
+       -0.10844,
+       0.01217
+      ],
+      "point": -0.04152
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "point": 0.0
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.00385,
+       0.00084
+      ],
+      "point": -0.00134
+     }
+    },
+    "challenger_regime_minus_champion": {
+     "delta_bias": {
+      "ci95": [
+       0.04407,
+       0.28781
+      ],
+      "point": 0.16049
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.03115,
+       0.14013
+      ],
+      "point": 0.04171
+     },
+     "delta_mae": {
+      "ci95": [
+       0.01448,
+       0.2379
+      ],
+      "point": 0.11565
+     },
+     "delta_mse": {
+      "ci95": [
+       0.05364,
+       1.15466
+      ],
+      "point": 0.52237
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.1087,
+       0.0
+      ],
+      "point": -0.04348
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       0.00024,
+       0.04533
+      ],
+      "point": 0.01986
+     }
+    },
+    "champion_minus_baseline": {
+     "delta_bias": {
+      "ci95": [
+       -0.52189,
+       -0.16069
+      ],
+      "point": -0.33997
+     },
+     "delta_log_loss": {
+      "ci95": [
+       -0.25964,
+       0.08048
+      ],
+      "point": -0.07588
+     },
+     "delta_mae": {
+      "ci95": [
+       -0.26012,
+       0.16696
+      ],
+      "point": -0.05007
+     },
+     "delta_mse": {
+      "ci95": [
+       -2.37532,
+       0.80192
+      ],
+      "point": -0.66099
+     },
+     "delta_p10_p90_coverage": {
+      "ci95": [
+       -0.04444,
+       0.12766
+      ],
+      "point": 0.04348
+     },
+     "delta_threshold_brier": {
+      "ci95": [
+       -0.05043,
+       0.03147
+      ],
+      "point": -0.00932
+     }
+    }
+   },
+   "games": 25,
+   "n": 46,
+   "overall": {
+    "baseline": {
+     "bias": 0.6377,
+     "games": 25,
+     "log_loss": 2.3442,
+     "mae": 1.9478,
+     "median_abs_error": 1.5,
+     "median_signed_error": 0.4,
+     "n": 46,
+     "p10_p90_coverage": 0.8043,
+     "rmse": 2.5182,
+     "threshold_brier": 0.24895
+    },
+    "challenger": {
+     "bias": 0.494,
+     "games": 25,
+     "log_loss": 2.3156,
+     "mae": 2.0204,
+     "median_abs_error": 1.5677,
+     "median_signed_error": 0.616,
+     "n": 46,
+     "p10_p90_coverage": 0.8043,
+     "rmse": 2.4989,
+     "threshold_brier": 0.26083
+    },
+    "challenger_regime": {
+     "bias": 0.4582,
+     "games": 25,
+     "log_loss": 2.31,
+     "mae": 2.0134,
+     "median_abs_error": 1.5327,
+     "median_signed_error": 0.5849,
+     "n": 46,
+     "p10_p90_coverage": 0.8043,
+     "rmse": 2.4905,
+     "threshold_brier": 0.25949
+    },
+    "champion": {
+     "bias": 0.2977,
+     "games": 25,
+     "log_loss": 2.2683,
+     "mae": 1.8978,
+     "median_abs_error": 1.5551,
+     "median_signed_error": 0.3244,
+     "n": 46,
+     "p10_p90_coverage": 0.8478,
+     "rmse": 2.3834,
+     "threshold_brier": 0.23964
+    }
+   },
+   "reference_champion_deployed_path": {
+    "bias": 0.3105,
+    "mae": 1.9457,
+    "n": 43,
+    "note": "NOT PURE (reads settlement evidence as history); reference only, never a gate comparator"
+   },
+   "subgroups": {
+    "game_type_D": {
+     "challenger_minus_champion": {
+      "delta_bias": {
+       "ci95": [
+        -0.02985,
+        0.29493
+       ],
+       "point": 0.12774
+      },
+      "delta_log_loss": {
+       "ci95": [
+        -0.09283,
+        0.07381
+       ],
+       "point": -0.00998
+      },
+      "delta_mae": {
+       "ci95": [
+        -0.05129,
+        0.24265
+       ],
+       "point": 0.08579
+      },
+      "delta_mse": {
+       "ci95": [
+        -0.33262,
+        0.65349
+       ],
+       "point": 0.16895
+      },
+      "delta_p10_p90_coverage": {
+       "ci95": [
+        -0.16129,
+        0.0
+       ],
+       "point": -0.06667
+      },
+      "delta_threshold_brier": {
+       "ci95": [
+        -0.01414,
+        0.04649
+       ],
+       "point": 0.01395
+      }
+     },
+     "challenger_regime_minus_champion": {
+      "delta_bias": {
+       "ci95": [
+        -0.06097,
+        0.25452
+       ],
+       "point": 0.09223
+      },
+      "delta_log_loss": {
+       "ci95": [
+        -0.09241,
+        0.07181
+       ],
+       "point": -0.01145
+      },
+      "delta_mae": {
+       "ci95": [
+        -0.05607,
+        0.22788
+       ],
+       "point": 0.07783
+      },
+      "delta_mse": {
+       "ci95": [
+        -0.31828,
+        0.61542
+       ],
+       "point": 0.15572
+      },
+      "delta_p10_p90_coverage": {
+       "ci95": [
+        -0.16129,
+        0.0
+       ],
+       "point": -0.06667
+      },
+      "delta_threshold_brier": {
+       "ci95": [
+        -0.01333,
+        0.04276
+       ],
+       "point": 0.01273
+      }
+     },
+     "games": 16,
+     "n": 30,
+     "summary": {
+      "baseline": {
+       "bias": 0.52,
+       "games": 16,
+       "log_loss": 2.1731,
+       "mae": 1.7156,
+       "median_abs_error": 1.4,
+       "median_signed_error": 0.6,
+       "n": 30,
+       "p10_p90_coverage": 0.8667,
+       "rmse": 2.1798,
+       "threshold_brier": 0.25325
+      },
+      "challenger": {
+       "bias": 0.324,
+       "games": 16,
+       "log_loss": 2.1798,
+       "mae": 1.7679,
+       "median_abs_error": 1.2886,
+       "median_signed_error": 0.7089,
+       "n": 30,
+       "p10_p90_coverage": 0.8333,
+       "rmse": 2.2002,
+       "threshold_brier": 0.26385
+      },
+      "challenger_regime": {
+       "bias": 0.2885,
+       "games": 16,
+       "log_loss": 2.1783,
+       "mae": 1.76,
+       "median_abs_error": 1.2729,
+       "median_signed_error": 0.6824,
+       "n": 30,
+       "p10_p90_coverage": 0.8333,
+       "rmse": 2.1972,
+       "threshold_brier": 0.26262
+      },
+      "champion": {
+       "bias": 0.1962,
+       "games": 16,
+       "log_loss": 2.1898,
+       "mae": 1.6821,
+       "median_abs_error": 1.2371,
+       "median_signed_error": 0.3483,
+       "n": 30,
+       "p10_p90_coverage": 0.9,
+       "rmse": 2.1615,
+       "threshold_brier": 0.24989
+      }
+     }
+    },
+    "game_type_F": {
+     "challenger_minus_champion": {
+      "delta_bias": {
+       "ci95": [
+        0.14748,
+        0.51821
+       ],
+       "point": 0.32469
+      },
+      "delta_log_loss": {
+       "ci95": [
+        -0.0013,
+        0.37304
+       ],
+       "point": 0.15473
+      },
+      "delta_mae": {
+       "ci95": [
+        0.03596,
+        0.37802
+       ],
+       "point": 0.19169
+      },
+      "delta_mse": {
+       "ci95": [
+        0.2791,
+        2.99586
+       ],
+       "point": 1.3044
+      },
+      "delta_p10_p90_coverage": {
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "point": 0.0
+      },
+      "delta_threshold_brier": {
+       "ci95": [
+        0.00047,
+        0.0736
+       ],
+       "point": 0.03477
+      }
+     },
+     "challenger_regime_minus_champion": {
+      "delta_bias": {
+       "ci95": [
+        0.11399,
+        0.47392
+       ],
+       "point": 0.28847
+      },
+      "delta_log_loss": {
+       "ci95": [
+        1e-05,
+        0.3373
+       ],
+       "point": 0.14139
+      },
+      "delta_mae": {
+       "ci95": [
+        0.03961,
+        0.35689
+       ],
+       "point": 0.18657
+      },
+      "delta_mse": {
+       "ci95": [
+        0.28439,
+        2.77014
+       ],
+       "point": 1.20985
+      },
+      "delta_p10_p90_coverage": {
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "point": 0.0
+      },
+      "delta_threshold_brier": {
+       "ci95": [
+        0.00223,
+        0.06906
+       ],
+       "point": 0.03322
+      }
+     },
+     "games": 9,
+     "n": 16,
+     "summary": {
+      "baseline": {
+       "bias": 0.8583,
+       "games": 9,
+       "log_loss": 2.6649,
+       "mae": 2.3833,
+       "median_abs_error": 2.3667,
+       "median_signed_error": 0.1,
+       "n": 16,
+       "p10_p90_coverage": 0.6875,
+       "rmse": 3.0533,
+       "threshold_brier": 0.2409
+      },
+      "challenger": {
+       "bias": 0.8127,
+       "games": 9,
+       "log_loss": 2.5702,
+       "mae": 2.4937,
+       "median_abs_error": 2.5853,
+       "median_signed_error": 0.1715,
+       "n": 16,
+       "p10_p90_coverage": 0.75,
+       "rmse": 2.9792,
+       "threshold_brier": 0.25518
+      },
+      "challenger_regime": {
+       "bias": 0.7765,
+       "games": 9,
+       "log_loss": 2.5568,
+       "mae": 2.4886,
+       "median_abs_error": 2.5729,
+       "median_signed_error": 0.1391,
+       "n": 16,
+       "p10_p90_coverage": 0.75,
+       "rmse": 2.9633,
+       "threshold_brier": 0.25363
+      },
+      "champion": {
+       "bias": 0.488,
+       "games": 9,
+       "log_loss": 2.4154,
+       "mae": 2.302,
+       "median_abs_error": 2.6211,
+       "median_signed_error": 0.1336,
+       "n": 16,
+       "p10_p90_coverage": 0.75,
+       "rmse": 2.7516,
+       "threshold_brier": 0.22041
+      }
+     }
+    }
+   }
+  }
+ },
+ "versions": {
+  "baseline": "naive_recent5_v1",
+  "challenger": "mlb_pitcher_workload_joint_v1",
+  "challenger_regime": "mlb_pitcher_workload_joint_v1+postseason_regime_v1",
+  "champion": "pitcher_prop_projection@params_asof_2026-10-07+sports_postseason_history"
+ }
+}

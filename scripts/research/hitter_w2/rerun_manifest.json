@@ -1,0 +1,15 @@
+{
+  "mode": "placeholder",
+  "cwd": "../../..",
+  "market_inputs": {
+    "totals": "data/research/hitter_w2/rerun_inputs/totals.json",
+    "hitter_quotes": "data/research/hitter_w2/rerun_inputs/hitter_quotes.jsonl"
+  },
+  "sports_inputs": {
+    "mlb_feed": "data/research/hitter_w2/mlb_feed",
+    "params": "data/research/hitter_w2/params_v1.json"
+  },
+  "outputs": ["challenger.jsonl"],
+  "compare": "bytes",
+  "env": {"OMP_NUM_THREADS": "1"}
+}

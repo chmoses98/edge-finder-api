@@ -1,0 +1,71 @@
+name: Research - Hitter W2 MLB feed backfill (data branch only)
+
+# SIFT Wave 2, MLB hitter lane. RESEARCH ONLY.
+# Fetches public MLB Stats API game feeds (sports data only; no odds, no
+# Kalshi, no settlement records) for the regular-season gamePks already
+# committed in data/research_cache/bullpen_backtest/<season>/schedules/,
+# extracts compact player-game / plate-appearance CSVs and commits them back
+# to the research data branch that triggered the run -- never to main.
+# The research sandbox cannot reach statsapi.mlb.com; GitHub-hosted runners can.
+#
+# Throttled by design: ONE job, no matrix, timeout 30 minutes, time-budgeted
+# and resumable (each run continues where the previous one stopped; a season
+# whose manifest.json says complete is skipped). Triggered only by a push to
+# the dedicated data branch, so pushes to the PR branch never start it.
+# GITHUB_TOKEN pushes do not retrigger workflows.
+
+on:
+  push:
+    branches:
+      - 'claude/w2-mlb-hitter-data'
+    paths:
+      - '.github/workflows/research-hitter-w2-backfill.yml'
+      - 'scripts/research/hitter_w2/fetch_pbp_backfill.py'
+      - 'scripts/research/hitter_w2/BACKFILL_TRIGGER'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-hitter-w2-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Refuse protected branches
+        env:
+          TARGET: ${{ github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$TARGET" = "main" ] || [ "$TARGET" = "master" ] || [ "$TARGET" = "$DEFAULT_BRANCH" ]; then
+            echo "::error::refusing to run against $TARGET"; exit 1; fi
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fetch + extract (time-budgeted, resumable)
+        run: python3 scripts/research/hitter_w2/fetch_pbp_backfill.py --seasons 2026,2025,2024 --workers 6 --budget-seconds 1080
+      - name: Validate and commit
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          python3 - <<'EOF'
+          import csv, glob, gzip, json
+          for m in sorted(glob.glob("data/research/hitter_w2/mlb_feed/*/manifest.json")):
+              d = json.load(open(m))
+              n = sum(1 for _ in csv.DictReader(gzip.open(m.replace("manifest.json", "batting.csv.gz"), "rt")))
+              assert n == d["rows"]["batting"], (m, n)
+              print(m, d["extracted"], "games", n, "batting rows", "remaining", d["remaining"], "complete", d["complete"])
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 scripts/ci/git_data_commit.py \
+            --message "research(hitter-w2): MLB feed backfill chunk (sports-only player-game + PA extracts)" \
+            --branch "$BRANCH" \
+            "data/research/hitter_w2/mlb_feed/" \
+            || { echo "ERROR: hitter-w2 backfill commit could not be pushed" >&2; exit 1; }

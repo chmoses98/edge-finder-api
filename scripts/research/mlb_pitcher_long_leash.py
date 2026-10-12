@@ -32,9 +32,11 @@ import sys
 from collections import defaultdict
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-for p in (ROOT, os.path.join(ROOT, "scripts", "research")):
-    if p not in sys.path:
-        sys.path.insert(0, p)
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+_RESEARCH_SCRIPTS = os.path.join(ROOT, "scripts", "research")
+if _RESEARCH_SCRIPTS not in sys.path:
+    sys.path.insert(1, _RESEARCH_SCRIPTS)
 
 import mlb_pitcher_workload_joint as W  # noqa: E402
 from lib.research import pitcher_workload_joint as J  # noqa: E402

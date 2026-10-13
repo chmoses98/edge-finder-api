@@ -1,0 +1,4970 @@
+{
+  "data": {
+    "_containsSentinels": true,
+    "_sentinelCheckRan": true,
+    "_sentinelViolationCount": 4,
+    "_sentinelViolations": [
+      {
+        "path": "games[0].gameId",
+        "value": 849813
+      },
+      {
+        "path": "games[0].kalshi.markets[0].volume",
+        "value": 410434.02
+      },
+      {
+        "path": "games[0].kalshi.markets[1].volume",
+        "value": 149851.23
+      },
+      {
+        "path": "games[0].kalshi.ml.volume",
+        "value": 149851.23
+      }
+    ],
+    "bullpensLoaded": 30,
+    "dataSources": {
+      "schedule": "statsapi",
+      "standings": "statsapi",
+      "teamStats": "teamstats_endpoint"
+    },
+    "date": "2026-10-13",
+    "games": [
+      {
+        "allEdges": [
+          {
+            "actionable": true,
+            "awayEdgePct": 6.22,
+            "awayProjRuns": 4.37,
+            "betEdgePct": 6.22,
+            "betModelPct": 68.2,
+            "betPinVF": 43.8,
+            "betSide": "AWAY",
+            "betSize": 4.5,
+            "betTeam": "Cleveland Guardians",
+            "confidence": "MEDIUM",
+            "homeEdgePct": -6.22,
+            "homeProjRuns": 3.11,
+            "kalshiAway": 43.5,
+            "logForCLV": true,
+            "market": "ML",
+            "modelAwayPct": 68.2,
+            "modelHomePct": 31.8,
+            "pinGap": 0.3,
+            "pinVfAway": 43.8,
+            "pinVfHome": 56.2,
+            "totalProj": 7.5
+          },
+          {
+            "actionable": false,
+            "betSize": 4.5,
+            "confidence": "MEDIUM",
+            "edgePct": -4.47,
+            "logForCLV": true,
+            "market": "RUN LINE",
+            "modelCoverPct": 46,
+            "pinVFpct": 63.5,
+            "price": -190,
+            "rlLine": 1.5,
+            "side": "AWAY"
+          }
+        ],
+        "away": {
+          "abbr": "CLE",
+          "bullpen": {
+            "bbPer9": 3.32,
+            "elite": false,
+            "era": 3.77,
+            "fatigued": false,
+            "hlAvailable": true,
+            "hlDivergence": -0.25,
+            "hlGrade": "ABOVE_AVERAGE",
+            "hlSamplePA": 6180,
+            "hlXFIP": 3.66,
+            "hr9": 1.1,
+            "ip": 1437.222,
+            "kPer9": 9.58,
+            "last3DaysIP": null,
+            "recentUsage": {
+              "asOfDate": "2026-10-12",
+              "backToBackRelievers": [
+                {
+                  "name": "Hunter Gaddis",
+                  "playerId": "683769"
+                },
+                {
+                  "name": "Erik Sabrowski",
+                  "playerId": "681870"
+                },
+                {
+                  "name": "Cade Smith",
+                  "playerId": "671922"
+                }
+              ],
+              "dataAvailable": true,
+              "gamesConsidered": 2,
+              "handednessMix": {
+                "L": 0,
+                "R": 0,
+                "unknown": 5
+              },
+              "highLeverageRecentUsage": [
+                {
+                  "holds": 0,
+                  "name": "Cade Smith",
+                  "playerId": "671922",
+                  "saves": 1,
+                  "totalPitches": 27
+                },
+                {
+                  "holds": 1,
+                  "name": "Hunter Gaddis",
+                  "playerId": "683769",
+                  "saves": 0,
+                  "totalPitches": 24
+                },
+                {
+                  "holds": 2,
+                  "name": "Erik Sabrowski",
+                  "playerId": "681870",
+                  "saves": 0,
+                  "totalPitches": 19
+                }
+              ],
+              "recentPitchCounts": [
+                {
+                  "appearances": 2,
+                  "name": "Hunter Gaddis",
+                  "playerId": "683769",
+                  "totalPitches": 37
+                },
+                {
+                  "appearances": 2,
+                  "name": "Cade Smith",
+                  "playerId": "671922",
+                  "totalPitches": 33
+                },
+                {
+                  "appearances": 2,
+                  "name": "Erik Sabrowski",
+                  "playerId": "681870",
+                  "totalPitches": 19
+                },
+                {
+                  "appearances": 1,
+                  "name": "Joey Cantillo",
+                  "playerId": "676282",
+                  "totalPitches": 17
+                },
+                {
+                  "appearances": 1,
+                  "name": "Daniel Espino",
+                  "playerId": "682982",
+                  "totalPitches": 14
+                }
+              ],
+              "relieversUsedLastGame": [
+                {
+                  "name": "Daniel Espino",
+                  "numberOfPitches": 14,
+                  "playerId": "682982"
+                },
+                {
+                  "name": "Joey Cantillo",
+                  "numberOfPitches": 17,
+                  "playerId": "676282"
+                },
+                {
+                  "name": "Hunter Gaddis",
+                  "numberOfPitches": 13,
+                  "playerId": "683769"
+                },
+                {
+                  "name": "Erik Sabrowski",
+                  "numberOfPitches": 14,
+                  "playerId": "681870"
+                },
+                {
+                  "name": "Cade Smith",
+                  "numberOfPitches": 6,
+                  "playerId": "671922"
+                }
+              ],
+              "teamPitchCountLastGame": 64,
+              "teamPitchCountWindow": 120,
+              "unavailableReason": null
+            },
+            "vulnerable": false,
+            "whip": 1.26,
+            "xFIP": 3.81,
+            "xFIPMethod": "real_xFIP"
+          },
+          "pitcher": {
+            "id": "800048",
+            "name": "Parker Messick",
+            "note": "",
+            "pitchHand": null
+          },
+          "pitcherSavant": {
+            "avgIPperStart": 6.09,
+            "barrelPct": 5,
+            "bbPct": 6.6,
+            "eliteStarter": false,
+            "exitVeloAvg": 87.6,
+            "fbPct": 50.3,
+            "firstInningSplit": {
+              "appearances": 483,
+              "available": true,
+              "firstInningERA": null,
+              "firstInningXERA": null,
+              "ip": 0,
+              "openerQualified": false,
+              "strongOpener": false
+            },
+            "hardHitPct": 34.3,
+            "highWalkRisk": false,
+            "kPct": 25.8,
+            "name": "Messick, Parker",
+            "recentFIP": 2.8,
+            "seasonFIP": 3,
+            "seasonIP": 186.1,
+            "seasonStarts": 32,
+            "startsSampled": 5,
+            "tto1": {
+              "fip": 2.98,
+              "gamesUsed": 1
+            },
+            "tto3": {
+              "fip": 3.1,
+              "gamesUsed": 8
+            },
+            "ttoAvailable": true,
+            "ttoRisk": false,
+            "ttoSplit": 0.12,
+            "velocityRecent": null,
+            "velocitySeason": null,
+            "velocityStartsN": null,
+            "vsLHH": null,
+            "vsRHH": null,
+            "whiffPct": 25.5,
+            "xERA": 3.15,
+            "xFIP": 3,
+            "xFIPvsXERA": -0.15
+          },
+          "record": "1-0",
+          "team": "Cleveland Guardians"
+        },
+        "awayTeamStats": {
+          "abbr": "CLE",
+          "avg": null,
+          "gamesPlayed": 162,
+          "last15RpG": 5,
+          "last7RpG": 6.75,
+          "lineupAdj": null,
+          "lineupAdjApplied": false,
+          "lineupAdjAvailable": false,
+          "lineupBattersExpected": 9,
+          "lineupBattersFound": 0,
+          "lineupBattersResolved": 0,
+          "lineupConfirmed": false,
+          "lineupConfirmedOfficial": false,
+          "lineupDataQuality": "none",
+          "lineupNote": "lineup_not_posted",
+          "lineupPosted": false,
+          "lineupSource": "mlb_stats_api",
+          "lineupStatus": "missing",
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "lineupWOBADelta": null,
+          "obp": null,
+          "offenseBaselineAdj": 4.786,
+          "offenseBaselineBayes": 4.8,
+          "offenseBaselineOppAdj": 4.786,
+          "offenseBaselineRaw": 5.201,
+          "offenseForm": {
+            "asOfDate": "2026-10-12",
+            "formLabel": {
+              "label": "COLD",
+              "reason": "median 2.0 and only 2/7 games clearing 4 runs",
+              "window": "L7"
+            },
+            "formLines": {
+              "L10": "L10: 5.3 avg | 4.0 med | 6,5,12,1,3,0,1,12,11,2 | 5/10 >=4 | 5/10 >=5 | max 12 (23% of L10 runs)",
+              "L5": "L5: 5.2 avg | 2.0 med | 0,1,12,11,2 | 2/5 >=4 | 2/5 >=5 | max 12 (46% of L5 runs) | OUTLIER-DEPENDENT",
+              "L7": "L7: 4.3 avg | 2.0 med | 1,3,0,1,12,11,2 | 2/7 >=4 | 2/7 >=5 | max 12 (40% of L7 runs) | OUTLIER-DEPENDENT"
+            },
+            "gamesAvailable": 14,
+            "source": "mlb_stats_api_schedule",
+            "team": "CLE",
+            "unavailableReason": null,
+            "windows": {
+              "L10": {
+                "ewma": 5.38,
+                "games": 10,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 10,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 12,
+                "mean": 5.3,
+                "median": 4.0,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": false,
+                  "meanMinusTrimmedMean": 0.18,
+                  "topGameShareOfWindowRuns": 0.226
+                },
+                "scores": [
+                  6,
+                  5,
+                  12,
+                  1,
+                  3,
+                  0,
+                  1,
+                  12,
+                  11,
+                  2
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 6,
+                    "of": 10,
+                    "pct": 0.6
+                  },
+                  "ge4": {
+                    "games": 5,
+                    "of": 10,
+                    "pct": 0.5
+                  },
+                  "ge5": {
+                    "games": 5,
+                    "of": 10,
+                    "pct": 0.5
+                  },
+                  "ge6": {
+                    "games": 4,
+                    "of": 10,
+                    "pct": 0.4
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.226,
+                "totalRuns": 53,
+                "trimmedMean": 5.12,
+                "window": 10
+              },
+              "L5": {
+                "ewma": 5.7,
+                "games": 5,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 5,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 12,
+                "mean": 5.2,
+                "median": 2.0,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": true,
+                  "meanMinusTrimmedMean": 0.53,
+                  "topGameShareOfWindowRuns": 0.462
+                },
+                "scores": [
+                  0,
+                  1,
+                  12,
+                  11,
+                  2
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 2,
+                    "of": 5,
+                    "pct": 0.4
+                  },
+                  "ge4": {
+                    "games": 2,
+                    "of": 5,
+                    "pct": 0.4
+                  },
+                  "ge5": {
+                    "games": 2,
+                    "of": 5,
+                    "pct": 0.4
+                  },
+                  "ge6": {
+                    "games": 2,
+                    "of": 5,
+                    "pct": 0.4
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.462,
+                "totalRuns": 26,
+                "trimmedMean": 4.67,
+                "window": 5
+              },
+              "L7": {
+                "ewma": 5.05,
+                "games": 7,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 7,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 12,
+                "mean": 4.29,
+                "median": 2.0,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": true,
+                  "meanMinusTrimmedMean": 0.69,
+                  "topGameShareOfWindowRuns": 0.4
+                },
+                "scores": [
+                  1,
+                  3,
+                  0,
+                  1,
+                  12,
+                  11,
+                  2
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 3,
+                    "of": 7,
+                    "pct": 0.429
+                  },
+                  "ge4": {
+                    "games": 2,
+                    "of": 7,
+                    "pct": 0.286
+                  },
+                  "ge5": {
+                    "games": 2,
+                    "of": 7,
+                    "pct": 0.286
+                  },
+                  "ge6": {
+                    "games": 2,
+                    "of": 7,
+                    "pct": 0.286
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.4,
+                "totalRuns": 30,
+                "trimmedMean": 3.6,
+                "window": 7
+              }
+            }
+          },
+          "offenseFormAsOf": "2026-10-12",
+          "offenseFormLabel": "COLD",
+          "offenseFormLine": "L7: 4.3 avg | 2.0 med | 1,3,0,1,12,11,2 | 2/7 >=4 | 2/7 >=5 | max 12 (40% of L7 runs) | OUTLIER-DEPENDENT",
+          "offenseFormReason": "median 2.0 and only 2/7 games clearing 4 runs",
+          "oppQualityAdj": -0.014,
+          "oppQualityConf": "partial",
+          "oppQualityGames": 6,
+          "oppQualityNote": "rolling_15_game",
+          "oppXFIPavg": 3.83,
+          "ops": null,
+          "record": {
+            "divisionRank": "1",
+            "leagueRank": "4",
+            "losses": 77,
+            "pct": ".525",
+            "runDiff": 11,
+            "runsAllowed": 667,
+            "runsScored": 678,
+            "streak": "L1",
+            "wins": 85
+          },
+          "rpgIndex": 93,
+          "runs": 678,
+          "runsPerGame": 4.19,
+          "seasonRpG": 4.19,
+          "slg": null,
+          "teamBBPct": null,
+          "teamBarrel": null,
+          "teamFBPct": 0.355,
+          "teamHardHit": null,
+          "teamId": 114,
+          "teamKPct": null,
+          "teamWOBA": 0.306,
+          "wrcPlus": 93
+        },
+        "f5": {
+          "awayF5Pct": 68.6,
+          "awayF5Proj": 2.34,
+          "bookF5": null,
+          "f5Amplified": false,
+          "f5PriceNote": "F5 market not offered on any book today",
+          "favoredSide": "AWAY",
+          "homeF5Pct": 31.4,
+          "homeF5Proj": 1.56,
+          "pinF5VigFree": null,
+          "tieProb": 19.6,
+          "xERAGap": 1.14
+        },
+        "gameId": 849813,
+        "gameType": "L",
+        "gamesInSeries": 7,
+        "home": {
+          "abbr": "TB",
+          "bullpen": {
+            "bbPer9": 2.55,
+            "elite": false,
+            "era": 3.7,
+            "fatigued": false,
+            "hlAvailable": true,
+            "hlDivergence": 0.3,
+            "hlGrade": "ABOVE_AVERAGE",
+            "hlSamplePA": 6205,
+            "hlXFIP": 3.93,
+            "hr9": 1.25,
+            "ip": 1443,
+            "kPer9": 8.25,
+            "last3DaysIP": null,
+            "recentUsage": {
+              "asOfDate": "2026-10-12",
+              "backToBackRelievers": [],
+              "dataAvailable": true,
+              "gamesConsidered": 1,
+              "handednessMix": {
+                "L": 0,
+                "R": 0,
+                "unknown": 5
+              },
+              "highLeverageRecentUsage": [],
+              "recentPitchCounts": [
+                {
+                  "appearances": 1,
+                  "name": "Cole Sulser",
+                  "playerId": "642121",
+                  "totalPitches": 27
+                },
+                {
+                  "appearances": 1,
+                  "name": "Ian Seymour",
+                  "playerId": "693855",
+                  "totalPitches": 9
+                },
+                {
+                  "appearances": 1,
+                  "name": "Cam Booser",
+                  "playerId": "592155",
+                  "totalPitches": 8
+                },
+                {
+                  "appearances": 1,
+                  "name": "Tyler Wells",
+                  "playerId": "669330",
+                  "totalPitches": 6
+                },
+                {
+                  "appearances": 1,
+                  "name": "Kevin Kelly",
+                  "playerId": "687330",
+                  "totalPitches": 5
+                }
+              ],
+              "relieversUsedLastGame": [
+                {
+                  "name": "Cam Booser",
+                  "numberOfPitches": 8,
+                  "playerId": "592155"
+                },
+                {
+                  "name": "Tyler Wells",
+                  "numberOfPitches": 6,
+                  "playerId": "669330"
+                },
+                {
+                  "name": "Ian Seymour",
+                  "numberOfPitches": 9,
+                  "playerId": "693855"
+                },
+                {
+                  "name": "Cole Sulser",
+                  "numberOfPitches": 27,
+                  "playerId": "642121"
+                },
+                {
+                  "name": "Kevin Kelly",
+                  "numberOfPitches": 5,
+                  "playerId": "687330"
+                }
+              ],
+              "teamPitchCountLastGame": 55,
+              "teamPitchCountWindow": 55,
+              "unavailableReason": null
+            },
+            "vulnerable": false,
+            "whip": 1.14,
+            "xFIP": 4.04,
+            "xFIPMethod": "real_xFIP"
+          },
+          "pitcher": {
+            "id": "642547",
+            "name": "Freddy Peralta",
+            "note": "",
+            "pitchHand": null
+          },
+          "pitcherSavant": {
+            "avgIPperStart": 5.29,
+            "barrelPct": 5.8,
+            "bbPct": 8.6,
+            "eliteStarter": false,
+            "exitVeloAvg": 87.6,
+            "fbPct": 55.3,
+            "firstInningSplit": {
+              "appearances": 585,
+              "available": true,
+              "firstInningERA": null,
+              "firstInningXERA": null,
+              "ip": 0,
+              "openerQualified": false,
+              "strongOpener": false
+            },
+            "hardHitPct": 37.2,
+            "highWalkRisk": false,
+            "kPct": 21.4,
+            "name": "Peralta, Freddy",
+            "recentFIP": 4.73,
+            "seasonFIP": 4.14,
+            "seasonIP": 169,
+            "seasonStarts": 32,
+            "startsSampled": 5,
+            "tto1": {
+              "fip": 6.4,
+              "gamesUsed": 3
+            },
+            "tto3": {
+              "fip": 3.52,
+              "gamesUsed": 5
+            },
+            "ttoAvailable": true,
+            "ttoRisk": false,
+            "ttoSplit": -2.88,
+            "velocityRecent": null,
+            "velocitySeason": null,
+            "velocityStartsN": null,
+            "vsLHH": null,
+            "vsRHH": null,
+            "whiffPct": 26.1,
+            "xERA": 3.84,
+            "xFIP": 4.14,
+            "xFIPvsXERA": 0.3
+          },
+          "record": "0-1",
+          "team": "Tampa Bay Rays"
+        },
+        "homeTeamStats": {
+          "abbr": "TB",
+          "avg": null,
+          "gamesPlayed": 162,
+          "last15RpG": 3.25,
+          "last7RpG": 3.5,
+          "lineupAdj": null,
+          "lineupAdjApplied": false,
+          "lineupAdjAvailable": false,
+          "lineupBattersExpected": 9,
+          "lineupBattersFound": 0,
+          "lineupBattersResolved": 0,
+          "lineupConfirmed": false,
+          "lineupConfirmedOfficial": false,
+          "lineupDataQuality": "none",
+          "lineupNote": "lineup_not_posted",
+          "lineupPosted": false,
+          "lineupSource": "mlb_stats_api",
+          "lineupStatus": "missing",
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "lineupWOBADelta": null,
+          "obp": null,
+          "offenseBaselineAdj": 4.166,
+          "offenseBaselineBayes": 4.218,
+          "offenseBaselineOppAdj": 4.166,
+          "offenseBaselineRaw": 3.841,
+          "offenseForm": {
+            "asOfDate": "2026-10-12",
+            "formLabel": {
+              "label": "NEUTRAL",
+              "reason": "3/7 games clearing 4 runs, median 3.0, mean 4.14",
+              "window": "L7"
+            },
+            "formLines": {
+              "L10": "L10: 3.8 avg | 2.5 med | 2,2,5,0,6,2,4,2,12,3 | 4/10 >=4 | 3/10 >=5 | max 12 (32% of L10 runs)",
+              "L5": "L5: 4.6 avg | 3.0 med | 2,4,2,12,3 | 2/5 >=4 | 1/5 >=5 | max 12 (52% of L5 runs) | OUTLIER-DEPENDENT",
+              "L7": "L7: 4.1 avg | 3.0 med | 0,6,2,4,2,12,3 | 3/7 >=4 | 2/7 >=5 | max 12 (41% of L7 runs) | OUTLIER-DEPENDENT"
+            },
+            "gamesAvailable": 15,
+            "source": "mlb_stats_api_schedule",
+            "team": "TB",
+            "unavailableReason": null,
+            "windows": {
+              "L10": {
+                "ewma": 4.29,
+                "games": 10,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 10,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 12,
+                "mean": 3.8,
+                "median": 2.5,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": false,
+                  "meanMinusTrimmedMean": 0.55,
+                  "topGameShareOfWindowRuns": 0.316
+                },
+                "scores": [
+                  2,
+                  2,
+                  5,
+                  0,
+                  6,
+                  2,
+                  4,
+                  2,
+                  12,
+                  3
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 5,
+                    "of": 10,
+                    "pct": 0.5
+                  },
+                  "ge4": {
+                    "games": 4,
+                    "of": 10,
+                    "pct": 0.4
+                  },
+                  "ge5": {
+                    "games": 3,
+                    "of": 10,
+                    "pct": 0.3
+                  },
+                  "ge6": {
+                    "games": 2,
+                    "of": 10,
+                    "pct": 0.2
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.316,
+                "totalRuns": 38,
+                "trimmedMean": 3.25,
+                "window": 10
+              },
+              "L5": {
+                "ewma": 5.05,
+                "games": 5,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 5,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 12,
+                "mean": 4.6,
+                "median": 3.0,
+                "min": 2,
+                "outlierDependence": {
+                  "isOutlierDependent": true,
+                  "meanMinusTrimmedMean": 1.6,
+                  "topGameShareOfWindowRuns": 0.522
+                },
+                "scores": [
+                  2,
+                  4,
+                  2,
+                  12,
+                  3
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 3,
+                    "of": 5,
+                    "pct": 0.6
+                  },
+                  "ge4": {
+                    "games": 2,
+                    "of": 5,
+                    "pct": 0.4
+                  },
+                  "ge5": {
+                    "games": 1,
+                    "of": 5,
+                    "pct": 0.2
+                  },
+                  "ge6": {
+                    "games": 1,
+                    "of": 5,
+                    "pct": 0.2
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.522,
+                "totalRuns": 23,
+                "trimmedMean": 3.0,
+                "window": 5
+              },
+              "L7": {
+                "ewma": 4.68,
+                "games": 7,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 7,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 12,
+                "mean": 4.14,
+                "median": 3.0,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": true,
+                  "meanMinusTrimmedMean": 0.74,
+                  "topGameShareOfWindowRuns": 0.414
+                },
+                "scores": [
+                  0,
+                  6,
+                  2,
+                  4,
+                  2,
+                  12,
+                  3
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 4,
+                    "of": 7,
+                    "pct": 0.571
+                  },
+                  "ge4": {
+                    "games": 3,
+                    "of": 7,
+                    "pct": 0.429
+                  },
+                  "ge5": {
+                    "games": 2,
+                    "of": 7,
+                    "pct": 0.286
+                  },
+                  "ge6": {
+                    "games": 2,
+                    "of": 7,
+                    "pct": 0.286
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.414,
+                "totalRuns": 29,
+                "trimmedMean": 3.4,
+                "window": 7
+              }
+            }
+          },
+          "offenseFormAsOf": "2026-10-12",
+          "offenseFormLabel": "NEUTRAL",
+          "offenseFormLine": "L7: 4.1 avg | 3.0 med | 0,6,2,4,2,12,3 | 3/7 >=4 | 2/7 >=5 | max 12 (41% of L7 runs) | OUTLIER-DEPENDENT",
+          "offenseFormReason": "3/7 games clearing 4 runs, median 3.0, mean 4.14",
+          "oppQualityAdj": -0.052,
+          "oppQualityConf": "partial",
+          "oppQualityGames": 7,
+          "oppQualityNote": "rolling_15_game",
+          "oppXFIPavg": 3.35,
+          "ops": null,
+          "record": {
+            "divisionRank": "1",
+            "leagueRank": "1",
+            "losses": 64,
+            "pct": ".605",
+            "runDiff": 86,
+            "runsAllowed": 650,
+            "runsScored": 736,
+            "streak": "L1",
+            "wins": 98
+          },
+          "rpgIndex": 101,
+          "runs": 736,
+          "runsPerGame": 4.54,
+          "seasonRpG": 4.54,
+          "slg": null,
+          "teamBBPct": null,
+          "teamBarrel": null,
+          "teamFBPct": 0.355,
+          "teamHardHit": null,
+          "teamId": 139,
+          "teamKPct": null,
+          "teamWOBA": 0.319,
+          "wrcPlus": 101
+        },
+        "kalshi": {
+          "markets": [
+            {
+              "awayAbbr": "CLE",
+              "closeTime": "2026-10-17T00:00:00Z",
+              "eventTicker": "KXMLBGAME-26OCT132000CLETB",
+              "homeAbbr": "TB",
+              "impliedPct": 56.5,
+              "mid": 56,
+              "ticker": "KXMLBGAME-26OCT132000CLETB-TB",
+              "timeStr": "2000",
+              "title": "Tampa Bay wins",
+              "volume": 410434.02,
+              "yesAsk": 57,
+              "yesBid": 56
+            },
+            {
+              "awayAbbr": "CLE",
+              "closeTime": "2026-10-17T00:00:00Z",
+              "eventTicker": "KXMLBGAME-26OCT132000CLETB",
+              "homeAbbr": "TB",
+              "impliedPct": 43.5,
+              "mid": 44,
+              "ticker": "KXMLBGAME-26OCT132000CLETB-CLE",
+              "timeStr": "2000",
+              "title": "Cleveland wins",
+              "volume": 149851.23,
+              "yesAsk": 44,
+              "yesBid": 43
+            }
+          ],
+          "ml": {
+            "awayAbbr": "CLE",
+            "closeTime": "2026-10-17T00:00:00Z",
+            "eventTicker": "KXMLBGAME-26OCT132000CLETB",
+            "homeAbbr": "TB",
+            "impliedPct": 43.5,
+            "mid": 44,
+            "ticker": "KXMLBGAME-26OCT132000CLETB-CLE",
+            "timeStr": "2000",
+            "title": "Cleveland wins",
+            "volume": 149851.23,
+            "yesAsk": 44,
+            "yesBid": 43
+          }
+        },
+        "kalshiEventTickerSuffix": "26OCT132000CLETB",
+        "kalshiF5VF": {
+          "away": 47.47,
+          "home": 52.53
+        },
+        "kalshiGameTime": "8:00 PM ET",
+        "kalshiKey": "CLETB",
+        "kalshiSnapshotTs": "2026-10-13T13:12:13Z",
+        "kalshiVF": {
+          "away": 43.48,
+          "home": 56.52
+        },
+        "lineupAuditUsed": true,
+        "lineupCheckedAt": "2026-10-13T13:12:06Z",
+        "lineupConfirmed": false,
+        "lineupSource": "unavailable",
+        "lineupStatus": "unconfirmed",
+        "mlEdge": {
+          "actionable": true,
+          "awayEdgePct": 6.22,
+          "awayProjRuns": 4.37,
+          "betEdgePct": 6.22,
+          "betModelPct": 68.2,
+          "betPinVF": 43.8,
+          "betSide": "AWAY",
+          "betSize": 4.5,
+          "betTeam": "Cleveland Guardians",
+          "confidence": "MEDIUM",
+          "homeEdgePct": -6.22,
+          "homeProjRuns": 3.11,
+          "kalshiAway": 43.5,
+          "logForCLV": true,
+          "market": "ML",
+          "modelAwayPct": 68.2,
+          "modelHomePct": 31.8,
+          "pinGap": 0.3,
+          "pinVfAway": 43.8,
+          "pinVfHome": 56.2,
+          "totalProj": 7.5
+        },
+        "modelProb": {
+          "away": 68.2,
+          "awayProjDetail": {
+            "bullpenIP": 3.7,
+            "offMatchup": 1.07,
+            "offenseBaseline": 4.8,
+            "projRuns": 4.37,
+            "rolling15": 5,
+            "seasonRpG": 4.19,
+            "starterIP": 5.3,
+            "trueXFIP": 4.14,
+            "wrcPlus": 93,
+            "xfipSource": "xFIP"
+          },
+          "awayProjRuns": 4.37,
+          "confidence": "MEDIUM",
+          "factors": {
+            "awayOffBaseline": 4.8,
+            "awayTrueXFIP": 4.14,
+            "awayXfipSource": "xFIP",
+            "homeOffBaseline": 4.22,
+            "homeTrueXFIP": 3,
+            "homeXfipSource": "xFIP",
+            "parkRunAdj": 0
+          },
+          "home": 31.8,
+          "homeProjDetail": {
+            "bullpenIP": 2.9,
+            "offMatchup": 0.94,
+            "offenseBaseline": 4.22,
+            "projRuns": 3.11,
+            "rolling15": 3.25,
+            "seasonRpG": 4.54,
+            "starterIP": 6.1,
+            "trueXFIP": 3,
+            "wrcPlus": 101,
+            "xfipSource": "xFIP"
+          },
+          "homeProjRuns": 3.11,
+          "push": 13.4,
+          "totalProj": 7.5,
+          "vsKalshi": 24.7,
+          "vsPin": 24.4
+        },
+        "nrfi": {
+          "lean": "NRFI",
+          "leanStrength": "LEAN",
+          "nrfiPct": 100,
+          "nrfiScore": 2,
+          "reasons": [
+            "Away K%: 25.8%"
+          ],
+          "yrfiMeta": {
+            "formulaUsed": "poisson_independence",
+            "lambdaDerivedFromFullGame": false,
+            "lambdaFormula": "proxy_kpct_bbpct",
+            "lambdaIsFirstInningSpecific": false,
+            "lambdaUsed": 0.481,
+            "parkFirstInningRateIncluded": false,
+            "poissonCheckFirstInningValid": false,
+            "teamFirstInningRatesIncluded": false
+          },
+          "yrfiPct": 0,
+          "yrfiScore": 0
+        },
+        "odds": {
+          "betmgm": {
+            "f5ml": {
+              "away": 100,
+              "home": -125,
+              "updated": "2026-10-13T13:11:32Z"
+            },
+            "f5rl": {
+              "away": -150,
+              "awayPoint": 0.5,
+              "home": 115,
+              "homePoint": -0.5
+            },
+            "ml": {
+              "away": 115,
+              "home": -135,
+              "updated": "2026-10-13T13:10:45Z"
+            },
+            "rl": {
+              "away": -200,
+              "awayPoint": 1.5,
+              "home": 165,
+              "homePoint": -1.5
+            },
+            "teamTotals": {
+              "away": {
+                "line": 2.5,
+                "over": -150,
+                "under": 115
+              },
+              "home": {
+                "line": 3.5,
+                "over": 105,
+                "under": -140
+              }
+            },
+            "total": {
+              "line": 6.5,
+              "over": -118,
+              "under": -102
+            }
+          },
+          "draftkings": {
+            "f5ml": {
+              "away": -105,
+              "home": -125,
+              "updated": "2026-10-13T13:11:34Z"
+            },
+            "ml": {
+              "away": 110,
+              "home": -132,
+              "updated": "2026-10-13T13:11:30Z"
+            },
+            "rl": {
+              "away": -205,
+              "awayPoint": 1.5,
+              "home": 168,
+              "homePoint": -1.5
+            },
+            "teamTotals": {
+              "away": {
+                "line": 3.5,
+                "over": 114,
+                "under": -145
+              },
+              "home": {
+                "line": 3.5,
+                "over": -105,
+                "under": -125
+              }
+            },
+            "total": {
+              "line": 7,
+              "over": 102,
+              "under": -123
+            }
+          },
+          "fanduel": {
+            "f5ml": {
+              "away": -106,
+              "home": -118,
+              "updated": "2026-10-13T13:11:39Z"
+            },
+            "f5rl": {
+              "away": -160,
+              "awayPoint": 0.5,
+              "home": 122,
+              "homePoint": -0.5
+            },
+            "ml": {
+              "away": 112,
+              "home": -132,
+              "updated": "2026-10-13T13:11:15Z"
+            },
+            "rl": {
+              "away": -210,
+              "awayPoint": 1.5,
+              "home": 172,
+              "homePoint": -1.5
+            },
+            "teamTotals": {
+              "away": {
+                "line": 3.5,
+                "over": 118,
+                "under": -150
+              },
+              "home": {
+                "line": 3.5,
+                "over": 110,
+                "under": -140
+              }
+            },
+            "total": {
+              "line": 6.5,
+              "over": -128,
+              "under": 104
+            }
+          },
+          "kalshi": {
+            "f5_spread": {
+              "all_lines": [
+                {
+                  "american": 308,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 24.5,
+                  "last_price": 0.24,
+                  "mid": 0.245,
+                  "no_ask": 0.76,
+                  "no_bid": 0.75,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 2,
+                  "status": "active",
+                  "team": "CLE",
+                  "ticker": "KXMLBF5SPREAD-26OCT132000CLETB-CLE2",
+                  "unit": "dollars",
+                  "win_by_over": 1.5,
+                  "yes_ask": 0.25,
+                  "yes_bid": 0.24
+                },
+                {
+                  "american": 525,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 16.0,
+                  "last_price": 0.17,
+                  "mid": 0.16,
+                  "no_ask": 0.85,
+                  "no_bid": 0.83,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 3,
+                  "status": "active",
+                  "team": "CLE",
+                  "ticker": "KXMLBF5SPREAD-26OCT132000CLETB-CLE3",
+                  "unit": "dollars",
+                  "win_by_over": 2.5,
+                  "yes_ask": 0.17,
+                  "yes_bid": 0.15
+                },
+                {
+                  "american": 251,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 28.5,
+                  "last_price": 0.3,
+                  "mid": 0.285,
+                  "no_ask": 0.72,
+                  "no_bid": 0.71,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 2,
+                  "status": "active",
+                  "team": "TB",
+                  "ticker": "KXMLBF5SPREAD-26OCT132000CLETB-TB2",
+                  "unit": "dollars",
+                  "win_by_over": 1.5,
+                  "yes_ask": 0.29,
+                  "yes_bid": 0.28
+                },
+                {
+                  "american": 471,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 17.5,
+                  "last_price": 0.0,
+                  "mid": 0.175,
+                  "no_ask": 0.84,
+                  "no_bid": 0.81,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 3,
+                  "status": "active",
+                  "team": "TB",
+                  "ticker": "KXMLBF5SPREAD-26OCT132000CLETB-TB3",
+                  "unit": "dollars",
+                  "win_by_over": 2.5,
+                  "yes_ask": 0.19,
+                  "yes_bid": 0.16
+                }
+              ],
+              "american": 251,
+              "best_ticker": "KXMLBF5SPREAD-26OCT132000CLETB-TB2",
+              "implied_pct": 28.5,
+              "source": "kalshi_registry",
+              "team": "TB",
+              "wins_by_over": 1.5
+            },
+            "f5_total": {
+              "all_lines": [
+                {
+                  "american": -1567,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 94.0,
+                  "last_price": 0.95,
+                  "mid": 0.94,
+                  "no_ask": 0.07,
+                  "no_bid": 0.05,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBF5TOTAL-26OCT132000CLETB-1",
+                  "total": 1,
+                  "unit": "dollars",
+                  "yes_ask": 0.95,
+                  "yes_bid": 0.93
+                },
+                {
+                  "american": -471,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 82.5,
+                  "last_price": 0.88,
+                  "mid": 0.825,
+                  "no_ask": 0.19,
+                  "no_bid": 0.16,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBF5TOTAL-26OCT132000CLETB-2",
+                  "total": 2,
+                  "unit": "dollars",
+                  "yes_ask": 0.84,
+                  "yes_bid": 0.81
+                },
+                {
+                  "american": -208,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 67.5,
+                  "last_price": 0.68,
+                  "mid": 0.675,
+                  "no_ask": 0.33,
+                  "no_bid": 0.32,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBF5TOTAL-26OCT132000CLETB-3",
+                  "total": 3,
+                  "unit": "dollars",
+                  "yes_ask": 0.68,
+                  "yes_bid": 0.67
+                },
+                {
+                  "american": -111,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 52.5,
+                  "last_price": 0.53,
+                  "mid": 0.525,
+                  "no_ask": 0.48,
+                  "no_bid": 0.47,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBF5TOTAL-26OCT132000CLETB-4",
+                  "total": 4,
+                  "unit": "dollars",
+                  "yes_ask": 0.53,
+                  "yes_bid": 0.52
+                },
+                {
+                  "american": 153,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 39.5,
+                  "last_price": 0.4,
+                  "mid": 0.395,
+                  "no_ask": 0.61,
+                  "no_bid": 0.6,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBF5TOTAL-26OCT132000CLETB-5",
+                  "total": 5,
+                  "unit": "dollars",
+                  "yes_ask": 0.4,
+                  "yes_bid": 0.39
+                },
+                {
+                  "american": 264,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 27.5,
+                  "last_price": 0.29,
+                  "mid": 0.275,
+                  "no_ask": 0.73,
+                  "no_bid": 0.72,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBF5TOTAL-26OCT132000CLETB-6",
+                  "total": 6,
+                  "unit": "dollars",
+                  "yes_ask": 0.28,
+                  "yes_bid": 0.27
+                },
+                {
+                  "american": 413,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 19.5,
+                  "last_price": 0.19,
+                  "mid": 0.195,
+                  "no_ask": 0.81,
+                  "no_bid": 0.8,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBF5TOTAL-26OCT132000CLETB-7",
+                  "total": 7,
+                  "unit": "dollars",
+                  "yes_ask": 0.2,
+                  "yes_bid": 0.19
+                }
+              ],
+              "american": -111,
+              "best_ticker": "KXMLBF5TOTAL-26OCT132000CLETB-4",
+              "implied_pct": 52.5,
+              "line": 4,
+              "source": "kalshi_registry"
+            },
+            "f5ml": {
+              "away": 160,
+              "away_book": {
+                "book_state": "TWO_SIDED",
+                "captured_at": "2026-10-13T13:12:13Z",
+                "no_ask": 0.62,
+                "no_bid": 0.61,
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "price_source_fields": {
+                  "last_price": "last_price_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "yes_bid": "yes_bid_dollars"
+                },
+                "status": "active",
+                "ticker": "KXMLBF5-26OCT132000CLETB-CLE",
+                "unit": "dollars",
+                "yes_ask": 0.39,
+                "yes_bid": 0.38
+              },
+              "away_ticker": "KXMLBF5-26OCT132000CLETB-CLE",
+              "eventTicker": "KXMLBF5-26OCT132000CLETB",
+              "home": 135,
+              "home_book": {
+                "book_state": "TWO_SIDED",
+                "captured_at": "2026-10-13T13:12:13Z",
+                "no_ask": 0.58,
+                "no_bid": 0.57,
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "price_source_fields": {
+                  "last_price": "last_price_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "yes_bid": "yes_bid_dollars"
+                },
+                "status": "active",
+                "ticker": "KXMLBF5-26OCT132000CLETB-TB",
+                "unit": "dollars",
+                "yes_ask": 0.43,
+                "yes_bid": 0.42
+              },
+              "home_ticker": "KXMLBF5-26OCT132000CLETB-TB",
+              "seriesTicker": "KXMLBF5",
+              "snapshot_ts": "2026-10-13T13:12:13Z",
+              "source": "kalshi_registry",
+              "status": "active",
+              "tie": 441,
+              "tie_american": 441,
+              "tie_book": {
+                "book_state": "TWO_SIDED",
+                "captured_at": "2026-10-13T13:12:13Z",
+                "no_ask": 0.82,
+                "no_bid": 0.81,
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "price_source_fields": {
+                  "last_price": "last_price_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "yes_bid": "yes_bid_dollars"
+                },
+                "status": "active",
+                "ticker": "KXMLBF5-26OCT132000CLETB-TIE",
+                "unit": "dollars",
+                "yes_ask": 0.19,
+                "yes_bid": 0.18
+              },
+              "tie_ticker": "KXMLBF5-26OCT132000CLETB-TIE"
+            },
+            "f7ml": {
+              "away": 150,
+              "away_ticker": "KXMLBF7-26OCT132000CLETB-CLE",
+              "home": 120,
+              "home_ticker": "KXMLBF7-26OCT132000CLETB-TB",
+              "note": "Three-way market (Away/Home/Tie). RESEARCH-ONLY \u2014 not part of marketLedger.",
+              "researchOnly": true,
+              "source": "kalshi_registry",
+              "tie": 641,
+              "tie_ticker": "KXMLBF7-26OCT132000CLETB-TIE"
+            },
+            "hitter_hits": {
+              "family": "hitter_hits",
+              "note": "Per-player N+ threshold ladder. RESEARCH-ONLY \u2014 not part of marketLedger.",
+              "players": {
+                "CLE:Brayan Rocchio": {
+                  "displayName": "Brayan Rocchio",
+                  "team": "CLE",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": -106,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 51.5,
+                      "last_price": 0.52,
+                      "mid": 0.515,
+                      "no_ask": 0.49,
+                      "no_bid": 0.48,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 1,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-CLEBROCCHIO4-1",
+                      "unit": "dollars",
+                      "yes_ask": 0.52,
+                      "yes_bid": 0.51
+                    },
+                    {
+                      "american": 641,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 13.5,
+                      "last_price": 0.15,
+                      "mid": 0.135,
+                      "no_ask": 0.87,
+                      "no_bid": 0.86,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 2,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-CLEBROCCHIO4-2",
+                      "unit": "dollars",
+                      "yes_ask": 0.14,
+                      "yes_bid": 0.13
+                    },
+                    {
+                      "american": 3900,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 2.5,
+                      "last_price": 0.0,
+                      "mid": 0.025,
+                      "no_ask": 0.99,
+                      "no_bid": 0.96,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-CLEBROCCHIO4-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.04,
+                      "yes_bid": 0.01
+                    }
+                  ]
+                },
+                "CLE:Jo Adell": {
+                  "displayName": "Jo Adell",
+                  "team": "CLE",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": -125,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 55.5,
+                      "last_price": 0.56,
+                      "mid": 0.555,
+                      "no_ask": 0.45,
+                      "no_bid": 0.44,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 1,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-CLEJADELL7-1",
+                      "unit": "dollars",
+                      "yes_ask": 0.56,
+                      "yes_bid": 0.55
+                    },
+                    {
+                      "american": 506,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 16.5,
+                      "last_price": 0.17,
+                      "mid": 0.165,
+                      "no_ask": 0.84,
+                      "no_bid": 0.83,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 2,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-CLEJADELL7-2",
+                      "unit": "dollars",
+                      "yes_ask": 0.17,
+                      "yes_bid": 0.16
+                    },
+                    {
+                      "american": 3233,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 3.0,
+                      "last_price": 0.0,
+                      "mid": 0.03,
+                      "no_ask": 0.99,
+                      "no_bid": 0.95,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-CLEJADELL7-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.05,
+                      "yes_bid": 0.01
+                    }
+                  ]
+                },
+                "CLE:Jos\u00e9 Ram\u00edrez": {
+                  "displayName": "Jos\u00e9 Ram\u00edrez",
+                  "team": "CLE",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": -156,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 61.0,
+                      "last_price": 0.62,
+                      "mid": 0.61,
+                      "no_ask": 0.4,
+                      "no_bid": 0.38,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 1,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-CLEJRAMREZ11-1",
+                      "unit": "dollars",
+                      "yes_ask": 0.62,
+                      "yes_bid": 0.6
+                    },
+                    {
+                      "american": 376,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 21.0,
+                      "last_price": 0.22,
+                      "mid": 0.21,
+                      "no_ask": 0.8,
+                      "no_bid": 0.78,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 2,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-CLEJRAMREZ11-2",
+                      "unit": "dollars",
+                      "yes_ask": 0.22,
+                      "yes_bid": 0.2
+                    },
+                    {
+                      "american": 2400,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 4.0,
+                      "last_price": 0.05,
+                      "mid": 0.04,
+                      "no_ask": 0.97,
+                      "no_bid": 0.95,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-CLEJRAMREZ11-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.05,
+                      "yes_bid": 0.03
+                    }
+                  ]
+                },
+                "TB:Jonathan Aranda": {
+                  "displayName": "Jonathan Aranda",
+                  "team": "TB",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": -160,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 61.5,
+                      "last_price": 0.62,
+                      "mid": 0.615,
+                      "no_ask": 0.39,
+                      "no_bid": 0.38,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 1,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-TBJARANDA8-1",
+                      "unit": "dollars",
+                      "yes_ask": 0.62,
+                      "yes_bid": 0.61
+                    },
+                    {
+                      "american": 376,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 21.0,
+                      "last_price": 0.22,
+                      "mid": 0.21,
+                      "no_ask": 0.8,
+                      "no_bid": 0.78,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 2,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-TBJARANDA8-2",
+                      "unit": "dollars",
+                      "yes_ask": 0.22,
+                      "yes_bid": 0.2
+                    },
+                    {
+                      "american": 2757,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 3.5,
+                      "last_price": 0.05,
+                      "mid": 0.035,
+                      "no_ask": 0.98,
+                      "no_bid": 0.95,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-TBJARANDA8-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.05,
+                      "yes_bid": 0.02
+                    }
+                  ]
+                },
+                "TB:Junior Caminero": {
+                  "displayName": "Junior Caminero",
+                  "team": "TB",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": -182,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 64.5,
+                      "last_price": 0.65,
+                      "mid": 0.645,
+                      "no_ask": 0.36,
+                      "no_bid": 0.35,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 1,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-TBJCAMINERO13-1",
+                      "unit": "dollars",
+                      "yes_ask": 0.65,
+                      "yes_bid": 0.64
+                    },
+                    {
+                      "american": 308,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 24.5,
+                      "last_price": 0.26,
+                      "mid": 0.245,
+                      "no_ask": 0.76,
+                      "no_bid": 0.75,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 2,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-TBJCAMINERO13-2",
+                      "unit": "dollars",
+                      "yes_ask": 0.25,
+                      "yes_bid": 0.24
+                    },
+                    {
+                      "american": 2122,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 4.5,
+                      "last_price": 0.05,
+                      "mid": 0.045,
+                      "no_ask": 0.96,
+                      "no_bid": 0.95,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-TBJCAMINERO13-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.05,
+                      "yes_bid": 0.04
+                    }
+                  ]
+                },
+                "TB:Yandy D\u00edaz": {
+                  "displayName": "Yandy D\u00edaz",
+                  "team": "TB",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": -217,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 68.5,
+                      "last_price": 0.69,
+                      "mid": 0.685,
+                      "no_ask": 0.32,
+                      "no_bid": 0.31,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 1,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-TBYDIAZ2-1",
+                      "unit": "dollars",
+                      "yes_ask": 0.69,
+                      "yes_bid": 0.68
+                    },
+                    {
+                      "american": 251,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 28.5,
+                      "last_price": 0.29,
+                      "mid": 0.285,
+                      "no_ask": 0.72,
+                      "no_bid": 0.71,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 2,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-TBYDIAZ2-2",
+                      "unit": "dollars",
+                      "yes_ask": 0.29,
+                      "yes_bid": 0.28
+                    },
+                    {
+                      "american": 1329,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 7.0,
+                      "last_price": 0.09,
+                      "mid": 0.07,
+                      "no_ask": 0.94,
+                      "no_bid": 0.92,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBHIT-26OCT132000CLETB-TBYDIAZ2-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.08,
+                      "yes_bid": 0.06
+                    }
+                  ]
+                }
+              },
+              "researchOnly": true,
+              "source": "kalshi_registry",
+              "unparseableCount": 0
+            },
+            "hitter_total_bases": {
+              "family": "hitter_total_bases",
+              "note": "Per-player N+ threshold ladder. RESEARCH-ONLY \u2014 not part of marketLedger.",
+              "players": {
+                "CLE:Brayan Rocchio": {
+                  "displayName": "Brayan Rocchio",
+                  "team": "CLE",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": 285,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 26.0,
+                      "last_price": 0.0,
+                      "mid": 0.26,
+                      "no_ask": 0.75,
+                      "no_bid": 0.73,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 2,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-CLEBROCCHIO4-2",
+                      "unit": "dollars",
+                      "yes_ask": 0.27,
+                      "yes_bid": 0.25
+                    },
+                    {
+                      "american": 669,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 13.0,
+                      "last_price": 0.15,
+                      "mid": 0.13,
+                      "no_ask": 0.88,
+                      "no_bid": 0.86,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-CLEBROCCHIO4-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.14,
+                      "yes_bid": 0.12
+                    },
+                    {
+                      "american": 1150,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 8.0,
+                      "last_price": 0.0,
+                      "mid": 0.08,
+                      "no_ask": 0.94,
+                      "no_bid": 0.9,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 4,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-CLEBROCCHIO4-4",
+                      "unit": "dollars",
+                      "yes_ask": 0.1,
+                      "yes_bid": 0.06
+                    }
+                  ]
+                },
+                "CLE:Jo Adell": {
+                  "displayName": "Jo Adell",
+                  "team": "CLE",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": 199,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 33.5,
+                      "last_price": 0.35,
+                      "mid": 0.335,
+                      "no_ask": 0.68,
+                      "no_bid": 0.65,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 2,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-CLEJADELL7-2",
+                      "unit": "dollars",
+                      "yes_ask": 0.35,
+                      "yes_bid": 0.32
+                    },
+                    {
+                      "american": 365,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 21.5,
+                      "last_price": 0.0,
+                      "mid": 0.215,
+                      "no_ask": 0.79,
+                      "no_bid": 0.78,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-CLEJADELL7-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.22,
+                      "yes_bid": 0.21
+                    },
+                    {
+                      "american": 456,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 18.0,
+                      "last_price": 0.18,
+                      "mid": 0.18,
+                      "no_ask": 0.83,
+                      "no_bid": 0.81,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 4,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-CLEJADELL7-4",
+                      "unit": "dollars",
+                      "yes_ask": 0.19,
+                      "yes_bid": 0.17
+                    },
+                    {
+                      "american": 1150,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 8.0,
+                      "last_price": 0.0,
+                      "mid": 0.08,
+                      "no_ask": 0.93,
+                      "no_bid": 0.91,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 5,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-CLEJADELL7-5",
+                      "unit": "dollars",
+                      "yes_ask": 0.09,
+                      "yes_bid": 0.07
+                    }
+                  ]
+                },
+                "CLE:Jos\u00e9 Ram\u00edrez": {
+                  "displayName": "Jos\u00e9 Ram\u00edrez",
+                  "team": "CLE",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": 174,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 36.5,
+                      "last_price": 0.37,
+                      "mid": 0.365,
+                      "no_ask": 0.64,
+                      "no_bid": 0.63,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 2,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-CLEJRAMREZ11-2",
+                      "unit": "dollars",
+                      "yes_ask": 0.37,
+                      "yes_bid": 0.36
+                    },
+                    {
+                      "american": 355,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 22.0,
+                      "last_price": 0.23,
+                      "mid": 0.22,
+                      "no_ask": 0.79,
+                      "no_bid": 0.77,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-CLEJRAMREZ11-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.23,
+                      "yes_bid": 0.21
+                    },
+                    {
+                      "american": 506,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 16.5,
+                      "last_price": 0.0,
+                      "mid": 0.165,
+                      "no_ask": 0.85,
+                      "no_bid": 0.82,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 4,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-CLEJRAMREZ11-4",
+                      "unit": "dollars",
+                      "yes_ask": 0.18,
+                      "yes_bid": 0.15
+                    },
+                    {
+                      "american": 1150,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 8.0,
+                      "last_price": 0.0,
+                      "mid": 0.08,
+                      "no_ask": 0.94,
+                      "no_bid": 0.9,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 5,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-CLEJRAMREZ11-5",
+                      "unit": "dollars",
+                      "yes_ask": 0.1,
+                      "yes_bid": 0.06
+                    }
+                  ]
+                },
+                "TB:Jonathan Aranda": {
+                  "displayName": "Jonathan Aranda",
+                  "team": "TB",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": 203,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 33.0,
+                      "last_price": 0.32,
+                      "mid": 0.33,
+                      "no_ask": 0.68,
+                      "no_bid": 0.66,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 2,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-TBJARANDA8-2",
+                      "unit": "dollars",
+                      "yes_ask": 0.34,
+                      "yes_bid": 0.32
+                    },
+                    {
+                      "american": 441,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 18.5,
+                      "last_price": 0.19,
+                      "mid": 0.185,
+                      "no_ask": 0.83,
+                      "no_bid": 0.8,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-TBJARANDA8-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.2,
+                      "yes_bid": 0.17
+                    },
+                    {
+                      "american": 770,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 11.5,
+                      "last_price": 0.0,
+                      "mid": 0.115,
+                      "no_ask": 0.9,
+                      "no_bid": 0.87,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 4,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-TBJARANDA8-4",
+                      "unit": "dollars",
+                      "yes_ask": 0.13,
+                      "yes_bid": 0.1
+                    },
+                    {
+                      "american": 1718,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 5.5,
+                      "last_price": 0.0,
+                      "mid": 0.055,
+                      "no_ask": 0.96,
+                      "no_bid": 0.93,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 5,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-TBJARANDA8-5",
+                      "unit": "dollars",
+                      "yes_ask": 0.07,
+                      "yes_bid": 0.04
+                    }
+                  ]
+                },
+                "TB:Junior Caminero": {
+                  "displayName": "Junior Caminero",
+                  "team": "TB",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": 138,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 42.0,
+                      "last_price": 0.43,
+                      "mid": 0.42,
+                      "no_ask": 0.59,
+                      "no_bid": 0.57,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 2,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-TBJCAMINERO13-2",
+                      "unit": "dollars",
+                      "yes_ask": 0.43,
+                      "yes_bid": 0.41
+                    },
+                    {
+                      "american": 270,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 27.0,
+                      "last_price": 0.28,
+                      "mid": 0.27,
+                      "no_ask": 0.74,
+                      "no_bid": 0.72,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-TBJCAMINERO13-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.28,
+                      "yes_bid": 0.26
+                    },
+                    {
+                      "american": 355,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 22.0,
+                      "last_price": 0.21,
+                      "mid": 0.22,
+                      "no_ask": 0.79,
+                      "no_bid": 0.77,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 4,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-TBJCAMINERO13-4",
+                      "unit": "dollars",
+                      "yes_ask": 0.23,
+                      "yes_bid": 0.21
+                    },
+                    {
+                      "american": 770,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 11.5,
+                      "last_price": 0.0,
+                      "mid": 0.115,
+                      "no_ask": 0.9,
+                      "no_bid": 0.87,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 5,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-TBJCAMINERO13-5",
+                      "unit": "dollars",
+                      "yes_ask": 0.13,
+                      "yes_bid": 0.1
+                    },
+                    {
+                      "american": 1567,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 6.0,
+                      "last_price": 0.0,
+                      "mid": 0.06,
+                      "no_ask": 0.96,
+                      "no_bid": 0.92,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 6,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-TBJCAMINERO13-6",
+                      "unit": "dollars",
+                      "yes_ask": 0.08,
+                      "yes_bid": 0.04
+                    }
+                  ]
+                },
+                "TB:Yandy D\u00edaz": {
+                  "displayName": "Yandy D\u00edaz",
+                  "team": "TB",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": 138,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 42.0,
+                      "last_price": 0.43,
+                      "mid": 0.42,
+                      "no_ask": 0.59,
+                      "no_bid": 0.57,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 2,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-TBYDIAZ2-2",
+                      "unit": "dollars",
+                      "yes_ask": 0.43,
+                      "yes_bid": 0.41
+                    },
+                    {
+                      "american": 300,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 25.0,
+                      "last_price": 0.26,
+                      "mid": 0.25,
+                      "no_ask": 0.76,
+                      "no_bid": 0.74,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-TBYDIAZ2-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.26,
+                      "yes_bid": 0.24
+                    },
+                    {
+                      "american": 506,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 16.5,
+                      "last_price": 0.16,
+                      "mid": 0.165,
+                      "no_ask": 0.85,
+                      "no_bid": 0.82,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 4,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-TBYDIAZ2-4",
+                      "unit": "dollars",
+                      "yes_ask": 0.18,
+                      "yes_bid": 0.15
+                    },
+                    {
+                      "american": 1011,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 9.0,
+                      "last_price": 0.11,
+                      "mid": 0.09,
+                      "no_ask": 0.92,
+                      "no_bid": 0.9,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 5,
+                      "ticker": "KXMLBTB-26OCT132000CLETB-TBYDIAZ2-5",
+                      "unit": "dollars",
+                      "yes_ask": 0.1,
+                      "yes_bid": 0.08
+                    }
+                  ]
+                }
+              },
+              "researchOnly": true,
+              "source": "kalshi_registry",
+              "unparseableCount": 0
+            },
+            "ml": {
+              "away": 130,
+              "away_book": {
+                "book_state": "TWO_SIDED",
+                "captured_at": "2026-10-13T13:12:13Z",
+                "no_ask": 0.57,
+                "no_bid": 0.56,
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "price_source_fields": {
+                  "last_price": "last_price_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "yes_bid": "yes_bid_dollars"
+                },
+                "status": "active",
+                "ticker": "KXMLBGAME-26OCT132000CLETB-CLE",
+                "unit": "dollars",
+                "yes_ask": 0.44,
+                "yes_bid": 0.43
+              },
+              "away_ticker": "KXMLBGAME-26OCT132000CLETB-CLE",
+              "home": -130,
+              "home_book": {
+                "book_state": "TWO_SIDED",
+                "captured_at": "2026-10-13T13:12:13Z",
+                "no_ask": 0.44,
+                "no_bid": 0.43,
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "price_source_fields": {
+                  "last_price": "last_price_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "yes_bid": "yes_bid_dollars"
+                },
+                "status": "active",
+                "ticker": "KXMLBGAME-26OCT132000CLETB-TB",
+                "unit": "dollars",
+                "yes_ask": 0.57,
+                "yes_bid": 0.56
+              },
+              "home_ticker": "KXMLBGAME-26OCT132000CLETB-TB",
+              "snapshot_ts": "2026-10-13T13:12:13Z",
+              "source": "kalshi_registry"
+            },
+            "nrfi_yrfi": {
+              "captured_at": "2026-10-13T13:11:45.744Z",
+              "note": "Fallback: registry rfi block absent; prices from kalshi_search.json. YES=YRFI, NO=NRFI.",
+              "nrfi_american": -130,
+              "nrfi_ask": 0.57,
+              "nrfi_bid": 0.56,
+              "nrfi_implied": 56.5,
+              "source": "kalshi_search_fallback",
+              "ticker": "KXMLBRFI-26OCT132000CLETB",
+              "unit": "dollars",
+              "yrfi_american": 130,
+              "yrfi_ask": 0.44,
+              "yrfi_bid": 0.43,
+              "yrfi_implied": 43.5
+            },
+            "pitcher_outs": {
+              "family": "pitcher_outs",
+              "note": "Per-player N+ threshold ladder. RESEARCH-ONLY \u2014 not part of marketLedger.",
+              "players": {
+                "CLE:Parker Messick": {
+                  "displayName": "Parker Messick",
+                  "team": "CLE",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": -113,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 53.0,
+                      "last_price": 0.53,
+                      "mid": 0.53,
+                      "no_ask": 0.48,
+                      "no_bid": 0.46,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 15,
+                      "ticker": "KXMLBOUTS-26OCT132000CLETB-CLEPMESSICK77-15",
+                      "unit": "dollars",
+                      "yes_ask": 0.54,
+                      "yes_bid": 0.52
+                    }
+                  ]
+                },
+                "TB:Freddy Peralta": {
+                  "displayName": "Freddy Peralta",
+                  "team": "TB",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": -115,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 53.5,
+                      "last_price": 0.54,
+                      "mid": 0.535,
+                      "no_ask": 0.47,
+                      "no_bid": 0.46,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 14,
+                      "ticker": "KXMLBOUTS-26OCT132000CLETB-TBFPERALTA51-14",
+                      "unit": "dollars",
+                      "yes_ask": 0.54,
+                      "yes_bid": 0.53
+                    }
+                  ]
+                }
+              },
+              "researchOnly": true,
+              "source": "kalshi_registry",
+              "unparseableCount": 0
+            },
+            "pitcher_strikeouts": {
+              "family": "pitcher_strikeouts",
+              "note": "Per-player N+ threshold ladder. RESEARCH-ONLY \u2014 not part of marketLedger.",
+              "players": {
+                "CLE:Parker Messick": {
+                  "displayName": "Parker Messick",
+                  "team": "CLE",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": -614,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 86.0,
+                      "last_price": 0.87,
+                      "mid": 0.86,
+                      "no_ask": 0.15,
+                      "no_bid": 0.13,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBKS-26OCT132000CLETB-CLEPMESSICK77-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.87,
+                      "yes_bid": 0.85
+                    },
+                    {
+                      "american": -245,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 71.0,
+                      "last_price": 0.72,
+                      "mid": 0.71,
+                      "no_ask": 0.3,
+                      "no_bid": 0.28,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 4,
+                      "ticker": "KXMLBKS-26OCT132000CLETB-CLEPMESSICK77-4",
+                      "unit": "dollars",
+                      "yes_ask": 0.72,
+                      "yes_bid": 0.7
+                    },
+                    {
+                      "american": -122,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 55.0,
+                      "last_price": 0.56,
+                      "mid": 0.55,
+                      "no_ask": 0.46,
+                      "no_bid": 0.44,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 5,
+                      "ticker": "KXMLBKS-26OCT132000CLETB-CLEPMESSICK77-5",
+                      "unit": "dollars",
+                      "yes_ask": 0.56,
+                      "yes_bid": 0.54
+                    },
+                    {
+                      "american": 174,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 36.5,
+                      "last_price": 0.36,
+                      "mid": 0.365,
+                      "no_ask": 0.64,
+                      "no_bid": 0.63,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 6,
+                      "ticker": "KXMLBKS-26OCT132000CLETB-CLEPMESSICK77-6",
+                      "unit": "dollars",
+                      "yes_ask": 0.37,
+                      "yes_bid": 0.36
+                    },
+                    {
+                      "american": 376,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 21.0,
+                      "last_price": 0.2,
+                      "mid": 0.21,
+                      "no_ask": 0.8,
+                      "no_bid": 0.78,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 7,
+                      "ticker": "KXMLBKS-26OCT132000CLETB-CLEPMESSICK77-7",
+                      "unit": "dollars",
+                      "yes_ask": 0.22,
+                      "yes_bid": 0.2
+                    },
+                    {
+                      "american": 700,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 12.5,
+                      "last_price": 0.14,
+                      "mid": 0.125,
+                      "no_ask": 0.89,
+                      "no_bid": 0.86,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 8,
+                      "ticker": "KXMLBKS-26OCT132000CLETB-CLEPMESSICK77-8",
+                      "unit": "dollars",
+                      "yes_ask": 0.14,
+                      "yes_bid": 0.11
+                    },
+                    {
+                      "american": 1438,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 6.5,
+                      "last_price": 0.08,
+                      "mid": 0.065,
+                      "no_ask": 0.95,
+                      "no_bid": 0.92,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 9,
+                      "ticker": "KXMLBKS-26OCT132000CLETB-CLEPMESSICK77-9",
+                      "unit": "dollars",
+                      "yes_ask": 0.08,
+                      "yes_bid": 0.05
+                    }
+                  ]
+                },
+                "TB:Freddy Peralta": {
+                  "displayName": "Freddy Peralta",
+                  "team": "TB",
+                  "teamResolutionStatus": "RESOLVED",
+                  "thresholds": [
+                    {
+                      "american": -852,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 89.5,
+                      "last_price": 0.9,
+                      "mid": 0.895,
+                      "no_ask": 0.11,
+                      "no_bid": 0.1,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 2,
+                      "ticker": "KXMLBKS-26OCT132000CLETB-TBFPERALTA51-2",
+                      "unit": "dollars",
+                      "yes_ask": 0.9,
+                      "yes_bid": 0.89
+                    },
+                    {
+                      "american": -270,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 73.0,
+                      "last_price": 0.74,
+                      "mid": 0.73,
+                      "no_ask": 0.28,
+                      "no_bid": 0.26,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 3,
+                      "ticker": "KXMLBKS-26OCT132000CLETB-TBFPERALTA51-3",
+                      "unit": "dollars",
+                      "yes_ask": 0.74,
+                      "yes_bid": 0.72
+                    },
+                    {
+                      "american": -117,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 54.0,
+                      "last_price": 0.54,
+                      "mid": 0.54,
+                      "no_ask": 0.47,
+                      "no_bid": 0.45,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 4,
+                      "ticker": "KXMLBKS-26OCT132000CLETB-TBFPERALTA51-4",
+                      "unit": "dollars",
+                      "yes_ask": 0.55,
+                      "yes_bid": 0.53
+                    },
+                    {
+                      "american": 208,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 32.5,
+                      "last_price": 0.33,
+                      "mid": 0.325,
+                      "no_ask": 0.68,
+                      "no_bid": 0.67,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 5,
+                      "ticker": "KXMLBKS-26OCT132000CLETB-TBFPERALTA51-5",
+                      "unit": "dollars",
+                      "yes_ask": 0.33,
+                      "yes_bid": 0.32
+                    },
+                    {
+                      "american": 426,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 19.0,
+                      "last_price": 0.2,
+                      "mid": 0.19,
+                      "no_ask": 0.82,
+                      "no_bid": 0.8,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 6,
+                      "ticker": "KXMLBKS-26OCT132000CLETB-TBFPERALTA51-6",
+                      "unit": "dollars",
+                      "yes_ask": 0.2,
+                      "yes_bid": 0.18
+                    },
+                    {
+                      "american": 1011,
+                      "book_state": "TWO_SIDED",
+                      "captured_at": null,
+                      "implied_pct": 9.0,
+                      "last_price": 0.08,
+                      "mid": 0.09,
+                      "no_ask": 0.92,
+                      "no_bid": 0.9,
+                      "price_level_structure": "linear_cent",
+                      "price_ranges": [
+                        {
+                          "end": "1.0000",
+                          "start": "0.0000",
+                          "step": "0.0100"
+                        }
+                      ],
+                      "price_source_fields": {
+                        "last_price": "last_price_dollars",
+                        "no_ask": "no_ask_dollars",
+                        "no_bid": "no_bid_dollars",
+                        "yes_ask": "yes_ask_dollars",
+                        "yes_bid": "yes_bid_dollars"
+                      },
+                      "status": "active",
+                      "threshold": 7,
+                      "ticker": "KXMLBKS-26OCT132000CLETB-TBFPERALTA51-7",
+                      "unit": "dollars",
+                      "yes_ask": 0.1,
+                      "yes_bid": 0.08
+                    }
+                  ]
+                }
+              },
+              "researchOnly": true,
+              "source": "kalshi_registry",
+              "unparseableCount": 0
+            },
+            "rl": {
+              "all_lines": [
+                {
+                  "american": 217,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 31.5,
+                  "last_price": 0.32,
+                  "mid": 0.315,
+                  "no_ask": 0.69,
+                  "no_bid": 0.68,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 2,
+                  "status": "active",
+                  "team": "CLE",
+                  "ticker": "KXMLBSPREAD-26OCT132000CLETB-CLE2",
+                  "unit": "dollars",
+                  "win_by_over": 1.5,
+                  "yes_ask": 0.32,
+                  "yes_bid": 0.31
+                },
+                {
+                  "american": 365,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 21.5,
+                  "last_price": 0.21,
+                  "mid": 0.215,
+                  "no_ask": 0.79,
+                  "no_bid": 0.78,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 3,
+                  "status": "active",
+                  "team": "CLE",
+                  "ticker": "KXMLBSPREAD-26OCT132000CLETB-CLE3",
+                  "unit": "dollars",
+                  "win_by_over": 2.5,
+                  "yes_ask": 0.22,
+                  "yes_bid": 0.21
+                },
+                {
+                  "american": 590,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 14.5,
+                  "last_price": 0.15,
+                  "mid": 0.145,
+                  "no_ask": 0.86,
+                  "no_bid": 0.85,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 4,
+                  "status": "active",
+                  "team": "CLE",
+                  "ticker": "KXMLBSPREAD-26OCT132000CLETB-CLE4",
+                  "unit": "dollars",
+                  "win_by_over": 3.5,
+                  "yes_ask": 0.15,
+                  "yes_bid": 0.14
+                },
+                {
+                  "american": 174,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 36.5,
+                  "last_price": 0.37,
+                  "mid": 0.365,
+                  "no_ask": 0.64,
+                  "no_bid": 0.63,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 2,
+                  "status": "active",
+                  "team": "TB",
+                  "ticker": "KXMLBSPREAD-26OCT132000CLETB-TB2",
+                  "unit": "dollars",
+                  "win_by_over": 1.5,
+                  "yes_ask": 0.37,
+                  "yes_bid": 0.36
+                },
+                {
+                  "american": 292,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 25.5,
+                  "last_price": 0.26,
+                  "mid": 0.255,
+                  "no_ask": 0.75,
+                  "no_bid": 0.74,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 3,
+                  "status": "active",
+                  "team": "TB",
+                  "ticker": "KXMLBSPREAD-26OCT132000CLETB-TB3",
+                  "unit": "dollars",
+                  "win_by_over": 2.5,
+                  "yes_ask": 0.26,
+                  "yes_bid": 0.25
+                },
+                {
+                  "american": 471,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 17.5,
+                  "last_price": 0.18,
+                  "mid": 0.175,
+                  "no_ask": 0.83,
+                  "no_bid": 0.82,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 4,
+                  "status": "active",
+                  "team": "TB",
+                  "ticker": "KXMLBSPREAD-26OCT132000CLETB-TB4",
+                  "unit": "dollars",
+                  "win_by_over": 3.5,
+                  "yes_ask": 0.18,
+                  "yes_bid": 0.17
+                }
+              ],
+              "american": 174,
+              "best_book": {
+                "book_state": "TWO_SIDED",
+                "captured_at": "2026-10-13T13:12:13Z",
+                "no_ask": 0.64,
+                "no_bid": 0.63,
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "price_source_fields": {
+                  "last_price": "last_price_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "yes_bid": "yes_bid_dollars"
+                },
+                "status": "active",
+                "ticker": "KXMLBSPREAD-26OCT132000CLETB-TB2",
+                "unit": "dollars",
+                "yes_ask": 0.37,
+                "yes_bid": 0.36
+              },
+              "best_ticker": "KXMLBSPREAD-26OCT132000CLETB-TB2",
+              "implied_pct": 36.5,
+              "note": "Spread is win-margin markets. best_line = line closest to 50% implied.",
+              "snapshot_ts": "2026-10-13T13:12:13Z",
+              "source": "kalshi_registry",
+              "team": "TB",
+              "wins_by_over": 1.5
+            },
+            "team_totals": {
+              "away": {
+                "all_lines": [
+                  {
+                    "american": -308,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-13T13:12:13Z",
+                    "implied_pct": 75.5,
+                    "last_price": 0.0,
+                    "mid": 0.755,
+                    "no_ask": 0.25,
+                    "no_bid": 0.24,
+                    "over_n": 2,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "CLE",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-CLE2",
+                    "unit": "dollars",
+                    "yes_ask": 0.76,
+                    "yes_bid": 0.75
+                  },
+                  {
+                    "american": -135,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-13T13:12:13Z",
+                    "implied_pct": 57.5,
+                    "last_price": 0.58,
+                    "mid": 0.575,
+                    "no_ask": 0.43,
+                    "no_bid": 0.42,
+                    "over_n": 3,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "CLE",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-CLE3",
+                    "unit": "dollars",
+                    "yes_ask": 0.58,
+                    "yes_bid": 0.57
+                  },
+                  {
+                    "american": 130,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-13T13:12:13Z",
+                    "implied_pct": 43.5,
+                    "last_price": 0.44,
+                    "mid": 0.435,
+                    "no_ask": 0.57,
+                    "no_bid": 0.56,
+                    "over_n": 4,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "CLE",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-CLE4",
+                    "unit": "dollars",
+                    "yes_ask": 0.44,
+                    "yes_bid": 0.43
+                  },
+                  {
+                    "american": 239,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-13T13:12:13Z",
+                    "implied_pct": 29.5,
+                    "last_price": 0.3,
+                    "mid": 0.295,
+                    "no_ask": 0.71,
+                    "no_bid": 0.7,
+                    "over_n": 5,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "CLE",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-CLE5",
+                    "unit": "dollars",
+                    "yes_ask": 0.3,
+                    "yes_bid": 0.29
+                  },
+                  {
+                    "american": 376,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-13T13:12:13Z",
+                    "implied_pct": 21.0,
+                    "last_price": 0.0,
+                    "mid": 0.21,
+                    "no_ask": 0.8,
+                    "no_bid": 0.78,
+                    "over_n": 6,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "CLE",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-CLE6",
+                    "unit": "dollars",
+                    "yes_ask": 0.22,
+                    "yes_bid": 0.2
+                  },
+                  {
+                    "american": 700,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-13T13:12:13Z",
+                    "implied_pct": 12.5,
+                    "last_price": 0.0,
+                    "mid": 0.125,
+                    "no_ask": 0.88,
+                    "no_bid": 0.87,
+                    "over_n": 7,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "CLE",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-CLE7",
+                    "unit": "dollars",
+                    "yes_ask": 0.13,
+                    "yes_bid": 0.12
+                  },
+                  {
+                    "american": 1233,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-13T13:12:13Z",
+                    "implied_pct": 7.5,
+                    "last_price": 0.0,
+                    "mid": 0.075,
+                    "no_ask": 0.93,
+                    "no_bid": 0.92,
+                    "over_n": 8,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "CLE",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-CLE8",
+                    "unit": "dollars",
+                    "yes_ask": 0.08,
+                    "yes_bid": 0.07
+                  }
+                ],
+                "american": 130,
+                "best_book": {
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "no_ask": 0.57,
+                  "no_bid": 0.56,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-CLE4",
+                  "unit": "dollars",
+                  "yes_ask": 0.44,
+                  "yes_bid": 0.43
+                },
+                "best_ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-CLE4",
+                "implied_pct": 43.5,
+                "line": 4,
+                "snapshot_ts": "2026-10-13T13:12:13Z",
+                "source": "kalshi_registry",
+                "team": "CLE"
+              },
+              "home": {
+                "all_lines": [
+                  {
+                    "american": -388,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-13T13:12:13Z",
+                    "implied_pct": 79.5,
+                    "last_price": 0.8,
+                    "mid": 0.795,
+                    "no_ask": 0.21,
+                    "no_bid": 0.2,
+                    "over_n": 2,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "TB",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-TB2",
+                    "unit": "dollars",
+                    "yes_ask": 0.8,
+                    "yes_bid": 0.79
+                  },
+                  {
+                    "american": -186,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-13T13:12:13Z",
+                    "implied_pct": 65.0,
+                    "last_price": 0.67,
+                    "mid": 0.65,
+                    "no_ask": 0.36,
+                    "no_bid": 0.34,
+                    "over_n": 3,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "TB",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-TB3",
+                    "unit": "dollars",
+                    "yes_ask": 0.66,
+                    "yes_bid": 0.64
+                  },
+                  {
+                    "american": 106,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-13T13:12:13Z",
+                    "implied_pct": 48.5,
+                    "last_price": 0.5,
+                    "mid": 0.485,
+                    "no_ask": 0.52,
+                    "no_bid": 0.51,
+                    "over_n": 4,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "TB",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-TB4",
+                    "unit": "dollars",
+                    "yes_ask": 0.49,
+                    "yes_bid": 0.48
+                  },
+                  {
+                    "american": 186,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-13T13:12:13Z",
+                    "implied_pct": 35.0,
+                    "last_price": 0.0,
+                    "mid": 0.35,
+                    "no_ask": 0.66,
+                    "no_bid": 0.64,
+                    "over_n": 5,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "TB",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-TB5",
+                    "unit": "dollars",
+                    "yes_ask": 0.36,
+                    "yes_bid": 0.34
+                  },
+                  {
+                    "american": 335,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-13T13:12:13Z",
+                    "implied_pct": 23.0,
+                    "last_price": 0.0,
+                    "mid": 0.23,
+                    "no_ask": 0.78,
+                    "no_bid": 0.76,
+                    "over_n": 6,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "TB",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-TB6",
+                    "unit": "dollars",
+                    "yes_ask": 0.24,
+                    "yes_bid": 0.22
+                  },
+                  {
+                    "american": 567,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-13T13:12:13Z",
+                    "implied_pct": 15.0,
+                    "last_price": 0.0,
+                    "mid": 0.15,
+                    "no_ask": 0.86,
+                    "no_bid": 0.84,
+                    "over_n": 7,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "TB",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-TB7",
+                    "unit": "dollars",
+                    "yes_ask": 0.16,
+                    "yes_bid": 0.14
+                  },
+                  {
+                    "american": 1011,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-13T13:12:13Z",
+                    "implied_pct": 9.0,
+                    "last_price": 0.09,
+                    "mid": 0.09,
+                    "no_ask": 0.92,
+                    "no_bid": 0.9,
+                    "over_n": 8,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "TB",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-TB8",
+                    "unit": "dollars",
+                    "yes_ask": 0.1,
+                    "yes_bid": 0.08
+                  }
+                ],
+                "american": 106,
+                "best_book": {
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "no_ask": 0.52,
+                  "no_bid": 0.51,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-TB4",
+                  "unit": "dollars",
+                  "yes_ask": 0.49,
+                  "yes_bid": 0.48
+                },
+                "best_ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-TB4",
+                "implied_pct": 48.5,
+                "line": 4,
+                "snapshot_ts": "2026-10-13T13:12:13Z",
+                "source": "kalshi_registry",
+                "team": "TB"
+              }
+            },
+            "total": {
+              "all_lines": [
+                {
+                  "american": -3233,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 97.0,
+                  "last_price": 0.98,
+                  "mid": 0.97,
+                  "no_ask": 0.04,
+                  "no_bid": 0.02,
+                  "over_threshold": 2,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT132000CLETB-2",
+                  "total": 2,
+                  "unit": "dollars",
+                  "yes_ask": 0.98,
+                  "yes_bid": 0.96
+                },
+                {
+                  "american": -1438,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 93.5,
+                  "last_price": 0.94,
+                  "mid": 0.935,
+                  "no_ask": 0.07,
+                  "no_bid": 0.06,
+                  "over_threshold": 3,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT132000CLETB-3",
+                  "total": 3,
+                  "unit": "dollars",
+                  "yes_ask": 0.94,
+                  "yes_bid": 0.93
+                },
+                {
+                  "american": -545,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 84.5,
+                  "last_price": 0.85,
+                  "mid": 0.845,
+                  "no_ask": 0.16,
+                  "no_bid": 0.15,
+                  "over_threshold": 4,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT132000CLETB-4",
+                  "total": 4,
+                  "unit": "dollars",
+                  "yes_ask": 0.85,
+                  "yes_bid": 0.84
+                },
+                {
+                  "american": -335,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 77.0,
+                  "last_price": 0.78,
+                  "mid": 0.77,
+                  "no_ask": 0.24,
+                  "no_bid": 0.22,
+                  "over_threshold": 5,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT132000CLETB-5",
+                  "total": 5,
+                  "unit": "dollars",
+                  "yes_ask": 0.78,
+                  "yes_bid": 0.76
+                },
+                {
+                  "american": -170,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 63.0,
+                  "last_price": 0.64,
+                  "mid": 0.63,
+                  "no_ask": 0.38,
+                  "no_bid": 0.36,
+                  "over_threshold": 6,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT132000CLETB-6",
+                  "total": 6,
+                  "unit": "dollars",
+                  "yes_ask": 0.64,
+                  "yes_bid": 0.62
+                },
+                {
+                  "american": -120,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 54.5,
+                  "last_price": 0.55,
+                  "mid": 0.545,
+                  "no_ask": 0.46,
+                  "no_bid": 0.45,
+                  "over_threshold": 7,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT132000CLETB-7",
+                  "total": 7,
+                  "unit": "dollars",
+                  "yes_ask": 0.55,
+                  "yes_bid": 0.54
+                },
+                {
+                  "american": 141,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 41.5,
+                  "last_price": 0.41,
+                  "mid": 0.415,
+                  "no_ask": 0.59,
+                  "no_bid": 0.58,
+                  "over_threshold": 8,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT132000CLETB-8",
+                  "total": 8,
+                  "unit": "dollars",
+                  "yes_ask": 0.42,
+                  "yes_bid": 0.41
+                },
+                {
+                  "american": 199,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 33.5,
+                  "last_price": 0.34,
+                  "mid": 0.335,
+                  "no_ask": 0.67,
+                  "no_bid": 0.66,
+                  "over_threshold": 9,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT132000CLETB-9",
+                  "total": 9,
+                  "unit": "dollars",
+                  "yes_ask": 0.34,
+                  "yes_bid": 0.33
+                },
+                {
+                  "american": 308,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 24.5,
+                  "last_price": 0.25,
+                  "mid": 0.245,
+                  "no_ask": 0.76,
+                  "no_bid": 0.75,
+                  "over_threshold": 10,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT132000CLETB-10",
+                  "total": 10,
+                  "unit": "dollars",
+                  "yes_ask": 0.25,
+                  "yes_bid": 0.24
+                },
+                {
+                  "american": 413,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 19.5,
+                  "last_price": 0.19,
+                  "mid": 0.195,
+                  "no_ask": 0.81,
+                  "no_bid": 0.8,
+                  "over_threshold": 11,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT132000CLETB-11",
+                  "total": 11,
+                  "unit": "dollars",
+                  "yes_ask": 0.2,
+                  "yes_bid": 0.19
+                },
+                {
+                  "american": 700,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-13T13:12:13Z",
+                  "implied_pct": 12.5,
+                  "last_price": 0.13,
+                  "mid": 0.125,
+                  "no_ask": 0.88,
+                  "no_bid": 0.87,
+                  "over_threshold": 12,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT132000CLETB-12",
+                  "total": 12,
+                  "unit": "dollars",
+                  "yes_ask": 0.13,
+                  "yes_bid": 0.12
+                }
+              ],
+              "american": -120,
+              "best_book": {
+                "book_state": "TWO_SIDED",
+                "captured_at": "2026-10-13T13:12:13Z",
+                "no_ask": 0.46,
+                "no_bid": 0.45,
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "price_source_fields": {
+                  "last_price": "last_price_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "yes_bid": "yes_bid_dollars"
+                },
+                "status": "active",
+                "ticker": "KXMLBTOTAL-26OCT132000CLETB-7",
+                "unit": "dollars",
+                "yes_ask": 0.55,
+                "yes_bid": 0.54
+              },
+              "best_ticker": "KXMLBTOTAL-26OCT132000CLETB-7",
+              "implied_pct": 54.5,
+              "line": 7,
+              "note": "Integer total lines. best_line = line closest to 50%.",
+              "snapshot_ts": "2026-10-13T13:12:13Z",
+              "source": "kalshi_registry"
+            }
+          },
+          "pinnacle": {
+            "f5rl": {
+              "away": 109,
+              "awayPoint": 0,
+              "home": -126,
+              "homePoint": 0
+            },
+            "ml": {
+              "away": 119,
+              "home": -129,
+              "updated": "2026-10-13T13:11:14Z"
+            },
+            "rl": {
+              "away": -180,
+              "awayPoint": 1.5,
+              "home": 161,
+              "homePoint": -1.5
+            },
+            "teamTotals": {
+              "away": {
+                "line": 3.5,
+                "over": 124,
+                "under": -145
+              },
+              "home": {
+                "line": 3.5,
+                "over": -102,
+                "under": -114
+              }
+            },
+            "total": {
+              "line": 7,
+              "over": 104,
+              "under": -117
+            }
+          }
+        },
+        "oddsApiCommenceTime": "2026-10-14T00:00:00Z",
+        "oddsApiEventId": "38049724abb5fcb2b69405bbe4bb3d72",
+        "park": {
+          "covered": true,
+          "dome": false,
+          "name": "Tropicana Field",
+          "parkFactor": 97
+        },
+        "pinnacleF5VF": {
+          "away": 48.73,
+          "home": 51.27,
+          "source": "fanduel"
+        },
+        "pinnacleVF": {
+          "available": true,
+          "away": 44.77,
+          "home": 55.23,
+          "source": "pinnacle"
+        },
+        "runLineEval": {
+          "best": {
+            "actionable": false,
+            "betSize": 4.5,
+            "confidence": "MEDIUM",
+            "edgePct": -4.47,
+            "logForCLV": true,
+            "modelCoverPct": 46,
+            "pinVFpct": 63.5,
+            "price": -190,
+            "rlLine": 1.5,
+            "side": "AWAY"
+          },
+          "both": [
+            {
+              "actionable": false,
+              "betSize": 4.5,
+              "confidence": "MEDIUM",
+              "edgePct": -4.47,
+              "logForCLV": true,
+              "modelCoverPct": 46,
+              "pinVFpct": 63.5,
+              "price": -190,
+              "rlLine": 1.5,
+              "side": "AWAY"
+            },
+            {
+              "actionable": false,
+              "betSize": 4.5,
+              "confidence": "MEDIUM",
+              "edgePct": -5.42,
+              "logForCLV": true,
+              "modelCoverPct": 15.2,
+              "pinVFpct": 36.5,
+              "price": 166,
+              "rlLine": -1.5,
+              "side": "HOME"
+            }
+          ]
+        },
+        "scheduleSource": "statsapi",
+        "seriesDescription": "AL Championship Series",
+        "seriesGameNumber": 2,
+        "startTime": "2026-10-14T00:00:00Z",
+        "status": "Scheduled",
+        "teamTotals": {
+          "awayActionable": false,
+          "awayEdgePct": 2.94,
+          "awayPover": 63.5,
+          "awaySize": 5.5,
+          "awayTTLean": "NEUTRAL",
+          "awayTTLine": 3.5,
+          "awayTTReason": null,
+          "homeActionable": false,
+          "homeEdgePct": -3.64,
+          "homePover": 37.7,
+          "homeSize": 5.5,
+          "homeTTLean": "NEUTRAL",
+          "homeTTLine": 3.5,
+          "homeTTReason": null,
+          "lineNote": "TT line estimated from game total \u2014 confirm actual DK/FD line before logging Medium/High (Rule 44)",
+          "projectedAwayRuns": 4.37,
+          "projectedHomeRuns": 3.11
+        },
+        "totalEval": {
+          "actionable": false,
+          "bestEdge": 0.08,
+          "bestSide": "OVER",
+          "diff": 0.5,
+          "logForCLV": false,
+          "overEdgePct": 0.08,
+          "pOver": 47.5,
+          "pUnder": 37.8,
+          "paperOnly": true,
+          "paperReason": "Game Total WR 41% \u2014 paper only per Rule 71 until WR\u226552% over N\u226530",
+          "pinVFover": 47.2,
+          "pinVFunder": 52.8,
+          "sizeOver": 1,
+          "sizeUnder": 1,
+          "totalProj": 7.5,
+          "underEdgePct": -3.82,
+          "vegasLine": 7
+        },
+        "venue": "Tropicana Field"
+      }
+    ],
+    "kalshiDate": "26OCT13",
+    "kalshiMarketsFound": 2,
+    "requestsRemaining": "18648",
+    "savantPitchersLoaded": 814,
+    "scheduleSource": "statsapi"
+  },
+  "meta": {
+    "createdAt": "2026-10-13T13:12:25Z",
+    "producedBy": "scripts/enrich_data.py",
+    "schemaVersion": "1.0",
+    "slateDate": "2026-10-13",
+    "sourceStage": null,
+    "stage": "normalized_slate",
+    "status": "canonical"
+  }
+}

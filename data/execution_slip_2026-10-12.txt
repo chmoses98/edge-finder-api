@@ -4,45 +4,39 @@ EXECUTION SLIP — 2026-10-12
 ======================================================================
 
 === REAL-MONEY BETS (1) ===
-  CLE@TB | TT_Away_Over | TT_Away_Over
-    Ticker:    KXMLBTEAMTOTAL-26OCT122000CLETB-CLE3
-    Model%:    64.06% | Exec Price: 53.0¢ | Raw Edge: +11.06% | Cal Edge: +2.82%
+  CLE@TB | TT_Home_Over | TT_Home_Over
+    Ticker:    KXMLBTEAMTOTAL-26OCT122000CLETB-TB4
+    Model%:    49.33% | Exec Price: 35.0¢ | Raw Edge: +14.32% | Cal Edge: +3.65%
     Tier:      MEDIUM | Stake: $4.0
-    MaxBet:    58.44¢ or better
+    MaxBet:    43.68¢ or better
+    Gates:     Tier cap: model/market disagreement 15.3pt > 7pt -- Tier A withheld pending explanation
     Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
-    Snapshot:  2026-10-12T23:11:04Z
+    Snapshot:  2026-10-13T01:58:49Z
 
 
 === PRICE-MOVED PASSES (0) ===
   (none)
 
-=== PAPER-ONLY (5) ===
-  CLE@TB | NRFI | Cal Edge: -2.78% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  CLE@TB | YRFI | Cal Edge: +2.52% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+=== PAPER-ONLY (8) ===
+  LAD@MIL | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
+  LAD@MIL | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
+  LAD@MIL | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
+  CLE@TB | NRFI | Cal Edge: — | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  CLE@TB | YRFI | Cal Edge: — | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   CLE@TB | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   CLE@TB | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   CLE@TB | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
 
-=== REJECTED / BLOCKED (16) ===
-  LAD@MIL | NRFI | Raw Edge: — | LIVE_GAME_BLOCKED: LAD@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  LAD@MIL | YRFI | Raw Edge: — | LIVE_GAME_BLOCKED: LAD@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  LAD@MIL | F5_ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: LAD@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  LAD@MIL | F5_ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: LAD@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  LAD@MIL | TT_Away_Over | Raw Edge: — | LIVE_GAME_BLOCKED: LAD@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  LAD@MIL | TT_Home_Over | Raw Edge: — | LIVE_GAME_BLOCKED: LAD@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  LAD@MIL | ML_Away | Raw Edge: — | LIVE_GAME_BLOCKED: LAD@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  LAD@MIL | ML_Home | Raw Edge: — | LIVE_GAME_BLOCKED: LAD@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  LAD@MIL | Game_Total | Raw Edge: — | LIVE_GAME_BLOCKED: LAD@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  LAD@MIL | RL_Away | Raw Edge: — | LIVE_GAME_BLOCKED: LAD@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  LAD@MIL | RL_Home | Raw Edge: — | LIVE_GAME_BLOCKED: LAD@MIL status='In Progress' — pregame-only mode cannot recommend real-money bets
-  CLE@TB | F5_ML_Away | Raw Edge: +0.14% | edge -0.346% below threshold
-  CLE@TB | F5_ML_Home | Raw Edge: -4.79% | edge -1.668% below threshold
-  CLE@TB | TT_Home_Over | Raw Edge: -1.11% | edge -0.728% below 1.0% floor
-  CLE@TB | ML_Away | Raw Edge: +4.23% | edge 0.651% below 1.0% floor
-  CLE@TB | ML_Home | Raw Edge: -4.23% | edge -1.508% below 1.0% floor
+=== REJECTED / BLOCKED (7) ===
+  LAD@MIL | ML_Away | Raw Edge: — | edge None% below 1.0% floor
+  LAD@MIL | ML_Home | Raw Edge: — | edge None% below 1.0% floor
+  CLE@TB | F5_ML_Away | Raw Edge: — | edge None% below threshold
+  CLE@TB | F5_ML_Home | Raw Edge: — | edge None% below threshold
+  CLE@TB | TT_Away_Over | Raw Edge: -13.03% | edge -3.765% below 1.0% floor
+  CLE@TB | ML_Away | Raw Edge: -0.36% | edge -0.533% below 1.0% floor
+  CLE@TB | ML_Home | Raw Edge: -0.64% | edge -0.604% below 1.0% floor
 
 ======================================================================
-SLIP SUMMARY: Real=1 PriceMoved=0 Paper=5 Rejected=16
-LIVE_GAME_BLOCKED: LAD@MIL — pregame-only gate applied, 0 real-money bets from these games
+SLIP SUMMARY: Real=1 PriceMoved=0 Paper=8 Rejected=7
 ======================================================================
 ======================================================================

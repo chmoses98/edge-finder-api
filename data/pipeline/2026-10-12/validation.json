@@ -5,16 +5,18 @@
     "errors": [],
     "gameCount": 2,
     "status": "pass",
-    "warningCount": 4,
+    "warningCount": 6,
     "warnings": [
       "LAD@MIL: Kalshi F5 ML not in slate (odds.kalshi.f5ml.away=null) \u2014 must show Missing Data in marketLedger",
+      "LAD@MIL: Kalshi TT Away not in slate (odds.kalshi.team_totals.away.best_ticker=null) \u2014 must show Missing Data in marketLedger",
+      "LAD@MIL: Kalshi TT Home not in slate (odds.kalshi.team_totals.home.best_ticker=null) \u2014 must show Missing Data in marketLedger",
       "LAD@MIL: Kalshi NRFI/YRFI not in slate (odds.kalshi.nrfi_yrfi.nrfi_american=null) \u2014 must show Missing Data in marketLedger",
-      "LAD@MIL: awayProjRuns not in allEdges \u2014 projection may have used league-average fallback (marketLedger present, game was evaluated)",
+      "LAD@MIL: Kalshi RL not in slate (odds.kalshi.rl.best_ticker=null) \u2014 must show Missing Data in marketLedger",
       "CLE@TB: awayProjRuns not in allEdges \u2014 projection may have used league-average fallback (marketLedger present, game was evaluated)"
     ]
   },
   "meta": {
-    "createdAt": "2026-10-12T23:11:16Z",
+    "createdAt": "2026-10-13T01:59:02Z",
     "producedBy": "scripts/validate_slate_final.py",
     "schemaVersion": "1.0",
     "slateDate": "2026-10-12",

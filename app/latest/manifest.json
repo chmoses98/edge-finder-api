@@ -1,86 +1,93 @@
 {
-  "commit_sha": "f5ba8b587853c6858b81c910a0b5525c9c902b55",
+  "commit_sha": "cb5dbe9656c3fb9b6d18c4444ff4d2a92b3e481d",
   "counts": {
-    "board": 0,
-    "events": 0,
+    "board": 1,
+    "events": 1,
     "markets": 329,
-    "model_prices": 0,
+    "model_prices": 7,
     "recommendations": 0,
     "runs": 1,
     "settlements": 152,
-    "theses": 0,
+    "theses": 1,
     "wagers": 157
   },
   "files": {
     "board": {
-      "bytes": 220,
-      "count": 0,
+      "bytes": 1024,
+      "count": 1,
       "kind": "board",
       "path": "board.json",
-      "sha256": "3e39a7c7279fd6345ac5db590a03a7677d8d14166e338f720d864dcca8a9b10d"
+      "sha256": "22f542af9395093253798d1182a45e7480180d1486bd2351bedf80c54a16bf48"
+    },
+    "event_detail/evt_dc51c0717fe900c470e7": {
+      "bytes": 299938,
+      "count": null,
+      "kind": "event_detail",
+      "path": "event_detail/evt_dc51c0717fe900c470e7.json",
+      "sha256": "e85cb4fa7261324356321a766bdc746aba149fbdccac1d66c4f0fba5ca397cf5"
     },
     "events": {
-      "bytes": 165,
-      "count": 0,
+      "bytes": 1685,
+      "count": 1,
       "kind": "events",
       "path": "events.json",
-      "sha256": "f61d0a648c7d3e5ef0fea793b3ca64294d8459a754a72f8f1d5e5f989bf67ab4"
+      "sha256": "9a0d38ba3c8d8b8b10825c7a591aaef94c19595bd611ba057c7ecd8a6b63d54f"
     },
     "markets": {
-      "bytes": 374681,
+      "bytes": 402932,
       "count": 329,
       "kind": "markets",
       "path": "markets.json",
-      "sha256": "a80da97762a6e333029d16ba75f6502e67e4e44d8fa9e2a485881231ed858fef"
+      "sha256": "2f11e874c3c704f03d96c31303034ca821a3543666c0a3767c43eab852cd446d"
     },
     "model_prices": {
-      "bytes": 171,
-      "count": 0,
+      "bytes": 5293,
+      "count": 7,
       "kind": "model_prices",
       "path": "model_prices.json",
-      "sha256": "88db78db6f4b9ae5946ebe106b468f955e7f20beccee25d70b453cfeeaa23765"
+      "sha256": "b5a4e65ca6b423e47db4904f328c59b0e282926387edb002fe8134062cfc3c95"
     },
     "performance": {
       "bytes": 22975,
       "count": null,
       "kind": "performance",
       "path": "performance.json",
-      "sha256": "fdb68b9a5aa66647f045b5e64478d362fdfc959484df2dc28647a1bf0266ee07"
+      "sha256": "03061a80915b5278a7614ae250a3d2472fd739c5c0ce68015cb844a400786750"
     },
     "recommendations": {
       "bytes": 174,
       "count": 0,
       "kind": "recommendations",
       "path": "recommendations.json",
-      "sha256": "79c9bb7d3f6aed0837f39d3c6bec93b162c1a66881d859e11988e271ef7e738d"
+      "sha256": "4190319fca5b1a8293c12407bd83383fcb8a86741ba44e483a4a76d7fbc33889"
     },
     "runs": {
-      "bytes": 1557,
+      "bytes": 1330,
       "count": 1,
       "kind": "runs",
       "path": "runs.json",
-      "sha256": "0c17be61ca1925c6cfee77bc8545e6a3a056d3537c75596ee96028c958137ccd"
+      "sha256": "7543f5d7c4b69a257f73de90de295381dcb4b63a890d251e6eb4714b9594ddc1"
     },
     "settlements": {
       "bytes": 105889,
       "count": 152,
       "kind": "settlements",
       "path": "settlements.json",
-      "sha256": "f4b64185c91c575dc8a7a0cbe43abae2b735148a511b57839666841d192bd837"
+      "sha256": "6c123b5b889ed48049fc2b07ad3c65e8d80e6033124941396c73ab3fa5ea038e"
     },
     "theses": {
-      "bytes": 165,
-      "count": 0,
+      "bytes": 1797,
+      "count": 1,
       "kind": "theses",
       "path": "theses.json",
-      "sha256": "451b0f2a54655e8ccad8db636282540784832a8f0b687727dbea2aa4f53afe54"
+      "sha256": "8007902afd5e167778c120f5cc0f4a807bec9f8d45bf44ee0ccbeaa6ce4e618d"
     },
     "wagers": {
       "bytes": 258138,
       "count": 157,
       "kind": "wagers",
       "path": "wagers.json",
-      "sha256": "17ffce02867099867811fc819b849c04c94843b0811fa619338b43275ba90c18"
+      "sha256": "ca1e9007cc2e4d2b0816b9dbce9900ced8738e213447cdde45df09630ac74da8"
     }
   },
   "freshness": {
@@ -89,15 +96,15 @@
       "status": "STALE"
     },
     "model": {
-      "as_of": null,
-      "status": "UNKNOWN"
+      "as_of": "2026-10-14T13:10:11Z",
+      "status": "FRESH"
     },
     "router": {
       "as_of": "2026-10-12T00:38:45Z",
       "status": "STALE"
     },
     "schedule": {
-      "as_of": "2026-10-14T00:46:44Z",
+      "as_of": "2026-10-14T13:10:12Z",
       "status": "FRESH"
     },
     "settlement": {
@@ -105,17 +112,14 @@
       "status": "AGING"
     }
   },
-  "generated_at": "2026-10-14T13:09:51Z",
+  "generated_at": "2026-10-14T13:14:56Z",
   "kind": "manifest",
   "model_version": null,
-  "run_id": "run_d358b6f4324a7be05edd",
+  "run_id": "run_ee9502ad344c99afef53",
   "schema_version": "edge_finder.app.v1",
   "source_branch": "main",
   "source_repo": "chmoses98/edge-finder-api",
   "sport": "MLB",
   "status": "SUCCESS",
-  "warnings": [
-    "no published slate for 2026-10-14 (data/slates/2026-10-14/authoritative.json missing): 1 Kalshi-discovered game(s) await MLB schedule reconciliation, so events and model prices cannot be built until Fetch Slate Data publishes the slate",
-    "no model price could be exported for 2026-10-14"
-  ]
+  "warnings": []
 }

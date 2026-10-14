@@ -1,0 +1,145 @@
+{
+  "contentHash": "3a8edcdca97c6d8fd82345c41c73b940e1a6a92b0d4f2929cd8f06f8e45d6e0b",
+  "ingestionReadiness": {
+    "modelEvaluationsIngested": true,
+    "reasons": [],
+    "recommendationsIngested": true,
+    "settlementsIngested": true
+  },
+  "limitationReasons": [
+    "EFFECTIVE_CONFIG_PARTIAL",
+    "SETTLEMENT_CLV_UNAVAILABLE: POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN",
+    "WAGER_LINKAGE_UNAVAILABLE: POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN"
+  ],
+  "provenance": {
+    "capturedAt": "2026-10-14T11:39:19Z",
+    "ingestedAt": "2026-10-14T11:39:19Z",
+    "sourceFile": null,
+    "sourceKey": "82ced3d4377cb4c0519a1bbfe6f668e704efc0f3",
+    "sourceSystem": "scored_replay"
+  },
+  "replayRunId": "82ced3d4377cb4c0519a1bbfe6f668e704efc0f3",
+  "schemaVersion": "1",
+  "scoredAt": "2026-10-14T11:39:19Z",
+  "scoredReplayRunId": "bb69120f542ecb32e49926ee8b4d3f73077180e1",
+  "scoringFrameworkVersion": "1",
+  "snapshotDate": "2026-10-13",
+  "snapshotId": "eb044d4d4de46d89b9ef069b943cf2c201fef40e",
+  "summary": {
+    "brier": {
+      "avgBrierScore": null,
+      "n": 0,
+      "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+      "winRate": null
+    },
+    "byConfidenceTier": {
+      "NONE": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "PAPER": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      }
+    },
+    "byMarketFamily": {
+      "KXMLBF5": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBGAME": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBRFI": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBSPREAD": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBTEAMTOTAL": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "KXMLBTOTAL": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "UNKNOWN": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      }
+    },
+    "calibrationBuckets": [],
+    "clv": {
+      "avgClv": null,
+      "coverageCount": 0,
+      "coverageRate": 0.0
+    },
+    "linkageCoverage": {
+      "confirmedBetCount": 0,
+      "modelEvaluationLinkedCount": 10,
+      "modelEvaluationLinkedRate": 0.9091,
+      "recommendationLinkedCount": 4,
+      "recommendationLinkedRate": 0.3636,
+      "recommendedNoConfirmedBetCount": 1,
+      "wagerLinkageRateAmongRecommended": 0.0
+    },
+    "missingCoverageReasons": {
+      "clvUnavailableReasons": {
+        "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 11
+      },
+      "settlementUnresolvedReasons": {
+        "POSTGAME_SNAPSHOT_NOT_LINKED_TO_THIS_PREGAME_RUN": 11
+      }
+    },
+    "n": 11,
+    "predictionAvailableCount": 9,
+    "predictionUnavailableCount": 2,
+    "realizedPnl": {
+      "confirmedBetCount": 0,
+      "roi": null,
+      "totalNetProfitLoss": null,
+      "totalStaked": null
+    },
+    "recommendedVsPassed": {
+      "passed": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      },
+      "recommended": {
+        "avgBrierScore": null,
+        "n": 0,
+        "sampleSizeStatus": "INSUFFICIENT_SAMPLE",
+        "winRate": null
+      }
+    },
+    "settlement": {
+      "settledCount": 0,
+      "unresolvedCount": 11
+    }
+  },
+  "wagerLinkageAvailable": false
+}

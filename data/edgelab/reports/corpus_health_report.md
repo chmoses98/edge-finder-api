@@ -1,5 +1,5 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-10-13T14:51:52Z
+Generated: 2026-10-14T12:42:18Z
 
 ## Operational health: **FAILED**
 - Reasons: HARD_FAIL:FORWARD_MISSING_SNAPSHOT
@@ -22,24 +22,25 @@ Generated: 2026-10-13T14:51:52Z
 - Forward snapshots captured: 64
 - Forward snapshots missing (no manifest at all): 6 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15', '2026-10-09']
 - Forward incomplete captures (manifest exists, missing a required component): 0 []
-- Forward dates pending today (not yet due): 0 []
+- Forward dates pending today (not yet due): 1 ['2026-10-14']
 - Forward no-slate dates (MLB schedule verified no games; no production expected): 2 ['2026-09-28', '2026-10-02']
 - Forward provenance coverage: 64/70
-- Forward replay: attempted 253, completed 131, failed 122
+- Forward replay: attempted 257, completed 134, failed 123
 - Forward CLV-linked markets: 44
 - Forward settlement-linked markets: 89
 - Consecutive degraded forward runs: 0
 - Hard-fail dates (drive exitShouldFail): ['2026-10-09']
 - Acknowledged legacy gap dates (excluded from exitShouldFail, see data/edgelab/corpus_acknowledged_forward_gaps.json): ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
-- FORWARD_HEALTHY: 40
+- FORWARD_HEALTHY: 41
 - FORWARD_MISSING_SNAPSHOT: 6
 - FORWARD_NO_SLATE: 2
-- FORWARD_RESEARCH_ONLY_NO_DECISION: 24
+- FORWARD_PENDING_TODAY: 1
+- FORWARD_RESEARCH_ONLY_NO_DECISION: 23
 
 ## Storage
-- Snapshots: 376,082,695 bytes
-- Replay runs: 27,890,729 bytes
-- Total: 403,973,424 bytes
+- Snapshots: 377,423,037 bytes
+- Replay runs: 27,946,342 bytes
+- Total: 405,369,379 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Stored Completeness | Effective Completeness | Research-Only | Commit SHA Known | Replay | Runs | Acknowledged Gap |
@@ -119,4 +120,5 @@ Generated: 2026-10-13T14:51:52Z
 | 2026-10-10 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 4 |  |
 | 2026-10-11 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 4 |  |
 | 2026-10-12 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 4 |  |
-| 2026-10-13 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 1 |  |
+| 2026-10-13 | FORWARD | HEALTHY | FORWARD_HEALTHY | PARTIAL_REPLAY | PARTIAL_REPLAY | False | True | COMPLETED | 5 |  |
+| 2026-10-14 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |

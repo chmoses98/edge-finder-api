@@ -1,66 +1,60 @@
 {
   "bet_authority": "MANUAL",
-  "commit_sha": "cf12efb0d9ba7e58da3444d2823855cf937138a1",
+  "commit_sha": "2216ba9b1479e15ded84b469bbd1e28c12b2d19c",
   "components": {
-    "daily_health": {
-      "age_seconds": 4758.2,
-      "as_of": "2026-10-14T02:12:13Z",
-      "detail": "edgelab daily health 2026-10-13 status=HEALTHY",
-      "status": "OK"
-    },
     "export": {
-      "age_seconds": 0.2,
-      "as_of": "2026-10-14T03:31:31Z",
+      "age_seconds": 0.7,
+      "as_of": "2026-10-14T04:25:01Z",
       "detail": null,
       "status": "OK"
     },
     "market_data": {
-      "age_seconds": 1805.5,
-      "as_of": "2026-10-14T03:01:25Z",
+      "age_seconds": 606.1,
+      "as_of": "2026-10-14T04:14:55Z",
       "detail": null,
       "status": "OK"
     },
     "model": {
-      "age_seconds": 14583.2,
-      "as_of": "2026-10-13T23:28:28Z",
+      "age_seconds": null,
+      "as_of": null,
       "detail": null,
-      "status": "OK"
+      "status": "UNAVAILABLE"
     },
     "production_gate": {
-      "age_seconds": 28164.2,
+      "age_seconds": 31374.7,
       "as_of": "2026-10-13T19:42:07Z",
       "detail": "production_health_gate overall=HEALTHY",
       "status": "OK"
     },
     "router": {
-      "age_seconds": 183166.2,
+      "age_seconds": 186376.7,
       "as_of": "2026-10-12T00:38:45Z",
       "detail": null,
       "status": "STALE"
     },
     "settlement": {
-      "age_seconds": 94869.2,
+      "age_seconds": 98079.7,
       "as_of": "2026-10-13T01:10:22Z",
       "detail": null,
       "status": "OK"
     }
   },
-  "data_age_seconds": 14583.2,
+  "data_age_seconds": 606.1,
   "errors": [],
-  "freshness_status": "AGING",
-  "generated_at": "2026-10-14T03:31:31Z",
+  "freshness_status": "STALE",
+  "generated_at": "2026-10-14T04:25:01Z",
   "kind": "health",
-  "last_export_attempt": "2026-10-14T03:31:31Z",
-  "last_market_capture": "2026-10-14T03:01:25Z",
-  "last_model_generated": "2026-10-13T23:28:28Z",
-  "last_successful_run": "2026-10-14T03:31:31Z",
+  "last_export_attempt": "2026-10-14T04:25:01Z",
+  "last_market_capture": "2026-10-14T04:14:55Z",
+  "last_model_generated": null,
+  "last_successful_run": "2026-10-14T04:25:01Z",
   "market_data_status": "OK",
-  "model_status": "OK",
-  "next_scheduled_run": "2026-10-14T04:00:00Z",
-  "overall_status": "HEALTHY",
-  "payload_run_id": "run_28eeacb36b799a961cd1",
+  "model_status": "UNAVAILABLE",
+  "next_scheduled_run": "2026-10-14T04:30:00Z",
+  "overall_status": "UNAVAILABLE",
+  "payload_run_id": "run_f94cc237e9bb6ed851ec",
   "router_status": "STALE",
-  "run_id": "run_28eeacb36b799a961cd1",
+  "run_id": "run_f94cc237e9bb6ed851ec",
   "schema_version": "edge_finder.app.v1",
   "settlement_status": "OK",
   "sport": "MLB",
@@ -95,6 +89,7 @@
     }
   },
   "warnings": [
-    "3 recommendation row(s) skipped: ticker, event or contract side could not be established"
+    "no published slate for 2026-10-14 (data/slates/2026-10-14/authoritative.json missing): 1 Kalshi-discovered game(s) await MLB schedule reconciliation, so events and model prices cannot be built until Fetch Slate Data publishes the slate",
+    "no model price could be exported for 2026-10-14"
   ]
 }

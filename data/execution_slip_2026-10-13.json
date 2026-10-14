@@ -1,259 +1,284 @@
 {
-  "generatedAt": "2026-10-13T23:46:48.513647+00:00",
+  "generatedAt": "2026-10-14T00:46:44.009906+00:00",
   "date": "2026-10-13",
-  "realMoney": [
-    {
-      "game": "CLE@TB",
-      "market": "TT_Away_Over",
-      "side": "TT_Away_Over",
-      "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-CLE3",
-      "modelProb": "81.23%",
-      "execPrice": "59.0\u00a2",
-      "rawEdge": "+22.23%",
-      "calEdge": "+5.67%",
-      "conf": "MEDIUM",
-      "betSize": 4.0,
-      "maxBetPrice": "76.04\u00a2 or better",
-      "snapshotTs": "2026-10-13T23:46:39Z",
-      "reasonCodes": [
-        "MARKET_REAL_MONEY_ELIGIBLE",
-        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
-        "RAW_EDGE_STRONG",
-        "LINEUP_CONFIRMED_OFFICIAL",
-        "LINEUP_ADJ_APPLIED",
-        "PRICE_WITHIN_MAX"
-      ],
-      "gatesFired": [
-        "Tier cap: model/market disagreement 23.2pt > 7pt -- Tier A withheld pending explanation"
-      ],
-      "rejectionReason": null,
-      "status": "Accepted",
-      "lineupStatus": "confirmed"
-    }
-  ],
+  "realMoney": [],
   "priceMoved": [],
-  "paperOnly": [
+  "paperOnly": [],
+  "rejectedBlocked": [
     {
       "game": "CLE@TB",
       "market": "NRFI",
       "side": "NRFI",
-      "ticker": "KXMLBRFI-26OCT132000CLETB",
-      "modelProb": "43.56%",
-      "execPrice": "57.0\u00a2",
-      "rawEdge": "-13.44%",
-      "calEdge": "-3.43%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "37.99\u00a2 or better",
-      "snapshotTs": "2026-10-13T23:46:39Z",
-      "reasonCodes": [
-        "FIRST_INNING_NATIVE_EVIDENCE"
-      ],
-      "gatesFired": [
-        "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
-      ],
-      "rejectionReason": "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-      "status": "Rejected",
-      "lineupStatus": "confirmed"
-    },
-    {
-      "game": "CLE@TB",
-      "market": "YRFI",
-      "side": "YRFI",
-      "ticker": "KXMLBRFI-26OCT132000CLETB",
-      "modelProb": "56.44%",
-      "execPrice": "44.0\u00a2",
-      "rawEdge": "+12.44%",
-      "calEdge": "+3.17%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "50.77\u00a2 or better",
-      "snapshotTs": "2026-10-13T23:46:39Z",
-      "reasonCodes": [
-        "FIRST_INNING_NATIVE_EVIDENCE"
-      ],
-      "gatesFired": [
-        "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-        "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
-      ],
-      "rejectionReason": "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-      "status": "Rejected",
-      "lineupStatus": "confirmed"
-    },
-    {
-      "game": "CLE@TB",
-      "market": "Game_Total",
-      "side": "Game_Total",
-      "ticker": "KXMLBTOTAL-26OCT132000CLETB-7",
-      "modelProb": "61.9%",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-13T23:46:39Z",
-      "reasonCodes": [],
-      "gatesFired": [],
-      "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
-      "status": "Rejected",
-      "lineupStatus": "confirmed"
-    },
-    {
-      "game": "CLE@TB",
-      "market": "RL_Away",
-      "side": "RL_Away",
       "ticker": null,
       "modelProb": "\u2014",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
       "calEdge": "\u2014",
       "conf": "\u2014",
-      "betSize": null,
+      "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-13T23:46:39Z",
-      "reasonCodes": [],
-      "gatesFired": [],
-      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "snapshotTs": "2026-10-14T00:46:30Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: CLE@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
       "status": "Rejected",
-      "lineupStatus": "confirmed"
+      "lineupStatus": "\u2014"
     },
     {
       "game": "CLE@TB",
-      "market": "RL_Home",
-      "side": "RL_Home",
-      "ticker": "KXMLBSPREAD-26OCT132000CLETB-TB2",
+      "market": "YRFI",
+      "side": "YRFI",
+      "ticker": null,
       "modelProb": "\u2014",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
       "calEdge": "\u2014",
       "conf": "\u2014",
-      "betSize": null,
+      "betSize": "\u2014",
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-13T23:46:39Z",
-      "reasonCodes": [],
-      "gatesFired": [],
-      "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
+      "snapshotTs": "2026-10-14T00:46:30Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: CLE@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
       "status": "Rejected",
-      "lineupStatus": "confirmed"
-    }
-  ],
-  "rejectedBlocked": [
+      "lineupStatus": "\u2014"
+    },
     {
       "game": "CLE@TB",
       "market": "F5_ML_Away",
       "side": "F5_ML_Away",
       "ticker": "KXMLBF5-26OCT132000CLETB-CLE",
-      "modelProb": "58.31%",
-      "execPrice": "39.0\u00a2",
-      "rawEdge": "+19.31%",
-      "calEdge": "+4.92%",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
       "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "52.65\u00a2 or better",
-      "snapshotTs": "2026-10-13T23:46:39Z",
-      "reasonCodes": [],
-      "gatesFired": [
-        "Tier cap: model/market disagreement 20.4pt > 7pt -- Tier A withheld pending explanation",
-        "Rule71-F5: model 58.3% vs KalshiF5VF 37.9% = 20.4% > 12%"
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-10-14T00:46:30Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
       ],
-      "rejectionReason": "Tier cap: model/market disagreement 20.4pt > 7pt -- Tier A withheld pending explanation",
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: CLE@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
       "status": "Rejected",
-      "lineupStatus": "confirmed"
+      "lineupStatus": "\u2014"
     },
     {
       "game": "CLE@TB",
       "market": "F5_ML_Home",
       "side": "F5_ML_Home",
       "ticker": "KXMLBF5-26OCT132000CLETB-TB",
-      "modelProb": "22.84%",
-      "execPrice": "45.0\u00a2",
-      "rawEdge": "-22.16%",
-      "calEdge": "-5.65%",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
       "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "17.89\u00a2 or better",
-      "snapshotTs": "2026-10-13T23:46:39Z",
-      "reasonCodes": [],
-      "gatesFired": [
-        "Rule71-F5: model 22.8% vs KalshiF5VF 43.8% = 21.0% > 12%"
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-10-14T00:46:30Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
       ],
-      "rejectionReason": "Rule71-F5: model 22.8% vs KalshiF5VF 43.8% = 21.0% > 12%",
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: CLE@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
       "status": "Rejected",
-      "lineupStatus": "confirmed"
+      "lineupStatus": "\u2014"
+    },
+    {
+      "game": "CLE@TB",
+      "market": "TT_Away_Over",
+      "side": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-CLE3",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-10-14T00:46:30Z",
+      "reasonCodes": [
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG",
+        "LINEUP_CONFIRMED_OFFICIAL",
+        "LINEUP_ADJ_APPLIED",
+        "PRICE_WITHIN_MAX",
+        "LIVE_GAME_BLOCKED"
+      ],
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: CLE@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
+      "status": "Rejected",
+      "lineupStatus": "\u2014"
     },
     {
       "game": "CLE@TB",
       "market": "TT_Home_Over",
       "side": "TT_Home_Over",
-      "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-TB4",
-      "modelProb": "37.52%",
-      "execPrice": "49.0\u00a2",
-      "rawEdge": "-11.48%",
-      "calEdge": "-2.93%",
+      "ticker": "KXMLBTEAMTOTAL-26OCT132000CLETB-TB3",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
       "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "32.07\u00a2 or better",
-      "snapshotTs": "2026-10-13T23:46:39Z",
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-10-14T00:46:30Z",
       "reasonCodes": [
-        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG",
+        "LINEUP_CONFIRMED_OFFICIAL",
+        "LINEUP_ADJ_APPLIED",
+        "PRICE_WITHIN_MAX",
+        "LIVE_GAME_BLOCKED"
       ],
-      "gatesFired": [],
-      "rejectionReason": "edge -3.374% below 1.0% floor",
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: CLE@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
       "status": "Rejected",
-      "lineupStatus": "confirmed"
+      "lineupStatus": "\u2014"
     },
     {
       "game": "CLE@TB",
       "market": "ML_Away",
       "side": "ML_Away",
       "ticker": "KXMLBGAME-26OCT132000CLETB-CLE",
-      "modelProb": "68.47%",
-      "execPrice": "45.0\u00a2",
-      "rawEdge": "+23.47%",
-      "calEdge": "+5.98%",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
       "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "62.91\u00a2 or better",
-      "snapshotTs": "2026-10-13T23:46:39Z",
-      "reasonCodes": [],
-      "gatesFired": [
-        "Tier cap: model/market disagreement 24.0pt > 7pt -- Tier A withheld pending explanation",
-        "Rule71: model 68.5% vs PinVF 44.8% = 23.7% gap > 8%"
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-10-14T00:46:30Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
       ],
-      "rejectionReason": "Tier cap: model/market disagreement 24.0pt > 7pt -- Tier A withheld pending explanation; Rule71: model 68.5% vs PinVF 44.8% = 23.7% gap > 8%",
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: CLE@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
       "status": "Rejected",
-      "lineupStatus": "confirmed"
+      "lineupStatus": "\u2014"
     },
     {
       "game": "CLE@TB",
       "market": "ML_Home",
       "side": "ML_Home",
       "ticker": "KXMLBGAME-26OCT132000CLETB-TB",
-      "modelProb": "31.53%",
-      "execPrice": "56.0\u00a2",
-      "rawEdge": "-24.47%",
-      "calEdge": "-6.24%",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
       "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "26.25\u00a2 or better",
-      "snapshotTs": "2026-10-13T23:46:39Z",
-      "reasonCodes": [],
-      "gatesFired": [
-        "Rule71: model 31.5% vs PinVF 55.2% = 23.7% gap > 8%"
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-10-14T00:46:30Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
       ],
-      "rejectionReason": "Rule71: model 31.5% vs PinVF 55.2% = 23.7% gap > 8%",
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: CLE@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
       "status": "Rejected",
-      "lineupStatus": "confirmed"
+      "lineupStatus": "\u2014"
+    },
+    {
+      "game": "CLE@TB",
+      "market": "Game_Total",
+      "side": "Game_Total",
+      "ticker": "KXMLBTOTAL-26OCT132000CLETB-6",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-10-14T00:46:30Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: CLE@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
+      "status": "Rejected",
+      "lineupStatus": "\u2014"
+    },
+    {
+      "game": "CLE@TB",
+      "market": "RL_Away",
+      "side": "RL_Away",
+      "ticker": "KXMLBSPREAD-26OCT132000CLETB-CLE2",
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-10-14T00:46:30Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: CLE@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
+      "status": "Rejected",
+      "lineupStatus": "\u2014"
+    },
+    {
+      "game": "CLE@TB",
+      "market": "RL_Home",
+      "side": "RL_Home",
+      "ticker": null,
+      "modelProb": "\u2014",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": "\u2014",
+      "maxBetPrice": "\u2014",
+      "snapshotTs": "2026-10-14T00:46:30Z",
+      "reasonCodes": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "gatesFired": [
+        "LIVE_GAME_BLOCKED"
+      ],
+      "rejectionReason": "LIVE_GAME_BLOCKED: CLE@TB status='In Progress' \u2014 pregame-only mode cannot recommend real-money bets for games that have already started",
+      "status": "Rejected",
+      "lineupStatus": "\u2014"
     }
   ],
-  "liveGameBlockedGames": [],
+  "liveGameBlockedGames": [
+    "CLE@TB"
+  ],
   "summary": {
-    "realMoneyCount": 1,
+    "realMoneyCount": 0,
     "priceMovedCount": 0,
-    "paperOnlyCount": 5,
-    "rejectedBlockedCount": 5,
-    "liveGameBlockedCount": 0
+    "paperOnlyCount": 0,
+    "rejectedBlockedCount": 11,
+    "liveGameBlockedCount": 1
   }
 }

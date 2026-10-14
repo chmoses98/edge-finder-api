@@ -6,30 +6,25 @@ EXECUTION SLIP — 2026-10-14
 === REAL-MONEY BETS (0) ===
   (none)
 
-=== PRICE-MOVED PASSES (2) ===
-  MIL@LAD | TT_Away_Over
-    REASON: Rule 50: lineupConfirmedOfficial=False → TT Paper only; Executable EV: price 43.0¢ exceeds fee-aware bet-up-to 36.1¢ (gross ceiling was 37.71¢) -- PRICE_MOVED_BEYOND_MAX
-    Exec: 43.0¢ | MaxBet: 36.1¢ or better
-  MIL@LAD | TT_Home_Over
-    REASON: Rule 50: lineupConfirmedOfficial=False → TT Paper only; Executable EV: price 45.0¢ exceeds fee-aware bet-up-to 28.21¢ (gross ceiling was 29.62¢) -- PRICE_MOVED_BEYOND_MAX
-    Exec: 45.0¢ | MaxBet: 28.21¢ or better
+=== PRICE-MOVED PASSES (0) ===
+  (none)
 
-
-=== PAPER-ONLY (9) ===
-  MIL@LAD | NRFI | Cal Edge: -2.44% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  MIL@LAD | YRFI | Cal Edge: +2.19% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  MIL@LAD | F5_ML_Away | Cal Edge: -0.31% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
-  MIL@LAD | F5_ML_Home | Cal Edge: -1.80% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
-  MIL@LAD | ML_Away | Cal Edge: +0.71% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER
-  MIL@LAD | ML_Home | Cal Edge: -0.96% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER
+=== PAPER-ONLY (6) ===
+  MIL@LAD | NRFI | Cal Edge: -2.52% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  MIL@LAD | YRFI | Cal Edge: +2.26% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  MIL@LAD | TT_Away_Over | Cal Edge: +1.52% | paper-tier
   MIL@LAD | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   MIL@LAD | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   MIL@LAD | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
 
-=== REJECTED / BLOCKED (0) ===
-  (none)
+=== REJECTED / BLOCKED (5) ===
+  MIL@LAD | F5_ML_Away | Raw Edge: -1.50% | edge -0.777% below threshold
+  MIL@LAD | F5_ML_Home | Raw Edge: -7.64% | edge -2.392% below threshold
+  MIL@LAD | TT_Home_Over | Raw Edge: -9.50% | edge -2.862% below 1.0% floor
+  MIL@LAD | ML_Away | Raw Edge: +2.22% | edge 0.141% below 1.0% floor
+  MIL@LAD | ML_Home | Raw Edge: -3.22% | edge -1.241% below 1.0% floor
 
 ======================================================================
-SLIP SUMMARY: Real=0 PriceMoved=2 Paper=9 Rejected=0
+SLIP SUMMARY: Real=0 PriceMoved=0 Paper=6 Rejected=5
 ======================================================================
 ======================================================================

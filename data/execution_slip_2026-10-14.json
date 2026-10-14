@@ -1,223 +1,102 @@
 {
-  "generatedAt": "2026-10-14T20:04:21.574170+00:00",
+  "generatedAt": "2026-10-14T23:08:28.946747+00:00",
   "date": "2026-10-14",
   "realMoney": [],
-  "priceMoved": [
-    {
-      "game": "MIL@LAD",
-      "market": "TT_Away_Over",
-      "side": "TT_Away_Over",
-      "ticker": "KXMLBTEAMTOTAL-26OCT142000MILLAD-MIL4",
-      "modelProb": "41.63%",
-      "execPrice": "43.0\u00a2",
-      "rawEdge": "-1.36%",
-      "calEdge": "-0.35%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "36.1\u00a2 or better",
-      "snapshotTs": "2026-10-14T20:04:08Z",
-      "reasonCodes": [
-        "PRICE_MOVED_BEYOND_MAX",
-        "LINEUP_MISSING"
-      ],
-      "gatesFired": [
-        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only",
-        "Executable EV: price 43.0\u00a2 exceeds fee-aware bet-up-to 36.1\u00a2 (gross ceiling was 37.71\u00a2) -- PRICE_MOVED_BEYOND_MAX"
-      ],
-      "rejectionReason": "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only; Executable EV: price 43.0\u00a2 exceeds fee-aware bet-up-to 36.1\u00a2 (gross ceiling was 37.71\u00a2) -- PRICE_MOVED_BEYOND_MAX",
-      "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "MIL@LAD",
-      "market": "TT_Home_Over",
-      "side": "TT_Home_Over",
-      "ticker": "KXMLBTEAMTOTAL-26OCT142000MILLAD-LAD5",
-      "modelProb": "33.55%",
-      "execPrice": "45.0\u00a2",
-      "rawEdge": "-11.45%",
-      "calEdge": "-2.92%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "28.21\u00a2 or better",
-      "snapshotTs": "2026-10-14T20:04:08Z",
-      "reasonCodes": [
-        "PRICE_MOVED_BEYOND_MAX",
-        "LINEUP_MISSING"
-      ],
-      "gatesFired": [
-        "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only",
-        "Executable EV: price 45.0\u00a2 exceeds fee-aware bet-up-to 28.21\u00a2 (gross ceiling was 29.62\u00a2) -- PRICE_MOVED_BEYOND_MAX"
-      ],
-      "rejectionReason": "Rule 50: lineupConfirmedOfficial=False \u2192 TT Paper only; Executable EV: price 45.0\u00a2 exceeds fee-aware bet-up-to 28.21\u00a2 (gross ceiling was 29.62\u00a2) -- PRICE_MOVED_BEYOND_MAX",
-      "status": "Rejected",
-      "lineupStatus": "missing"
-    }
-  ],
+  "priceMoved": [],
   "paperOnly": [
     {
       "game": "MIL@LAD",
       "market": "NRFI",
       "side": "NRFI",
       "ticker": "KXMLBRFI-26OCT142000MILLAD",
-      "modelProb": "45.42%",
+      "modelProb": "45.13%",
       "execPrice": "55.0\u00a2",
-      "rawEdge": "-9.57%",
-      "calEdge": "-2.44%",
+      "rawEdge": "-9.87%",
+      "calEdge": "-2.52%",
       "conf": "\u2014",
       "betSize": null,
-      "maxBetPrice": "39.83\u00a2 or better",
-      "snapshotTs": "2026-10-14T20:04:08Z",
+      "maxBetPrice": "39.53\u00a2 or better",
+      "snapshotTs": "2026-10-14T23:08:16Z",
       "reasonCodes": [
-        "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
       ],
       "gatesFired": [
         "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
         "Rule 34: NRFI blocked \u2014 Kalshi total line=8 >= 8.0",
-        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
         "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
       ],
       "rejectionReason": "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "MIL@LAD",
       "market": "YRFI",
       "side": "YRFI",
       "ticker": "KXMLBRFI-26OCT142000MILLAD",
-      "modelProb": "54.58%",
+      "modelProb": "54.87%",
       "execPrice": "46.0\u00a2",
-      "rawEdge": "+8.57%",
-      "calEdge": "+2.19%",
+      "rawEdge": "+8.87%",
+      "calEdge": "+2.26%",
       "conf": "\u2014",
       "betSize": null,
-      "maxBetPrice": "48.9\u00a2 or better",
-      "snapshotTs": "2026-10-14T20:04:08Z",
+      "maxBetPrice": "49.2\u00a2 or better",
+      "snapshotTs": "2026-10-14T23:08:16Z",
       "reasonCodes": [
-        "LINEUP_MISSING",
         "FIRST_INNING_NATIVE_EVIDENCE"
       ],
       "gatesFired": [
         "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
-        "Rule 52: YRFI/NRFI requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
         "Rule 40 incomplete \u2014 first-inning xERA missing for: ['away.pitcherSavant.firstInningSplit.firstInningXERA', 'home.pitcherSavant.firstInningSplit.firstInningXERA']; paper cap applied"
       ],
       "rejectionReason": "MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kalshi 0.2481 and vs constant base rate 0.2500 over 225 independent games/21 dates; wins 6/19 held-out dates. Methodology V3 STATISTICAL_SIGNAL=no, PREDICTIVE_MATERIALITY=no. Reactivation requires research evidence plus explicit human approval -- see docs/EDGELAB_KXMLBRFI_SUSPENSION.md",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "MIL@LAD",
-      "market": "F5_ML_Away",
-      "side": "F5_ML_Away",
-      "ticker": "KXMLBF5-26OCT142000MILLAD-MIL",
-      "modelProb": "31.79%",
-      "execPrice": "33.0\u00a2",
-      "rawEdge": "-1.21%",
-      "calEdge": "-0.31%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "26.5\u00a2 or better",
-      "snapshotTs": "2026-10-14T20:04:08Z",
+      "market": "TT_Away_Over",
+      "side": "TT_Away_Over",
+      "ticker": "KXMLBTEAMTOTAL-26OCT142000MILLAD-MIL3",
+      "modelProb": "63.96%",
+      "execPrice": "58.0\u00a2",
+      "rawEdge": "+5.96%",
+      "calEdge": "+1.52%",
+      "conf": "PAPER",
+      "betSize": 1.0,
+      "maxBetPrice": "58.33\u00a2 or better",
+      "snapshotTs": "2026-10-14T23:08:16Z",
       "reasonCodes": [
-        "LINEUP_PROJECTED_ONLY"
+        "MARKET_REAL_MONEY_ELIGIBLE",
+        "EXECUTABLE_EDGE_ABOVE_THRESHOLD",
+        "RAW_EDGE_STRONG",
+        "LINEUP_CONFIRMED_OFFICIAL",
+        "LINEUP_ADJ_APPLIED",
+        "PRICE_WITHIN_MAX"
       ],
-      "gatesFired": [
-        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER"
-      ],
-      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
-      "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "MIL@LAD",
-      "market": "F5_ML_Home",
-      "side": "F5_ML_Home",
-      "ticker": "KXMLBF5-26OCT142000MILLAD-LAD",
-      "modelProb": "45.93%",
-      "execPrice": "53.0\u00a2",
-      "rawEdge": "-7.07%",
-      "calEdge": "-1.80%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "40.32\u00a2 or better",
-      "snapshotTs": "2026-10-14T20:04:08Z",
-      "reasonCodes": [
-        "LINEUP_PROJECTED_ONLY"
-      ],
-      "gatesFired": [
-        "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER"
-      ],
-      "rejectionReason": "Rule 53: F5 requires confirmed lineups for both teams \u2014 away, home unconfirmed (lineupConfirmedOfficial=False) \u2192 PAPER",
-      "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "MIL@LAD",
-      "market": "ML_Away",
-      "side": "ML_Away",
-      "ticker": "KXMLBGAME-26OCT142000MILLAD-MIL",
-      "modelProb": "41.77%",
-      "execPrice": "39.0\u00a2",
-      "rawEdge": "+2.77%",
-      "calEdge": "+0.71%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "36.23\u00a2 or better",
-      "snapshotTs": "2026-10-14T20:04:08Z",
-      "reasonCodes": [
-        "LINEUP_MISSING"
-      ],
-      "gatesFired": [
-        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER"
-      ],
-      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
-      "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "MIL@LAD",
-      "market": "ML_Home",
-      "side": "ML_Home",
-      "ticker": "KXMLBGAME-26OCT142000MILLAD-LAD",
-      "modelProb": "58.23%",
-      "execPrice": "62.0\u00a2",
-      "rawEdge": "-3.77%",
-      "calEdge": "-0.96%",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "52.56\u00a2 or better",
-      "snapshotTs": "2026-10-14T20:04:08Z",
-      "reasonCodes": [
-        "LINEUP_MISSING"
-      ],
-      "gatesFired": [
-        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER"
-      ],
-      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
-      "status": "Rejected",
-      "lineupStatus": "missing"
+      "gatesFired": [],
+      "rejectionReason": null,
+      "status": "Accepted",
+      "lineupStatus": "confirmed"
     },
     {
       "game": "MIL@LAD",
       "market": "Game_Total",
       "side": "Game_Total",
       "ticker": "KXMLBTOTAL-26OCT142000MILLAD-8",
-      "modelProb": "41.65%",
+      "modelProb": "42.53%",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
       "calEdge": "\u2014",
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-14T20:04:08Z",
+      "snapshotTs": "2026-10-14T23:08:16Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "MIL@LAD",
@@ -231,12 +110,12 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-14T20:04:08Z",
+      "snapshotTs": "2026-10-14T23:08:16Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "MIL@LAD",
@@ -250,21 +129,127 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-14T20:04:08Z",
+      "snapshotTs": "2026-10-14T23:08:16Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     }
   ],
-  "rejectedBlocked": [],
+  "rejectedBlocked": [
+    {
+      "game": "MIL@LAD",
+      "market": "F5_ML_Away",
+      "side": "F5_ML_Away",
+      "ticker": "KXMLBF5-26OCT142000MILLAD-MIL",
+      "modelProb": "31.5%",
+      "execPrice": "33.0\u00a2",
+      "rawEdge": "-1.50%",
+      "calEdge": "-0.38%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "26.22\u00a2 or better",
+      "snapshotTs": "2026-10-14T23:08:16Z",
+      "reasonCodes": [
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+      ],
+      "gatesFired": [],
+      "rejectionReason": "edge -0.777% below threshold",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "MIL@LAD",
+      "market": "F5_ML_Home",
+      "side": "F5_ML_Home",
+      "ticker": "KXMLBF5-26OCT142000MILLAD-LAD",
+      "modelProb": "46.36%",
+      "execPrice": "54.0\u00a2",
+      "rawEdge": "-7.64%",
+      "calEdge": "-1.95%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "40.75\u00a2 or better",
+      "snapshotTs": "2026-10-14T23:08:16Z",
+      "reasonCodes": [
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+      ],
+      "gatesFired": [],
+      "rejectionReason": "edge -2.392% below threshold",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "MIL@LAD",
+      "market": "TT_Home_Over",
+      "side": "TT_Home_Over",
+      "ticker": "KXMLBTEAMTOTAL-26OCT142000MILLAD-LAD5",
+      "modelProb": "34.5%",
+      "execPrice": "44.0\u00a2",
+      "rawEdge": "-9.50%",
+      "calEdge": "-2.42%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "29.13\u00a2 or better",
+      "snapshotTs": "2026-10-14T23:08:16Z",
+      "reasonCodes": [
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+      ],
+      "gatesFired": [],
+      "rejectionReason": "edge -2.862% below 1.0% floor",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "MIL@LAD",
+      "market": "ML_Away",
+      "side": "ML_Away",
+      "ticker": "KXMLBGAME-26OCT142000MILLAD-MIL",
+      "modelProb": "41.22%",
+      "execPrice": "39.0\u00a2",
+      "rawEdge": "+2.22%",
+      "calEdge": "+0.57%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "35.69\u00a2 or better",
+      "snapshotTs": "2026-10-14T23:08:16Z",
+      "reasonCodes": [
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+      ],
+      "gatesFired": [],
+      "rejectionReason": "edge 0.141% below 1.0% floor",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "MIL@LAD",
+      "market": "ML_Home",
+      "side": "ML_Home",
+      "ticker": "KXMLBGAME-26OCT142000MILLAD-LAD",
+      "modelProb": "58.78%",
+      "execPrice": "62.0\u00a2",
+      "rawEdge": "-3.22%",
+      "calEdge": "-0.82%",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "53.12\u00a2 or better",
+      "snapshotTs": "2026-10-14T23:08:16Z",
+      "reasonCodes": [
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+      ],
+      "gatesFired": [],
+      "rejectionReason": "edge -1.241% below 1.0% floor",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    }
+  ],
   "liveGameBlockedGames": [],
   "summary": {
     "realMoneyCount": 0,
-    "priceMovedCount": 2,
-    "paperOnlyCount": 9,
-    "rejectedBlockedCount": 0,
+    "priceMovedCount": 0,
+    "paperOnlyCount": 6,
+    "rejectedBlockedCount": 5,
     "liveGameBlockedCount": 0
   }
 }

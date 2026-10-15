@@ -6,27 +6,17 @@ EXECUTION SLIP — 2026-10-15
 === REAL-MONEY BETS (0) ===
   (none)
 
-=== PRICE-MOVED PASSES (2) ===
-  MIL@LAD | TT_Away_Over
-    REASON: Rule 50: lineupConfirmedOfficial=False → TT Paper only; Executable EV: price 48.0¢ exceeds fee-aware bet-up-to 37.92¢ (gross ceiling was 39.56¢) -- PRICE_MOVED_BEYOND_MAX
-    Exec: 48.0¢ | MaxBet: 37.92¢ or better
-  MIL@LAD | TT_Home_Over
-    REASON: Rule 50: lineupConfirmedOfficial=False → TT Paper only; Executable EV: price 44.0¢ exceeds fee-aware bet-up-to 20.98¢ (gross ceiling was 22.14¢) -- PRICE_MOVED_BEYOND_MAX
-    Exec: 44.0¢ | MaxBet: 20.98¢ or better
+=== PRICE-MOVED PASSES (0) ===
+  (none)
 
-
-=== PAPER-ONLY (9) ===
-  MIL@LAD | NRFI | Cal Edge: -2.29% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  MIL@LAD | YRFI | Cal Edge: +2.04% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  MIL@LAD | F5_ML_Away | Cal Edge: +0.33% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
-  MIL@LAD | F5_ML_Home | Cal Edge: -2.73% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
-  MIL@LAD | ML_Away | Cal Edge: +1.55% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER
-  MIL@LAD | ML_Home | Cal Edge: -2.06% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER
+=== PAPER-ONLY (5) ===
+  MIL@LAD | NRFI | Cal Edge: -2.33% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  MIL@LAD | YRFI | Cal Edge: +2.07% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   MIL@LAD | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   MIL@LAD | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   MIL@LAD | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
 
-=== REJECTED / BLOCKED (11) ===
+=== REJECTED / BLOCKED (17) ===
   TB@CLE | NRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: TB@CLE status='Final' — pregame-only mode cannot recommend real-money bet
   TB@CLE | YRFI | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: TB@CLE status='Final' — pregame-only mode cannot recommend real-money bet
   TB@CLE | F5_ML_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: TB@CLE status='Final' — pregame-only mode cannot recommend real-money bet
@@ -38,9 +28,15 @@ EXECUTION SLIP — 2026-10-15
   TB@CLE | Game_Total | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: TB@CLE status='Final' — pregame-only mode cannot recommend real-money bet
   TB@CLE | RL_Away | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: TB@CLE status='Final' — pregame-only mode cannot recommend real-money bet
   TB@CLE | RL_Home | Raw Edge: — | PREGAME_ONLY_STARTED_GAME: TB@CLE status='Final' — pregame-only mode cannot recommend real-money bet
+  MIL@LAD | F5_ML_Away | Raw Edge: +0.90% | edge -0.183% below threshold
+  MIL@LAD | F5_ML_Home | Raw Edge: -9.21% | edge -2.795% below threshold
+  MIL@LAD | TT_Away_Over | Raw Edge: -4.73% | edge -1.653% below 1.0% floor
+  MIL@LAD | TT_Home_Over | Raw Edge: -17.26% | edge -4.841% below 1.0% floor
+  MIL@LAD | ML_Away | Raw Edge: +5.36% | edge 0.928% below 1.0% floor
+  MIL@LAD | ML_Home | Raw Edge: -6.36% | edge -2.055% below 1.0% floor
 
 ======================================================================
-SLIP SUMMARY: Real=0 PriceMoved=2 Paper=9 Rejected=11
+SLIP SUMMARY: Real=0 PriceMoved=0 Paper=5 Rejected=17
 LIVE_GAME_BLOCKED: TB@CLE — pregame-only gate applied, 0 real-money bets from these games
 ======================================================================
 ======================================================================

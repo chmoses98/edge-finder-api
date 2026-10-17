@@ -109,7 +109,7 @@ class Ctx:
                     seen.add(g["game_pk"])
                     games.append(g)
         self.games = games
-        self.captured_iso = self.now_iso if self.fixed_now else max(fetched)
+        self.captured_iso = api.iso(self.now - timedelta(seconds=30)) if self.fixed_now else max(fetched)
         return games
 
     def refresh_clock(self):
@@ -456,6 +456,8 @@ def _run(ctx, a):
         except Exception as e:  # noqa: BLE001
             failed = (s, e)
             ctx.summary["stages"][s] = {"stage": s, "error": f"{type(e).__name__}: {e}"}
+            import traceback
+            traceback.print_exc()
             print(f"[mlb-pf {s}] FAILED: {type(e).__name__}: {e}", flush=True)
             break
         ctx.summary["stages"][s]["seconds"] = round(time.time() - t0, 1)

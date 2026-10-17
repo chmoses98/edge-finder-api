@@ -1,0 +1,62 @@
+name: Projection Intelligence (read-only)
+
+# Daily READ-ONLY evaluation of the point-in-time hitter projection snapshots against contemporaneous Kalshi quotes and settlements
+# using chmoses98/sift-sports-intelligence research/intelligence. RESEARCH ONLY: no authority, nothing is committed or pushed;
+# result = job summary + retained artifact. Retroactive pitcher rows are counted and excluded, never scored.
+# Errors fail the job (observable). Inert until merged (schedules fire from the default branch only).
+on:
+  schedule:
+    - cron: "52 11 * * *"
+  workflow_dispatch:
+    inputs:
+      intelligence_ref:
+        required: false
+        default: "main"
+permissions:
+  contents: read
+concurrency:
+  group: projection-intelligence
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash -eo pipefail {0}
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            data/edgelab/hitter_projection_snapshots
+            data/edgelab/observations
+            data/edgelab/settlements
+            data/edgelab/model_evaluations
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: chmoses98/sift-sports-intelligence
+          ref: ${{ github.event.inputs.intelligence_ref || 'main' }}
+          path: sift
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q numpy pandas
+      - name: Evaluate
+        run: |
+          mkdir -p out
+          (cd sift && python3 -m research.intelligence.adapters.mlb "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/out/mlb_evaluation.json")
+          python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json
+          r = json.load(open("out/mlb_evaluation.json"))
+          print("### MLB projection intelligence")
+          print("status:", r.get("status"), "| status_counts:", r.get("status_counts"))
+          print("accounting:", json.dumps(r.get("accounting"))[:700])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mlb-projection-intelligence
+          path: out/mlb_evaluation.json
+          retention-days: 90

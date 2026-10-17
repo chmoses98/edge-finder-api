@@ -190,12 +190,13 @@ def scenario_a(out):
     f["gen"] = pd.to_datetime(f["generated_utc"], utc=True)
     assert (f["arch"] < f["start"]).all() and (f["gen"] < f["start"]).all(), "late forecast archived"
     ch = f[f.model_role == "challenger"]
-    assert len(ch) and ch["participation"].map(lambda p: isinstance(p, dict) and "status" in p).all()
+    players = ch[~ch.family.isin(["team_runs", "game_total"])]
+    assert len(players) and players["participation"].map(lambda p: isinstance(p, dict) and "status" in p).all()
     assert set(ch[ch.family.isin(["hits", "plate_appearances"])]["slot_source"].dropna()) == {"CONFIRMED_POSTED_LINEUP"}
     metrics["archived"] = {"n": len(f), "by_role": f.groupby("model_role").size().to_dict(),
                            "by_family": f.groupby(["model_role", "family"]).size().to_dict().__repr__(),
                            "gate": ch.groupby("gate_status").size().to_dict(),
-                           "participation": ch["participation"].map(lambda p: p["status"] if p else None).value_counts().to_dict(),
+                           "participation": players["participation"].map(lambda p: p["status"]).value_counts().to_dict(),
                            "games": sorted(f.game_id.unique().tolist())}
     inc = f[f.model_role == "incumbent"]
     metrics["incumbent"] = {"n": len(inc), "families": inc.groupby("family").size().to_dict(),

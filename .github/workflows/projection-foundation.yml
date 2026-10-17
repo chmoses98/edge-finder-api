@@ -3,7 +3,8 @@ name: Research - MLB Projection Foundation (live shadow)
 # SIFT Projection Foundation, MLB, LIVE prospective validation. RESEARCH ONLY: authority is always research_only; nothing
 # here changes a production model, pricer, ledger or betting file.
 #
-# One entry point, `python -m mlb.live.run` (research/projection_foundation), runs idempotent stages:
+# One entry point, `python -m mlb.live.run` (research/projection_foundation), runs idempotent stages (all = capture, results,
+# settle, project, publish, score, guard; results/settle come first so the projection sees every game that just finished):
 #   capture  MLB schedule -> probable pitchers + posted lineups -> immutable availability snapshot (certainty per observation)
 #   project  frozen models for games starting in the next 20 h, using ONLY archived as-of availability; archives pregame
 #            forecasts (challenger) and the incumbents' current pregame forecasts (never anything for a started game)
@@ -121,7 +122,7 @@ jobs:
         run: python -m pytest -q tests/test_mlb_live.py tests/test_mlb_pf.py tests/test_pf_core.py tests/test_pf_live.py
       - name: Check out the projection-data branch (creates the orphan on the first run)
         run: bash "$PF_DIR/ci/setup_archive.sh" "$RUNNER_TEMP/archive" "${{ env.DRY_RUN == 'true' && 'false' || 'true' }}"
-      - name: Run the stages (capture, project, publish, results, settle, score, guard)
+      - name: Run the stages (capture, results, settle, project, publish, score, guard)
         working-directory: ${{ env.PF_DIR }}
         run: |
           set -euo pipefail

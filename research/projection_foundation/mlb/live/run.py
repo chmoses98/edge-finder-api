@@ -3,7 +3,8 @@
     cd research/projection_foundation
     python -m mlb.live.run --stage all --archive <checkout of the projection-data branch> [--dry-run] [--now ISO]
 
-Stages (each idempotent; `all` runs them in order)
+Stages (each idempotent; `all` runs them in this order: results/settle run BEFORE project so the projection sees the
+box scores of every game that has just finished)
   capture  fetch the MLB schedule (probable pitchers + posted lineups) and write an immutable availability snapshot
   project  frozen-model projections for games starting in the next --horizon-hours, using ONLY the as-of archived
            availability; archive challenger forecasts and the incumbents' current pregame forecasts (never late ones)
@@ -40,7 +41,7 @@ from pf_core import availability as av, prospective as pr  # noqa: E402
 from mlb.live import availability as live_av, forecast as FC, incumbent as INC, results as RES, score as SC, statsapi as api  # noqa: E402
 
 SPORT = "MLB"
-STAGES = ["capture", "project", "publish", "results", "settle", "score", "guard"]
+STAGES = ["capture", "results", "settle", "project", "publish", "score", "guard"]
 FAMILY_LABEL_NOTE = ("Research only: nothing here is a betting signal and nothing changes betting authority. "
                      "Hitter rows stay SHADOW until point-in-time batting orders are proven.")
 

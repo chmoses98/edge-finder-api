@@ -1,0 +1,158 @@
+name: Research - MLB Projection Foundation
+
+# SIFT Projection Foundation (MLB). RESEARCH ONLY -- authority is always research_only.
+#
+# Daily in season: builds forward projections (sift.projections.v1) for the most recent archived
+# slate from committed repo data with research/projection_foundation/mlb/project.py, using the
+# frozen walk-forward parameters in research/projection_foundation/results/frozen_params_mlb.json.
+# workflow_dispatch with full_walkforward=true also re-runs the complete chronological backtest
+# (research/projection_foundation/mlb/run_walkforward.py, ~1 h on 2 cores) first.
+#
+# Publication: the ORPHAN branch `projection-data` (created on first run if missing):
+#   projections/mlb/latest.json, projections/mlb/<YYYY-MM-DDTHHMMZ>.json, summary/mlb/latest.json
+# Commits only when the projection content changed (generated_utc ignored). Never writes to main,
+# never touches production pipelines, models, staking or betting authority. No secrets, no paid APIs.
+# Inert until merged to the default branch (schedules only fire there).
+
+on:
+  schedule:
+    # 15:41 UTC daily, March-November (after the morning slate fetch).
+    - cron: '41 15 * 3-11 *'
+  workflow_dispatch:
+    inputs:
+      slate_date:
+        description: 'Slate date YYYY-MM-DD (blank = most recent archived slate)'
+        required: false
+        default: ''
+      full_walkforward:
+        description: 'Re-run the full walk-forward backtest before projecting (slow)'
+        required: false
+        default: 'false'
+      publish:
+        description: 'Publish to the projection-data branch'
+        required: false
+        default: 'true'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: projection-foundation-mlb
+  cancel-in-progress: false
+
+jobs:
+  project:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      PF_DIR: research/projection_foundation
+    steps:
+      - name: Checkout (sparse, blobless; only the inputs the projection reads)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            research/projection_foundation
+            data/research/hitter_w2/mlb_feed
+            data/research/hitter_v2
+            data/research/pitcher_workload_joint
+            data/research_cache/starter_workload
+            data/research_cache/batting_backtest
+            data/research_cache/bullpen_backtest
+            data/statcast_raw
+            data/pipeline
+            data/edgelab/hitter_projection_snapshots
+
+      - name: Add only the newest archived slate to the checkout
+        run: |
+          set -euo pipefail
+          latest="${{ github.event.inputs.slate_date }}"
+          if [ -z "$latest" ]; then
+            latest=$(git ls-tree -d --name-only HEAD data/slates/ | sed 's#data/slates/##' | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' | sort | tail -1)
+          fi
+          echo "slate: $latest"
+          git sparse-checkout add "data/slates/$latest"
+          echo "SLATE_DATE=$latest" >> "$GITHUB_ENV"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: python -m pip install --quiet numpy pandas scipy scikit-learn statsmodels lightgbm pyarrow pytest
+
+      - name: Full walk-forward backtest (dispatch only)
+        if: ${{ github.event.inputs.full_walkforward == 'true' }}
+        working-directory: ${{ env.PF_DIR }}
+        run: python -m mlb.run_walkforward --stage all
+
+      - name: Build forward projections
+        working-directory: ${{ env.PF_DIR }}
+        run: python -m mlb.project --slate-date "$SLATE_DATE" --out "$RUNNER_TEMP/projections_latest.json"
+
+      - name: Contract tests
+        working-directory: ${{ env.PF_DIR }}
+        run: |
+          cp "$RUNNER_TEMP/projections_latest.json" results/projections_latest.json
+          python -m pytest -q tests/test_mlb_pf.py tests/test_pf_core.py
+
+      - name: Publish to the projection-data branch (only if changed)
+        if: ${{ github.event_name == 'schedule' || github.event.inputs.publish != 'false' }}
+        env:
+          SUMMARY: ${{ env.PF_DIR }}/results/summary.json
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          WT="$RUNNER_TEMP/projection-data"
+          if git ls-remote --exit-code --heads origin projection-data >/dev/null 2>&1; then
+            git fetch --depth=1 origin projection-data:refs/remotes/origin/projection-data
+            git worktree add "$WT" -B projection-data origin/projection-data
+          else
+            git worktree add --detach "$WT"
+            git -C "$WT" checkout --orphan projection-data
+            git -C "$WT" rm -rf --quiet . || true
+            git -C "$WT" clean -fdx --quiet
+          fi
+          mkdir -p "$WT/projections/mlb" "$WT/summary/mlb"
+          NEW="$RUNNER_TEMP/projections_latest.json"
+          changed=$(python3 - "$NEW" "$WT/projections/mlb/latest.json" <<'PY'
+          import json, os, sys
+          new = json.load(open(sys.argv[1]))
+          old = json.load(open(sys.argv[2])) if os.path.exists(sys.argv[2]) else None
+          strip = lambda d: {k: v for k, v in d.items() if k != "generated_utc"} if d else None
+          print("yes" if strip(new) != strip(old) else "no")
+          PY
+          )
+          cp "$SUMMARY" "$WT/summary/mlb/latest.json"
+          if [ "$changed" = "yes" ]; then
+            stamp=$(date -u +'%Y-%m-%dT%H%MZ')
+            cp "$NEW" "$WT/projections/mlb/latest.json"
+            cp "$NEW" "$WT/projections/mlb/${stamp}.json"
+          fi
+          git -C "$WT" add -A
+          if git -C "$WT" diff --cached --quiet; then
+            echo "No content change; nothing to publish."
+            exit 0
+          fi
+          git -C "$WT" commit -q -m "mlb projection-foundation publish $(date -u +'%Y-%m-%dT%H:%M:%SZ') (slate $SLATE_DATE)"
+          for i in 1 2 3 4; do
+            if git -C "$WT" push origin HEAD:projection-data; then exit 0; fi
+            sleep $((2 ** i))
+            git -C "$WT" fetch origin projection-data && git -C "$WT" rebase origin/projection-data || true
+          done
+          echo "push failed after retries" >&2
+          exit 1
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: projection-foundation-mlb
+          path: |
+            ${{ runner.temp }}/projections_latest.json
+            ${{ env.PF_DIR }}/results/summary.json
+          if-no-files-found: ignore

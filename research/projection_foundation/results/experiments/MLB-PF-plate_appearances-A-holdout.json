@@ -1,0 +1,77 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:38:22Z",
+  "data_provenance": [
+    "data/research/hitter_w2/mlb_feed (batting, pa)",
+    "pitcher frame (opposing starter)"
+  ],
+  "distribution": {
+    "cover_50": 0.4912786705122923,
+    "cover_80": 0.7877352012086252,
+    "cover_90": 0.8947946710616673,
+    "crps": 0.3896100353843407,
+    "dist": "empirical_resid",
+    "log_score": 1.1353998459946197,
+    "pit_deciles": [
+      0.105,
+      0.0966,
+      0.0961,
+      0.0979,
+      0.0973,
+      0.0972,
+      0.0979,
+      0.1024,
+      0.1023,
+      0.1073
+    ],
+    "pit_var_ratio": 1.0253694852201183,
+    "thresholds": {
+      "4": {
+        "brier": 0.14352495893430214,
+        "hit_rate": 0.79483129606739,
+        "log_loss": 0.4456422802146284,
+        "mean_p": 0.7966283483320729
+      },
+      "5": {
+        "brier": 0.17793634416853268,
+        "hit_rate": 0.2547955866868104,
+        "log_loss": 0.5362457147812039,
+        "mean_p": 0.24445996220311372
+      }
+    }
+  },
+  "eval_period": "2026 RS",
+  "experiment_id": "MLB-PF-plate_appearances-A-holdout",
+  "family": "plate_appearances",
+  "features": [
+    "see mlb/hitters.py E_FEATURES / COVARS"
+  ],
+  "fingerprint": "9a1a20f33c4fc4e4",
+  "hyperparameters": {},
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Batting order is the post-game official lineup (retrospective; pregame lineups archived only for 527 games)."
+  ],
+  "model": "A",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2427,
+  "n_independent": 43686,
+  "n_obs": 43686,
+  "point": {
+    "bias": -0.003918969681127133,
+    "corr": 0.3596613214840112,
+    "mae": 0.5842252666492126,
+    "mean_actual": 4.015062033603443,
+    "mean_pred": 4.011143063922315,
+    "rmse": 0.7740714691734562
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model A for plate_appearances?",
+  "split": "holdout",
+  "sport": "MLB",
+  "train_period": "2024 (fit from 2024-05-01)",
+  "verdict": "",
+  "vs_baseline": {},
+  "vs_incumbent": {}
+}

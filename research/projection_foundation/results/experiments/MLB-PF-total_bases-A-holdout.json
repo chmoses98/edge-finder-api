@@ -1,0 +1,89 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:38:22Z",
+  "data_provenance": [
+    "data/research/hitter_w2/mlb_feed (batting, pa)",
+    "pitcher frame (opposing starter)"
+  ],
+  "distribution": {
+    "cover_50": 0.491095545483679,
+    "cover_80": 0.799752781211372,
+    "cover_90": 0.8962138900334203,
+    "crps": 0.8702476014273068,
+    "dist": "tb_mix",
+    "log_score": 1.625837666435237,
+    "pit_deciles": [
+      0.0963,
+      0.1005,
+      0.1023,
+      0.0984,
+      0.0972,
+      0.0972,
+      0.099,
+      0.1006,
+      0.1045,
+      0.104
+    ],
+    "pit_var_ratio": 1.012959713393913,
+    "thresholds": {
+      "1": {
+        "brier": 0.2368470580184522,
+        "hit_rate": 0.6063040791100124,
+        "log_loss": 0.6665134071537673,
+        "mean_p": 0.6040884317771532
+      },
+      "2": {
+        "brier": 0.22565402862571005,
+        "hit_rate": 0.35004349219429565,
+        "log_loss": 0.6433717459916157,
+        "mean_p": 0.3419327696453219
+      },
+      "3": {
+        "brier": 0.16122047915052606,
+        "hit_rate": 0.2042988600466969,
+        "log_loss": 0.5021983756376674,
+        "mean_p": 0.19470208234849265
+      },
+      "4": {
+        "brier": 0.12115044656946947,
+        "hit_rate": 0.1429290848326695,
+        "log_loss": 0.4047001488376291,
+        "mean_p": 0.13819501664909542
+      }
+    }
+  },
+  "eval_period": "2026 RS",
+  "experiment_id": "MLB-PF-total_bases-A-holdout",
+  "family": "total_bases",
+  "features": [
+    "see mlb/hitters.py E_FEATURES / COVARS"
+  ],
+  "fingerprint": "bbc9488d382173f7",
+  "hyperparameters": {},
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Batting order is the post-game official lineup (retrospective; pregame lineups archived only for 527 games)."
+  ],
+  "model": "A",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2427,
+  "n_independent": 43686,
+  "n_obs": 43686,
+  "point": {
+    "bias": -0.04117953553968027,
+    "corr": 0.11032730953160536,
+    "mae": 1.323415506595987,
+    "mean_actual": 1.4354026461566634,
+    "mean_pred": 1.3942231106169833,
+    "rmse": 1.7386340904237292
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model A for total_bases?",
+  "split": "holdout",
+  "sport": "MLB",
+  "train_period": "2024 (fit from 2024-05-01)",
+  "verdict": "",
+  "vs_baseline": {},
+  "vs_incumbent": {}
+}

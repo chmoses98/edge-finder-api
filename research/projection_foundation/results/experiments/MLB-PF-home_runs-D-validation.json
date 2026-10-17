@@ -1,0 +1,84 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:38:22Z",
+  "data_provenance": [
+    "data/research/hitter_w2/mlb_feed (batting, pa)",
+    "pitcher frame (opposing starter)"
+  ],
+  "distribution": {
+    "cover_50": 0.5067097187872126,
+    "cover_80": 0.8006549418338371,
+    "cover_90": 0.8984382156270038,
+    "crps": 0.11016381246146864,
+    "dist": "binom_mix",
+    "log_score": 0.38386436937784435,
+    "pit_deciles": [
+      0.102,
+      0.0976,
+      0.0976,
+      0.1037,
+      0.1019,
+      0.0998,
+      0.1017,
+      0.0991,
+      0.0992,
+      0.0974
+    ],
+    "pit_var_ratio": 0.9940895418920128,
+    "thresholds": {
+      "1": {
+        "brier": 0.10162973793027191,
+        "hit_rate": 0.1172712283594394,
+        "log_loss": 0.35253188163846677,
+        "mean_p": 0.12070936335824846
+      }
+    }
+  },
+  "eval_period": "2025 RS",
+  "experiment_id": "MLB-PF-home_runs-D-validation",
+  "family": "home_runs",
+  "features": [
+    "see mlb/hitters.py E_FEATURES / COVARS"
+  ],
+  "fingerprint": "d6e6c2c9470e3e83",
+  "hyperparameters": {
+    "icpt": 0.00270153575777096,
+    "park_hr": 0.6999785392387882,
+    "plat": 0.48829791567969477,
+    "sp_hr": 0.15155945446112595
+  },
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Batting order is the post-game official lineup (retrospective; pregame lineups archived only for 527 games)."
+  ],
+  "model": "D",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2426,
+  "n_independent": 43668,
+  "n_obs": 43668,
+  "point": {
+    "bias": 0.0017204251404588,
+    "corr": 0.14040463218756824,
+    "mae": 0.21981554793946492,
+    "mean_actual": 0.1259045525327471,
+    "mean_pred": 0.12762497767320588,
+    "rmse": 0.35494676921489887
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model D for home_runs?",
+  "split": "validation",
+  "sport": "MLB",
+  "train_period": "2024 (fit from 2024-05-01)",
+  "verdict": "",
+  "vs_baseline": {
+    "ci95": [
+      -0.0006385119657828217,
+      -0.0003367400781711658
+    ],
+    "mean_diff": -0.00048743847316495934,
+    "n_clusters": 2426,
+    "n_obs": 43668
+  },
+  "vs_incumbent": {}
+}

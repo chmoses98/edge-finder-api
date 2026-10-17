@@ -1,0 +1,97 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:38:22Z",
+  "data_provenance": [
+    "data/research/hitter_w2/mlb_feed (batting, pa)",
+    "pitcher frame (opposing starter)"
+  ],
+  "distribution": {
+    "cover_50": 0.49033617294128423,
+    "cover_80": 0.7967848309975268,
+    "cover_90": 0.8953467069707796,
+    "crps": 0.8804360156716369,
+    "dist": "tb_mix",
+    "log_score": 1.63709739179507,
+    "pit_deciles": [
+      0.1031,
+      0.1058,
+      0.1015,
+      0.0983,
+      0.0989,
+      0.0998,
+      0.0958,
+      0.0955,
+      0.1012,
+      0.1001
+    ],
+    "pit_var_ratio": 1.0184335391794948,
+    "thresholds": {
+      "1": {
+        "brier": 0.2347740198142877,
+        "hit_rate": 0.6121645140606393,
+        "log_loss": 0.662212391780191,
+        "mean_p": 0.6242436453699698
+      },
+      "2": {
+        "brier": 0.22613532108731255,
+        "hit_rate": 0.35586699642759,
+        "log_loss": 0.6442265212643147,
+        "mean_p": 0.3606262687051998
+      },
+      "3": {
+        "brier": 0.1621947198258518,
+        "hit_rate": 0.2076119813135477,
+        "log_loss": 0.5037376114988524,
+        "mean_p": 0.207570429252891
+      },
+      "4": {
+        "brier": 0.12306229966171342,
+        "hit_rate": 0.14644591004854812,
+        "log_loss": 0.40884263262253995,
+        "mean_p": 0.14659660608886024
+      }
+    }
+  },
+  "eval_period": "2025 RS",
+  "experiment_id": "MLB-PF-total_bases-D_hist_slot-validation",
+  "family": "total_bases",
+  "features": [
+    "see mlb/hitters.py E_FEATURES / COVARS"
+  ],
+  "fingerprint": "d7ecd75946d3e7e0",
+  "hyperparameters": {},
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Batting order is the post-game official lineup (retrospective; pregame lineups archived only for 527 games)."
+  ],
+  "model": "D_hist_slot",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2426,
+  "n_independent": 43668,
+  "n_obs": 43668,
+  "point": {
+    "bias": 0.003598906439540334,
+    "corr": 0.13896351477537586,
+    "mae": 1.348502825585886,
+    "mean_actual": 1.4639552990748375,
+    "mean_pred": 1.4675542055143778,
+    "rmse": 1.7622933130981444
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model D_hist_slot for total_bases?",
+  "split": "validation",
+  "sport": "MLB",
+  "train_period": "2024 (fit from 2024-05-01)",
+  "verdict": "",
+  "vs_baseline": {
+    "ci95": [
+      -0.003700675047383289,
+      -0.00156451667198877
+    ],
+    "mean_diff": -0.0026635106439185314,
+    "n_clusters": 2426,
+    "n_obs": 43668
+  },
+  "vs_incumbent": {}
+}

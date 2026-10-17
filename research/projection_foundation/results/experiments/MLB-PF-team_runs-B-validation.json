@@ -1,0 +1,107 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:39:17Z",
+  "data_provenance": [
+    "data/research_cache/batting_backtest",
+    "data/research/hitter_w2/mlb_feed"
+  ],
+  "distribution": {
+    "cover_50": 0.48639736191261335,
+    "cover_80": 0.7901896125309151,
+    "cover_90": 0.8950948062654576,
+    "crps": 1.7537029041218697,
+    "dist": "empirical_resid",
+    "log_score": 2.510230460546982,
+    "pit_deciles": [
+      0.1043,
+      0.1076,
+      0.0969,
+      0.0973,
+      0.1026,
+      0.1,
+      0.0927,
+      0.0944,
+      0.0987,
+      0.1055
+    ],
+    "pit_var_ratio": 1.0261976723671915,
+    "thresholds": {
+      "2": {
+        "brier": 0.14965322348920074,
+        "hit_rate": 0.8167765869744436,
+        "log_loss": 0.4763214352554509,
+        "mean_p": 0.829312919477094
+      },
+      "3": {
+        "brier": 0.21358828048864426,
+        "hit_rate": 0.6896125309150866,
+        "log_loss": 0.6183233586001059,
+        "mean_p": 0.6984078392289221
+      },
+      "4": {
+        "brier": 0.2462352794216433,
+        "hit_rate": 0.5513190436933223,
+        "log_loss": 0.6855857719509347,
+        "mean_p": 0.5553320959326109
+      },
+      "5": {
+        "brier": 0.2421060930473856,
+        "hit_rate": 0.41817807089859854,
+        "log_loss": 0.6772250116583887,
+        "mean_p": 0.42893337100466383
+      },
+      "6": {
+        "brier": 0.21416640330104203,
+        "hit_rate": 0.3128606760098928,
+        "log_loss": 0.6194907514481315,
+        "mean_p": 0.31718931770006764
+      },
+      "7": {
+        "brier": 0.17531569631786134,
+        "hit_rate": 0.2279472382522671,
+        "log_loss": 0.5349429498272392,
+        "mean_p": 0.22513029812622637
+      }
+    }
+  },
+  "eval_period": "2025 RS",
+  "experiment_id": "MLB-PF-team_runs-B-validation",
+  "family": "team_runs",
+  "features": [
+    "see mlb/teams.py"
+  ],
+  "fingerprint": "8d56df39d885e978",
+  "hyperparameters": {},
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [],
+  "model": "B",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2426,
+  "n_independent": 4852,
+  "n_obs": 4852,
+  "point": {
+    "bias": -0.008251533331965788,
+    "corr": 0.0805934280131312,
+    "mae": 2.5208427002337466,
+    "mean_actual": 4.448887056883759,
+    "mean_pred": 4.440635523551793,
+    "rmse": 3.2366454931172197
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model B for team_runs?",
+  "split": "validation",
+  "sport": "MLB",
+  "train_period": "2022-2024 (history 2022; fitting 2023-2024)",
+  "verdict": "",
+  "vs_baseline": {
+    "ci95": [
+      -0.005149184538889945,
+      -0.00042468786376265557
+    ],
+    "mean_diff": -0.0029753286713761974,
+    "n_clusters": 2426,
+    "n_obs": 4852
+  },
+  "vs_incumbent": {}
+}

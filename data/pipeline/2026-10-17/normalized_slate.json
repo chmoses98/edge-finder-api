@@ -1,0 +1,2581 @@
+{
+  "data": {
+    "_containsSentinels": true,
+    "_sentinelCheckRan": true,
+    "_sentinelViolationCount": 4,
+    "_sentinelViolations": [
+      {
+        "path": "games[0].gameId",
+        "value": 849816
+      },
+      {
+        "path": "games[0].kalshi.markets[0].volume",
+        "value": 70005.52
+      },
+      {
+        "path": "games[0].kalshi.markets[1].volume",
+        "value": 61800.58
+      },
+      {
+        "path": "games[0].kalshi.ml.volume",
+        "value": 70005.52
+      }
+    ],
+    "bullpensLoaded": 30,
+    "dataSources": {
+      "schedule": "statsapi",
+      "standings": "statsapi",
+      "teamStats": "teamstats_endpoint"
+    },
+    "date": "2026-10-17",
+    "games": [
+      {
+        "allEdges": [
+          {
+            "actionable": false,
+            "betSize": 4.5,
+            "confidence": "MEDIUM",
+            "edgePct": -2.35,
+            "logForCLV": true,
+            "market": "RUN LINE",
+            "modelCoverPct": 27.8,
+            "pinVFpct": 37,
+            "price": 162,
+            "rlLine": -1.5,
+            "side": "AWAY"
+          },
+          {
+            "actionable": false,
+            "bestEdge": 2.85,
+            "bestSide": "OVER",
+            "diff": 1,
+            "logForCLV": true,
+            "market": "TOTAL",
+            "overEdgePct": 2.85,
+            "pOver": 62.2,
+            "pUnder": 23.2,
+            "paperOnly": true,
+            "paperReason": "Game Total WR 41% \u2014 paper only per Rule 71 until WR\u226552% over N\u226530",
+            "pinVFover": 51,
+            "pinVFunder": 49,
+            "sizeOver": 1,
+            "sizeUnder": 1,
+            "totalProj": 7.5,
+            "underEdgePct": -6.58,
+            "vegasLine": 6.5
+          }
+        ],
+        "away": {
+          "abbr": "TB",
+          "bullpen": {
+            "bbPer9": 2.55,
+            "elite": false,
+            "era": 3.7,
+            "fatigued": false,
+            "hlAvailable": true,
+            "hlDivergence": 0.3,
+            "hlGrade": "ABOVE_AVERAGE",
+            "hlSamplePA": 6205,
+            "hlXFIP": 3.93,
+            "hr9": 1.25,
+            "ip": 1443,
+            "kPer9": 8.25,
+            "last3DaysIP": null,
+            "recentUsage": {
+              "asOfDate": "2026-10-15",
+              "backToBackRelievers": [],
+              "dataAvailable": true,
+              "gamesConsidered": 1,
+              "handednessMix": {
+                "L": 0,
+                "R": 0,
+                "unknown": 2
+              },
+              "highLeverageRecentUsage": [],
+              "recentPitchCounts": [
+                {
+                  "appearances": 1,
+                  "name": "Tyler Wells",
+                  "playerId": "669330",
+                  "totalPitches": 26
+                },
+                {
+                  "appearances": 1,
+                  "name": "Steven Matz",
+                  "playerId": "571927",
+                  "totalPitches": 25
+                }
+              ],
+              "relieversUsedLastGame": [
+                {
+                  "name": "Tyler Wells",
+                  "numberOfPitches": 26,
+                  "playerId": "669330"
+                },
+                {
+                  "name": "Steven Matz",
+                  "numberOfPitches": 25,
+                  "playerId": "571927"
+                }
+              ],
+              "teamPitchCountLastGame": 51,
+              "teamPitchCountWindow": 51,
+              "unavailableReason": null
+            },
+            "vulnerable": false,
+            "whip": 1.14,
+            "xFIP": 4.04,
+            "xFIPMethod": "real_xFIP"
+          },
+          "pitcher": {
+            "id": "607259",
+            "name": "Nick Martinez",
+            "note": "",
+            "pitchHand": null
+          },
+          "pitcherSavant": {
+            "avgIPperStart": 5.89,
+            "barrelPct": 6.8,
+            "bbPct": 3.6,
+            "eliteStarter": false,
+            "exitVeloAvg": 87,
+            "fbPct": 60,
+            "firstInningSplit": {
+              "appearances": 412,
+              "available": true,
+              "firstInningERA": null,
+              "firstInningXERA": null,
+              "ip": 0,
+              "openerQualified": false,
+              "strongOpener": false
+            },
+            "hardHitPct": 32.9,
+            "highWalkRisk": false,
+            "kPct": 15.1,
+            "name": "Martinez, Nick",
+            "recentFIP": 3.13,
+            "seasonFIP": 3.91,
+            "seasonIP": 180,
+            "seasonStarts": 31,
+            "startsSampled": 5,
+            "tto1": {
+              "fip": 4.23,
+              "gamesUsed": 2
+            },
+            "tto3": {
+              "fip": 3.94,
+              "gamesUsed": 9
+            },
+            "ttoAvailable": true,
+            "ttoRisk": false,
+            "ttoSplit": -0.29,
+            "velocityRecent": null,
+            "velocitySeason": null,
+            "velocityStartsN": null,
+            "vsLHH": null,
+            "vsRHH": null,
+            "whiffPct": 17.4,
+            "xERA": 3.98,
+            "xFIP": 3.91,
+            "xFIPvsXERA": -0.07
+          },
+          "record": "1-2",
+          "team": "Tampa Bay Rays"
+        },
+        "awayTeamStats": {
+          "abbr": "TB",
+          "avg": null,
+          "gamesPlayed": 162,
+          "last15RpG": 3,
+          "last7RpG": 2.67,
+          "lineupAdj": null,
+          "lineupAdjApplied": false,
+          "lineupAdjAvailable": false,
+          "lineupBattersExpected": 9,
+          "lineupBattersFound": 0,
+          "lineupBattersResolved": 0,
+          "lineupConfirmed": false,
+          "lineupConfirmedOfficial": false,
+          "lineupDataQuality": "none",
+          "lineupNote": "lineup_not_posted",
+          "lineupPosted": false,
+          "lineupSource": "mlb_stats_api",
+          "lineupStatus": "missing",
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "lineupWOBADelta": null,
+          "obp": null,
+          "offenseBaselineAdj": 4.079,
+          "offenseBaselineBayes": 4.079,
+          "offenseBaselineOppAdj": 4.079,
+          "offenseBaselineRaw": 3.517,
+          "offenseForm": {
+            "asOfDate": "2026-10-16",
+            "formLabel": {
+              "label": "NEUTRAL",
+              "reason": "3/7 games clearing 4 runs, median 3.0, mean 4.14",
+              "window": "L7"
+            },
+            "formLines": {
+              "L10": "L10: 3.8 avg | 2.5 med | 2,2,5,0,6,2,4,2,12,3 | 4/10 >=4 | 3/10 >=5 | max 12 (32% of L10 runs)",
+              "L5": "L5: 4.6 avg | 3.0 med | 2,4,2,12,3 | 2/5 >=4 | 1/5 >=5 | max 12 (52% of L5 runs) | OUTLIER-DEPENDENT",
+              "L7": "L7: 4.1 avg | 3.0 med | 0,6,2,4,2,12,3 | 3/7 >=4 | 2/7 >=5 | max 12 (41% of L7 runs) | OUTLIER-DEPENDENT"
+            },
+            "gamesAvailable": 12,
+            "source": "mlb_stats_api_schedule",
+            "team": "TB",
+            "unavailableReason": null,
+            "windows": {
+              "L10": {
+                "ewma": 4.29,
+                "games": 10,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 10,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 12,
+                "mean": 3.8,
+                "median": 2.5,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": false,
+                  "meanMinusTrimmedMean": 0.55,
+                  "topGameShareOfWindowRuns": 0.316
+                },
+                "scores": [
+                  2,
+                  2,
+                  5,
+                  0,
+                  6,
+                  2,
+                  4,
+                  2,
+                  12,
+                  3
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 5,
+                    "of": 10,
+                    "pct": 0.5
+                  },
+                  "ge4": {
+                    "games": 4,
+                    "of": 10,
+                    "pct": 0.4
+                  },
+                  "ge5": {
+                    "games": 3,
+                    "of": 10,
+                    "pct": 0.3
+                  },
+                  "ge6": {
+                    "games": 2,
+                    "of": 10,
+                    "pct": 0.2
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.316,
+                "totalRuns": 38,
+                "trimmedMean": 3.25,
+                "window": 10
+              },
+              "L5": {
+                "ewma": 5.05,
+                "games": 5,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 5,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 12,
+                "mean": 4.6,
+                "median": 3.0,
+                "min": 2,
+                "outlierDependence": {
+                  "isOutlierDependent": true,
+                  "meanMinusTrimmedMean": 1.6,
+                  "topGameShareOfWindowRuns": 0.522
+                },
+                "scores": [
+                  2,
+                  4,
+                  2,
+                  12,
+                  3
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 3,
+                    "of": 5,
+                    "pct": 0.6
+                  },
+                  "ge4": {
+                    "games": 2,
+                    "of": 5,
+                    "pct": 0.4
+                  },
+                  "ge5": {
+                    "games": 1,
+                    "of": 5,
+                    "pct": 0.2
+                  },
+                  "ge6": {
+                    "games": 1,
+                    "of": 5,
+                    "pct": 0.2
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.522,
+                "totalRuns": 23,
+                "trimmedMean": 3.0,
+                "window": 5
+              },
+              "L7": {
+                "ewma": 4.68,
+                "games": 7,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 7,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 12,
+                "mean": 4.14,
+                "median": 3.0,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": true,
+                  "meanMinusTrimmedMean": 0.74,
+                  "topGameShareOfWindowRuns": 0.414
+                },
+                "scores": [
+                  0,
+                  6,
+                  2,
+                  4,
+                  2,
+                  12,
+                  3
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 4,
+                    "of": 7,
+                    "pct": 0.571
+                  },
+                  "ge4": {
+                    "games": 3,
+                    "of": 7,
+                    "pct": 0.429
+                  },
+                  "ge5": {
+                    "games": 2,
+                    "of": 7,
+                    "pct": 0.286
+                  },
+                  "ge6": {
+                    "games": 2,
+                    "of": 7,
+                    "pct": 0.286
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.414,
+                "totalRuns": 29,
+                "trimmedMean": 3.4,
+                "window": 7
+              }
+            }
+          },
+          "offenseFormAsOf": "2026-10-16",
+          "offenseFormLabel": "NEUTRAL",
+          "offenseFormLine": "L7: 4.1 avg | 3.0 med | 0,6,2,4,2,12,3 | 3/7 >=4 | 2/7 >=5 | max 12 (41% of L7 runs) | OUTLIER-DEPENDENT",
+          "offenseFormReason": "3/7 games clearing 4 runs, median 3.0, mean 4.14",
+          "oppQualityAdj": null,
+          "oppQualityConf": "low",
+          "oppQualityGames": 2,
+          "oppQualityNote": "unavailable",
+          "oppXFIPavg": null,
+          "ops": null,
+          "record": {
+            "divisionRank": "1",
+            "leagueRank": "1",
+            "losses": 64,
+            "pct": ".605",
+            "runDiff": 86,
+            "runsAllowed": 650,
+            "runsScored": 736,
+            "streak": "L1",
+            "wins": 98
+          },
+          "rpgIndex": 101,
+          "runs": 736,
+          "runsPerGame": 4.54,
+          "seasonRpG": 4.54,
+          "slg": null,
+          "teamBBPct": null,
+          "teamBarrel": null,
+          "teamFBPct": 0.355,
+          "teamHardHit": null,
+          "teamId": 139,
+          "teamKPct": null,
+          "teamWOBA": 0.319,
+          "wrcPlus": 101
+        },
+        "f5": {
+          "awayF5Pct": 51.6,
+          "awayF5Proj": 2.19,
+          "bookF5": null,
+          "f5Amplified": false,
+          "f5PriceNote": "F5 market not offered on any book today",
+          "favoredSide": "NEUTRAL",
+          "homeF5Pct": 48.4,
+          "homeF5Proj": 2.12,
+          "pinF5VigFree": null,
+          "tieProb": 19.9,
+          "xERAGap": 0.36
+        },
+        "gameId": 849816,
+        "gameType": "L",
+        "gamesInSeries": 7,
+        "home": {
+          "abbr": "CLE",
+          "bullpen": {
+            "bbPer9": 3.32,
+            "elite": false,
+            "era": 3.77,
+            "fatigued": false,
+            "hlAvailable": true,
+            "hlDivergence": -0.25,
+            "hlGrade": "ABOVE_AVERAGE",
+            "hlSamplePA": 6180,
+            "hlXFIP": 3.66,
+            "hr9": 1.1,
+            "ip": 1437.222,
+            "kPer9": 9.58,
+            "last3DaysIP": null,
+            "recentUsage": {
+              "asOfDate": "2026-10-15",
+              "backToBackRelievers": [],
+              "dataAvailable": true,
+              "gamesConsidered": 1,
+              "handednessMix": {
+                "L": 0,
+                "R": 0,
+                "unknown": 4
+              },
+              "highLeverageRecentUsage": [
+                {
+                  "holds": 0,
+                  "name": "Cade Smith",
+                  "playerId": "671922",
+                  "saves": 1,
+                  "totalPitches": 18
+                },
+                {
+                  "holds": 1,
+                  "name": "Daniel Espino",
+                  "playerId": "682982",
+                  "saves": 0,
+                  "totalPitches": 12
+                },
+                {
+                  "holds": 1,
+                  "name": "Erik Sabrowski",
+                  "playerId": "681870",
+                  "saves": 0,
+                  "totalPitches": 10
+                },
+                {
+                  "holds": 1,
+                  "name": "Hunter Gaddis",
+                  "playerId": "683769",
+                  "saves": 0,
+                  "totalPitches": 9
+                }
+              ],
+              "recentPitchCounts": [
+                {
+                  "appearances": 1,
+                  "name": "Cade Smith",
+                  "playerId": "671922",
+                  "totalPitches": 18
+                },
+                {
+                  "appearances": 1,
+                  "name": "Daniel Espino",
+                  "playerId": "682982",
+                  "totalPitches": 12
+                },
+                {
+                  "appearances": 1,
+                  "name": "Erik Sabrowski",
+                  "playerId": "681870",
+                  "totalPitches": 10
+                },
+                {
+                  "appearances": 1,
+                  "name": "Hunter Gaddis",
+                  "playerId": "683769",
+                  "totalPitches": 9
+                }
+              ],
+              "relieversUsedLastGame": [
+                {
+                  "name": "Daniel Espino",
+                  "numberOfPitches": 12,
+                  "playerId": "682982"
+                },
+                {
+                  "name": "Erik Sabrowski",
+                  "numberOfPitches": 10,
+                  "playerId": "681870"
+                },
+                {
+                  "name": "Hunter Gaddis",
+                  "numberOfPitches": 9,
+                  "playerId": "683769"
+                },
+                {
+                  "name": "Cade Smith",
+                  "numberOfPitches": 18,
+                  "playerId": "671922"
+                }
+              ],
+              "teamPitchCountLastGame": 49,
+              "teamPitchCountWindow": 49,
+              "unavailableReason": null
+            },
+            "vulnerable": false,
+            "whip": 1.26,
+            "xFIP": 3.81,
+            "xFIPMethod": "real_xFIP"
+          },
+          "pitcher": {
+            "id": "542888",
+            "name": "Shawn Armstrong",
+            "note": "",
+            "pitchHand": null
+          },
+          "pitcherSavant": {
+            "avgIPperStart": null,
+            "barrelPct": 7.1,
+            "bbPct": 12.3,
+            "eliteStarter": false,
+            "exitVeloAvg": 88.5,
+            "fbPct": 59.4,
+            "firstInningSplit": {
+              "available": false,
+              "reason": "no_data"
+            },
+            "hardHitPct": 35.4,
+            "highWalkRisk": true,
+            "kPct": 22.1,
+            "name": "Armstrong, Shawn",
+            "recentFIP": null,
+            "seasonFIP": 4.27,
+            "seasonIP": 35.1,
+            "seasonStarts": 0,
+            "startsSampled": null,
+            "tto1": null,
+            "tto3": null,
+            "ttoAvailable": false,
+            "ttoRisk": false,
+            "ttoSplit": null,
+            "velocityRecent": null,
+            "velocitySeason": null,
+            "velocityStartsN": null,
+            "vsLHH": null,
+            "vsRHH": null,
+            "whiffPct": 23.7,
+            "xERA": 4.21,
+            "xFIP": 4.27,
+            "xFIPvsXERA": 0.06
+          },
+          "record": "2-1",
+          "team": "Cleveland Guardians"
+        },
+        "homeTeamStats": {
+          "abbr": "CLE",
+          "avg": null,
+          "gamesPlayed": 162,
+          "last15RpG": 4.25,
+          "last7RpG": 3.25,
+          "lineupAdj": null,
+          "lineupAdjApplied": false,
+          "lineupAdjAvailable": false,
+          "lineupBattersExpected": 9,
+          "lineupBattersFound": 0,
+          "lineupBattersResolved": 0,
+          "lineupConfirmed": false,
+          "lineupConfirmedOfficial": false,
+          "lineupDataQuality": "none",
+          "lineupNote": "lineup_not_posted",
+          "lineupPosted": false,
+          "lineupSource": "mlb_stats_api",
+          "lineupStatus": "missing",
+          "lineupStatusReason": "Batting order not yet posted by MLB Stats API",
+          "lineupWOBADelta": null,
+          "obp": null,
+          "offenseBaselineAdj": 4.254,
+          "offenseBaselineBayes": 4.254,
+          "offenseBaselineOppAdj": 4.254,
+          "offenseBaselineRaw": 3.926,
+          "offenseForm": {
+            "asOfDate": "2026-10-16",
+            "formLabel": {
+              "label": "COLD",
+              "reason": "median 2.0 and only 2/7 games clearing 4 runs",
+              "window": "L7"
+            },
+            "formLines": {
+              "L10": "L10: 5.3 avg | 4.0 med | 6,5,12,1,3,0,1,12,11,2 | 5/10 >=4 | 5/10 >=5 | max 12 (23% of L10 runs)",
+              "L5": "L5: 5.2 avg | 2.0 med | 0,1,12,11,2 | 2/5 >=4 | 2/5 >=5 | max 12 (46% of L5 runs) | OUTLIER-DEPENDENT",
+              "L7": "L7: 4.3 avg | 2.0 med | 1,3,0,1,12,11,2 | 2/7 >=4 | 2/7 >=5 | max 12 (40% of L7 runs) | OUTLIER-DEPENDENT"
+            },
+            "gamesAvailable": 10,
+            "source": "mlb_stats_api_schedule",
+            "team": "CLE",
+            "unavailableReason": null,
+            "windows": {
+              "L10": {
+                "ewma": 5.38,
+                "games": 10,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 10,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 12,
+                "mean": 5.3,
+                "median": 4.0,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": false,
+                  "meanMinusTrimmedMean": 0.18,
+                  "topGameShareOfWindowRuns": 0.226
+                },
+                "scores": [
+                  6,
+                  5,
+                  12,
+                  1,
+                  3,
+                  0,
+                  1,
+                  12,
+                  11,
+                  2
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 6,
+                    "of": 10,
+                    "pct": 0.6
+                  },
+                  "ge4": {
+                    "games": 5,
+                    "of": 10,
+                    "pct": 0.5
+                  },
+                  "ge5": {
+                    "games": 5,
+                    "of": 10,
+                    "pct": 0.5
+                  },
+                  "ge6": {
+                    "games": 4,
+                    "of": 10,
+                    "pct": 0.4
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.226,
+                "totalRuns": 53,
+                "trimmedMean": 5.12,
+                "window": 10
+              },
+              "L5": {
+                "ewma": 5.7,
+                "games": 5,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 5,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 12,
+                "mean": 5.2,
+                "median": 2.0,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": true,
+                  "meanMinusTrimmedMean": 0.53,
+                  "topGameShareOfWindowRuns": 0.462
+                },
+                "scores": [
+                  0,
+                  1,
+                  12,
+                  11,
+                  2
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 2,
+                    "of": 5,
+                    "pct": 0.4
+                  },
+                  "ge4": {
+                    "games": 2,
+                    "of": 5,
+                    "pct": 0.4
+                  },
+                  "ge5": {
+                    "games": 2,
+                    "of": 5,
+                    "pct": 0.4
+                  },
+                  "ge6": {
+                    "games": 2,
+                    "of": 5,
+                    "pct": 0.4
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.462,
+                "totalRuns": 26,
+                "trimmedMean": 4.67,
+                "window": 5
+              },
+              "L7": {
+                "ewma": 5.05,
+                "games": 7,
+                "marketRelative": {
+                  "lineCoverage": {
+                    "of": 7,
+                    "withLine": 0
+                  },
+                  "meanMarginVsLine": null,
+                  "medianMarginVsLine": null,
+                  "overs": 0,
+                  "oversPct": null
+                },
+                "max": 12,
+                "mean": 4.29,
+                "median": 2.0,
+                "min": 0,
+                "outlierDependence": {
+                  "isOutlierDependent": true,
+                  "meanMinusTrimmedMean": 0.69,
+                  "topGameShareOfWindowRuns": 0.4
+                },
+                "scores": [
+                  1,
+                  3,
+                  0,
+                  1,
+                  12,
+                  11,
+                  2
+                ],
+                "thresholdClears": {
+                  "ge3": {
+                    "games": 3,
+                    "of": 7,
+                    "pct": 0.429
+                  },
+                  "ge4": {
+                    "games": 2,
+                    "of": 7,
+                    "pct": 0.286
+                  },
+                  "ge5": {
+                    "games": 2,
+                    "of": 7,
+                    "pct": 0.286
+                  },
+                  "ge6": {
+                    "games": 2,
+                    "of": 7,
+                    "pct": 0.286
+                  }
+                },
+                "topGameShareOfWindowRuns": 0.4,
+                "totalRuns": 30,
+                "trimmedMean": 3.6,
+                "window": 7
+              }
+            }
+          },
+          "offenseFormAsOf": "2026-10-16",
+          "offenseFormLabel": "COLD",
+          "offenseFormLine": "L7: 4.3 avg | 2.0 med | 1,3,0,1,12,11,2 | 2/7 >=4 | 2/7 >=5 | max 12 (40% of L7 runs) | OUTLIER-DEPENDENT",
+          "offenseFormReason": "median 2.0 and only 2/7 games clearing 4 runs",
+          "oppQualityAdj": null,
+          "oppQualityConf": "low",
+          "oppQualityGames": 2,
+          "oppQualityNote": "unavailable",
+          "oppXFIPavg": null,
+          "ops": null,
+          "record": {
+            "divisionRank": "1",
+            "leagueRank": "4",
+            "losses": 77,
+            "pct": ".525",
+            "runDiff": 11,
+            "runsAllowed": 667,
+            "runsScored": 678,
+            "streak": "L1",
+            "wins": 85
+          },
+          "rpgIndex": 93,
+          "runs": 678,
+          "runsPerGame": 4.19,
+          "seasonRpG": 4.19,
+          "slg": null,
+          "teamBBPct": null,
+          "teamBarrel": null,
+          "teamFBPct": 0.355,
+          "teamHardHit": null,
+          "teamId": 114,
+          "teamKPct": null,
+          "teamWOBA": 0.306,
+          "wrcPlus": 93
+        },
+        "kalshi": {
+          "markets": [
+            {
+              "awayAbbr": "TB",
+              "closeTime": "2026-10-21T00:00:00Z",
+              "eventTicker": "KXMLBGAME-26OCT172000TBCLE",
+              "homeAbbr": "CLE",
+              "impliedPct": 52.5,
+              "mid": 53,
+              "ticker": "KXMLBGAME-26OCT172000TBCLE-TB",
+              "timeStr": "2000",
+              "title": "Tampa Bay wins",
+              "volume": 70005.52,
+              "yesAsk": 53,
+              "yesBid": 52
+            },
+            {
+              "awayAbbr": "TB",
+              "closeTime": "2026-10-21T00:00:00Z",
+              "eventTicker": "KXMLBGAME-26OCT172000TBCLE",
+              "homeAbbr": "CLE",
+              "impliedPct": 47.5,
+              "mid": 48,
+              "ticker": "KXMLBGAME-26OCT172000TBCLE-CLE",
+              "timeStr": "2000",
+              "title": "Cleveland wins",
+              "volume": 61800.58,
+              "yesAsk": 48,
+              "yesBid": 47
+            }
+          ],
+          "ml": {
+            "awayAbbr": "TB",
+            "closeTime": "2026-10-21T00:00:00Z",
+            "eventTicker": "KXMLBGAME-26OCT172000TBCLE",
+            "homeAbbr": "CLE",
+            "impliedPct": 52.5,
+            "mid": 53,
+            "ticker": "KXMLBGAME-26OCT172000TBCLE-TB",
+            "timeStr": "2000",
+            "title": "Tampa Bay wins",
+            "volume": 70005.52,
+            "yesAsk": 53,
+            "yesBid": 52
+          }
+        },
+        "kalshiEventTickerSuffix": "26OCT172000TBCLE",
+        "kalshiF5VF": {
+          "away": 52.81,
+          "home": 47.19
+        },
+        "kalshiGameTime": "8:00 PM ET",
+        "kalshiKey": "TBCLE",
+        "kalshiSnapshotTs": "2026-10-17T18:13:47Z",
+        "kalshiVF": {
+          "away": 52.61,
+          "home": 47.39
+        },
+        "lineupAuditUsed": true,
+        "lineupCheckedAt": "2026-10-17T18:13:40Z",
+        "lineupConfirmed": false,
+        "lineupSource": "unavailable",
+        "lineupStatus": "unconfirmed",
+        "mlEdge": {
+          "actionable": false,
+          "awayEdgePct": -0.54,
+          "awayProjRuns": 3.71,
+          "betEdgePct": 0.54,
+          "betModelPct": 51.2,
+          "betPinVF": 49.1,
+          "betSide": "HOME",
+          "betSize": 4.5,
+          "betTeam": "Cleveland Guardians",
+          "confidence": "MEDIUM",
+          "homeEdgePct": 0.54,
+          "homeProjRuns": 3.79,
+          "kalshiAway": 52.5,
+          "logForCLV": false,
+          "market": "ML",
+          "modelAwayPct": 48.8,
+          "modelHomePct": 51.2,
+          "pinGap": -1.6,
+          "pinVfAway": 50.9,
+          "pinVfHome": 49.1,
+          "totalProj": 7.5
+        },
+        "modelProb": {
+          "away": 48.8,
+          "awayProjDetail": {
+            "bullpenIP": 3.5,
+            "offMatchup": 0.91,
+            "offenseBaseline": 4.08,
+            "projRuns": 3.71,
+            "rolling15": 3,
+            "seasonRpG": 4.54,
+            "starterIP": 5.5,
+            "trueXFIP": 4.27,
+            "wrcPlus": 101,
+            "xfipSource": "xFIP"
+          },
+          "awayProjRuns": 3.71,
+          "confidence": "MEDIUM",
+          "factors": {
+            "awayOffBaseline": 4.08,
+            "awayTrueXFIP": 4.27,
+            "awayXfipSource": "xFIP",
+            "homeOffBaseline": 4.25,
+            "homeTrueXFIP": 3.91,
+            "homeXfipSource": "xFIP",
+            "parkRunAdj": 0
+          },
+          "home": 51.2,
+          "homeProjDetail": {
+            "bullpenIP": 3.1,
+            "offMatchup": 0.95,
+            "offenseBaseline": 4.25,
+            "projRuns": 3.79,
+            "rolling15": 4.25,
+            "seasonRpG": 4.19,
+            "starterIP": 5.9,
+            "trueXFIP": 3.91,
+            "wrcPlus": 93,
+            "xfipSource": "xFIP"
+          },
+          "homeProjRuns": 3.79,
+          "push": 14.8,
+          "totalProj": 7.5,
+          "vsKalshi": -3.7,
+          "vsPin": -2.1
+        },
+        "nrfi": {
+          "lean": "YRFI",
+          "leanStrength": "LEAN",
+          "nrfiPct": 33,
+          "nrfiScore": 2,
+          "reasons": [
+            "Away K% low: 15.1%",
+            "Away BB% low: 3.6%",
+            "Home BB% high: 12.3%"
+          ],
+          "yrfiMeta": {
+            "formulaUsed": "poisson_independence",
+            "lambdaDerivedFromFullGame": false,
+            "lambdaFormula": "proxy_kpct_bbpct",
+            "lambdaIsFirstInningSpecific": false,
+            "lambdaUsed": 0.526,
+            "parkFirstInningRateIncluded": false,
+            "poissonCheckFirstInningValid": false,
+            "teamFirstInningRatesIncluded": false
+          },
+          "yrfiPct": 67,
+          "yrfiScore": 4
+        },
+        "odds": {
+          "betmgm": {
+            "f5ml": {
+              "away": -125,
+              "home": 100,
+              "updated": "2026-10-17T18:12:09Z"
+            },
+            "f5rl": {
+              "away": 115,
+              "awayPoint": -0.5,
+              "home": -150,
+              "homePoint": 0.5
+            },
+            "ml": {
+              "away": -115,
+              "home": -105,
+              "updated": "2026-10-17T18:12:39Z"
+            },
+            "rl": {
+              "away": 155,
+              "awayPoint": -1.5,
+              "home": -190,
+              "homePoint": 1.5
+            },
+            "teamTotals": {
+              "away": {
+                "line": 3.5,
+                "over": 105,
+                "under": -140
+              },
+              "home": {
+                "line": 2.5,
+                "over": -155,
+                "under": 118
+              }
+            },
+            "total": {
+              "line": 6.5,
+              "over": -115,
+              "under": -105
+            }
+          },
+          "draftkings": {
+            "f5ml": {
+              "away": -135,
+              "home": 105,
+              "updated": "2026-10-17T18:12:30Z"
+            },
+            "ml": {
+              "away": -112,
+              "home": -107,
+              "updated": "2026-10-17T18:12:38Z"
+            },
+            "rl": {
+              "away": 161,
+              "awayPoint": -1.5,
+              "home": -197,
+              "homePoint": 1.5
+            },
+            "teamTotals": {
+              "away": {
+                "line": 3.5,
+                "over": 105,
+                "under": -135
+              },
+              "home": {
+                "line": 2.5,
+                "over": -154,
+                "under": 120
+              }
+            },
+            "total": {
+              "line": 6.5,
+              "over": -112,
+              "under": -108
+            }
+          },
+          "fanduel": {
+            "f5ml": {
+              "away": -120,
+              "home": -104,
+              "updated": "2026-10-17T18:12:34Z"
+            },
+            "f5rl": {
+              "away": 122,
+              "awayPoint": -0.5,
+              "home": -160,
+              "homePoint": 0.5
+            },
+            "ml": {
+              "away": -116,
+              "home": -102,
+              "updated": "2026-10-17T18:13:01Z"
+            },
+            "rl": {
+              "away": 160,
+              "awayPoint": -1.5,
+              "home": -194,
+              "homePoint": 1.5
+            },
+            "teamTotals": {
+              "away": {
+                "line": 3.5,
+                "over": 112,
+                "under": -142
+              },
+              "home": {
+                "line": 2.5,
+                "over": -158,
+                "under": 124
+              }
+            },
+            "total": {
+              "line": 6.5,
+              "over": -112,
+              "under": -108
+            }
+          },
+          "kalshi": {
+            "f5ml": {
+              "away": 135,
+              "away_book": {
+                "book_state": "TWO_SIDED",
+                "captured_at": "2026-10-17T18:13:47Z",
+                "no_ask": 0.59,
+                "no_bid": 0.56,
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "price_source_fields": {
+                  "last_price": "last_price_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "yes_bid": "yes_bid_dollars"
+                },
+                "status": "active",
+                "ticker": "KXMLBF5-26OCT172000TBCLE-TB",
+                "unit": "dollars",
+                "yes_ask": 0.44,
+                "yes_bid": 0.41
+              },
+              "away_ticker": "KXMLBF5-26OCT172000TBCLE-TB",
+              "eventTicker": "KXMLBF5-26OCT172000TBCLE",
+              "home": 163,
+              "home_book": {
+                "book_state": "TWO_SIDED",
+                "captured_at": "2026-10-17T18:13:47Z",
+                "no_ask": 0.64,
+                "no_bid": 0.6,
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "price_source_fields": {
+                  "last_price": "last_price_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "yes_bid": "yes_bid_dollars"
+                },
+                "status": "active",
+                "ticker": "KXMLBF5-26OCT172000TBCLE-CLE",
+                "unit": "dollars",
+                "yes_ask": 0.4,
+                "yes_bid": 0.36
+              },
+              "home_ticker": "KXMLBF5-26OCT172000TBCLE-CLE",
+              "seriesTicker": "KXMLBF5",
+              "snapshot_ts": "2026-10-17T18:13:47Z",
+              "source": "kalshi_registry",
+              "status": "active",
+              "tie": 441,
+              "tie_american": 441,
+              "tie_book": {
+                "book_state": "TWO_SIDED",
+                "captured_at": "2026-10-17T18:13:47Z",
+                "no_ask": 0.83,
+                "no_bid": 0.8,
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "price_source_fields": {
+                  "last_price": "last_price_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "yes_bid": "yes_bid_dollars"
+                },
+                "status": "active",
+                "ticker": "KXMLBF5-26OCT172000TBCLE-TIE",
+                "unit": "dollars",
+                "yes_ask": 0.2,
+                "yes_bid": 0.17
+              },
+              "tie_ticker": "KXMLBF5-26OCT172000TBCLE-TIE"
+            },
+            "ml": {
+              "away": -111,
+              "away_book": {
+                "book_state": "TWO_SIDED",
+                "captured_at": "2026-10-17T18:13:47Z",
+                "no_ask": 0.48,
+                "no_bid": 0.47,
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "price_source_fields": {
+                  "last_price": "last_price_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "yes_bid": "yes_bid_dollars"
+                },
+                "status": "active",
+                "ticker": "KXMLBGAME-26OCT172000TBCLE-TB",
+                "unit": "dollars",
+                "yes_ask": 0.53,
+                "yes_bid": 0.52
+              },
+              "away_ticker": "KXMLBGAME-26OCT172000TBCLE-TB",
+              "home": 111,
+              "home_book": {
+                "book_state": "TWO_SIDED",
+                "captured_at": "2026-10-17T18:13:47Z",
+                "no_ask": 0.53,
+                "no_bid": 0.52,
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "price_source_fields": {
+                  "last_price": "last_price_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "yes_bid": "yes_bid_dollars"
+                },
+                "status": "active",
+                "ticker": "KXMLBGAME-26OCT172000TBCLE-CLE",
+                "unit": "dollars",
+                "yes_ask": 0.48,
+                "yes_bid": 0.47
+              },
+              "home_ticker": "KXMLBGAME-26OCT172000TBCLE-CLE",
+              "snapshot_ts": "2026-10-17T18:13:47Z",
+              "source": "kalshi_registry"
+            },
+            "nrfi_yrfi": {
+              "captured_at": "2026-10-17T18:13:21.344Z",
+              "note": "Fallback: registry rfi block absent; prices from kalshi_search.json. YES=YRFI, NO=NRFI.",
+              "nrfi_american": -138,
+              "nrfi_ask": 0.59,
+              "nrfi_bid": 0.57,
+              "nrfi_implied": 58.0,
+              "source": "kalshi_search_fallback",
+              "ticker": "KXMLBRFI-26OCT172000TBCLE",
+              "unit": "dollars",
+              "yrfi_american": 138,
+              "yrfi_ask": 0.43,
+              "yrfi_bid": 0.41,
+              "yrfi_implied": 42
+            },
+            "rl": {
+              "all_lines": [
+                {
+                  "american": 233,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 30.0,
+                  "last_price": 0.3,
+                  "mid": 0.3,
+                  "no_ask": 0.71,
+                  "no_bid": 0.69,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 2,
+                  "status": "active",
+                  "team": "CLE",
+                  "ticker": "KXMLBSPREAD-26OCT172000TBCLE-CLE2",
+                  "unit": "dollars",
+                  "win_by_over": 1.5,
+                  "yes_ask": 0.31,
+                  "yes_bid": 0.29
+                },
+                {
+                  "american": 413,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 19.5,
+                  "last_price": 0.0,
+                  "mid": 0.195,
+                  "no_ask": 0.82,
+                  "no_bid": 0.79,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 3,
+                  "status": "active",
+                  "team": "CLE",
+                  "ticker": "KXMLBSPREAD-26OCT172000TBCLE-CLE3",
+                  "unit": "dollars",
+                  "win_by_over": 2.5,
+                  "yes_ask": 0.21,
+                  "yes_bid": 0.18
+                },
+                {
+                  "american": 614,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 14.0,
+                  "last_price": 0.0,
+                  "mid": 0.14,
+                  "no_ask": 0.87,
+                  "no_bid": 0.85,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 4,
+                  "status": "active",
+                  "team": "CLE",
+                  "ticker": "KXMLBSPREAD-26OCT172000TBCLE-CLE4",
+                  "unit": "dollars",
+                  "win_by_over": 3.5,
+                  "yes_ask": 0.15,
+                  "yes_bid": 0.13
+                },
+                {
+                  "american": 182,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 35.5,
+                  "last_price": 0.36,
+                  "mid": 0.355,
+                  "no_ask": 0.65,
+                  "no_bid": 0.64,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 2,
+                  "status": "active",
+                  "team": "TB",
+                  "ticker": "KXMLBSPREAD-26OCT172000TBCLE-TB2",
+                  "unit": "dollars",
+                  "win_by_over": 1.5,
+                  "yes_ask": 0.36,
+                  "yes_bid": 0.35
+                },
+                {
+                  "american": 300,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 25.0,
+                  "last_price": 0.25,
+                  "mid": 0.25,
+                  "no_ask": 0.76,
+                  "no_bid": 0.74,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 3,
+                  "status": "active",
+                  "team": "TB",
+                  "ticker": "KXMLBSPREAD-26OCT172000TBCLE-TB3",
+                  "unit": "dollars",
+                  "win_by_over": 2.5,
+                  "yes_ask": 0.26,
+                  "yes_bid": 0.24
+                },
+                {
+                  "american": 506,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 16.5,
+                  "last_price": 0.16,
+                  "mid": 0.165,
+                  "no_ask": 0.84,
+                  "no_bid": 0.83,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "run_number": 4,
+                  "status": "active",
+                  "team": "TB",
+                  "ticker": "KXMLBSPREAD-26OCT172000TBCLE-TB4",
+                  "unit": "dollars",
+                  "win_by_over": 3.5,
+                  "yes_ask": 0.17,
+                  "yes_bid": 0.16
+                }
+              ],
+              "american": 182,
+              "best_book": {
+                "book_state": "TWO_SIDED",
+                "captured_at": "2026-10-17T18:13:47Z",
+                "no_ask": 0.65,
+                "no_bid": 0.64,
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "price_source_fields": {
+                  "last_price": "last_price_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "yes_bid": "yes_bid_dollars"
+                },
+                "status": "active",
+                "ticker": "KXMLBSPREAD-26OCT172000TBCLE-TB2",
+                "unit": "dollars",
+                "yes_ask": 0.36,
+                "yes_bid": 0.35
+              },
+              "best_ticker": "KXMLBSPREAD-26OCT172000TBCLE-TB2",
+              "implied_pct": 35.5,
+              "note": "Spread is win-margin markets. best_line = line closest to 50% implied.",
+              "snapshot_ts": "2026-10-17T18:13:47Z",
+              "source": "kalshi_registry",
+              "team": "TB",
+              "wins_by_over": 1.5
+            },
+            "team_totals": {
+              "away": {
+                "all_lines": [
+                  {
+                    "american": -317,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-17T18:13:47Z",
+                    "implied_pct": 76.0,
+                    "last_price": 0.0,
+                    "mid": 0.76,
+                    "no_ask": 0.26,
+                    "no_bid": 0.22,
+                    "over_n": 2,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "TB",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-TB2",
+                    "unit": "dollars",
+                    "yes_ask": 0.78,
+                    "yes_bid": 0.74
+                  },
+                  {
+                    "american": -150,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-17T18:13:47Z",
+                    "implied_pct": 60.0,
+                    "last_price": 0.0,
+                    "mid": 0.6,
+                    "no_ask": 0.42,
+                    "no_bid": 0.38,
+                    "over_n": 3,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "TB",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-TB3",
+                    "unit": "dollars",
+                    "yes_ask": 0.62,
+                    "yes_bid": 0.58
+                  },
+                  {
+                    "american": 127,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-17T18:13:47Z",
+                    "implied_pct": 44.0,
+                    "last_price": 0.0,
+                    "mid": 0.44,
+                    "no_ask": 0.58,
+                    "no_bid": 0.54,
+                    "over_n": 4,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "TB",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-TB4",
+                    "unit": "dollars",
+                    "yes_ask": 0.46,
+                    "yes_bid": 0.42
+                  },
+                  {
+                    "american": 223,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-17T18:13:47Z",
+                    "implied_pct": 31.0,
+                    "last_price": 0.0,
+                    "mid": 0.31,
+                    "no_ask": 0.71,
+                    "no_bid": 0.67,
+                    "over_n": 5,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "TB",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-TB5",
+                    "unit": "dollars",
+                    "yes_ask": 0.33,
+                    "yes_bid": 0.29
+                  },
+                  {
+                    "american": 376,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-17T18:13:47Z",
+                    "implied_pct": 21.0,
+                    "last_price": 0.0,
+                    "mid": 0.21,
+                    "no_ask": 0.81,
+                    "no_bid": 0.77,
+                    "over_n": 6,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "TB",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-TB6",
+                    "unit": "dollars",
+                    "yes_ask": 0.23,
+                    "yes_bid": 0.19
+                  },
+                  {
+                    "american": 641,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-17T18:13:47Z",
+                    "implied_pct": 13.5,
+                    "last_price": 0.0,
+                    "mid": 0.135,
+                    "no_ask": 0.89,
+                    "no_bid": 0.84,
+                    "over_n": 7,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "TB",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-TB7",
+                    "unit": "dollars",
+                    "yes_ask": 0.16,
+                    "yes_bid": 0.11
+                  },
+                  {
+                    "american": 1076,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-17T18:13:47Z",
+                    "implied_pct": 8.5,
+                    "last_price": 0.0,
+                    "mid": 0.085,
+                    "no_ask": 0.94,
+                    "no_bid": 0.89,
+                    "over_n": 8,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "TB",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-TB8",
+                    "unit": "dollars",
+                    "yes_ask": 0.11,
+                    "yes_bid": 0.06
+                  }
+                ],
+                "american": 127,
+                "best_book": {
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "no_ask": 0.58,
+                  "no_bid": 0.54,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-TB4",
+                  "unit": "dollars",
+                  "yes_ask": 0.46,
+                  "yes_bid": 0.42
+                },
+                "best_ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-TB4",
+                "implied_pct": 44.0,
+                "line": 4,
+                "snapshot_ts": "2026-10-17T18:13:47Z",
+                "source": "kalshi_registry",
+                "team": "TB"
+              },
+              "home": {
+                "all_lines": [
+                  {
+                    "american": -308,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-17T18:13:47Z",
+                    "implied_pct": 75.5,
+                    "last_price": 0.0,
+                    "mid": 0.755,
+                    "no_ask": 0.27,
+                    "no_bid": 0.22,
+                    "over_n": 2,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "CLE",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-CLE2",
+                    "unit": "dollars",
+                    "yes_ask": 0.78,
+                    "yes_bid": 0.73
+                  },
+                  {
+                    "american": -135,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-17T18:13:47Z",
+                    "implied_pct": 57.5,
+                    "last_price": 0.57,
+                    "mid": 0.575,
+                    "no_ask": 0.43,
+                    "no_bid": 0.42,
+                    "over_n": 3,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "CLE",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-CLE3",
+                    "unit": "dollars",
+                    "yes_ask": 0.58,
+                    "yes_bid": 0.57
+                  },
+                  {
+                    "american": 138,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-17T18:13:47Z",
+                    "implied_pct": 42.0,
+                    "last_price": 0.38,
+                    "mid": 0.42,
+                    "no_ask": 0.6,
+                    "no_bid": 0.56,
+                    "over_n": 4,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "CLE",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-CLE4",
+                    "unit": "dollars",
+                    "yes_ask": 0.44,
+                    "yes_bid": 0.4
+                  },
+                  {
+                    "american": 264,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-17T18:13:47Z",
+                    "implied_pct": 27.5,
+                    "last_price": 0.0,
+                    "mid": 0.275,
+                    "no_ask": 0.75,
+                    "no_bid": 0.7,
+                    "over_n": 5,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "CLE",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-CLE5",
+                    "unit": "dollars",
+                    "yes_ask": 0.3,
+                    "yes_bid": 0.25
+                  },
+                  {
+                    "american": 471,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-17T18:13:47Z",
+                    "implied_pct": 17.5,
+                    "last_price": 0.0,
+                    "mid": 0.175,
+                    "no_ask": 0.85,
+                    "no_bid": 0.8,
+                    "over_n": 6,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "CLE",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-CLE6",
+                    "unit": "dollars",
+                    "yes_ask": 0.2,
+                    "yes_bid": 0.15
+                  },
+                  {
+                    "american": 809,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-17T18:13:47Z",
+                    "implied_pct": 11.0,
+                    "last_price": 0.0,
+                    "mid": 0.11,
+                    "no_ask": 0.91,
+                    "no_bid": 0.87,
+                    "over_n": 7,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "CLE",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-CLE7",
+                    "unit": "dollars",
+                    "yes_ask": 0.13,
+                    "yes_bid": 0.09
+                  },
+                  {
+                    "american": 1438,
+                    "book_state": "TWO_SIDED",
+                    "captured_at": "2026-10-17T18:13:47Z",
+                    "implied_pct": 6.5,
+                    "last_price": 0.0,
+                    "mid": 0.065,
+                    "no_ask": 0.96,
+                    "no_bid": 0.91,
+                    "over_n": 8,
+                    "price_level_structure": "linear_cent",
+                    "price_ranges": [
+                      {
+                        "end": "1.0000",
+                        "start": "0.0000",
+                        "step": "0.0100"
+                      }
+                    ],
+                    "price_source_fields": {
+                      "last_price": "last_price_dollars",
+                      "no_ask": "no_ask_dollars",
+                      "no_bid": "no_bid_dollars",
+                      "yes_ask": "yes_ask_dollars",
+                      "yes_bid": "yes_bid_dollars"
+                    },
+                    "status": "active",
+                    "team": "CLE",
+                    "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-CLE8",
+                    "unit": "dollars",
+                    "yes_ask": 0.09,
+                    "yes_bid": 0.04
+                  }
+                ],
+                "american": -135,
+                "best_book": {
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "no_ask": 0.43,
+                  "no_bid": 0.42,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-CLE3",
+                  "unit": "dollars",
+                  "yes_ask": 0.58,
+                  "yes_bid": 0.57
+                },
+                "best_ticker": "KXMLBTEAMTOTAL-26OCT172000TBCLE-CLE3",
+                "implied_pct": 57.5,
+                "line": 3,
+                "snapshot_ts": "2026-10-17T18:13:47Z",
+                "source": "kalshi_registry",
+                "team": "CLE"
+              }
+            },
+            "total": {
+              "all_lines": [
+                {
+                  "american": -2122,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 95.5,
+                  "last_price": 0.0,
+                  "mid": 0.955,
+                  "no_ask": 0.07,
+                  "no_bid": 0.02,
+                  "over_threshold": 2,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT172000TBCLE-2",
+                  "total": 2,
+                  "unit": "dollars",
+                  "yes_ask": 0.98,
+                  "yes_bid": 0.93
+                },
+                {
+                  "american": -1011,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 91.0,
+                  "last_price": 0.94,
+                  "mid": 0.91,
+                  "no_ask": 0.1,
+                  "no_bid": 0.08,
+                  "over_threshold": 3,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT172000TBCLE-3",
+                  "total": 3,
+                  "unit": "dollars",
+                  "yes_ask": 0.92,
+                  "yes_bid": 0.9
+                },
+                {
+                  "american": -441,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 81.5,
+                  "last_price": 0.82,
+                  "mid": 0.815,
+                  "no_ask": 0.19,
+                  "no_bid": 0.18,
+                  "over_threshold": 4,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT172000TBCLE-4",
+                  "total": 4,
+                  "unit": "dollars",
+                  "yes_ask": 0.82,
+                  "yes_bid": 0.81
+                },
+                {
+                  "american": -270,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 73.0,
+                  "last_price": 0.75,
+                  "mid": 0.73,
+                  "no_ask": 0.28,
+                  "no_bid": 0.26,
+                  "over_threshold": 5,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT172000TBCLE-5",
+                  "total": 5,
+                  "unit": "dollars",
+                  "yes_ask": 0.74,
+                  "yes_bid": 0.72
+                },
+                {
+                  "american": -144,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 59.0,
+                  "last_price": 0.0,
+                  "mid": 0.59,
+                  "no_ask": 0.42,
+                  "no_bid": 0.4,
+                  "over_threshold": 6,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT172000TBCLE-6",
+                  "total": 6,
+                  "unit": "dollars",
+                  "yes_ask": 0.6,
+                  "yes_bid": 0.58
+                },
+                {
+                  "american": -106,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 51.5,
+                  "last_price": 0.52,
+                  "mid": 0.515,
+                  "no_ask": 0.49,
+                  "no_bid": 0.48,
+                  "over_threshold": 7,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT172000TBCLE-7",
+                  "total": 7,
+                  "unit": "dollars",
+                  "yes_ask": 0.52,
+                  "yes_bid": 0.51
+                },
+                {
+                  "american": 163,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 38.0,
+                  "last_price": 0.0,
+                  "mid": 0.38,
+                  "no_ask": 0.63,
+                  "no_bid": 0.61,
+                  "over_threshold": 8,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT172000TBCLE-8",
+                  "total": 8,
+                  "unit": "dollars",
+                  "yes_ask": 0.39,
+                  "yes_bid": 0.37
+                },
+                {
+                  "american": 233,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 30.0,
+                  "last_price": 0.0,
+                  "mid": 0.3,
+                  "no_ask": 0.72,
+                  "no_bid": 0.68,
+                  "over_threshold": 9,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT172000TBCLE-9",
+                  "total": 9,
+                  "unit": "dollars",
+                  "yes_ask": 0.32,
+                  "yes_bid": 0.28
+                },
+                {
+                  "american": 376,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 21.0,
+                  "last_price": 0.0,
+                  "mid": 0.21,
+                  "no_ask": 0.8,
+                  "no_bid": 0.78,
+                  "over_threshold": 10,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT172000TBCLE-10",
+                  "total": 10,
+                  "unit": "dollars",
+                  "yes_ask": 0.22,
+                  "yes_bid": 0.2
+                },
+                {
+                  "american": 471,
+                  "book_state": "TWO_SIDED",
+                  "captured_at": "2026-10-17T18:13:47Z",
+                  "implied_pct": 17.5,
+                  "last_price": 0.17,
+                  "mid": 0.175,
+                  "no_ask": 0.83,
+                  "no_bid": 0.82,
+                  "over_threshold": 11,
+                  "price_level_structure": "linear_cent",
+                  "price_ranges": [
+                    {
+                      "end": "1.0000",
+                      "start": "0.0000",
+                      "step": "0.0100"
+                    }
+                  ],
+                  "price_source_fields": {
+                    "last_price": "last_price_dollars",
+                    "no_ask": "no_ask_dollars",
+                    "no_bid": "no_bid_dollars",
+                    "yes_ask": "yes_ask_dollars",
+                    "yes_bid": "yes_bid_dollars"
+                  },
+                  "status": "active",
+                  "ticker": "KXMLBTOTAL-26OCT172000TBCLE-11",
+                  "total": 11,
+                  "unit": "dollars",
+                  "yes_ask": 0.18,
+                  "yes_bid": 0.17
+                }
+              ],
+              "american": -106,
+              "best_book": {
+                "book_state": "TWO_SIDED",
+                "captured_at": "2026-10-17T18:13:47Z",
+                "no_ask": 0.49,
+                "no_bid": 0.48,
+                "price_level_structure": "linear_cent",
+                "price_ranges": [
+                  {
+                    "end": "1.0000",
+                    "start": "0.0000",
+                    "step": "0.0100"
+                  }
+                ],
+                "price_source_fields": {
+                  "last_price": "last_price_dollars",
+                  "no_ask": "no_ask_dollars",
+                  "no_bid": "no_bid_dollars",
+                  "yes_ask": "yes_ask_dollars",
+                  "yes_bid": "yes_bid_dollars"
+                },
+                "status": "active",
+                "ticker": "KXMLBTOTAL-26OCT172000TBCLE-7",
+                "unit": "dollars",
+                "yes_ask": 0.52,
+                "yes_bid": 0.51
+              },
+              "best_ticker": "KXMLBTOTAL-26OCT172000TBCLE-7",
+              "implied_pct": 51.5,
+              "line": 7,
+              "note": "Integer total lines. best_line = line closest to 50%.",
+              "snapshot_ts": "2026-10-17T18:13:47Z",
+              "source": "kalshi_registry"
+            }
+          },
+          "pinnacle": {
+            "f5rl": {
+              "away": -126,
+              "awayPoint": 0,
+              "home": 110,
+              "homePoint": 0
+            },
+            "ml": {
+              "away": -106,
+              "home": -102,
+              "updated": "2026-10-17T18:12:38Z"
+            },
+            "rl": {
+              "away": 168,
+              "awayPoint": -1.5,
+              "home": -188,
+              "homePoint": 1.5
+            },
+            "teamTotals": {
+              "away": {
+                "line": 3.5,
+                "over": 112,
+                "under": -131
+              },
+              "home": {
+                "line": 2.5,
+                "over": -149,
+                "under": 127
+              }
+            },
+            "total": {
+              "line": 6.5,
+              "over": -109,
+              "under": -103
+            }
+          }
+        },
+        "oddsApiCommenceTime": "2026-10-18T00:00:00Z",
+        "oddsApiEventId": "bf41baaebfa23a202d2f3a6811425ff9",
+        "park": {
+          "dome": false,
+          "name": "Progressive Field",
+          "parkFactor": 96
+        },
+        "pinnacleF5VF": {
+          "away": 51.69,
+          "home": 48.31,
+          "source": "fanduel"
+        },
+        "pinnacleVF": {
+          "available": true,
+          "away": 50.47,
+          "home": 49.53,
+          "source": "pinnacle"
+        },
+        "runLineEval": {
+          "best": {
+            "actionable": false,
+            "betSize": 4.5,
+            "confidence": "MEDIUM",
+            "edgePct": -2.35,
+            "logForCLV": true,
+            "modelCoverPct": 27.8,
+            "pinVFpct": 37,
+            "price": 162,
+            "rlLine": -1.5,
+            "side": "AWAY"
+          },
+          "both": [
+            {
+              "actionable": false,
+              "betSize": 4.5,
+              "confidence": "MEDIUM",
+              "edgePct": -2.35,
+              "logForCLV": true,
+              "modelCoverPct": 27.8,
+              "pinVFpct": 37,
+              "price": 162,
+              "rlLine": -1.5,
+              "side": "AWAY"
+            },
+            {
+              "actionable": false,
+              "betSize": 4.5,
+              "confidence": "MEDIUM",
+              "edgePct": -8.46,
+              "logForCLV": true,
+              "modelCoverPct": 29.8,
+              "pinVFpct": 63,
+              "price": -185,
+              "rlLine": 1.5,
+              "side": "HOME"
+            }
+          ]
+        },
+        "scheduleSource": "statsapi",
+        "seriesDescription": "AL Championship Series",
+        "seriesGameNumber": 4,
+        "startTime": "2026-10-18T00:08:00Z",
+        "status": "Scheduled",
+        "teamTotals": {
+          "awayActionable": false,
+          "awayEdgePct": -0.31,
+          "awayPover": 50.8,
+          "awaySize": 5.5,
+          "awayTTLean": "NEUTRAL",
+          "awayTTLine": 3,
+          "awayTTReason": null,
+          "homeActionable": false,
+          "homeEdgePct": 0.11,
+          "homePover": 52.4,
+          "homeSize": 5.5,
+          "homeTTLean": "NEUTRAL",
+          "homeTTLine": 3,
+          "homeTTReason": null,
+          "lineNote": "TT line estimated from game total \u2014 confirm actual DK/FD line before logging Medium/High (Rule 44)",
+          "projectedAwayRuns": 3.71,
+          "projectedHomeRuns": 3.79
+        },
+        "totalEval": {
+          "actionable": false,
+          "bestEdge": 2.85,
+          "bestSide": "OVER",
+          "diff": 1,
+          "logForCLV": true,
+          "overEdgePct": 2.85,
+          "pOver": 62.2,
+          "pUnder": 23.2,
+          "paperOnly": true,
+          "paperReason": "Game Total WR 41% \u2014 paper only per Rule 71 until WR\u226552% over N\u226530",
+          "pinVFover": 51,
+          "pinVFunder": 49,
+          "sizeOver": 1,
+          "sizeUnder": 1,
+          "totalProj": 7.5,
+          "underEdgePct": -6.58,
+          "vegasLine": 6.5
+        },
+        "venue": "Progressive Field"
+      }
+    ],
+    "kalshiDate": "26OCT17",
+    "kalshiMarketsFound": 2,
+    "requestsRemaining": "18171",
+    "savantPitchersLoaded": 814,
+    "scheduleSource": "statsapi"
+  },
+  "meta": {
+    "createdAt": "2026-10-17T18:13:59Z",
+    "producedBy": "scripts/enrich_data.py",
+    "schemaVersion": "1.0",
+    "slateDate": "2026-10-17",
+    "sourceStage": null,
+    "stage": "normalized_slate",
+    "status": "canonical"
+  }
+}

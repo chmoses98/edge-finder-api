@@ -1,0 +1,85 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:38:22Z",
+  "data_provenance": [
+    "data/research/hitter_w2/mlb_feed (batting, pa)",
+    "pitcher frame (opposing starter)"
+  ],
+  "distribution": {
+    "cover_50": 0.49645049006137215,
+    "cover_80": 0.7940826234313456,
+    "cover_90": 0.8949574058807365,
+    "crps": 0.31861841848866485,
+    "dist": "binom_mix",
+    "log_score": 0.8884444862289315,
+    "pit_deciles": [
+      0.101,
+      0.0984,
+      0.1043,
+      0.1006,
+      0.1005,
+      0.0985,
+      0.0965,
+      0.0954,
+      0.0999,
+      0.1049
+    ],
+    "pit_var_ratio": 1.0127508787679065,
+    "thresholds": {
+      "1": {
+        "brier": 0.2310327521063934,
+        "hit_rate": 0.3755610515709444,
+        "log_loss": 0.6544646470615556,
+        "mean_p": 0.38129614017143265
+      },
+      "2": {
+        "brier": 0.07501418375495204,
+        "hit_rate": 0.08282953192268938,
+        "log_loss": 0.27995047417921504,
+        "mean_p": 0.07575337505230735
+      }
+    }
+  },
+  "eval_period": "2025 RS",
+  "experiment_id": "MLB-PF-runs-D_hist_slot-validation",
+  "family": "runs",
+  "features": [
+    "see mlb/hitters.py E_FEATURES / COVARS"
+  ],
+  "fingerprint": "caa9591fd79d3ccc",
+  "hyperparameters": {},
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Batting order is the post-game official lineup (retrospective; pregame lineups archived only for 527 games)."
+  ],
+  "model": "D_hist_slot",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2426,
+  "n_independent": 43668,
+  "n_obs": 43668,
+  "point": {
+    "bias": -0.004848490168472708,
+    "corr": 0.14430399291496449,
+    "mae": 0.5767314956127416,
+    "mean_actual": 0.4711230191444536,
+    "mean_pred": 0.4662745289759808,
+    "rmse": 0.6776237849333803
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model D_hist_slot for runs?",
+  "split": "validation",
+  "sport": "MLB",
+  "train_period": "2024 (fit from 2024-05-01)",
+  "verdict": "",
+  "vs_baseline": {
+    "ci95": [
+      -0.0022950637947024848,
+      -0.0011155599365453408
+    ],
+    "mean_diff": -0.0017083278336198124,
+    "n_clusters": 2426,
+    "n_obs": 43668
+  },
+  "vs_incumbent": {}
+}

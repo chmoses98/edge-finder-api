@@ -1,0 +1,103 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:38:22Z",
+  "data_provenance": [
+    "data/research/hitter_w2/mlb_feed (batting, pa)",
+    "pitcher frame (opposing starter)"
+  ],
+  "distribution": {
+    "cover_50": 0.4958321883301273,
+    "cover_80": 0.7974947329852523,
+    "cover_90": 0.898850416781167,
+    "crps": 1.0035164812579902,
+    "dist": "empirical_resid",
+    "log_score": 1.8191262561800854,
+    "pit_deciles": [
+      0.1016,
+      0.1002,
+      0.0993,
+      0.0996,
+      0.0994,
+      0.0989,
+      0.0954,
+      0.1028,
+      0.1019,
+      0.1009
+    ],
+    "pit_var_ratio": 1.0095370427123749,
+    "thresholds": {
+      "1": {
+        "brier": 0.21681005009889126,
+        "hit_rate": 0.6772006961619492,
+        "log_loss": 0.6252176320609021,
+        "mean_p": 0.6786699229286048
+      },
+      "2": {
+        "brier": 0.24532566281634605,
+        "hit_rate": 0.4587111843913163,
+        "log_loss": 0.6837243334615578,
+        "mean_p": 0.45880217508457344
+      },
+      "3": {
+        "brier": 0.20529433932846552,
+        "hit_rate": 0.29449482458550885,
+        "log_loss": 0.6001812066979965,
+        "mean_p": 0.2897533846677701
+      },
+      "4": {
+        "brier": 0.14267986457248538,
+        "hit_rate": 0.17459008885224878,
+        "log_loss": 0.45815179196111216,
+        "mean_p": 0.17344520383305678
+      },
+      "5": {
+        "brier": 0.08824139105602712,
+        "hit_rate": 0.09860767610149308,
+        "log_loss": 0.31837164659364353,
+        "mean_p": 0.09858353223619325
+      }
+    }
+  },
+  "eval_period": "2025 RS",
+  "experiment_id": "MLB-PF-hits_runs_rbis-B-validation",
+  "family": "hits_runs_rbis",
+  "features": [
+    "see mlb/hitters.py E_FEATURES / COVARS"
+  ],
+  "fingerprint": "aefd6d1620f53ae3",
+  "hyperparameters": {},
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Batting order is the post-game official lineup (retrospective; pregame lineups archived only for 527 games)."
+  ],
+  "model": "B",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2426,
+  "n_independent": 43668,
+  "n_obs": 43668,
+  "point": {
+    "bias": -0.008202114910349263,
+    "corr": 0.12789040547904434,
+    "mae": 1.5100523651785431,
+    "mean_actual": 1.813387377484657,
+    "mean_pred": 1.8051852625743077,
+    "rmse": 1.9306633642335993
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model B for hits_runs_rbis?",
+  "split": "validation",
+  "sport": "MLB",
+  "train_period": "2024 (fit from 2024-05-01)",
+  "verdict": "",
+  "vs_baseline": {
+    "ci95": [
+      -0.001315322414000754,
+      -9.384666885310717e-06
+    ],
+    "mean_diff": -0.0006630106218961711,
+    "n_clusters": 2426,
+    "n_obs": 43668
+  },
+  "vs_incumbent": {}
+}

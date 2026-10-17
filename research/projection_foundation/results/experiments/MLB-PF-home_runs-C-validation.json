@@ -1,0 +1,79 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:38:22Z",
+  "data_provenance": [
+    "data/research/hitter_w2/mlb_feed (batting, pa)",
+    "pitcher frame (opposing starter)"
+  ],
+  "distribution": {
+    "cover_50": 0.5053128148758816,
+    "cover_80": 0.7998305395255106,
+    "cover_90": 0.898461115691124,
+    "crps": 0.11026342081957016,
+    "dist": "binom_mix",
+    "log_score": 0.3844455119194879,
+    "pit_deciles": [
+      0.1015,
+      0.0978,
+      0.0979,
+      0.1028,
+      0.102,
+      0.1001,
+      0.1008,
+      0.0997,
+      0.0989,
+      0.0986
+    ],
+    "pit_var_ratio": 0.9958715655293202,
+    "thresholds": {
+      "1": {
+        "brier": 0.10172401443886148,
+        "hit_rate": 0.1172712283594394,
+        "log_loss": 0.35298567709072454,
+        "mean_p": 0.11935828096201859
+      }
+    }
+  },
+  "eval_period": "2025 RS",
+  "experiment_id": "MLB-PF-home_runs-C-validation",
+  "family": "home_runs",
+  "features": [
+    "see mlb/hitters.py E_FEATURES / COVARS"
+  ],
+  "fingerprint": "8e187cac3af1f22c",
+  "hyperparameters": {},
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Batting order is the post-game official lineup (retrospective; pregame lineups archived only for 527 games)."
+  ],
+  "model": "C",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2426,
+  "n_independent": 43668,
+  "n_obs": 43668,
+  "point": {
+    "bias": 0.00012398863556850338,
+    "corr": 0.13690137222569715,
+    "mae": 0.2189336025920624,
+    "mean_actual": 0.1259045525327471,
+    "mean_pred": 0.1260285411683156,
+    "rmse": 0.3551605796359794
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model C for home_runs?",
+  "split": "validation",
+  "sport": "MLB",
+  "train_period": "2024 (fit from 2024-05-01)",
+  "verdict": "",
+  "vs_baseline": {
+    "ci95": [
+      -0.0004941401675989841,
+      -0.00027860596286695914
+    ],
+    "mean_diff": -0.0003878301150634463,
+    "n_clusters": 2426,
+    "n_obs": 43668
+  },
+  "vs_incumbent": {}
+}

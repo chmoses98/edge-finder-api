@@ -1,0 +1,97 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:38:22Z",
+  "data_provenance": [
+    "data/research/hitter_w2/mlb_feed (batting, pa)",
+    "pitcher frame (opposing starter)"
+  ],
+  "distribution": {
+    "cover_50": 0.49647339012549235,
+    "cover_80": 0.7995099386278282,
+    "cover_90": 0.8990794174223687,
+    "crps": 0.3514270848635012,
+    "dist": "empirical_resid",
+    "log_score": 0.9014746524866272,
+    "pit_deciles": [
+      0.1013,
+      0.0981,
+      0.1004,
+      0.1002,
+      0.0981,
+      0.1003,
+      0.0951,
+      0.1026,
+      0.1046,
+      0.0992
+    ],
+    "pit_var_ratio": 1.0060560629432436,
+    "thresholds": {
+      "1": {
+        "brier": 0.20692554562018406,
+        "hit_rate": 0.2977695337546945,
+        "log_loss": 0.6037367026247942,
+        "mean_p": 0.29388759891203686
+      },
+      "2": {
+        "brier": 0.09291814678114492,
+        "hit_rate": 0.10447009251625905,
+        "log_loss": 0.33140981847321144,
+        "mean_p": 0.1061729010970134
+      },
+      "3": {
+        "brier": 0.03474881677853106,
+        "hit_rate": 0.03618210130988367,
+        "log_loss": 0.1538939943567463,
+        "mean_p": 0.035949093030079406
+      }
+    }
+  },
+  "eval_period": "2025 RS",
+  "experiment_id": "MLB-PF-rbis-D-validation",
+  "family": "rbis",
+  "features": [
+    "see mlb/hitters.py E_FEATURES / COVARS"
+  ],
+  "fingerprint": "6a293193bcf3f35f",
+  "hyperparameters": {
+    "icpt": -0.011898942222285326,
+    "opp_def": 0.7219941048329234,
+    "own_obp": 0.9328118169734826,
+    "park_r": 0.4331561535594216,
+    "sp_r": 0.5092200137642148
+  },
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Batting order is the post-game official lineup (retrospective; pregame lineups archived only for 527 games)."
+  ],
+  "model": "D",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2426,
+  "n_independent": 43668,
+  "n_obs": 43668,
+  "point": {
+    "bias": -0.005297365958746758,
+    "corr": 0.10819312011151484,
+    "mae": 0.6292420587877724,
+    "mean_actual": 0.4554364752221306,
+    "mean_pred": 0.45013910926338385,
+    "rmse": 0.8428113650112651
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model D for rbis?",
+  "split": "validation",
+  "sport": "MLB",
+  "train_period": "2024 (fit from 2024-05-01)",
+  "verdict": "",
+  "vs_baseline": {
+    "ci95": [
+      -0.001375082577045144,
+      -0.0005237554738515482
+    ],
+    "mean_diff": -0.0009435008296297372,
+    "n_clusters": 2426,
+    "n_obs": 43668
+  },
+  "vs_incumbent": {}
+}

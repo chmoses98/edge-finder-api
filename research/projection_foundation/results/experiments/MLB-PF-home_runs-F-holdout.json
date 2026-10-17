@@ -1,0 +1,83 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:38:22Z",
+  "data_provenance": [
+    "data/research/hitter_w2/mlb_feed (batting, pa)",
+    "pitcher frame (opposing starter)"
+  ],
+  "distribution": {
+    "cover_50": 0.5068214073158449,
+    "cover_80": 0.8031405942407178,
+    "cover_90": 0.9022112347205055,
+    "crps": 0.10742551741795076,
+    "dist": "binom_mix",
+    "log_score": 0.37637140687181575,
+    "pit_deciles": [
+      0.1012,
+      0.0979,
+      0.0976,
+      0.1024,
+      0.1025,
+      0.099,
+      0.1025,
+      0.1014,
+      0.0998,
+      0.0957
+    ],
+    "pit_var_ratio": 0.9883469688156286,
+    "thresholds": {
+      "1": {
+        "brier": 0.0999946289525742,
+        "hit_rate": 0.11481939294053015,
+        "log_loss": 0.34846612471812505,
+        "mean_p": 0.12010091322440342
+      }
+    }
+  },
+  "eval_period": "2026 RS",
+  "experiment_id": "MLB-PF-home_runs-F-holdout",
+  "family": "home_runs",
+  "features": [
+    "see mlb/hitters.py E_FEATURES / COVARS"
+  ],
+  "fingerprint": "d02679a1dc6d0d4e",
+  "hyperparameters": {
+    "HR_B": 0.0,
+    "HR_D": 0.716781673793499,
+    "HR_E": 0.2832183262065009
+  },
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Batting order is the post-game official lineup (retrospective; pregame lineups archived only for 527 games)."
+  ],
+  "model": "F",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2427,
+  "n_independent": 43686,
+  "n_obs": 43686,
+  "point": {
+    "bias": 0.0046509343853986885,
+    "corr": 0.13167979356781556,
+    "mae": 0.2165887081169435,
+    "mean_actual": 0.12232751911367486,
+    "mean_pred": 0.12697845349907355,
+    "rmse": 0.34785933058999263
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model F for home_runs?",
+  "split": "holdout",
+  "sport": "MLB",
+  "train_period": "2024 (fit from 2024-05-01)",
+  "verdict": "frozen winner",
+  "vs_baseline": {
+    "ci95": [
+      -0.0007494975704459473,
+      -0.00043447759481736817
+    ],
+    "mean_diff": -0.0005939125246415788,
+    "n_clusters": 2427,
+    "n_obs": 43686
+  },
+  "vs_incumbent": {}
+}

@@ -1,0 +1,97 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:16:33Z",
+  "data_provenance": [
+    "data/research_cache/starter_workload",
+    "data/research/hitter_w2/mlb_feed"
+  ],
+  "distribution": {
+    "cover_50": 0.504328112118714,
+    "cover_80": 0.8118301731244848,
+    "cover_90": 0.9076669414674361,
+    "crps": 2.0694059562086755,
+    "dist": "empirical_resid",
+    "log_score": 2.711712149565001,
+    "pit_deciles": [
+      0.0956,
+      0.1049,
+      0.1101,
+      0.1068,
+      0.0981,
+      0.1002,
+      0.0934,
+      0.1055,
+      0.093,
+      0.0925
+    ],
+    "pit_var_ratio": 0.9775441226911838,
+    "thresholds": {
+      "18": {
+        "brier": 0.08285138817118433,
+        "hit_rate": 0.8961253091508656,
+        "log_loss": 0.2965254922175713,
+        "mean_p": 0.8798881332040911
+      },
+      "20": {
+        "brier": 0.14418684320253744,
+        "hit_rate": 0.8002885408079142,
+        "log_loss": 0.45436101314552957,
+        "mean_p": 0.7918321522757559
+      },
+      "22": {
+        "brier": 0.21266974600169067,
+        "hit_rate": 0.6191261335531739,
+        "log_loss": 0.6126746752485719,
+        "mean_p": 0.62510743559576
+      },
+      "24": {
+        "brier": 0.21971838975095692,
+        "hit_rate": 0.38334707337180546,
+        "log_loss": 0.6271550474740386,
+        "mean_p": 0.39904290833529427
+      },
+      "26": {
+        "brier": 0.13646225354783678,
+        "hit_rate": 0.171681780708986,
+        "log_loss": 0.4369905911404098,
+        "mean_p": 0.18755158893168114
+      }
+    }
+  },
+  "eval_period": "2025 RS",
+  "experiment_id": "MLB-PF-batters_faced-A-validation",
+  "family": "batters_faced",
+  "features": [
+    "see mlb/pitchers.py E_FEATURES / ladder definitions"
+  ],
+  "fingerprint": "ccf2c0309e2d15ea",
+  "hyperparameters": {
+    "k_games": 1.2731038704359894
+  },
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Starter identity is the actual starter (probable == starter 99.9% in the post-game feed; scratches unmeasurable)."
+  ],
+  "model": "A",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2426,
+  "n_independent": 4852,
+  "n_obs": 4852,
+  "point": {
+    "bias": 0.035161798628041974,
+    "corr": 0.44760385966519933,
+    "mae": 2.8721353263073395,
+    "mean_actual": 21.9181780708986,
+    "mean_pred": 21.95333986952664,
+    "rmse": 3.9542175703863762
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model A for batters_faced?",
+  "split": "validation",
+  "sport": "MLB",
+  "train_period": "2022-2024 (history 2022; fitting 2023-2024)",
+  "verdict": "",
+  "vs_baseline": {},
+  "vs_incumbent": {}
+}

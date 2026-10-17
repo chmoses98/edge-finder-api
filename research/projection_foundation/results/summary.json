@@ -1,0 +1,5816 @@
+{
+ "schema": "sift.projection_foundation.sport_summary.v1",
+ "sport": "MLB",
+ "generated_utc": "2026-10-17T06:59:24Z",
+ "code_sha": "7e66d2379fb876130183a1aae8a411c1e041afdc",
+ "pf_core_version": "1.0.0",
+ "splits": {
+  "development": "pitchers & teams: 2023-2024 regular seasons (2022 = history only); hitters: 2024 (fits use 2024-05-01 on; no 2022-23 player-level hitter lines)",
+  "validation": "2025 regular season (model selection)",
+  "holdout": "2026 regular season (frozen winners scored once; incumbent comparisons on matched rows)"
+ },
+ "inventory": [
+  {
+   "dataset": "games / schedule (date, start time, venue, teams, final score)",
+   "seasons": "2022-2026 RS",
+   "rows": 12138,
+   "pit_class": "reconstructable",
+   "notes": "2022-23 from research_cache schedules, 2024-26 from MLB feed; start_utc used as the forecast cutoff."
+  },
+  {
+   "dataset": "pitcher box lines per game (BF, outs, pitches, K, BB, H, R; ER; HR)",
+   "seasons": "2022-2026 RS",
+   "rows": 103822,
+   "pit_class": "reconstructable",
+   "notes": "Feed (2024-26) and research-cache box agree on starters: BF 1.0000, K 1.0000 (n=13706). ER missing after 2026-08-26 (box cache ends) -> runs-allowed family uses R. HR only 2024+."
+  },
+  {
+   "dataset": "hitter box lines per game (PA..RBI, batting order)",
+   "seasons": "2024-2026 RS",
+   "rows": 153144,
+   "pit_class": "reconstructable",
+   "notes": "MLB feed/live, 4 rain-shortened games missing per season. No player-level hitter lines for 2022-2023 (team-level only) -> 2024 is a cold-start development season."
+  },
+  {
+   "dataset": "per-PA events with batter side / pitcher hand",
+   "seasons": "2024-2026 RS",
+   "rows": 550007,
+   "pit_class": "reconstructable",
+   "notes": "Used for platoon multipliers and opponent K% vs handedness."
+  },
+  {
+   "dataset": "team batting lines per game",
+   "seasons": "2022-2026 RS",
+   "rows": 24276,
+   "pit_class": "reconstructable",
+   "notes": "Opponent / park / league context."
+  },
+  {
+   "dataset": "pitch-level Statcast (velocity, whiff, CSW)",
+   "seasons": "2026 2026-08-11..2026-09-27",
+   "rows": 190107,
+   "pit_class": "reconstructable",
+   "notes": "643 games only (~7 weeks); Savant is blocked so no backfill. Too short for a multi-season walk-forward; used in one sub-study."
+  },
+  {
+   "dataset": "batting order (post-game official lineup)",
+   "seasons": "2024-2026",
+   "rows": 131004,
+   "pit_class": "retrospective",
+   "notes": "Equals the confirmed lineup except late scratches; models using it are labelled 'known slot'."
+  },
+  {
+   "dataset": "archived PREGAME lineups",
+   "seasons": "2026 2026-08-16..2026-10-01",
+   "rows": 9261,
+   "pit_class": "archived",
+   "notes": "527 games; captured before first pitch 1.000; player started 0.984; same slot as post-game lineup 0.980."
+  },
+  {
+   "dataset": "probable pitchers",
+   "seasons": "2024-2026 (feed field) / 2026-06-15.. (slates)",
+   "rows": 88,
+   "pit_class": "retrospective",
+   "notes": "Feed 'probable' field was fetched post-game and equals the actual starter 0.9990 of the time (it is overwritten, so it cannot measure scratches). Archived pregame probables exist only in data/slates (88 slate dates from 2026-06-15)."
+  },
+  {
+   "dataset": "handedness (bats/throws)",
+   "seasons": "2022-2026",
+   "rows": null,
+   "pit_class": "reconstructable",
+   "notes": "Static identity; 2022-23-only pitchers lack throws (24% of 2022 appearances) -> treated as R."
+  },
+  {
+   "dataset": "parks (venue id)",
+   "seasons": "2022-2026",
+   "rows": null,
+   "pit_class": "reconstructable",
+   "notes": "Park factors are estimated point-in-time from prior games at the venue (both teams), shrunk (EB)."
+  },
+  {
+   "dataset": "weather",
+   "seasons": "-",
+   "rows": 0,
+   "pit_class": "missing",
+   "notes": "No per-date archive (Milestone-2 PIT audit, unchanged)."
+  },
+  {
+   "dataset": "injuries / IL / pitch-count restrictions",
+   "seasons": "-",
+   "rows": 0,
+   "pit_class": "missing",
+   "notes": "No source in repo; layoff (>=15 days) is used as a proxy."
+  },
+  {
+   "dataset": "bullpen usage",
+   "seasons": "2022-2026",
+   "rows": 79546,
+   "pit_class": "reconstructable",
+   "notes": "Relief lines derivable from box scores."
+  },
+  {
+   "dataset": "archived pregame TEAM-RUN projections (production)",
+   "seasons": "2026-07-30..",
+   "rows": 1520,
+   "pit_class": "archived",
+   "notes": "data/pipeline/<date>/projections.json; createdAt before first pitch 0.404."
+  },
+  {
+   "dataset": "archived pregame HITTER projections (production snapshots)",
+   "seasons": "2026 2026-08-19..2026-10-16",
+   "rows": 11876,
+   "pit_class": "archived",
+   "notes": "24 dates; incumbent also re-run over 2026-08-16..09-27 (hitter_w2/audit, fidelity ~0.014)."
+  },
+  {
+   "dataset": "PITCHER projections in the archive",
+   "seasons": "2025-2026 sidecars; 2026-10-12.. shadow",
+   "rows": null,
+   "pit_class": "retrospective",
+   "notes": "pitcher_workload_joint sidecars are retroactive walk-forward reruns (NOT archived pregame forecasts). Genuinely prospective, hash-chained pitcher projections exist only in data/shadow_pure/mlb_pitcher (5 dates, postseason)."
+  },
+  {
+   "dataset": "Kalshi market observations",
+   "seasons": "2026 2026-08-01..2026-10-17",
+   "rows": null,
+   "pit_class": "archived",
+   "notes": "Not used: this initiative measures projection accuracy, not market edge."
+  },
+  {
+   "dataset": "sportsbook game lines (Pinnacle sample)",
+   "seasons": "2022-2026",
+   "rows": 178,
+   "pit_class": "archived",
+   "notes": "Every ~5 days; not used."
+  },
+  {
+   "dataset": "2026 postseason box lines",
+   "seasons": "2026 PS",
+   "rows": 25,
+   "pit_class": "reconstructable",
+   "notes": "Pitcher lines only (25 games to 2026-10-10); no postseason hitter lines -> forward hitter projections use regular-season form."
+  }
+ ],
+ "families": [
+  {
+   "family": "batters_faced",
+   "unit": "starter-game",
+   "opportunity_family": null,
+   "population": "every regular-season starting pitcher (openers included), 2025 validation / 2026 holdout",
+   "models": [
+    {
+     "model": "A",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.8721,
+     "rmse": 3.9542,
+     "bias": 0.0352,
+     "crps": 2.0694,
+     "log_score": 2.7117,
+     "cover_50": 0.5043,
+     "cover_80": 0.8118,
+     "cover_90": 0.9077,
+     "pit_var_ratio": 0.9775,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1592,
+     "vs_baseline": null,
+     "vs_incumbent": {
+      "mean_diff": -0.13126,
+      "ci95": [
+       -0.14739,
+       -0.11502
+      ],
+      "metric": "rung RPS over incumbent rungs 15..30 (matched n=4490)",
+      "mae_diff": 0.0792,
+      "mae_ci95": [
+       0.0502,
+       0.1068
+      ]
+     },
+     "verdict": "baseline"
+    },
+    {
+     "model": "B",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.8342,
+     "rmse": 3.9034,
+     "bias": -0.0089,
+     "crps": 2.0438,
+     "log_score": 2.6997,
+     "cover_50": 0.5169,
+     "cover_80": 0.8124,
+     "cover_90": 0.912,
+     "pit_var_ratio": 0.9631,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1577,
+     "vs_baseline": {
+      "mean_diff": -0.02562,
+      "ci95": [
+       -0.04239,
+       -0.00974
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "C",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.8138,
+     "rmse": 3.8904,
+     "bias": 0.004,
+     "crps": 2.0342,
+     "log_score": 2.7146,
+     "cover_50": 0.5153,
+     "cover_80": 0.8143,
+     "cover_90": 0.9056,
+     "pit_var_ratio": 0.9675,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1569,
+     "vs_baseline": {
+      "mean_diff": -0.03525,
+      "ci95": [
+       -0.05196,
+       -0.0195
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "D",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.8131,
+     "rmse": 3.89,
+     "bias": -0.0002,
+     "crps": 2.0345,
+     "log_score": 2.7116,
+     "cover_50": 0.519,
+     "cover_80": 0.8141,
+     "cover_90": 0.9083,
+     "pit_var_ratio": 0.965,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1568,
+     "vs_baseline": {
+      "mean_diff": -0.03486,
+      "ci95": [
+       -0.05152,
+       -0.0187
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": {
+      "mean_diff": -0.16318,
+      "ci95": [
+       -0.17641,
+       -0.14999
+      ],
+      "metric": "rung RPS over incumbent rungs 15..30 (matched n=4490)",
+      "mae_diff": 0.0132,
+      "mae_ci95": [
+       -0.0054,
+       0.0324
+      ]
+     },
+     "verdict": "rejected"
+    },
+    {
+     "model": "D_rc",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.6052,
+     "rmse": 3.5374,
+     "bias": 0.1123,
+     "crps": 1.8851,
+     "log_score": 2.658,
+     "cover_50": 0.5163,
+     "cover_80": 0.8139,
+     "cover_90": 0.9048,
+     "pit_var_ratio": 0.9746,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1498,
+     "vs_baseline": {
+      "mean_diff": -0.18426,
+      "ci95": [
+       -0.21885,
+       -0.14812
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": {
+      "mean_diff": -0.20191,
+      "ci95": [
+       -0.21952,
+       -0.18388
+      ],
+      "metric": "rung RPS over incumbent rungs 15..30 (matched n=4490)",
+      "mae_diff": -0.1039,
+      "mae_ci95": [
+       -0.1301,
+       -0.0792
+      ]
+     },
+     "verdict": "rejected"
+    },
+    {
+     "model": "E",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.5267,
+     "rmse": 3.4239,
+     "bias": 0.0718,
+     "crps": 1.8268,
+     "log_score": 2.6387,
+     "cover_50": 0.5218,
+     "cover_80": 0.8135,
+     "cover_90": 0.9079,
+     "pit_var_ratio": 0.9584,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1457,
+     "vs_baseline": {
+      "mean_diff": -0.2426,
+      "ci95": [
+       -0.27869,
+       -0.20477
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": {
+      "mean_diff": -0.2486,
+      "ci95": [
+       -0.26925,
+       -0.22883
+      ],
+      "metric": "rung RPS over incumbent rungs 15..30 (matched n=4490)",
+      "mae_diff": -0.1672,
+      "mae_ci95": [
+       -0.2021,
+       -0.1341
+      ]
+     },
+     "verdict": "best"
+    },
+    {
+     "model": "F",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.5274,
+     "rmse": 3.4322,
+     "bias": 0.0802,
+     "crps": 1.8286,
+     "log_score": 2.6253,
+     "cover_50": 0.5181,
+     "cover_80": 0.8131,
+     "cover_90": 0.9081,
+     "pit_var_ratio": 0.965,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1458,
+     "vs_baseline": {
+      "mean_diff": -0.24078,
+      "ci95": [
+       -0.27602,
+       -0.20417
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    }
+   ],
+   "best_model": "E",
+   "holdout": {
+    "model": "E",
+    "n_obs": 4854,
+    "n_clusters": 2427,
+    "mae": 2.6168,
+    "rmse": 3.5794,
+    "crps": 1.8919,
+    "bias": 0.0456,
+    "cover_80": 0.8078,
+    "cover_90": 0.9036,
+    "pit_var_ratio": 0.9757,
+    "mean_threshold_brier": 0.1443,
+    "thresholds": {
+     "18": {
+      "brier": 0.06935977390748439,
+      "log_loss": 0.2566470666274845,
+      "mean_p": 0.8589386815010198,
+      "hit_rate": 0.8660898228265348
+     },
+     "20": {
+      "brier": 0.12780766696413814,
+      "log_loss": 0.40945875350663224,
+      "mean_p": 0.7677412264258298,
+      "hit_rate": 0.7737948084054388
+     },
+     "22": {
+      "brier": 0.19167607970698838,
+      "log_loss": 0.5604993820394186,
+      "mean_p": 0.5939736248630573,
+      "hit_rate": 0.6017717346518335
+     },
+     "24": {
+      "brier": 0.20387144936183202,
+      "log_loss": 0.5858899978487652,
+      "mean_p": 0.3723197676242869,
+      "hit_rate": 0.37556654305727233
+     },
+     "26": {
+      "brier": 0.12903018737809016,
+      "log_loss": 0.41064289924678543,
+      "mean_p": 0.16878632869809523,
+      "hit_rate": 0.16913885455294603
+     }
+    },
+    "vs_baseline": {
+     "mean_diff": -0.37846,
+     "ci95": [
+      -0.42755,
+      -0.33174
+     ],
+     "metric": "crps"
+    },
+    "vs_baseline_mae": {
+     "mean_diff": -0.52174,
+     "ci95": [
+      -0.58183,
+      -0.46433
+     ]
+    },
+    "vs_incumbent": {
+     "mean_diff": -0.24885,
+     "ci95": [
+      -0.26765,
+      -0.22882
+     ],
+     "metric": "rung RPS over incumbent rungs 15..30 (matched n=4524)",
+     "mae_diff": -0.2287,
+     "mae_ci95": [
+      -0.2628,
+      -0.1944
+     ]
+    }
+   },
+   "readiness": "READY",
+   "readiness_reason": "holdout CRPS vs baseline -0.3785 [-0.42755, -0.33174]; 80% PIT coverage 0.8078, PIT variance ratio 0.9757; incumbent: better (-0.2488 [-0.26765, -0.22882], rung RPS over incumbent rungs 15..30 (matched n=4524)); ready for research-only publication in place of the incumbent; prospective (archived pregame) confirmation still recommended",
+   "selection": "lowest validation CRPS: E; beats best transparent D_rc by -0.0583 CRPS [-0.0732, -0.0416]",
+   "dist_choice_dev_crps": {
+    "poisson": 2.0083082936048493,
+    "nb": 2.0083082936048493,
+    "normal_binned": 1.9178547818798415,
+    "empirical_resid": 1.9007794722950129
+   }
+  },
+  {
+   "family": "outs",
+   "unit": "starter-game",
+   "opportunity_family": "batters_faced",
+   "population": "every regular-season starting pitcher (openers included), 2025 validation / 2026 holdout",
+   "models": [
+    {
+     "model": "A",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.9066,
+     "rmse": 3.8575,
+     "bias": 0.0127,
+     "crps": 2.0863,
+     "log_score": 2.5638,
+     "cover_50": 0.5188,
+     "cover_80": 0.8112,
+     "cover_90": 0.9027,
+     "pit_var_ratio": 0.9564,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1858,
+     "vs_baseline": null,
+     "vs_incumbent": {
+      "mean_diff": 0.0179,
+      "ci95": [
+       0.00534,
+       0.02951
+      ],
+      "metric": "rung RPS over incumbent rungs 9..21 (matched n=4490)",
+      "mae_diff": 0.0479,
+      "mae_ci95": [
+       0.0267,
+       0.0695
+      ]
+     },
+     "verdict": "baseline"
+    },
+    {
+     "model": "B",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.885,
+     "rmse": 3.8229,
+     "bias": -0.0296,
+     "crps": 2.0676,
+     "log_score": 2.5602,
+     "cover_50": 0.5262,
+     "cover_80": 0.819,
+     "cover_90": 0.9025,
+     "pit_var_ratio": 0.9521,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1843,
+     "vs_baseline": {
+      "mean_diff": -0.01877,
+      "ci95": [
+       -0.03169,
+       -0.0055
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "C",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.7318,
+     "rmse": 3.619,
+     "bias": 0.0579,
+     "crps": 1.9555,
+     "log_score": 2.5195,
+     "cover_50": 0.5188,
+     "cover_80": 0.8164,
+     "cover_90": 0.9048,
+     "pit_var_ratio": 0.962,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1786,
+     "vs_baseline": {
+      "mean_diff": -0.13084,
+      "ci95": [
+       -0.15381,
+       -0.10549
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "D",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.7322,
+     "rmse": 3.6188,
+     "bias": 0.0558,
+     "crps": 1.9557,
+     "log_score": 2.5202,
+     "cover_50": 0.5206,
+     "cover_80": 0.8145,
+     "cover_90": 0.9029,
+     "pit_var_ratio": 0.9647,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1785,
+     "vs_baseline": {
+      "mean_diff": -0.13064,
+      "ci95": [
+       -0.15395,
+       -0.10426
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": {
+      "mean_diff": -0.04029,
+      "ci95": [
+       -0.05373,
+       -0.0286
+      ],
+      "metric": "rung RPS over incumbent rungs 9..21 (matched n=4490)",
+      "mae_diff": -0.0633,
+      "mae_ci95": [
+       -0.0854,
+       -0.0445
+      ]
+     },
+     "verdict": "rejected"
+    },
+    {
+     "model": "E",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.6976,
+     "rmse": 3.574,
+     "bias": 0.0227,
+     "crps": 1.9297,
+     "log_score": 2.5028,
+     "cover_50": 0.5266,
+     "cover_80": 0.8135,
+     "cover_90": 0.9062,
+     "pit_var_ratio": 0.9461,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1758,
+     "vs_baseline": {
+      "mean_diff": -0.15667,
+      "ci95": [
+       -0.18324,
+       -0.12962
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "F",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.6958,
+     "rmse": 3.5723,
+     "bias": 0.0346,
+     "crps": 1.9281,
+     "log_score": 2.5084,
+     "cover_50": 0.5214,
+     "cover_80": 0.8133,
+     "cover_90": 0.9056,
+     "pit_var_ratio": 0.9562,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1757,
+     "vs_baseline": {
+      "mean_diff": -0.15824,
+      "ci95": [
+       -0.18255,
+       -0.1322
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": {
+      "mean_diff": -0.06392,
+      "ci95": [
+       -0.07894,
+       -0.05064
+      ],
+      "metric": "rung RPS over incumbent rungs 9..21 (matched n=4490)",
+      "mae_diff": -0.0975,
+      "mae_ci95": [
+       -0.1222,
+       -0.0746
+      ]
+     },
+     "verdict": "best"
+    }
+   ],
+   "best_model": "F",
+   "holdout": {
+    "model": "F",
+    "n_obs": 4854,
+    "n_clusters": 2427,
+    "mae": 2.7091,
+    "rmse": 3.58,
+    "crps": 1.936,
+    "bias": 0.0642,
+    "cover_80": 0.8193,
+    "cover_90": 0.9087,
+    "pit_var_ratio": 0.9605,
+    "mean_threshold_brier": 0.1714,
+    "thresholds": {
+     "12": {
+      "brier": 0.09249576586831126,
+      "log_loss": 0.32413745904758096,
+      "mean_p": 0.8336060139544412,
+      "hit_rate": 0.842192006592501
+     },
+     "15": {
+      "brier": 0.18036646109454466,
+      "log_loss": 0.5360745637654561,
+      "mean_p": 0.6623023839698388,
+      "hit_rate": 0.6786155747836835
+     },
+     "16": {
+      "brier": 0.21579068515598918,
+      "log_loss": 0.6131170078675549,
+      "mean_p": 0.49978627529088127,
+      "hit_rate": 0.4888751545117429
+     },
+     "17": {
+      "brier": 0.21272318507696392,
+      "log_loss": 0.6067017412827165,
+      "mean_p": 0.43096697674166945,
+      "hit_rate": 0.4264524103831891
+     },
+     "18": {
+      "brier": 0.20354942034193518,
+      "log_loss": 0.586338264476715,
+      "mean_p": 0.35920115988112666,
+      "hit_rate": 0.36402966625463534
+     },
+     "19": {
+      "brier": 0.12351902129476283,
+      "log_loss": 0.39892004901271727,
+      "mean_p": 0.1726504027986429,
+      "hit_rate": 0.15533580552121962
+     }
+    },
+    "vs_baseline": {
+     "mean_diff": -0.25521,
+     "ci95": [
+      -0.28619,
+      -0.22407
+     ],
+     "metric": "crps"
+    },
+    "vs_baseline_mae": {
+     "mean_diff": -0.3472,
+     "ci95": [
+      -0.38629,
+      -0.30441
+     ]
+    },
+    "vs_incumbent": {
+     "mean_diff": -0.07631,
+     "ci95": [
+      -0.09137,
+      -0.06308
+     ],
+     "metric": "rung RPS over incumbent rungs 9..21 (matched n=4524)",
+     "mae_diff": -0.1246,
+     "mae_ci95": [
+      -0.1501,
+      -0.1018
+     ]
+    }
+   },
+   "readiness": "READY",
+   "readiness_reason": "holdout CRPS vs baseline -0.2552 [-0.28619, -0.22407]; 80% PIT coverage 0.8193, PIT variance ratio 0.9605; incumbent: better (-0.0763 [-0.09137, -0.06308], rung RPS over incumbent rungs 9..21 (matched n=4524)); ready for research-only publication in place of the incumbent; prospective (archived pregame) confirmation still recommended",
+   "selection": "lowest validation CRPS: F; beats best transparent C by -0.0274 CRPS [-0.035, -0.0195]",
+   "dist_choice_dev_crps": {
+    "poisson": 2.0244067110447124,
+    "nb": 2.0244067110447124,
+    "normal_binned": 2.0084176460582235,
+    "empirical_resid": 1.9838583578741327
+   }
+  },
+  {
+   "family": "pitcher_strikeouts",
+   "unit": "starter-game",
+   "opportunity_family": "batters_faced",
+   "population": "every regular-season starting pitcher (openers included), 2025 validation / 2026 holdout",
+   "models": [
+    {
+     "model": "A",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.8297,
+     "rmse": 2.2984,
+     "bias": -0.0465,
+     "crps": 1.2818,
+     "log_score": 2.2432,
+     "cover_50": 0.5095,
+     "cover_80": 0.8032,
+     "cover_90": 0.8961,
+     "pit_var_ratio": 0.9873,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1608,
+     "vs_baseline": null,
+     "vs_incumbent": {
+      "mean_diff": 0.00884,
+      "ci95": [
+       0.00091,
+       0.01763
+      ],
+      "metric": "rung RPS over incumbent rungs 2..10 (matched n=4490)",
+      "mae_diff": 0.0099,
+      "mae_ci95": [
+       -0.004,
+       0.025
+      ]
+     },
+     "verdict": "baseline"
+    },
+    {
+     "model": "B",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.827,
+     "rmse": 2.2935,
+     "bias": -0.0046,
+     "crps": 1.2786,
+     "log_score": 2.2365,
+     "cover_50": 0.5068,
+     "cover_80": 0.8044,
+     "cover_90": 0.8965,
+     "pit_var_ratio": 0.9853,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1604,
+     "vs_baseline": {
+      "mean_diff": -0.00326,
+      "ci95": [
+       -0.00873,
+       0.00249
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "C",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.7966,
+     "rmse": 2.2645,
+     "bias": 0.0694,
+     "crps": 1.257,
+     "log_score": 2.209,
+     "cover_50": 0.5029,
+     "cover_80": 0.8019,
+     "cover_90": 0.8943,
+     "pit_var_ratio": 0.9988,
+     "dist": "nb_binned",
+     "mean_threshold_brier": 0.1577,
+     "vs_baseline": {
+      "mean_diff": -0.02479,
+      "ci95": [
+       -0.03308,
+       -0.01625
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "D",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.765,
+     "rmse": 2.2293,
+     "bias": 0.0263,
+     "crps": 1.2386,
+     "log_score": 2.1937,
+     "cover_50": 0.4957,
+     "cover_80": 0.784,
+     "cover_90": 0.8862,
+     "pit_var_ratio": 1.0268,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1553,
+     "vs_baseline": {
+      "mean_diff": -0.04323,
+      "ci95": [
+       -0.05362,
+       -0.03201
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": {
+      "mean_diff": -0.02172,
+      "ci95": [
+       -0.0282,
+       -0.01594
+      ],
+      "metric": "rung RPS over incumbent rungs 2..10 (matched n=4490)",
+      "mae_diff": -0.0314,
+      "mae_ci95": [
+       -0.0425,
+       -0.021
+      ]
+     },
+     "verdict": "competitive"
+    },
+    {
+     "model": "E",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.7618,
+     "rmse": 2.2224,
+     "bias": 0.069,
+     "crps": 1.2339,
+     "log_score": 2.1909,
+     "cover_50": 0.5097,
+     "cover_80": 0.7995,
+     "cover_90": 0.8953,
+     "pit_var_ratio": 0.9944,
+     "dist": "nb_binned",
+     "mean_threshold_brier": 0.1548,
+     "vs_baseline": {
+      "mean_diff": -0.04791,
+      "ci95": [
+       -0.05903,
+       -0.03598
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "F",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.7579,
+     "rmse": 2.2188,
+     "bias": 0.0463,
+     "crps": 1.232,
+     "log_score": 2.1883,
+     "cover_50": 0.5016,
+     "cover_80": 0.7873,
+     "cover_90": 0.8891,
+     "pit_var_ratio": 1.0186,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1545,
+     "vs_baseline": {
+      "mean_diff": -0.04977,
+      "ci95": [
+       -0.06066,
+       -0.03827
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": {
+      "mean_diff": -0.02833,
+      "ci95": [
+       -0.03528,
+       -0.02171
+      ],
+      "metric": "rung RPS over incumbent rungs 2..10 (matched n=4490)",
+      "mae_diff": -0.0392,
+      "mae_ci95": [
+       -0.051,
+       -0.0281
+      ]
+     },
+     "verdict": "best"
+    }
+   ],
+   "best_model": "F",
+   "holdout": {
+    "model": "F",
+    "n_obs": 4854,
+    "n_clusters": 2427,
+    "mae": 1.7335,
+    "rmse": 2.1762,
+    "crps": 1.2049,
+    "bias": 0.0606,
+    "cover_80": 0.802,
+    "cover_90": 0.8978,
+    "pit_var_ratio": 0.9956,
+    "mean_threshold_brier": 0.1506,
+    "thresholds": {
+     "3": {
+      "brier": 0.13166451201075385,
+      "log_loss": 0.4249025879058957,
+      "mean_p": 0.8121210385368244,
+      "hit_rate": 0.8005768438401318
+     },
+     "4": {
+      "brier": 0.19092310686397745,
+      "log_loss": 0.5628378604579067,
+      "mean_p": 0.6696713816084385,
+      "hit_rate": 0.6596621343222084
+     },
+     "5": {
+      "brier": 0.2128802741750074,
+      "log_loss": 0.6096814531851497,
+      "mean_p": 0.5094503598869198,
+      "hit_rate": 0.4964977338277709
+     },
+     "6": {
+      "brier": 0.19547879630047205,
+      "log_loss": 0.570133034973603,
+      "mean_p": 0.3567177063272543,
+      "hit_rate": 0.350020601565719
+     },
+     "7": {
+      "brier": 0.15346575049693748,
+      "log_loss": 0.47158695489370595,
+      "mean_p": 0.23017732239609473,
+      "hit_rate": 0.2284713638236506
+     },
+     "8": {
+      "brier": 0.10238114766043802,
+      "log_loss": 0.3410416125960491,
+      "mean_p": 0.13726112843107022,
+      "hit_rate": 0.13226205191594562
+     },
+     "9": {
+      "brier": 0.06720179942643147,
+      "log_loss": 0.24184280905083136,
+      "mean_p": 0.07588695605746684,
+      "hit_rate": 0.07972805933250927
+     }
+    },
+    "vs_baseline": {
+     "mean_diff": -0.06577,
+     "ci95": [
+      -0.07666,
+      -0.05521
+     ],
+     "metric": "crps"
+    },
+    "vs_baseline_mae": {
+     "mean_diff": -0.09892,
+     "ci95": [
+      -0.1155,
+      -0.08223
+     ]
+    },
+    "vs_incumbent": {
+     "mean_diff": -0.03235,
+     "ci95": [
+      -0.03901,
+      -0.02553
+     ],
+     "metric": "rung RPS over incumbent rungs 2..10 (matched n=4524)",
+     "mae_diff": -0.0513,
+     "mae_ci95": [
+      -0.0628,
+      -0.0397
+     ]
+    }
+   },
+   "readiness": "READY",
+   "readiness_reason": "holdout CRPS vs baseline -0.0658 [-0.07666, -0.05521]; 80% PIT coverage 0.802, PIT variance ratio 0.9956; incumbent: better (-0.0323 [-0.03901, -0.02553], rung RPS over incumbent rungs 2..10 (matched n=4524)); ready for research-only publication in place of the incumbent; prospective (archived pregame) confirmation still recommended",
+   "selection": "lowest validation CRPS: F; beats best transparent D by -0.0065 CRPS [-0.0094, -0.0038]",
+   "dist_choice_dev_crps": {
+    "poisson": 1.2396751637483694,
+    "nb": 1.2396551730650964,
+    "nb_binned": 1.2393240852895848,
+    "empirical_resid": 1.2403861510609464,
+    "binom_mix(phi=0.005)": 1.2392653487333964
+   }
+  },
+  {
+   "family": "pitcher_walks",
+   "unit": "starter-game",
+   "opportunity_family": "batters_faced",
+   "population": "every regular-season starting pitcher (openers included), 2025 validation / 2026 holdout",
+   "models": [
+    {
+     "model": "A",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.0229,
+     "rmse": 1.2649,
+     "bias": 0.017,
+     "crps": 0.6911,
+     "log_score": 1.5905,
+     "cover_50": 0.4938,
+     "cover_80": 0.7999,
+     "cover_90": 0.9007,
+     "pit_var_ratio": 1.0017,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1651,
+     "vs_baseline": null,
+     "vs_incumbent": null,
+     "verdict": "baseline"
+    },
+    {
+     "model": "B",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.0248,
+     "rmse": 1.2671,
+     "bias": 0.0181,
+     "crps": 0.6923,
+     "log_score": 1.5924,
+     "cover_50": 0.4957,
+     "cover_80": 0.7964,
+     "cover_90": 0.8996,
+     "pit_var_ratio": 1.0041,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1655,
+     "vs_baseline": {
+      "mean_diff": 0.00129,
+      "ci95": [
+       -0.00052,
+       0.00335
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "C",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.0163,
+     "rmse": 1.2577,
+     "bias": 0.022,
+     "crps": 0.6863,
+     "log_score": 1.5888,
+     "cover_50": 0.4905,
+     "cover_80": 0.7949,
+     "cover_90": 0.8982,
+     "pit_var_ratio": 1.0102,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.164,
+     "vs_baseline": {
+      "mean_diff": -0.00475,
+      "ci95": [
+       -0.00758,
+       -0.00185
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "D",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.0154,
+     "rmse": 1.2547,
+     "bias": 0.0231,
+     "crps": 0.6844,
+     "log_score": 1.5853,
+     "cover_50": 0.4887,
+     "cover_80": 0.7943,
+     "cover_90": 0.8982,
+     "pit_var_ratio": 1.0175,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1635,
+     "vs_baseline": {
+      "mean_diff": -0.00662,
+      "ci95": [
+       -0.0099,
+       -0.00297
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "best"
+    },
+    {
+     "model": "E",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.01,
+     "rmse": 1.2508,
+     "bias": -0.0102,
+     "crps": 0.6825,
+     "log_score": 1.5794,
+     "cover_50": 0.4986,
+     "cover_80": 0.8017,
+     "cover_90": 0.899,
+     "pit_var_ratio": 0.9982,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.163,
+     "vs_baseline": {
+      "mean_diff": -0.00853,
+      "ci95": [
+       -0.01271,
+       -0.00374
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "F",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.0139,
+     "rmse": 1.2523,
+     "bias": 0.027,
+     "crps": 0.6831,
+     "log_score": 1.5833,
+     "cover_50": 0.4909,
+     "cover_80": 0.7976,
+     "cover_90": 0.8959,
+     "pit_var_ratio": 1.0149,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1632,
+     "vs_baseline": {
+      "mean_diff": -0.00798,
+      "ci95": [
+       -0.01149,
+       -0.00406
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    }
+   ],
+   "best_model": "D",
+   "holdout": {
+    "model": "D",
+    "n_obs": 4854,
+    "n_clusters": 2427,
+    "mae": 1.0,
+    "rmse": 1.2589,
+    "crps": 0.6806,
+    "bias": -0.0196,
+    "cover_80": 0.8063,
+    "cover_90": 0.9005,
+    "pit_var_ratio": 0.9887,
+    "mean_threshold_brier": 0.16,
+    "thresholds": {
+     "1": {
+      "brier": 0.13470345281285723,
+      "log_loss": 0.4366474744086934,
+      "mean_p": 0.8216705569289967,
+      "hit_rate": 0.826946847960445
+     },
+     "2": {
+      "brier": 0.23434827200097771,
+      "log_loss": 0.6607649922973403,
+      "mean_p": 0.528170981412066,
+      "hit_rate": 0.5418211784095591
+     },
+     "3": {
+      "brier": 0.1839988494944104,
+      "log_loss": 0.5493862221846691,
+      "mean_p": 0.2589662444238871,
+      "hit_rate": 0.25978574371652247
+     },
+     "4": {
+      "brier": 0.0869010852929484,
+      "log_loss": 0.3088242260438843,
+      "mean_p": 0.09988684661057655,
+      "hit_rate": 0.09888751545117429
+     }
+    },
+    "vs_baseline": {
+     "mean_diff": -0.01135,
+     "ci95": [
+      -0.01527,
+      -0.00744
+     ],
+     "metric": "crps"
+    },
+    "vs_baseline_mae": {
+     "mean_diff": -0.0196,
+     "ci95": [
+      -0.02593,
+      -0.01327
+     ]
+    },
+    "vs_incumbent": null
+   },
+   "readiness": "SHADOW VALIDATION",
+   "readiness_reason": "holdout CRPS vs baseline -0.0114 [-0.01527, -0.00744]; 80% PIT coverage 0.8063, PIT variance ratio 0.9887; incumbent: none; no incumbent engine exists for this family (Kalshi lists <100 markets); prospective shadow needed",
+   "selection": "lowest validation CRPS: E; advantage over transparent D not significant (-0.0019 [-0.004926731731763374, 0.0010387264644427113]) -> D",
+   "dist_choice_dev_crps": {
+    "poisson": 0.677289393204351,
+    "nb": 0.677289393204351,
+    "nb_binned": 0.677289393204351,
+    "empirical_resid": 0.6765027348932372,
+    "binom_mix(phi=0.0)": 0.6771361192648926
+   }
+  },
+  {
+   "family": "pitcher_hits_allowed",
+   "unit": "starter-game",
+   "opportunity_family": "batters_faced",
+   "population": "every regular-season starting pitcher (openers included), 2025 validation / 2026 holdout",
+   "models": [
+    {
+     "model": "A",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.7503,
+     "rmse": 2.1776,
+     "bias": 0.0351,
+     "crps": 1.2185,
+     "log_score": 2.1773,
+     "cover_50": 0.5033,
+     "cover_80": 0.804,
+     "cover_90": 0.9052,
+     "pit_var_ratio": 0.988,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.191,
+     "vs_baseline": null,
+     "vs_incumbent": null,
+     "verdict": "baseline"
+    },
+    {
+     "model": "B",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.7468,
+     "rmse": 2.1741,
+     "bias": 0.0147,
+     "crps": 1.2198,
+     "log_score": 2.1896,
+     "cover_50": 0.5157,
+     "cover_80": 0.8155,
+     "cover_90": 0.9077,
+     "pit_var_ratio": 0.9629,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.191,
+     "vs_baseline": {
+      "mean_diff": 0.00132,
+      "ci95": [
+       -0.00177,
+       0.00494
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "C",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.709,
+     "rmse": 2.1228,
+     "bias": 0.0465,
+     "crps": 1.1872,
+     "log_score": 2.1554,
+     "cover_50": 0.5089,
+     "cover_80": 0.812,
+     "cover_90": 0.9023,
+     "pit_var_ratio": 0.9811,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1859,
+     "vs_baseline": {
+      "mean_diff": -0.03128,
+      "ci95": [
+       -0.04003,
+       -0.02302
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "D",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.7022,
+     "rmse": 2.1103,
+     "bias": 0.0528,
+     "crps": 1.1807,
+     "log_score": 2.1529,
+     "cover_50": 0.5037,
+     "cover_80": 0.8089,
+     "cover_90": 0.9027,
+     "pit_var_ratio": 0.9842,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1849,
+     "vs_baseline": {
+      "mean_diff": -0.03779,
+      "ci95": [
+       -0.04663,
+       -0.02937
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "E",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.6842,
+     "rmse": 2.0956,
+     "bias": 0.0508,
+     "crps": 1.1702,
+     "log_score": 2.1436,
+     "cover_50": 0.5072,
+     "cover_80": 0.8094,
+     "cover_90": 0.9054,
+     "pit_var_ratio": 0.9755,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1829,
+     "vs_baseline": {
+      "mean_diff": -0.04824,
+      "ci95": [
+       -0.05845,
+       -0.03753
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "F",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.6815,
+     "rmse": 2.0904,
+     "bias": 0.0455,
+     "crps": 1.1677,
+     "log_score": 2.1374,
+     "cover_50": 0.4986,
+     "cover_80": 0.8015,
+     "cover_90": 0.9054,
+     "pit_var_ratio": 1.0002,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1826,
+     "vs_baseline": {
+      "mean_diff": -0.05072,
+      "ci95": [
+       -0.06006,
+       -0.04086
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "best"
+    }
+   ],
+   "best_model": "F",
+   "holdout": {
+    "model": "F",
+    "n_obs": 4854,
+    "n_clusters": 2427,
+    "mae": 1.6691,
+    "rmse": 2.0864,
+    "crps": 1.1613,
+    "bias": 0.0403,
+    "cover_80": 0.7963,
+    "cover_90": 0.8968,
+    "pit_var_ratio": 1.0032,
+    "mean_threshold_brier": 0.1805,
+    "thresholds": {
+     "3": {
+      "brier": 0.11433380726550896,
+      "log_loss": 0.3833888461075466,
+      "mean_p": 0.8420416106466273,
+      "hit_rate": 0.8331273176761433
+     },
+     "4": {
+      "brier": 0.18435945947314406,
+      "log_loss": 0.550453909179737,
+      "mean_p": 0.7031033978363425,
+      "hit_rate": 0.6938607334157396
+     },
+     "5": {
+      "brier": 0.22532775231491325,
+      "log_loss": 0.6367450449624075,
+      "mean_p": 0.5320328062465408,
+      "hit_rate": 0.5288421920065925
+     },
+     "6": {
+      "brier": 0.21516560146021274,
+      "log_loss": 0.6140624568940614,
+      "mean_p": 0.36058190921353866,
+      "hit_rate": 0.3617634940255459
+     },
+     "7": {
+      "brier": 0.16322354413721793,
+      "log_loss": 0.5003546627107694,
+      "mean_p": 0.2178592600273403,
+      "hit_rate": 0.21755253399258342
+     }
+    },
+    "vs_baseline": {
+     "mean_diff": -0.07489,
+     "ci95": [
+      -0.08634,
+      -0.0634
+     ],
+     "metric": "crps"
+    },
+    "vs_baseline_mae": {
+     "mean_diff": -0.11014,
+     "ci95": [
+      -0.12844,
+      -0.09256
+     ]
+    },
+    "vs_incumbent": null
+   },
+   "readiness": "SHADOW VALIDATION",
+   "readiness_reason": "holdout CRPS vs baseline -0.0749 [-0.08634, -0.0634]; 80% PIT coverage 0.7963, PIT variance ratio 1.0032; incumbent: none; no incumbent engine exists for this family (Kalshi lists <100 markets); prospective shadow needed",
+   "selection": "lowest validation CRPS: F; beats best transparent D by -0.0129 CRPS [-0.0167, -0.009]",
+   "dist_choice_dev_crps": {
+    "poisson": 1.1993988548778636,
+    "nb": 1.1993988548778636,
+    "nb_binned": 1.199324667336339,
+    "empirical_resid": 1.1989794103199576,
+    "binom_mix(phi=0.0)": 1.1984074523061825
+   }
+  },
+  {
+   "family": "pitcher_runs_allowed",
+   "unit": "starter-game",
+   "opportunity_family": "batters_faced",
+   "population": "every regular-season starting pitcher (openers included), 2025 validation / 2026 holdout",
+   "models": [
+    {
+     "model": "A",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.6532,
+     "rmse": 2.0334,
+     "bias": -0.0027,
+     "crps": 1.1205,
+     "log_score": 2.0344,
+     "cover_50": 0.5148,
+     "cover_80": 0.8028,
+     "cover_90": 0.9011,
+     "pit_var_ratio": 0.9767,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1911,
+     "vs_baseline": null,
+     "vs_incumbent": null,
+     "verdict": "baseline"
+    },
+    {
+     "model": "B",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.659,
+     "rmse": 2.0383,
+     "bias": 0.0201,
+     "crps": 1.1233,
+     "log_score": 2.0331,
+     "cover_50": 0.5177,
+     "cover_80": 0.8028,
+     "cover_90": 0.9017,
+     "pit_var_ratio": 0.9789,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1915,
+     "vs_baseline": {
+      "mean_diff": 0.00278,
+      "ci95": [
+       -1e-05,
+       0.00549
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "C",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.6403,
+     "rmse": 2.0183,
+     "bias": 0.0388,
+     "crps": 1.1101,
+     "log_score": 2.0172,
+     "cover_50": 0.5008,
+     "cover_80": 0.797,
+     "cover_90": 0.8963,
+     "pit_var_ratio": 1.0039,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.189,
+     "vs_baseline": {
+      "mean_diff": -0.01041,
+      "ci95": [
+       -0.01538,
+       -0.00592
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "D",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.6321,
+     "rmse": 2.0105,
+     "bias": 0.041,
+     "crps": 1.1055,
+     "log_score": 2.0181,
+     "cover_50": 0.5021,
+     "cover_80": 0.7991,
+     "cover_90": 0.8988,
+     "pit_var_ratio": 1.0031,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1882,
+     "vs_baseline": {
+      "mean_diff": -0.01506,
+      "ci95": [
+       -0.01984,
+       -0.01039
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "E",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.6291,
+     "rmse": 2.0056,
+     "bias": 0.0685,
+     "crps": 1.1023,
+     "log_score": 2.0092,
+     "cover_50": 0.5085,
+     "cover_80": 0.8028,
+     "cover_90": 0.9058,
+     "pit_var_ratio": 0.9889,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1876,
+     "vs_baseline": {
+      "mean_diff": -0.01821,
+      "ci95": [
+       -0.02432,
+       -0.01274
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "F",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 1.6214,
+     "rmse": 2.0033,
+     "bias": 0.0484,
+     "crps": 1.1009,
+     "log_score": 2.0149,
+     "cover_50": 0.5041,
+     "cover_80": 0.7951,
+     "cover_90": 0.9017,
+     "pit_var_ratio": 0.998,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1874,
+     "vs_baseline": {
+      "mean_diff": -0.01958,
+      "ci95": [
+       -0.02515,
+       -0.01432
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "best"
+    }
+   ],
+   "best_model": "F",
+   "holdout": {
+    "model": "F",
+    "n_obs": 4854,
+    "n_clusters": 2427,
+    "mae": 1.6138,
+    "rmse": 1.9998,
+    "crps": 1.0923,
+    "bias": 0.0585,
+    "cover_80": 0.8057,
+    "cover_90": 0.9015,
+    "pit_var_ratio": 0.9855,
+    "mean_threshold_brier": 0.1856,
+    "thresholds": {
+     "1": {
+      "brier": 0.12911458418846095,
+      "log_loss": 0.42308930631611463,
+      "mean_p": 0.8393668140702917,
+      "hit_rate": 0.8331273176761433
+     },
+     "2": {
+      "brier": 0.22138910399563017,
+      "log_loss": 0.634524035392003,
+      "mean_p": 0.6445861374384241,
+      "hit_rate": 0.6299958796868562
+     },
+     "3": {
+      "brier": 0.2378217733844487,
+      "log_loss": 0.6665342869117754,
+      "mean_p": 0.45666318299323927,
+      "hit_rate": 0.44107952204367534
+     },
+     "4": {
+      "brier": 0.19887933485408146,
+      "log_loss": 0.5832607623720647,
+      "mean_p": 0.300407299419116,
+      "hit_rate": 0.28491965389369595
+     },
+     "5": {
+      "brier": 0.14078551664822359,
+      "log_loss": 0.4505665432870122,
+      "mean_p": 0.18113470214308694,
+      "hit_rate": 0.173053152039555
+     }
+    },
+    "vs_baseline": {
+     "mean_diff": -0.03187,
+     "ci95": [
+      -0.03857,
+      -0.0256
+     ],
+     "metric": "crps"
+    },
+    "vs_baseline_mae": {
+     "mean_diff": -0.05078,
+     "ci95": [
+      -0.06106,
+      -0.04021
+     ]
+    },
+    "vs_incumbent": null
+   },
+   "readiness": "SHADOW VALIDATION",
+   "readiness_reason": "holdout CRPS vs baseline -0.0319 [-0.03857, -0.0256]; 80% PIT coverage 0.8057, PIT variance ratio 0.9855; incumbent: none; no incumbent engine exists for this family (Kalshi lists <100 markets); prospective shadow needed",
+   "selection": "lowest validation CRPS: F; beats best transparent D by -0.0045 CRPS [-0.0073, -0.0019]",
+   "dist_choice_dev_crps": {
+    "poisson": 1.1382081567341704,
+    "nb": 1.1208180546993012,
+    "nb_binned": 1.120467218791601,
+    "empirical_resid": 1.1187555474958666,
+    "binom_mix(phi=0.04)": 1.1195830277362437
+   }
+  },
+  {
+   "family": "plate_appearances",
+   "unit": "batter-game",
+   "opportunity_family": null,
+   "population": "every starting batter (lineup slots 1-9), 2025 validation / 2026 holdout",
+   "models": [
+    {
+     "model": "A",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5596,
+     "rmse": 0.7487,
+     "bias": 0.0005,
+     "crps": 0.3738,
+     "log_score": 1.1046,
+     "cover_50": 0.4946,
+     "cover_80": 0.7983,
+     "cover_90": 0.8991,
+     "pit_var_ratio": 1.0093,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.158,
+     "vs_baseline": null,
+     "vs_incumbent": null,
+     "verdict": "baseline"
+    },
+    {
+     "model": "B",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5639,
+     "rmse": 0.7448,
+     "bias": -0.0074,
+     "crps": 0.3713,
+     "log_score": 1.0981,
+     "cover_50": 0.4943,
+     "cover_80": 0.7967,
+     "cover_90": 0.8994,
+     "pit_var_ratio": 1.0099,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1567,
+     "vs_baseline": {
+      "mean_diff": -0.00249,
+      "ci95": [
+       -0.00331,
+       -0.00165
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "C",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5545,
+     "rmse": 0.72,
+     "bias": -0.0074,
+     "crps": 0.3556,
+     "log_score": 1.0627,
+     "cover_50": 0.4919,
+     "cover_80": 0.7938,
+     "cover_90": 0.8965,
+     "pit_var_ratio": 1.0167,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.149,
+     "vs_baseline": {
+      "mean_diff": -0.01823,
+      "ci95": [
+       -0.02015,
+       -0.01625
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "D",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5519,
+     "rmse": 0.7171,
+     "bias": -0.0132,
+     "crps": 0.3537,
+     "log_score": 1.0578,
+     "cover_50": 0.4933,
+     "cover_80": 0.7949,
+     "cover_90": 0.8969,
+     "pit_var_ratio": 1.0136,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.148,
+     "vs_baseline": {
+      "mean_diff": -0.02014,
+      "ci95": [
+       -0.02205,
+       -0.01814
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "E",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5464,
+     "rmse": 0.7065,
+     "bias": -0.0083,
+     "crps": 0.3482,
+     "log_score": 1.044,
+     "cover_50": 0.4969,
+     "cover_80": 0.7999,
+     "cover_90": 0.8999,
+     "pit_var_ratio": 1.0037,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1457,
+     "vs_baseline": {
+      "mean_diff": -0.02561,
+      "ci95": [
+       -0.02732,
+       -0.02381
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "F",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5473,
+     "rmse": 0.7063,
+     "bias": -0.0102,
+     "crps": 0.3478,
+     "log_score": 1.0428,
+     "cover_50": 0.4933,
+     "cover_80": 0.7961,
+     "cover_90": 0.8982,
+     "pit_var_ratio": 1.0119,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1455,
+     "vs_baseline": {
+      "mean_diff": -0.02599,
+      "ci95": [
+       -0.02763,
+       -0.02435
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "best"
+    },
+    {
+     "model": "C_hist_slot",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5605,
+     "rmse": 0.7363,
+     "bias": -0.0073,
+     "crps": 0.3656,
+     "log_score": 1.0876,
+     "cover_50": 0.492,
+     "cover_80": 0.7951,
+     "cover_90": 0.8973,
+     "pit_var_ratio": 1.0144,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1538,
+     "vs_baseline": {
+      "mean_diff": -0.00823,
+      "ci95": [
+       -0.0102,
+       -0.0064
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "D_hist_slot",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.557,
+     "rmse": 0.7334,
+     "bias": -0.0122,
+     "crps": 0.3636,
+     "log_score": 1.0827,
+     "cover_50": 0.4935,
+     "cover_80": 0.7962,
+     "cover_90": 0.8978,
+     "pit_var_ratio": 1.0121,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1529,
+     "vs_baseline": {
+      "mean_diff": -0.01021,
+      "ci95": [
+       -0.01217,
+       -0.00834
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "E_hist_slot",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5469,
+     "rmse": 0.7177,
+     "bias": -0.0067,
+     "crps": 0.3554,
+     "log_score": 1.0609,
+     "cover_50": 0.4934,
+     "cover_80": 0.799,
+     "cover_90": 0.8994,
+     "pit_var_ratio": 1.0077,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1492,
+     "vs_baseline": {
+      "mean_diff": -0.01846,
+      "ci95": [
+       -0.02011,
+       -0.01681
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    }
+   ],
+   "best_model": "F",
+   "holdout": {
+    "model": "F",
+    "n_obs": 43686,
+    "n_clusters": 2427,
+    "mae": 0.5718,
+    "rmse": 0.7351,
+    "crps": 0.3662,
+    "bias": -0.0017,
+    "cover_80": 0.7799,
+    "cover_90": 0.8864,
+    "pit_var_ratio": 1.0404,
+    "mean_threshold_brier": 0.1494,
+    "thresholds": {
+     "4": {
+      "brier": 0.13476332660319473,
+      "log_loss": 0.42022221856943454,
+      "mean_p": 0.7994980820358232,
+      "hit_rate": 0.79483129606739
+     },
+     "5": {
+      "brier": 0.16412176754980456,
+      "log_loss": 0.4977226011427592,
+      "mean_p": 0.23855877290902378,
+      "hit_rate": 0.2547955866868104
+     }
+    },
+    "vs_baseline": {
+     "mean_diff": -0.02341,
+     "ci95": [
+      -0.02539,
+      -0.02159
+     ],
+     "metric": "crps"
+    },
+    "vs_baseline_mae": {
+     "mean_diff": -0.01239,
+     "ci95": [
+      -0.01514,
+      -0.00991
+     ]
+    },
+    "vs_incumbent": {
+     "mean_diff": -0.08884,
+     "ci95": [
+      -0.10382,
+      -0.07561
+     ],
+     "metric": "CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)",
+     "mae_diff": -0.0885,
+     "mae_ci95": [
+      -0.1082,
+      -0.0703
+     ]
+    }
+   },
+   "readiness": "SHADOW VALIDATION",
+   "readiness_reason": "holdout CRPS vs baseline -0.0234 [-0.02539, -0.02159]; 80% PIT coverage 0.7799, PIT variance ratio 1.0404; incumbent: better (-0.0888 [-0.10382, -0.07561], CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)); inputs use the post-game official batting order (equivalent to a confirmed lineup); where an archived pregame lineup exists (527 games) it gives the same slot 99.5% of the time, but a prospective confirmed-lineup shadow is still required",
+   "selection": "lowest validation CRPS: F; beats best transparent D by -0.0058 CRPS [-0.0067, -0.005]",
+   "dist_choice_dev_crps": {
+    "poisson": 0.5439736334842558,
+    "normal_binned": 0.3472166812037053,
+    "empirical_resid": 0.34418758713483943
+   }
+  },
+  {
+   "family": "hits",
+   "unit": "batter-game",
+   "opportunity_family": "plate_appearances",
+   "population": "every starting batter (lineup slots 1-9), 2025 validation / 2026 holdout",
+   "models": [
+    {
+     "model": "A",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.6837,
+     "rmse": 0.8745,
+     "bias": 0.0062,
+     "crps": 0.4577,
+     "log_score": 1.2,
+     "cover_50": 0.4985,
+     "cover_80": 0.798,
+     "cover_90": 0.8967,
+     "pit_var_ratio": 1.0076,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1503,
+     "vs_baseline": null,
+     "vs_incumbent": null,
+     "verdict": "baseline"
+    },
+    {
+     "model": "B",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.6845,
+     "rmse": 0.8741,
+     "bias": 0.0,
+     "crps": 0.4574,
+     "log_score": 1.1993,
+     "cover_50": 0.4971,
+     "cover_80": 0.7972,
+     "cover_90": 0.8958,
+     "pit_var_ratio": 1.0097,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1502,
+     "vs_baseline": {
+      "mean_diff": -0.00031,
+      "ci95": [
+       -0.00063,
+       -2e-05
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "C",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.6838,
+     "rmse": 0.8725,
+     "bias": 0.0043,
+     "crps": 0.4565,
+     "log_score": 1.195,
+     "cover_50": 0.4949,
+     "cover_80": 0.796,
+     "cover_90": 0.8948,
+     "pit_var_ratio": 1.0129,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1499,
+     "vs_baseline": {
+      "mean_diff": -0.0012,
+      "ci95": [
+       -0.00167,
+       -0.00075
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "D",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.6854,
+     "rmse": 0.8706,
+     "bias": 0.0012,
+     "crps": 0.4552,
+     "log_score": 1.1928,
+     "cover_50": 0.4962,
+     "cover_80": 0.7965,
+     "cover_90": 0.8947,
+     "pit_var_ratio": 1.0119,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1495,
+     "vs_baseline": {
+      "mean_diff": -0.00247,
+      "ci95": [
+       -0.00325,
+       -0.00175
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "E",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.6842,
+     "rmse": 0.8698,
+     "bias": 0.0038,
+     "crps": 0.4547,
+     "log_score": 1.1918,
+     "cover_50": 0.4964,
+     "cover_80": 0.796,
+     "cover_90": 0.8958,
+     "pit_var_ratio": 1.0108,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1493,
+     "vs_baseline": {
+      "mean_diff": -0.00297,
+      "ci95": [
+       -0.00375,
+       -0.00219
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "F",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.6841,
+     "rmse": 0.8698,
+     "bias": 0.0003,
+     "crps": 0.4547,
+     "log_score": 1.1919,
+     "cover_50": 0.4959,
+     "cover_80": 0.7969,
+     "cover_90": 0.8949,
+     "pit_var_ratio": 1.0111,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1493,
+     "vs_baseline": {
+      "mean_diff": -0.00297,
+      "ci95": [
+       -0.00369,
+       -0.00229
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "best"
+    },
+    {
+     "model": "D_hist_slot",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.6855,
+     "rmse": 0.8715,
+     "bias": 0.0008,
+     "crps": 0.4558,
+     "log_score": 1.1939,
+     "cover_50": 0.4961,
+     "cover_80": 0.7962,
+     "cover_90": 0.8943,
+     "pit_var_ratio": 1.0126,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1497,
+     "vs_baseline": {
+      "mean_diff": -0.00187,
+      "ci95": [
+       -0.00263,
+       -0.00113
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    }
+   ],
+   "best_model": "F",
+   "holdout": {
+    "model": "F",
+    "n_obs": 43686,
+    "n_clusters": 2427,
+    "mae": 0.6828,
+    "rmse": 0.8655,
+    "crps": 0.4518,
+    "bias": 0.0058,
+    "cover_80": 0.8014,
+    "cover_90": 0.8986,
+    "pit_var_ratio": 1.0009,
+    "mean_threshold_brier": 0.1483,
+    "thresholds": {
+     "1": {
+      "brier": 0.235193914509081,
+      "log_loss": 0.663043112959514,
+      "mean_p": 0.6135101727658386,
+      "hit_rate": 0.6063040791100124
+     },
+     "2": {
+      "brier": 0.16607245368802365,
+      "log_loss": 0.5122404968344548,
+      "mean_p": 0.21698646322189322,
+      "hit_rate": 0.21503456484915076
+     },
+     "3": {
+      "brier": 0.04368821674825052,
+      "log_loss": 0.18337993207056388,
+      "mean_p": 0.0444448164102498,
+      "hit_rate": 0.046147507210548
+     }
+    },
+    "vs_baseline": {
+     "mean_diff": -0.00284,
+     "ci95": [
+      -0.00353,
+      -0.00215
+     ],
+     "metric": "crps"
+    },
+    "vs_baseline_mae": {
+     "mean_diff": -0.00104,
+     "ci95": [
+      -0.00201,
+      -7e-05
+     ]
+    },
+    "vs_incumbent": {
+     "mean_diff": -0.01101,
+     "ci95": [
+      -0.01401,
+      -0.0081
+     ],
+     "metric": "CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)",
+     "mae_diff": -0.0122,
+     "mae_ci95": [
+      -0.0166,
+      -0.0082
+     ]
+    }
+   },
+   "readiness": "SHADOW VALIDATION",
+   "readiness_reason": "holdout CRPS vs baseline -0.0028 [-0.00353, -0.00215]; 80% PIT coverage 0.8014, PIT variance ratio 1.0009; incumbent: better (-0.0110 [-0.01401, -0.0081], CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)); inputs use the post-game official batting order (equivalent to a confirmed lineup); where an archived pregame lineup exists (527 games) it gives the same slot 99.5% of the time, but a prospective confirmed-lineup shadow is still required",
+   "selection": "lowest validation CRPS: F; beats best transparent D by -0.0005 CRPS [-0.0006, -0.0004]",
+   "dist_choice_dev_crps": {
+    "poisson": 0.4523168743878257,
+    "nb": 0.4523168743878257,
+    "empirical_resid": 0.4512669221567954,
+    "binom_mix(phi=0.01)": 0.4509934731396896
+   }
+  },
+  {
+   "family": "total_bases",
+   "unit": "batter-game",
+   "opportunity_family": "plate_appearances",
+   "population": "every starting batter (lineup slots 1-9), 2025 validation / 2026 holdout",
+   "models": [
+    {
+     "model": "A",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 1.3432,
+     "rmse": 1.7667,
+     "bias": -0.0378,
+     "crps": 0.8831,
+     "log_score": 1.6402,
+     "cover_50": 0.4878,
+     "cover_80": 0.7946,
+     "cover_90": 0.8941,
+     "pit_var_ratio": 1.0232,
+     "dist": "tb_mix",
+     "mean_threshold_brier": 0.1872,
+     "vs_baseline": null,
+     "vs_incumbent": null,
+     "verdict": "baseline"
+    },
+    {
+     "model": "B",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 1.3366,
+     "rmse": 1.7658,
+     "bias": -0.047,
+     "crps": 0.8825,
+     "log_score": 1.6398,
+     "cover_50": 0.4883,
+     "cover_80": 0.7935,
+     "cover_90": 0.8939,
+     "pit_var_ratio": 1.0247,
+     "dist": "tb_mix",
+     "mean_threshold_brier": 0.187,
+     "vs_baseline": {
+      "mean_diff": -0.00057,
+      "ci95": [
+       -0.00118,
+       5e-05
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "rejected"
+    },
+    {
+     "model": "C",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 1.3506,
+     "rmse": 1.763,
+     "bias": 0.0075,
+     "crps": 0.8809,
+     "log_score": 1.6377,
+     "cover_50": 0.49,
+     "cover_80": 0.7967,
+     "cover_90": 0.8956,
+     "pit_var_ratio": 1.0188,
+     "dist": "tb_mix",
+     "mean_threshold_brier": 0.1867,
+     "vs_baseline": {
+      "mean_diff": -0.00218,
+      "ci95": [
+       -0.003,
+       -0.00132
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "D",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 1.3469,
+     "rmse": 1.7611,
+     "bias": 0.0047,
+     "crps": 0.8797,
+     "log_score": 1.6363,
+     "cover_50": 0.4907,
+     "cover_80": 0.7968,
+     "cover_90": 0.8957,
+     "pit_var_ratio": 1.018,
+     "dist": "tb_mix",
+     "mean_threshold_brier": 0.1864,
+     "vs_baseline": {
+      "mean_diff": -0.00344,
+      "ci95": [
+       -0.00454,
+       -0.00234
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "E",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 1.3459,
+     "rmse": 1.7606,
+     "bias": 0.0027,
+     "crps": 0.8804,
+     "log_score": 1.6474,
+     "cover_50": 0.4964,
+     "cover_80": 0.8007,
+     "cover_90": 0.8989,
+     "pit_var_ratio": 1.0047,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1865,
+     "vs_baseline": {
+      "mean_diff": -0.00271,
+      "ci95": [
+       -0.0039,
+       -0.0015
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "F",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 1.3453,
+     "rmse": 1.7593,
+     "bias": 0.0049,
+     "crps": 0.8785,
+     "log_score": 1.6351,
+     "cover_50": 0.4912,
+     "cover_80": 0.7969,
+     "cover_90": 0.8963,
+     "pit_var_ratio": 1.0169,
+     "dist": "tb_mix",
+     "mean_threshold_brier": 0.1861,
+     "vs_baseline": {
+      "mean_diff": -0.00463,
+      "ci95": [
+       -0.0057,
+       -0.00355
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "best"
+    },
+    {
+     "model": "D_hist_slot",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 1.3485,
+     "rmse": 1.7623,
+     "bias": 0.0036,
+     "crps": 0.8804,
+     "log_score": 1.6371,
+     "cover_50": 0.4903,
+     "cover_80": 0.7968,
+     "cover_90": 0.8953,
+     "pit_var_ratio": 1.0184,
+     "dist": "tb_mix",
+     "mean_threshold_brier": 0.1865,
+     "vs_baseline": {
+      "mean_diff": -0.00266,
+      "ci95": [
+       -0.0037,
+       -0.00156
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    }
+   ],
+   "best_model": "F",
+   "holdout": {
+    "model": "F",
+    "n_obs": 43686,
+    "n_clusters": 2427,
+    "mae": 1.3329,
+    "rmse": 1.7301,
+    "crps": 0.8652,
+    "bias": 0.0234,
+    "cover_80": 0.8036,
+    "cover_90": 0.8992,
+    "pit_var_ratio": 1.0058,
+    "mean_threshold_brier": 0.1851,
+    "thresholds": {
+     "1": {
+      "brier": 0.23543296923998894,
+      "log_loss": 0.6635454489909338,
+      "mean_p": 0.6212369042320374,
+      "hit_rate": 0.6063040791100124
+     },
+     "2": {
+      "brier": 0.22405213573633384,
+      "log_loss": 0.6397606377762606,
+      "mean_p": 0.35791832940402724,
+      "hit_rate": 0.35004349219429565
+     },
+     "3": {
+      "brier": 0.16019325815613247,
+      "log_loss": 0.49895985052096814,
+      "mean_p": 0.20616459579133553,
+      "hit_rate": 0.2042988600466969
+     },
+     "4": {
+      "brier": 0.12058567106870113,
+      "log_loss": 0.4024364983889542,
+      "mean_p": 0.14595832896546979,
+      "hit_rate": 0.1429290848326695
+     }
+    },
+    "vs_baseline": {
+     "mean_diff": -0.00502,
+     "ci95": [
+      -0.00622,
+      -0.00385
+     ],
+     "metric": "crps"
+    },
+    "vs_baseline_mae": {
+     "mean_diff": 0.00946,
+     "ci95": [
+      0.00766,
+      0.01126
+     ]
+    },
+    "vs_incumbent": {
+     "mean_diff": -0.01418,
+     "ci95": [
+      -0.01753,
+      -0.01094
+     ],
+     "metric": "CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)",
+     "mae_diff": -0.0075,
+     "mae_ci95": [
+      -0.0124,
+      -0.0021
+     ]
+    }
+   },
+   "readiness": "SHADOW VALIDATION",
+   "readiness_reason": "holdout CRPS vs baseline -0.0050 [-0.00622, -0.00385]; 80% PIT coverage 0.8036, PIT variance ratio 1.0058; incumbent: better (-0.0142 [-0.01753, -0.01094], CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)); inputs use the post-game official batting order (equivalent to a confirmed lineup); where an archived pregame lineup exists (527 games) it gives the same slot 99.5% of the time, but a prospective confirmed-lineup shadow is still required",
+   "selection": "lowest validation CRPS: F; beats best transparent D by -0.0012 CRPS [-0.0015, -0.0009]",
+   "dist_choice_dev_crps": {
+    "poisson": 0.9141101810184689,
+    "nb": 0.8766506747378482,
+    "empirical_resid": 0.8755024130108366,
+    "tb_mix": 0.8744780926314255
+   }
+  },
+  {
+   "family": "home_runs",
+   "unit": "batter-game",
+   "opportunity_family": "plate_appearances",
+   "population": "every starting batter (lineup slots 1-9), 2025 validation / 2026 holdout",
+   "models": [
+    {
+     "model": "A",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.2174,
+     "rmse": 0.3559,
+     "bias": -0.0033,
+     "crps": 0.1107,
+     "log_score": 0.3865,
+     "cover_50": 0.5041,
+     "cover_80": 0.7978,
+     "cover_90": 0.8973,
+     "pit_var_ratio": 0.9997,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1021,
+     "vs_baseline": null,
+     "vs_incumbent": null,
+     "verdict": "baseline"
+    },
+    {
+     "model": "B",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.2165,
+     "rmse": 0.3554,
+     "bias": -0.0035,
+     "crps": 0.1104,
+     "log_score": 0.385,
+     "cover_50": 0.5033,
+     "cover_80": 0.7982,
+     "cover_90": 0.8975,
+     "pit_var_ratio": 1.0004,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1018,
+     "vs_baseline": {
+      "mean_diff": -0.0003,
+      "ci95": [
+       -0.00038,
+       -0.00021
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "C",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.2189,
+     "rmse": 0.3552,
+     "bias": 0.0001,
+     "crps": 0.1103,
+     "log_score": 0.3844,
+     "cover_50": 0.5053,
+     "cover_80": 0.7998,
+     "cover_90": 0.8985,
+     "pit_var_ratio": 0.9959,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1017,
+     "vs_baseline": {
+      "mean_diff": -0.00039,
+      "ci95": [
+       -0.00049,
+       -0.00028
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "D",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.2198,
+     "rmse": 0.3549,
+     "bias": 0.0017,
+     "crps": 0.1102,
+     "log_score": 0.3839,
+     "cover_50": 0.5067,
+     "cover_80": 0.8007,
+     "cover_90": 0.8984,
+     "pit_var_ratio": 0.9941,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1016,
+     "vs_baseline": {
+      "mean_diff": -0.00049,
+      "ci95": [
+       -0.00064,
+       -0.00034
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "E",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.2172,
+     "rmse": 0.3554,
+     "bias": -0.0023,
+     "crps": 0.1104,
+     "log_score": 0.3872,
+     "cover_50": 0.5035,
+     "cover_80": 0.7974,
+     "cover_90": 0.8978,
+     "pit_var_ratio": 1.0,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1019,
+     "vs_baseline": {
+      "mean_diff": -0.00026,
+      "ci95": [
+       -0.00042,
+       -0.0001
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "F",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.219,
+     "rmse": 0.3547,
+     "bias": 0.001,
+     "crps": 0.11,
+     "log_score": 0.3832,
+     "cover_50": 0.5054,
+     "cover_80": 0.8001,
+     "cover_90": 0.8985,
+     "pit_var_ratio": 0.9952,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1015,
+     "vs_baseline": {
+      "mean_diff": -0.00062,
+      "ci95": [
+       -0.00077,
+       -0.00047
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "best"
+    },
+    {
+     "model": "D_hist_slot",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.2198,
+     "rmse": 0.355,
+     "bias": 0.0015,
+     "crps": 0.1102,
+     "log_score": 0.3841,
+     "cover_50": 0.5065,
+     "cover_80": 0.8006,
+     "cover_90": 0.8986,
+     "pit_var_ratio": 0.9942,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1017,
+     "vs_baseline": {
+      "mean_diff": -0.00046,
+      "ci95": [
+       -0.0006,
+       -0.00031
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    }
+   ],
+   "best_model": "F",
+   "holdout": {
+    "model": "F",
+    "n_obs": 43686,
+    "n_clusters": 2427,
+    "mae": 0.2166,
+    "rmse": 0.3479,
+    "crps": 0.1074,
+    "bias": 0.0047,
+    "cover_80": 0.8031,
+    "cover_90": 0.9022,
+    "pit_var_ratio": 0.9883,
+    "mean_threshold_brier": 0.1,
+    "thresholds": {
+     "1": {
+      "brier": 0.0999946289525742,
+      "log_loss": 0.34846612471812505,
+      "mean_p": 0.12010091322440342,
+      "hit_rate": 0.11481939294053015
+     }
+    },
+    "vs_baseline": {
+     "mean_diff": -0.00059,
+     "ci95": [
+      -0.00075,
+      -0.00043
+     ],
+     "metric": "crps"
+    },
+    "vs_baseline_mae": {
+     "mean_diff": 0.0036,
+     "ci95": [
+      0.00319,
+      0.00405
+     ]
+    },
+    "vs_incumbent": {
+     "mean_diff": -0.00264,
+     "ci95": [
+      -0.00343,
+      -0.0019
+     ],
+     "metric": "CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)",
+     "mae_diff": 0.0279,
+     "mae_ci95": [
+      0.0264,
+      0.0296
+     ]
+    }
+   },
+   "readiness": "SHADOW VALIDATION",
+   "readiness_reason": "holdout CRPS vs baseline -0.0006 [-0.00075, -0.00043]; 80% PIT coverage 0.8031, PIT variance ratio 0.9883; incumbent: better (-0.0026 [-0.00343, -0.0019], CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)); inputs use the post-game official batting order (equivalent to a confirmed lineup); where an archived pregame lineup exists (527 games) it gives the same slot 99.5% of the time, but a prospective confirmed-lineup shadow is still required; NOTE MAE of the mean is worse than the incumbent (+0.0279 [0.0264, 0.0296]) because the incumbent's downward-biased mean sits nearer the modal 0 for this zero-heavy count; CRPS/Brier/bias all favour the new model",
+   "selection": "lowest validation CRPS: F; beats best transparent D by -0.0001 CRPS [-0.0002, -0.0001]",
+   "dist_choice_dev_crps": {
+    "poisson": 0.10894384388419609,
+    "nb": 0.10894384388419609,
+    "empirical_resid": 0.1090382598672658,
+    "binom_mix(phi=0.0)": 0.10893863638044379
+   }
+  },
+  {
+   "family": "runs",
+   "unit": "batter-game",
+   "opportunity_family": "plate_appearances",
+   "population": "every starting batter (lineup slots 1-9), 2025 validation / 2026 holdout",
+   "models": [
+    {
+     "model": "A",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5801,
+     "rmse": 0.6805,
+     "bias": -0.0087,
+     "crps": 0.3203,
+     "log_score": 0.8916,
+     "cover_50": 0.4968,
+     "cover_80": 0.7981,
+     "cover_90": 0.8999,
+     "pit_var_ratio": 1.006,
+     "dist": "poisson",
+     "mean_threshold_brier": 0.1539,
+     "vs_baseline": null,
+     "vs_incumbent": null,
+     "verdict": "baseline"
+    },
+    {
+     "model": "B",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5774,
+     "rmse": 0.6797,
+     "bias": -0.0118,
+     "crps": 0.3199,
+     "log_score": 0.8906,
+     "cover_50": 0.4958,
+     "cover_80": 0.7977,
+     "cover_90": 0.8993,
+     "pit_var_ratio": 1.0082,
+     "dist": "poisson",
+     "mean_threshold_brier": 0.1536,
+     "vs_baseline": {
+      "mean_diff": -0.00047,
+      "ci95": [
+       -0.00069,
+       -0.00026
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "C",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5802,
+     "rmse": 0.6787,
+     "bias": 0.0017,
+     "crps": 0.3192,
+     "log_score": 0.8891,
+     "cover_50": 0.4998,
+     "cover_80": 0.8005,
+     "cover_90": 0.9024,
+     "pit_var_ratio": 0.9992,
+     "dist": "poisson",
+     "mean_threshold_brier": 0.1533,
+     "vs_baseline": {
+      "mean_diff": -0.00114,
+      "ci95": [
+       -0.00145,
+       -0.00082
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "D",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5759,
+     "rmse": 0.677,
+     "bias": -0.0046,
+     "crps": 0.3182,
+     "log_score": 0.8874,
+     "cover_50": 0.4971,
+     "cover_80": 0.7944,
+     "cover_90": 0.8951,
+     "pit_var_ratio": 1.0123,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1528,
+     "vs_baseline": {
+      "mean_diff": -0.00216,
+      "ci95": [
+       -0.00274,
+       -0.00157
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "E",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5776,
+     "rmse": 0.6784,
+     "bias": -0.0064,
+     "crps": 0.3189,
+     "log_score": 0.8969,
+     "cover_50": 0.4978,
+     "cover_80": 0.7972,
+     "cover_90": 0.8978,
+     "pit_var_ratio": 1.0075,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1532,
+     "vs_baseline": {
+      "mean_diff": -0.00142,
+      "ci95": [
+       -0.00191,
+       -0.00089
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "F",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5759,
+     "rmse": 0.6764,
+     "bias": -0.002,
+     "crps": 0.3178,
+     "log_score": 0.8866,
+     "cover_50": 0.4978,
+     "cover_80": 0.7946,
+     "cover_90": 0.8959,
+     "pit_var_ratio": 1.0104,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.1526,
+     "vs_baseline": {
+      "mean_diff": -0.00253,
+      "ci95": [
+       -0.00313,
+       -0.00195
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "best"
+    },
+    {
+     "model": "D_hist_slot",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.5767,
+     "rmse": 0.6776,
+     "bias": -0.0048,
+     "crps": 0.3186,
+     "log_score": 0.8884,
+     "cover_50": 0.4965,
+     "cover_80": 0.7941,
+     "cover_90": 0.895,
+     "pit_var_ratio": 1.0128,
+     "dist": "binom_mix",
+     "mean_threshold_brier": 0.153,
+     "vs_baseline": {
+      "mean_diff": -0.00171,
+      "ci95": [
+       -0.0023,
+       -0.00112
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    }
+   ],
+   "best_model": "F",
+   "holdout": {
+    "model": "F",
+    "n_obs": 43686,
+    "n_clusters": 2427,
+    "mae": 0.5748,
+    "rmse": 0.6724,
+    "crps": 0.3164,
+    "bias": 0.0018,
+    "cover_80": 0.8009,
+    "cover_90": 0.8981,
+    "pit_var_ratio": 0.9951,
+    "mean_threshold_brier": 0.152,
+    "thresholds": {
+     "1": {
+      "brier": 0.23120543333625493,
+      "log_loss": 0.6547733990467898,
+      "mean_p": 0.38492343062519707,
+      "hit_rate": 0.3775351371148652
+     },
+     "2": {
+      "brier": 0.07280570123959967,
+      "log_loss": 0.2737228411487598,
+      "mean_p": 0.0773505339497141,
+      "hit_rate": 0.07997985624685254
+     }
+    },
+    "vs_baseline": {
+     "mean_diff": -0.0024,
+     "ci95": [
+      -0.0029,
+      -0.00184
+     ],
+     "metric": "crps"
+    },
+    "vs_baseline_mae": {
+     "mean_diff": -0.00384,
+     "ci95": [
+      -0.00458,
+      -0.00306
+     ]
+    },
+    "vs_incumbent": {
+     "mean_diff": -0.00908,
+     "ci95": [
+      -0.01162,
+      -0.00648
+     ],
+     "metric": "CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)",
+     "mae_diff": 0.0152,
+     "mae_ci95": [
+      0.0121,
+      0.0187
+     ]
+    }
+   },
+   "readiness": "SHADOW VALIDATION",
+   "readiness_reason": "holdout CRPS vs baseline -0.0024 [-0.0029, -0.00184]; 80% PIT coverage 0.8009, PIT variance ratio 0.9951; incumbent: better (-0.0091 [-0.01162, -0.00648], CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)); inputs use the post-game official batting order (equivalent to a confirmed lineup); where an archived pregame lineup exists (527 games) it gives the same slot 99.5% of the time, but a prospective confirmed-lineup shadow is still required; NOTE MAE of the mean is worse than the incumbent (+0.0152 [0.0121, 0.0187]) because the incumbent's downward-biased mean sits nearer the modal 0 for this zero-heavy count; CRPS/Brier/bias all favour the new model",
+   "selection": "lowest validation CRPS: F; beats best transparent D by -0.0004 CRPS [-0.0005, -0.0002]",
+   "dist_choice_dev_crps": {
+    "poisson": 0.3133100045301553,
+    "nb": 0.3133100045301553,
+    "empirical_resid": 0.3135213963301863,
+    "binom_mix(phi=0.01)": 0.31329699788188003
+   }
+  },
+  {
+   "family": "rbis",
+   "unit": "batter-game",
+   "opportunity_family": "plate_appearances",
+   "population": "every starting batter (lineup slots 1-9), 2025 validation / 2026 holdout",
+   "models": [
+    {
+     "model": "A",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.633,
+     "rmse": 0.8444,
+     "bias": -0.0036,
+     "crps": 0.3524,
+     "log_score": 0.904,
+     "cover_50": 0.4995,
+     "cover_80": 0.7995,
+     "cover_90": 0.8987,
+     "pit_var_ratio": 1.0042,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1118,
+     "vs_baseline": null,
+     "vs_incumbent": null,
+     "verdict": "baseline"
+    },
+    {
+     "model": "B",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.6327,
+     "rmse": 0.8438,
+     "bias": -0.0019,
+     "crps": 0.3521,
+     "log_score": 0.903,
+     "cover_50": 0.4982,
+     "cover_80": 0.8005,
+     "cover_90": 0.8992,
+     "pit_var_ratio": 1.0035,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1118,
+     "vs_baseline": {
+      "mean_diff": -0.00024,
+      "ci95": [
+       -0.00045,
+       -2e-05
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "C",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.6313,
+     "rmse": 0.8436,
+     "bias": -0.0032,
+     "crps": 0.3519,
+     "log_score": 0.9051,
+     "cover_50": 0.4977,
+     "cover_80": 0.8,
+     "cover_90": 0.8991,
+     "pit_var_ratio": 1.0045,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1117,
+     "vs_baseline": {
+      "mean_diff": -0.00044,
+      "ci95": [
+       -0.00074,
+       -0.00014
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "D",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.6292,
+     "rmse": 0.8428,
+     "bias": -0.0053,
+     "crps": 0.3514,
+     "log_score": 0.9015,
+     "cover_50": 0.4965,
+     "cover_80": 0.7995,
+     "cover_90": 0.8991,
+     "pit_var_ratio": 1.0061,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1115,
+     "vs_baseline": {
+      "mean_diff": -0.00094,
+      "ci95": [
+       -0.00138,
+       -0.00052
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "E",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.628,
+     "rmse": 0.8425,
+     "bias": -0.0106,
+     "crps": 0.3512,
+     "log_score": 0.9039,
+     "cover_50": 0.4973,
+     "cover_80": 0.7988,
+     "cover_90": 0.8997,
+     "pit_var_ratio": 1.0074,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1114,
+     "vs_baseline": {
+      "mean_diff": -0.00121,
+      "ci95": [
+       -0.00159,
+       -0.00081
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "F",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.6271,
+     "rmse": 0.8421,
+     "bias": -0.0081,
+     "crps": 0.351,
+     "log_score": 0.9007,
+     "cover_50": 0.4969,
+     "cover_80": 0.7991,
+     "cover_90": 0.8985,
+     "pit_var_ratio": 1.0071,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1114,
+     "vs_baseline": {
+      "mean_diff": -0.0014,
+      "ci95": [
+       -0.00184,
+       -0.00097
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "best"
+    },
+    {
+     "model": "D_hist_slot",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 0.6301,
+     "rmse": 0.8429,
+     "bias": -0.0039,
+     "crps": 0.3515,
+     "log_score": 0.9022,
+     "cover_50": 0.4974,
+     "cover_80": 0.7992,
+     "cover_90": 0.8995,
+     "pit_var_ratio": 1.0053,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1115,
+     "vs_baseline": {
+      "mean_diff": -0.00089,
+      "ci95": [
+       -0.00129,
+       -0.00049
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    }
+   ],
+   "best_model": "F",
+   "holdout": {
+    "model": "F",
+    "n_obs": 43686,
+    "n_clusters": 2427,
+    "mae": 0.6256,
+    "rmse": 0.8317,
+    "crps": 0.3476,
+    "bias": -0.0019,
+    "cover_80": 0.8001,
+    "cover_90": 0.8998,
+    "pit_var_ratio": 0.9963,
+    "mean_threshold_brier": 0.1111,
+    "thresholds": {
+     "1": {
+      "brier": 0.20558133625556854,
+      "log_loss": 0.6008474698095354,
+      "mean_p": 0.29259908980658345,
+      "hit_rate": 0.29407590532436023
+     },
+     "2": {
+      "brier": 0.09354439946055447,
+      "log_loss": 0.3330312963962079,
+      "mean_p": 0.10569480676971281,
+      "hit_rate": 0.10527400082406263
+     },
+     "3": {
+      "brier": 0.03415458348712767,
+      "log_loss": 0.15160776229713113,
+      "mean_p": 0.03525900974424862,
+      "hit_rate": 0.03554914617955409
+     }
+    },
+    "vs_baseline": {
+     "mean_diff": -0.00134,
+     "ci95": [
+      -0.00175,
+      -0.00092
+     ],
+     "metric": "crps"
+    },
+    "vs_baseline_mae": {
+     "mean_diff": -0.0052,
+     "ci95": [
+      -0.00605,
+      -0.00441
+     ]
+    },
+    "vs_incumbent": {
+     "mean_diff": -0.0139,
+     "ci95": [
+      -0.01661,
+      -0.0111
+     ],
+     "metric": "CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)",
+     "mae_diff": 0.0473,
+     "mae_ci95": [
+      0.0436,
+      0.0513
+     ]
+    }
+   },
+   "readiness": "SHADOW VALIDATION",
+   "readiness_reason": "holdout CRPS vs baseline -0.0013 [-0.00175, -0.00092]; 80% PIT coverage 0.8001, PIT variance ratio 0.9963; incumbent: better (-0.0139 [-0.01661, -0.0111], CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)); inputs use the post-game official batting order (equivalent to a confirmed lineup); where an archived pregame lineup exists (527 games) it gives the same slot 99.5% of the time, but a prospective confirmed-lineup shadow is still required; NOTE MAE of the mean is worse than the incumbent (+0.0473 [0.0436, 0.0513]) because the incumbent's downward-biased mean sits nearer the modal 0 for this zero-heavy count; CRPS/Brier/bias all favour the new model",
+   "selection": "lowest validation CRPS: F; beats best transparent D by -0.0005 CRPS [-0.0006, -0.0003]",
+   "dist_choice_dev_crps": {
+    "poisson": 0.3533013648723507,
+    "nb": 0.34731481944283626,
+    "empirical_resid": 0.34728906954516225
+   }
+  },
+  {
+   "family": "hits_runs_rbis",
+   "unit": "batter-game",
+   "opportunity_family": "plate_appearances",
+   "population": "every starting batter (lineup slots 1-9), 2025 validation / 2026 holdout",
+   "models": [
+    {
+     "model": "A",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 1.5129,
+     "rmse": 1.932,
+     "bias": 0.0021,
+     "crps": 1.0042,
+     "log_score": 1.8236,
+     "cover_50": 0.4959,
+     "cover_80": 0.7976,
+     "cover_90": 0.8997,
+     "pit_var_ratio": 1.0083,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1798,
+     "vs_baseline": null,
+     "vs_incumbent": null,
+     "verdict": "baseline"
+    },
+    {
+     "model": "B",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 1.5101,
+     "rmse": 1.9307,
+     "bias": -0.0082,
+     "crps": 1.0035,
+     "log_score": 1.8191,
+     "cover_50": 0.4958,
+     "cover_80": 0.7975,
+     "cover_90": 0.8989,
+     "pit_var_ratio": 1.0095,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1797,
+     "vs_baseline": {
+      "mean_diff": -0.00066,
+      "ci95": [
+       -0.00132,
+       -1e-05
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "C",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 1.5074,
+     "rmse": 1.9283,
+     "bias": -0.0042,
+     "crps": 1.0019,
+     "log_score": 1.8206,
+     "cover_50": 0.4945,
+     "cover_80": 0.797,
+     "cover_90": 0.8994,
+     "pit_var_ratio": 1.0095,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1794,
+     "vs_baseline": {
+      "mean_diff": -0.00223,
+      "ci95": [
+       -0.00325,
+       -0.00118
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "D",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 1.5012,
+     "rmse": 1.9233,
+     "bias": -0.0092,
+     "crps": 0.9993,
+     "log_score": 1.816,
+     "cover_50": 0.4916,
+     "cover_80": 0.7972,
+     "cover_90": 0.8985,
+     "pit_var_ratio": 1.0132,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1789,
+     "vs_baseline": {
+      "mean_diff": -0.00491,
+      "ci95": [
+       -0.00662,
+       -0.00322
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "E",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 1.5005,
+     "rmse": 1.9235,
+     "bias": -0.0154,
+     "crps": 0.999,
+     "log_score": 1.817,
+     "cover_50": 0.4944,
+     "cover_80": 0.7985,
+     "cover_90": 0.8993,
+     "pit_var_ratio": 1.0092,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1788,
+     "vs_baseline": {
+      "mean_diff": -0.00522,
+      "ci95": [
+       -0.00671,
+       -0.00373
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "F",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 1.4999,
+     "rmse": 1.9209,
+     "bias": -0.0096,
+     "crps": 0.9976,
+     "log_score": 1.823,
+     "cover_50": 0.4944,
+     "cover_80": 0.7983,
+     "cover_90": 0.8987,
+     "pit_var_ratio": 1.0106,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1785,
+     "vs_baseline": {
+      "mean_diff": -0.00656,
+      "ci95": [
+       -0.00827,
+       -0.00489
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "best"
+    },
+    {
+     "model": "D_hist_slot",
+     "split": "validation",
+     "n_obs": 43668,
+     "n_clusters": 2426,
+     "mae": 1.5048,
+     "rmse": 1.9253,
+     "bias": -0.0078,
+     "crps": 1.0005,
+     "log_score": 1.8176,
+     "cover_50": 0.4932,
+     "cover_80": 0.7979,
+     "cover_90": 0.8988,
+     "pit_var_ratio": 1.0109,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.1791,
+     "vs_baseline": {
+      "mean_diff": -0.00364,
+      "ci95": [
+       -0.00525,
+       -0.00193
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    }
+   ],
+   "best_model": "F",
+   "holdout": {
+    "model": "F",
+    "n_obs": 43686,
+    "n_clusters": 2427,
+    "mae": 1.493,
+    "rmse": 1.9058,
+    "crps": 0.9911,
+    "bias": 0.0014,
+    "cover_80": 0.8032,
+    "cover_90": 0.9022,
+    "pit_var_ratio": 1.0011,
+    "mean_threshold_brier": 0.1781,
+    "thresholds": {
+     "1": {
+      "brier": 0.21630189892858093,
+      "log_loss": 0.6238301503453035,
+      "mean_p": 0.6772270505609745,
+      "hit_rate": 0.6750446367257245
+     },
+     "2": {
+      "brier": 0.24390105736770162,
+      "log_loss": 0.6808116149771227,
+      "mean_p": 0.45755759504157295,
+      "hit_rate": 0.4541271803323719
+     },
+     "3": {
+      "brier": 0.20303793652210053,
+      "log_loss": 0.595046989849386,
+      "mean_p": 0.28829633190730547,
+      "hit_rate": 0.29077965480932105
+     },
+     "4": {
+      "brier": 0.14086623608436036,
+      "log_loss": 0.4531394319629418,
+      "mean_p": 0.1712239741492267,
+      "hit_rate": 0.1724808863251385
+     },
+     "5": {
+      "brier": 0.08628528329002498,
+      "log_loss": 0.31214222556877613,
+      "mean_p": 0.09773115758614341,
+      "hit_rate": 0.09648399945062491
+     }
+    },
+    "vs_baseline": {
+     "mean_diff": -0.00587,
+     "ci95": [
+      -0.00752,
+      -0.00427
+     ],
+     "metric": "crps"
+    },
+    "vs_baseline_mae": {
+     "mean_diff": -0.01172,
+     "ci95": [
+      -0.01418,
+      -0.00923
+     ]
+    },
+    "vs_incumbent": null
+   },
+   "readiness": "SHADOW VALIDATION",
+   "readiness_reason": "holdout CRPS vs baseline -0.0059 [-0.00752, -0.00427]; 80% PIT coverage 0.8032, PIT variance ratio 1.0011; incumbent: none; inputs use the post-game official batting order (equivalent to a confirmed lineup); where an archived pregame lineup exists (527 games) it gives the same slot 99.5% of the time, but a prospective confirmed-lineup shadow is still required",
+   "selection": "lowest validation CRPS: F; beats best transparent D by -0.0016 CRPS [-0.0022, -0.0011]",
+   "dist_choice_dev_crps": {
+    "poisson": 1.027262837950431,
+    "nb": 0.9904227342606438,
+    "empirical_resid": 0.9885405193362733
+   }
+  },
+  {
+   "family": "team_runs",
+   "unit": "team-game",
+   "opportunity_family": null,
+   "population": "every regular-season team-game, 2025 validation / 2026 holdout",
+   "models": [
+    {
+     "model": "A",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.5237,
+     "rmse": 3.2427,
+     "bias": -0.0249,
+     "crps": 1.7567,
+     "log_score": 2.5081,
+     "cover_50": 0.4835,
+     "cover_80": 0.7842,
+     "cover_90": 0.8914,
+     "pit_var_ratio": 1.0318,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.2072,
+     "vs_baseline": null,
+     "vs_incumbent": null,
+     "verdict": "baseline"
+    },
+    {
+     "model": "B",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.5208,
+     "rmse": 3.2366,
+     "bias": -0.0083,
+     "crps": 1.7537,
+     "log_score": 2.5102,
+     "cover_50": 0.4864,
+     "cover_80": 0.7902,
+     "cover_90": 0.8951,
+     "pit_var_ratio": 1.0262,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.2068,
+     "vs_baseline": {
+      "mean_diff": -0.00298,
+      "ci95": [
+       -0.00515,
+       -0.00042
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "C",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.5018,
+     "rmse": 3.2167,
+     "bias": -0.0383,
+     "crps": 1.7432,
+     "log_score": 2.509,
+     "cover_50": 0.4918,
+     "cover_80": 0.7875,
+     "cover_90": 0.8928,
+     "pit_var_ratio": 1.0283,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.2056,
+     "vs_baseline": {
+      "mean_diff": -0.01343,
+      "ci95": [
+       -0.01979,
+       -0.00706
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "D",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.4988,
+     "rmse": 3.2052,
+     "bias": 0.0155,
+     "crps": 1.7372,
+     "log_score": 2.4629,
+     "cover_50": 0.4823,
+     "cover_80": 0.7764,
+     "cover_90": 0.884,
+     "pit_var_ratio": 1.0498,
+     "dist": "nb_binned",
+     "mean_threshold_brier": 0.2049,
+     "vs_baseline": {
+      "mean_diff": -0.01951,
+      "ci95": [
+       -0.02832,
+       -0.01079
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "best"
+    },
+    {
+     "model": "D_ridge",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.5011,
+     "rmse": 3.2119,
+     "bias": 0.0139,
+     "crps": 1.7409,
+     "log_score": 2.5071,
+     "cover_50": 0.4922,
+     "cover_80": 0.7859,
+     "cover_90": 0.8883,
+     "pit_var_ratio": 1.0287,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.2053,
+     "vs_baseline": {
+      "mean_diff": -0.01577,
+      "ci95": [
+       -0.02401,
+       -0.00727
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "E",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.5128,
+     "rmse": 3.2159,
+     "bias": 0.0717,
+     "crps": 1.7431,
+     "log_score": 2.4955,
+     "cover_50": 0.4915,
+     "cover_80": 0.7904,
+     "cover_90": 0.891,
+     "pit_var_ratio": 1.0246,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.2055,
+     "vs_baseline": {
+      "mean_diff": -0.01358,
+      "ci95": [
+       -0.02217,
+       -0.00558
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    },
+    {
+     "model": "F",
+     "split": "validation",
+     "n_obs": 4852,
+     "n_clusters": 2426,
+     "mae": 2.5005,
+     "rmse": 3.2072,
+     "bias": 0.0309,
+     "crps": 1.7385,
+     "log_score": 2.5053,
+     "cover_50": 0.4909,
+     "cover_80": 0.7892,
+     "cover_90": 0.8906,
+     "pit_var_ratio": 1.0291,
+     "dist": "empirical_resid",
+     "mean_threshold_brier": 0.2049,
+     "vs_baseline": {
+      "mean_diff": -0.01822,
+      "ci95": [
+       -0.02723,
+       -0.00984
+      ],
+      "metric": "crps"
+     },
+     "vs_incumbent": null,
+     "verdict": "competitive"
+    }
+   ],
+   "best_model": "D",
+   "holdout": {
+    "model": "D",
+    "n_obs": 4854,
+    "n_clusters": 2427,
+    "mae": 2.4983,
+    "rmse": 3.1755,
+    "crps": 1.7248,
+    "bias": 0.0272,
+    "cover_80": 0.7895,
+    "cover_90": 0.8933,
+    "pit_var_ratio": 1.0418,
+    "mean_threshold_brier": 0.2058,
+    "thresholds": {
+     "2": {
+      "brier": 0.1414792485038274,
+      "log_loss": 0.455784634259662,
+      "mean_p": 0.8409594135508689,
+      "hit_rate": 0.8279769262463947
+     },
+     "3": {
+      "brier": 0.21307981219890015,
+      "log_loss": 0.6169781648614876,
+      "mean_p": 0.7037558119911445,
+      "hit_rate": 0.688504326328801
+     },
+     "4": {
+      "brier": 0.2449300591583667,
+      "log_loss": 0.6828947182521167,
+      "mean_p": 0.5604195415503781,
+      "hit_rate": 0.5523279769262464
+     },
+     "5": {
+      "brier": 0.24285362654101356,
+      "log_loss": 0.6787228705934198,
+      "mean_p": 0.4283480631880358,
+      "hit_rate": 0.4324268644416976
+     },
+     "6": {
+      "brier": 0.21764060668603444,
+      "log_loss": 0.6267791958760076,
+      "mean_p": 0.31648545706489456,
+      "hit_rate": 0.3265348166460651
+     },
+     "7": {
+      "brier": 0.17455752793940288,
+      "log_loss": 0.5329182389730441,
+      "mean_p": 0.22732022607437108,
+      "hit_rate": 0.22950144210960033
+     }
+    },
+    "vs_baseline": {
+     "mean_diff": -0.01971,
+     "ci95": [
+      -0.02723,
+      -0.01228
+     ],
+     "metric": "crps"
+    },
+    "vs_baseline_mae": {
+     "mean_diff": -0.02954,
+     "ci95": [
+      -0.04143,
+      -0.01739
+     ]
+    },
+    "vs_incumbent": {
+     "mean_diff": -0.01694,
+     "ci95": [
+      -0.04966,
+      0.01403
+     ],
+     "metric": "CRPS vs archived production projection (NB alpha 0.2815), matched n=614",
+     "mae_diff": 0.0233,
+     "mae_ci95": [
+      -0.0309,
+      0.0761
+     ]
+    }
+   },
+   "readiness": "SHADOW VALIDATION",
+   "readiness_reason": "holdout CRPS vs baseline -0.0197 [-0.02723, -0.01228]; 80% PIT coverage 0.7895, PIT variance ratio 1.0418; incumbent: parity (-0.0169 [-0.04966, 0.01403], CRPS vs archived production projection (NB alpha 0.2815), matched n=614); incumbent parity (difference not significant); needs prospective archived-forecast evidence",
+   "selection": "lowest validation CRPS: D",
+   "dist_choice_dev_crps": {
+    "poisson": 1.7592346512065293,
+    "nb": 1.7034442936019354,
+    "nb_binned": 1.702897341536876,
+    "empirical_resid": 1.702988498661845
+   }
+  },
+  {
+   "family": "game_total",
+   "unit": "game",
+   "opportunity_family": null,
+   "population": "every regular-season game",
+   "models": [
+    {
+     "model": "D_convolution",
+     "split": "validation",
+     "n_obs": 2426,
+     "n_clusters": 2426,
+     "mae": 3.6055,
+     "rmse": 4.5468,
+     "bias": 0.031,
+     "crps": 2.5104,
+     "log_score": 2.8723,
+     "cover_50": 0.4806,
+     "cover_80": 0.7824,
+     "cover_90": 0.8937,
+     "pit_var_ratio": 1.0466,
+     "vs_baseline": null,
+     "vs_incumbent": null,
+     "verdict": "best"
+    }
+   ],
+   "best_model": "D_convolution",
+   "holdout": {
+    "model": "D_convolution",
+    "n_obs": 2427,
+    "mae": 3.5513,
+    "crps": 2.4765,
+    "bias": 0.0543,
+    "cover_80": 0.7923,
+    "pit_var_ratio": 1.0272,
+    "vs_baseline": null,
+    "vs_incumbent": null,
+    "vs_direct_nb": {
+     "mean_diff": 0.00048,
+     "ci95": [
+      -0.00059,
+      0.0015
+     ]
+    }
+   },
+   "readiness": "SHADOW VALIDATION",
+   "readiness_reason": "Convolution of the two team-run distributions; holdout cover80 0.7923, PIT var 1.0272; no archived pregame total projection to compare against except the incumbent team projections.",
+   "selection": "derived from team_runs winner"
+  }
+ ],
+ "experiments": [
+  {
+   "id": "MLB-PF-P1",
+   "question": "Why does a transparent workload model (pitch-count leash / pitches-per-BF x opponent) miss batters faced so badly?",
+   "hypothesis": "Errors concentrate in identifiable roles: openers/bulk relievers, season debuts, spot starters and short rest.",
+   "method": "Segment validation errors of model D (opener flag, days since last appearance, debut, layoff, no start history, early exit); add those terms to a dev-fitted Poisson GLM (D_rc).",
+   "data": "9710 dev starts (2023-24), 4852 validation starts (2025).",
+   "result": "D validation MAE 2.813 -> D_rc 2.605 (CRPS 2.0345 -> 1.8851). Rest <=2 days elasticity -0.71, rest 3 -0.49, rest 4 -0.34 (log scale). Early exits (<=12 BF) are 4.3% of starts but 16.5% of D's absolute error.",
+   "interpretation": "Days since the pitcher's last appearance is the single strongest workload signal: a 'starter' who pitched 1-4 days ago is an opener. Early exits (injury, blow-up) remain unforecastable from box scores.",
+   "decision": "adopt"
+  },
+  {
+   "id": "MLB-PF-P2",
+   "question": "Is the gradient-boosted model (E) better than the corrected transparent model for batters faced and outs?",
+   "hypothesis": "Remaining nonlinear workload interactions (rest x recent pitch counts x role) are learnable.",
+   "method": "Walk-forward LightGBM refitted every two months from 2023-04 on PIT features; frozen-winner rule on validation CRPS with a significance tie-break toward the transparent model.",
+   "data": "2022-2026 starter box lines.",
+   "result": "BF: lowest validation CRPS: E; beats best transparent D_rc by -0.0583 CRPS [-0.0732, -0.0416]. Outs: lowest validation CRPS: F; beats best transparent C by -0.0274 CRPS [-0.035, -0.0195].",
+   "interpretation": "The GBM's gain is broad: ordinary starters MAE D_rc 2.54 vs E 2.48; openers MAE D_rc 3.59 vs E 3.16; debuts MAE D_rc 3.22 vs E 2.97. It is frozen for the opportunity families with D_rc kept as the explainable fallback.",
+   "decision": "adopt"
+  },
+  {
+   "id": "MLB-PF-P3",
+   "question": "Does an opponent strikeout adjustment (team K% vs the pitcher's hand, shrunk) and park help strikeout projections?",
+   "hypothesis": "Opponent K tendency scales a pitcher's K rate multiplicatively (elasticity ~1, log5).",
+   "method": "C = BF(D_rc) x EB-shrunk K/BF; D = C x exp(b1 log opp_factor + b2 log park_factor), b fitted by Poisson likelihood on 2023-24.",
+   "data": "Opponent K% vs LHP/RHP from the 2024-26 PA feed, overall team K% for earlier seasons; park K factor from prior games at the venue.",
+   "result": "Fitted elasticities: opponent 1.01, park 0.45. Validation CRPS C 1.2570 -> D 1.2386; MAE 1.797 -> 1.765.",
+   "interpretation": "The opponent elasticity is almost exactly the theoretical 1.0, and the adjustment is a clear, significant gain (not a fitted artefact).",
+   "decision": "adopt"
+  },
+  {
+   "id": "MLB-PF-P4",
+   "question": "Which distribution best represents strikeouts given a mean?",
+   "hypothesis": "K | BF ~ Binomial(BF, p) mixed over the BF distribution captures both workload and rate uncertainty.",
+   "method": "Development CRPS of Poisson, NB, binned NB, empirical residual and binomial-on-BF mixture (beta-binomial phi grid) for model D.",
+   "data": "Development starts 2023-24.",
+   "result": "poisson 1.2447; nb 1.2446; nb_binned 1.2444; empirical_resid 1.2451; binom_mix(phi=0.005) 1.2443",
+   "interpretation": "The BF mixture is best, but every family is within ~0.1% CRPS: the mean is what matters; the shape is not the bottleneck.",
+   "decision": "adopt"
+  },
+  {
+   "id": "MLB-PF-P5",
+   "question": "Do pitch-level quality signals (prior whiff%, fastball velocity change) improve strikeout projections beyond K%?",
+   "hypothesis": "Whiff rate beyond what K% shows, and velocity drops, predict strikeouts.",
+   "method": "Poisson offset GLM on top of frozen D: fit 2026-08-25..09-08, test 09-09..09-27 (only window with Statcast in the repo).",
+   "data": "379 fit / 468 test starts with >=2 prior Statcast starts.",
+   "result": "Test MAE D 1.8326 vs D+Statcast 1.8322; MAE diff -0.0004 [-0.0133, +0.0116]; Poisson NLL diff +0.0018 [-0.0041, +0.0077].",
+   "interpretation": "No detectable gain; the window is 7 weeks, so this is 'no evidence of value at this depth', not proof of no value.",
+   "decision": "insufficient evidence"
+  },
+  {
+   "id": "MLB-PF-P6-k",
+   "question": "Is the frozen pitcher_strikeouts model better than the production pitcher engine (incumbent)?",
+   "hypothesis": "Role-aware workload and opponent-adjusted rates beat the incumbent's single recency-weighted outs mean.",
+   "method": "Matched 2026 holdout starts; incumbent = lib/research/pitcher_prop_projection.py re-run walk-forward (retroactive, as-of first pitch-60m). Rung RPS over the incumbent's own rungs, MAE, Brier at Kalshi rungs; game-clustered bootstrap.",
+   "data": "4524 matched starts, 2420 games.",
+   "result": "MAE 1.7471 vs 1.7985 (-0.0513 [-0.0628, -0.0397]); rung RPS 1.1735 vs 1.2059 (-0.0324 [-0.0390, -0.0255]); Brier at Kalshi rungs 0.1536 vs 0.1578; bias 0.0367 vs 0.1253. Versus the W1-D research challenger: RPS -0.0245 [-0.0313, -0.0171].",
+   "interpretation": "Better than the incumbent on every metric with intervals excluding zero; the incumbent rerun is retroactive, so this is a walk-forward comparison, not an archived-forecast one.",
+   "decision": "adopt"
+  },
+  {
+   "id": "MLB-PF-P6-bf",
+   "question": "Is the frozen batters_faced model better than the production pitcher engine (incumbent)?",
+   "hypothesis": "Role-aware workload and opponent-adjusted rates beat the incumbent's single recency-weighted outs mean.",
+   "method": "Matched 2026 holdout starts; incumbent = lib/research/pitcher_prop_projection.py re-run walk-forward (retroactive, as-of first pitch-60m). Rung RPS over the incumbent's own rungs, MAE, Brier at Kalshi rungs; game-clustered bootstrap.",
+   "data": "4524 matched starts, 2420 games.",
+   "result": "MAE 2.5927 vs 2.8214 (-0.2287 [-0.2628, -0.1944]); rung RPS 1.6889 vs 1.9378 (-0.2489 [-0.2677, -0.2288]); Brier at Kalshi rungs 0.1473 vs 0.1642; bias 0.0178 vs 0.1759. Versus the W1-D research challenger: RPS -0.0808 [-0.0982, -0.0625].",
+   "interpretation": "Better than the incumbent on every metric with intervals excluding zero; the incumbent rerun is retroactive, so this is a walk-forward comparison, not an archived-forecast one.",
+   "decision": "adopt"
+  },
+  {
+   "id": "MLB-PF-P6-outs",
+   "question": "Is the frozen outs model better than the production pitcher engine (incumbent)?",
+   "hypothesis": "Role-aware workload and opponent-adjusted rates beat the incumbent's single recency-weighted outs mean.",
+   "method": "Matched 2026 holdout starts; incumbent = lib/research/pitcher_prop_projection.py re-run walk-forward (retroactive, as-of first pitch-60m). Rung RPS over the incumbent's own rungs, MAE, Brier at Kalshi rungs; game-clustered bootstrap.",
+   "data": "4524 matched starts, 2420 games.",
+   "result": "MAE 2.71 vs 2.8346 (-0.1246 [-0.1501, -0.1018]); rung RPS 1.7372 vs 1.8135 (-0.0763 [-0.0914, -0.0631]); Brier at Kalshi rungs 0.176 vs 0.1821; bias 0.0101 vs 0.1841. Versus the W1-D research challenger: RPS -0.0331 [-0.0446, -0.0221].",
+   "interpretation": "Better than the incumbent on every metric with intervals excluding zero; the incumbent rerun is retroactive, so this is a walk-forward comparison, not an archived-forecast one.",
+   "decision": "adopt"
+  },
+  {
+   "id": "MLB-PF-H1",
+   "question": "How much does knowing the batting slot (confirmed lineup) improve hitter projections?",
+   "hypothesis": "PA depends strongly on slot; using only the previous slot loses accuracy when lineups change.",
+   "method": "Same model D with the post-game official slot vs the player's previous slot (no lineup information).",
+   "data": "2025 validation and 2026 holdout starters.",
+   "result": "PA (validation): CRPS prev-slot minus known-slot +0.0099 [+0.0089, +0.0110], slot changed in 41% of games; H (validation): CRPS prev-slot minus known-slot +0.0006 [+0.0004, +0.0008], slot changed in 41% of games; TB (validation): CRPS prev-slot minus known-slot +0.0008 [+0.0004, +0.0011], slot changed in 41% of games; R (validation): CRPS prev-slot minus known-slot +0.0005 [+0.0003, +0.0006], slot changed in 41% of games; RBI (validation): CRPS prev-slot minus known-slot +0.0001 [-0.0001, +0.0002], slot changed in 41% of games; HRR (validation): CRPS prev-slot minus known-slot +0.0013 [+0.0007, +0.0019], slot changed in 41% of games",
+   "interpretation": "Lineup confirmation is worth a measurable amount for PA (and less for rate stats). Forecasts made before lineups post must use the prev-slot variant and be labelled.",
+   "decision": "adopt"
+  },
+  {
+   "id": "MLB-PF-H2",
+   "question": "Do opposing-starter quality, park and platoon adjust hitter rates usefully?",
+   "hypothesis": "Hit rates scale with the starter's hits-allowed rate over his share of PAs, park and handedness.",
+   "method": "D = C x exp(sum b_i x share x log factor_i); b fitted on 2024 (from May).",
+   "data": "Starter PIT rates from the pitcher frame; park factors from prior games at the venue; league platoon multipliers fitted on 2024 PAs.",
+   "result": "Hits elasticities sp_h +0.07, park_h +0.74, plat -0.14, sp_k -0.59, icpt -0.01. Validation CRPS C 0.4565 -> D 0.4552.",
+   "interpretation": "Context adds a small, real improvement; most hitter variance is irreducible at the game level.",
+   "decision": "adopt"
+  },
+  {
+   "id": "MLB-PF-H3",
+   "question": "Which hitter distributions are best: Poisson/NB on the mean, empirical, binomial-on-PA, or TB convolution?",
+   "hypothesis": "Hits ~ Binomial(PA, p) mixed over PA; total bases = convolution of per-PA base outcomes.",
+   "method": "Development CRPS by candidate for model D.",
+   "data": "2024 (from May) starters.",
+   "result": "Hits: poisson 0.4525; nb 0.4525; empirical_resid 0.4516; binom_mix(phi=0.01) 0.4512. TB: poisson 0.9147; nb 0.8772; empirical_resid 0.8762; tb_mix 0.8751",
+   "interpretation": "Structural (binomial / convolution) shapes are at least as good as fitted ones and are coherent by construction.",
+   "decision": "adopt"
+  },
+  {
+   "id": "MLB-PF-H4",
+   "question": "Are the frozen hitter models better than the production hitter engine?",
+   "hypothesis": "Per-PA EB rates with structural PA beat the incumbent's simulation (known +0.135 hits / -0.151 RBI bias, HITTER_W2_RESULTS).",
+   "method": "Matched 2026 player-games where the incumbent re-run (archived pregame inputs) is PROJECTED; full CRPS from both pmfs.",
+   "data": "PA: n=8883; H: n=8883; TB: n=8883; HR: n=8883; R: n=8883; RBI: n=8883",
+   "result": "PA: CRPS 0.3706 vs 0.4595 (-0.0888 [-0.1038, -0.0756]), MAE 0.5775 vs 0.6659, bias -0.0129 vs 0.4208; H: CRPS 0.4535 vs 0.4645 (-0.0110 [-0.0140, -0.0081]), MAE 0.6827 vs 0.6948, bias -0.01 vs 0.1352; TB: CRPS 0.8623 vs 0.8765 (-0.0142 [-0.0175, -0.0109]), MAE 1.3221 vs 1.3296, bias -0.0004 vs -0.0155; HR: CRPS 0.1072 vs 0.1098 (-0.0026 [-0.0034, -0.0019]), MAE 0.2148 vs 0.1869, bias 0.0025 vs -0.0366; R: CRPS 0.3197 vs 0.3288 (-0.0091 [-0.0116, -0.0065]), MAE 0.5766 vs 0.5614, bias -0.0097 vs -0.1041; RBI: CRPS 0.3493 vs 0.3632 (-0.0139 [-0.0166, -0.0111]), MAE 0.6221 vs 0.5747, bias -0.0142 vs -0.1511",
+   "interpretation": "Consistent with the W2 audit: the incumbent's level biases dominate its error.",
+   "decision": "adopt"
+  },
+  {
+   "id": "MLB-PF-T1",
+   "question": "What does each layer of team-run context add (offence x opponent run prevention, starter, park, schedule adjustment)?",
+   "hypothesis": "Following RSCH-0015, opponent strength helps the mean but may not help probability scores.",
+   "method": "B EWMA vs C offence x defence (log5 on runs) vs D (+ starter share x starter runs factor + park + home) vs D_ridge (pf_core rolling ridge, weekly refits).",
+   "data": "Team-games 2022-2026.",
+   "result": "C_vs_B|validation: CRPS -0.0105 [-0.0167, -0.0044], MAE -0.0191 [-0.0292, -0.0092]; D_vs_C|validation: CRPS -0.0061 [-0.0102, -0.0021], MAE -0.0029 [-0.0095, +0.0036]; D_ridge_vs_D|validation: CRPS +0.0037 [+0.0005, +0.0073], MAE +0.0023 [-0.0030, +0.0077]; C_vs_B|holdout: CRPS -0.0116 [-0.0178, -0.0060], MAE -0.0211 [-0.0307, -0.0116]; D_vs_C|holdout: CRPS -0.0085 [-0.0121, -0.0046], MAE -0.0106 [-0.0170, -0.0041]; D_ridge_vs_D|holdout: CRPS +0.0015 [-0.0012, +0.0041], MAE -0.0006 [-0.0050, +0.0035]",
+   "interpretation": "Offence x opponent run prevention (C) improves both CRPS and MAE over the team's own EWMA on both splits; starter + park (D) improves CRPS on both splits and MAE only on holdout. Unlike RSCH-0015 (frozen NB), the probability gain survives because the distribution is fitted per model on development. Ridge schedule adjustment does not beat the raw shrunk factors (validation +0.0037 [+0.0005, +0.0073]).",
+   "decision": "adopt"
+  },
+  {
+   "id": "MLB-PF-T2",
+   "question": "Should the game total be the convolution of team distributions or a direct NB on the summed mean?",
+   "hypothesis": "Independence is adequate (RSCH-0010: correlation ~0.13).",
+   "method": "Holdout CRPS of the convolution vs a direct NB with alpha fitted on development totals.",
+   "data": "2025/2026 games.",
+   "result": "Validation diff +0.0001 [-0.0011, +0.0011]; holdout diff +0.0005 [-0.0006, +0.0015]; direct NB alpha 0.1295.",
+   "interpretation": "The two are near-identical; the convolution is kept because it is coherent with the team projections.",
+   "decision": "adopt"
+  },
+  {
+   "id": "MLB-PF-T3",
+   "question": "Is the team-run model better than the archived production projection?",
+   "hypothesis": "RSCH-0033 found the production mean biased (-0.33 runs) with slope ~1.",
+   "method": "Only archived projections whose file createdAt precedes first pitch (genuinely pregame); incumbent distribution = NB with RSCH-0010's 0.2815 dispersion.",
+   "data": "614 team-games, 307 games (2026-07-30..09-27).",
+   "result": "CRPS 1.6209 vs 1.6379 (-0.0169 [-0.0497, +0.0140]); MAE 2.3265 vs 2.3033 (+0.0233 [-0.0309, +0.0761]); bias 0.0838 vs -0.3364.",
+   "interpretation": "The model removes the incumbent's level bias (-0.34 runs, matching RSCH-0033's -0.33) but the CRPS difference is not significant on this short archived-pregame window (parity).",
+   "decision": "insufficient evidence"
+  },
+  {
+   "id": "MLB-PF-T4",
+   "question": "Do hitter run projections reconcile with team run projections?",
+   "hypothesis": "Sum of starters' projected runs ~= team runs x starters' share of runs.",
+   "method": "pf_core.gate.team_reconciliation per team-game on the 2026 holdout.",
+   "data": "4854 team-games.",
+   "result": "Starters score 94.4% of runs; mean sum of starters' R 4.2465 vs team 4.5068; ratio 0.9985; correlation 0.9302; reconciliation {'PASS': 4854}.",
+   "interpretation": "Hitter and team models are built independently yet agree in level; per-game spread differs because team context (opponent run prevention) is richer than the hitter R model.",
+   "decision": "adopt"
+  }
+ ],
+ "error_investigations": [
+  {
+   "pattern": "Batters faced: Openers / bulk relievers listed as starters",
+   "frequency": "6.3% of 2025 starts (n=306)",
+   "impact": "13.2% of model-D absolute error; bias +3.84 BF (D) -> +0.88 (D_rc)",
+   "cause": "role / workload state not represented in a recency-weighted mean",
+   "status": "verified defect",
+   "action": "fixed in D_rc (rest, opener, debut, layoff terms) and captured by E"
+  },
+  {
+   "pattern": "Batters faced: Season debut (ramp-up)",
+   "frequency": "7.6% of 2025 starts (n=368)",
+   "impact": "12.6% of model-D absolute error; bias +3.19 BF (D) -> +0.80 (D_rc)",
+   "cause": "role / workload state not represented in a recency-weighted mean",
+   "status": "verified defect",
+   "action": "fixed in D_rc (rest, opener, debut, layoff terms) and captured by E"
+  },
+  {
+   "pattern": "Batters faced: Spot starter with no start history",
+   "frequency": "2.2% of 2025 starts (n=107)",
+   "impact": "5.5% of model-D absolute error; bias +6.49 BF (D) -> +0.92 (D_rc)",
+   "cause": "role / workload state not represented in a recency-weighted mean",
+   "status": "verified defect",
+   "action": "fixed in D_rc (rest, opener, debut, layoff terms) and captured by E"
+  },
+  {
+   "pattern": "Batters faced: Early exit (<=12 BF: injury/blow-up)",
+   "frequency": "4.3% of 2025 starts (n=211)",
+   "impact": "16.5% of model-D absolute error; bias +10.66 BF (D) -> +7.48 (D_rc)",
+   "cause": "role / workload state not represented in a recency-weighted mean",
+   "status": "ruled out",
+   "action": "not forecastable from box scores (injury data missing); handled by the empirical residual tail"
+  },
+  {
+   "pattern": "Batters faced: First start after >=15 days (IL return proxy)",
+   "frequency": "2.6% of 2025 starts (n=124)",
+   "impact": "2.9% of model-D absolute error; bias +1.52 BF (D) -> +0.95 (D_rc)",
+   "cause": "role / workload state not represented in a recency-weighted mean",
+   "status": "verified defect",
+   "action": "fixed in D_rc (rest, opener, debut, layoff terms) and captured by E"
+  },
+  {
+   "pattern": "Batters faced: Pitched within 2 days",
+   "frequency": "1.0% of 2025 starts (n=49)",
+   "impact": "3.8% of model-D absolute error; bias +10.37 BF (D) -> +2.24 (D_rc)",
+   "cause": "role / workload state not represented in a recency-weighted mean",
+   "status": "verified defect",
+   "action": "fixed in D_rc (rest, opener, debut, layoff terms) and captured by E"
+  },
+  {
+   "pattern": "Archived team-run projections written after first pitch",
+   "frequency": "60% of archived team rows",
+   "impact": "Any audit that treats data/pipeline/<date>/projections.json as pregame includes post-start rewrites",
+   "cause": "the per-date file is overwritten during the day; createdAt is the last write",
+   "status": "verified defect",
+   "action": "incumbent comparison restricted to rows with createdAt < first pitch"
+  },
+  {
+   "pattern": "Probable-pitcher field in the post-game feed",
+   "frequency": "equals the actual starter 99.90%",
+   "impact": "Late scratches cannot be measured from the feed; starter identity in the backtest is effectively known",
+   "cause": "the feed overwrites probables after the game",
+   "status": "verified defect",
+   "action": "use archived slates (data/slates) for prospective evaluation; label backtests 'starter known'"
+  },
+  {
+   "pattern": "PA: Hitter's slot changed from his previous game",
+   "frequency": "41.0% of 2025 starter-games (n=17901)",
+   "impact": "40.5% of PA absolute error; bias -0.022, MAE 0.541",
+   "cause": "lineup position / playing time uncertainty",
+   "status": "hypothesis",
+   "action": "known-slot models need a confirmed lineup; prev-slot variant quantifies the cost"
+  },
+  {
+   "pattern": "PA: Fewer than 10 games this season",
+   "frequency": "11.6% of 2025 starter-games (n=5046)",
+   "impact": "12.2% of PA absolute error; bias +0.035, MAE 0.578",
+   "cause": "lineup position / playing time uncertainty",
+   "status": "hypothesis",
+   "action": "known-slot models need a confirmed lineup; prev-slot variant quantifies the cost"
+  },
+  {
+   "pattern": "PA: Returning after 11+ days (injury proxy)",
+   "frequency": "1.9% of 2025 starter-games (n=839)",
+   "impact": "2.1% of PA absolute error; bias +0.016, MAE 0.586",
+   "cause": "lineup position / playing time uncertainty",
+   "status": "hypothesis",
+   "action": "known-slot models need a confirmed lineup; prev-slot variant quantifies the cost"
+  }
+ ],
+ "opponent_adjustment": {
+  "summary": "Opponent adjustments are multiplicative factors (shrunk, point-in-time) whose elasticities are fitted on development. Pitcher K: opponent elasticity 1.01, park 0.45; hits allowed opponent 1.16; walks 1.27. Team runs: offence x opponent run prevention (log5) then starter share x starter run factor and park.",
+  "results": [
+   {
+    "family": "pitcher_strikeouts",
+    "C_vs_D_validation_crps": [
+     1.257,
+     1.2386
+    ],
+    "betas": {
+     "opp": 1.0050499612107922,
+     "park": 0.44593382171484125,
+     "icpt": -0.01348319388204346
+    }
+   },
+   {
+    "family": "pitcher_hits_allowed",
+    "betas": {
+     "opp": 1.1606049356060613,
+     "park": 0.6320799725353129,
+     "icpt": 0.006875155357106337
+    }
+   },
+   {
+    "family": "pitcher_walks",
+    "betas": {
+     "opp": 1.2730792604389076,
+     "park": -0.08367331962487162,
+     "icpt": 0.018907995878649678
+    }
+   },
+   {
+    "family": "pitcher_runs_allowed",
+    "betas": {
+     "opp": 1.0968311142076506,
+     "park": 0.43582708233073497,
+     "icpt": 0.027966374534949406
+    }
+   },
+   {
+    "family": "team_runs",
+    "comparisons": {
+     "C_vs_B|validation": {
+      "crps": {
+       "mean_diff": -0.010457333714684255,
+       "ci95": [
+        -0.016740867786649474,
+        -0.0044360947346974225
+       ],
+       "n_obs": 4852,
+       "n_clusters": 2426
+      },
+      "mae": {
+       "mean_diff": -0.019082142539330885,
+       "ci95": [
+        -0.029181845040222473,
+        -0.009240533617473632
+       ],
+       "n_obs": 4852,
+       "n_clusters": 2426
+      }
+     },
+     "D_vs_C|validation": {
+      "crps": {
+       "mean_diff": -0.006073937586904107,
+       "ci95": [
+        -0.010169274152222914,
+        -0.0021360478068873185
+       ],
+       "n_obs": 4852,
+       "n_clusters": 2426
+      },
+      "mae": {
+       "mean_diff": -0.002946435674208419,
+       "ci95": [
+        -0.009457576409520076,
+        0.0035950528687548108
+       ],
+       "n_obs": 4852,
+       "n_clusters": 2426
+      }
+     },
+     "D_ridge_vs_D|validation": {
+      "crps": {
+       "mean_diff": 0.0037329818164279567,
+       "ci95": [
+        0.00047508320120418575,
+        0.0073249486837470325
+       ],
+       "n_obs": 4852,
+       "n_clusters": 2426
+      },
+      "mae": {
+       "mean_diff": 0.002286669909343718,
+       "ci95": [
+        -0.0029868438397666073,
+        0.0077155383134470575
+       ],
+       "n_obs": 4852,
+       "n_clusters": 2426
+      }
+     },
+     "C_vs_B|holdout": {
+      "crps": {
+       "mean_diff": -0.011635782468170873,
+       "ci95": [
+        -0.017792772487542907,
+        -0.0060468936216121795
+       ],
+       "n_obs": 4854,
+       "n_clusters": 2427
+      },
+      "mae": {
+       "mean_diff": -0.021070910674391676,
+       "ci95": [
+        -0.030733114680873582,
+        -0.011570025438962529
+       ],
+       "n_obs": 4854,
+       "n_clusters": 2427
+      }
+     },
+     "D_vs_C|holdout": {
+      "crps": {
+       "mean_diff": -0.008528677209662447,
+       "ci95": [
+        -0.012075287672007535,
+        -0.004614129686886848
+       ],
+       "n_obs": 4854,
+       "n_clusters": 2427
+      },
+      "mae": {
+       "mean_diff": -0.01062864467043062,
+       "ci95": [
+        -0.01696669175136077,
+        -0.004144723151639473
+       ],
+       "n_obs": 4854,
+       "n_clusters": 2427
+      }
+     },
+     "D_ridge_vs_D|holdout": {
+      "crps": {
+       "mean_diff": 0.0014626637297223365,
+       "ci95": [
+        -0.0011738701743738069,
+        0.004148936551330173
+       ],
+       "n_obs": 4854,
+       "n_clusters": 2427
+      },
+      "mae": {
+       "mean_diff": -0.0006416436907461283,
+       "ci95": [
+        -0.005021093773053119,
+        0.0035189101971823877
+       ],
+       "n_obs": 4854,
+       "n_clusters": 2427
+      }
+     }
+    },
+    "D_betas": {
+     "sp_r": 0.40760403610239393,
+     "park_r": 0.4377422558476269,
+     "home": -0.005990445929170258,
+     "icpt": 0.015298163804595897
+    }
+   },
+   {
+    "family": "hits",
+    "betas": {
+     "sp_h": 0.0685190514088263,
+     "park_h": 0.7388368086664019,
+     "plat": -0.14202168052495054,
+     "sp_k": -0.5906853809464019,
+     "icpt": -0.0077286368280898386
+    }
+   },
+   {
+    "family": "home_runs",
+    "betas": {
+     "sp_hr": 0.15155945446112595,
+     "park_hr": 0.6999785392387882,
+     "plat": 0.48829791567969477,
+     "icpt": 0.00270153575777096
+    }
+   }
+  ]
+ },
+ "opportunity": {
+  "summary": "Opportunity accuracy: batters faced for starters, plate appearances for starting hitters.",
+  "results": [
+   {
+    "family": "batters_faced",
+    "validation": {
+     "A": {
+      "mae": 2.8721,
+      "crps": 2.0694,
+      "bias": 0.0352
+     },
+     "B": {
+      "mae": 2.8342,
+      "crps": 2.0438,
+      "bias": -0.0089
+     },
+     "C": {
+      "mae": 2.8138,
+      "crps": 2.0342,
+      "bias": 0.004
+     },
+     "D": {
+      "mae": 2.8131,
+      "crps": 2.0345,
+      "bias": -0.0002
+     },
+     "D_rc": {
+      "mae": 2.6052,
+      "crps": 1.8851,
+      "bias": 0.1123
+     },
+     "E": {
+      "mae": 2.5267,
+      "crps": 1.8268,
+      "bias": 0.0718
+     },
+     "F": {
+      "mae": 2.5274,
+      "crps": 1.8286,
+      "bias": 0.0802
+     }
+    },
+    "holdout": {
+     "model": "E",
+     "n_obs": 4854,
+     "n_clusters": 2427,
+     "mae": 2.6168,
+     "rmse": 3.5794,
+     "crps": 1.8919,
+     "bias": 0.0456,
+     "cover_80": 0.8078,
+     "cover_90": 0.9036,
+     "pit_var_ratio": 0.9757,
+     "mean_threshold_brier": 0.1443,
+     "thresholds": {
+      "18": {
+       "brier": 0.06935977390748439,
+       "log_loss": 0.2566470666274845,
+       "mean_p": 0.8589386815010198,
+       "hit_rate": 0.8660898228265348
+      },
+      "20": {
+       "brier": 0.12780766696413814,
+       "log_loss": 0.40945875350663224,
+       "mean_p": 0.7677412264258298,
+       "hit_rate": 0.7737948084054388
+      },
+      "22": {
+       "brier": 0.19167607970698838,
+       "log_loss": 0.5604993820394186,
+       "mean_p": 0.5939736248630573,
+       "hit_rate": 0.6017717346518335
+      },
+      "24": {
+       "brier": 0.20387144936183202,
+       "log_loss": 0.5858899978487652,
+       "mean_p": 0.3723197676242869,
+       "hit_rate": 0.37556654305727233
+      },
+      "26": {
+       "brier": 0.12903018737809016,
+       "log_loss": 0.41064289924678543,
+       "mean_p": 0.16878632869809523,
+       "hit_rate": 0.16913885455294603
+      }
+     },
+     "vs_baseline": {
+      "mean_diff": -0.37846,
+      "ci95": [
+       -0.42755,
+       -0.33174
+      ],
+      "metric": "crps"
+     },
+     "vs_baseline_mae": {
+      "mean_diff": -0.52174,
+      "ci95": [
+       -0.58183,
+       -0.46433
+      ]
+     },
+     "vs_incumbent": {
+      "mean_diff": -0.24885,
+      "ci95": [
+       -0.26765,
+       -0.22882
+      ],
+      "metric": "rung RPS over incumbent rungs 15..30 (matched n=4524)",
+      "mae_diff": -0.2287,
+      "mae_ci95": [
+       -0.2628,
+       -0.1944
+      ]
+     }
+    },
+    "rc_betas": {
+     "opp_obp": -0.27092321979670075,
+     "park_r": 0.021367297558492062,
+     "icpt": 0.011604925480478014,
+     "opener": -0.040893406092606,
+     "debut": -0.05241005751509693,
+     "no_hist": -0.16617679580153477,
+     "relief_share": -0.00039282386816229145,
+     "layoff": -0.07608684906070089,
+     "lp_ratio": -0.011242170758896136,
+     "rest_le2": -0.7134794389601573,
+     "rest_3": -0.48670306046476913,
+     "rest_4": -0.343321933567528,
+     "rest_9_14": -0.04400780913974844
+    }
+   },
+   {
+    "family": "plate_appearances",
+    "validation": {
+     "A": {
+      "mae": 0.5596,
+      "crps": 0.3738,
+      "bias": 0.0005
+     },
+     "B": {
+      "mae": 0.5639,
+      "crps": 0.3713,
+      "bias": -0.0074
+     },
+     "C": {
+      "mae": 0.5545,
+      "crps": 0.3556,
+      "bias": -0.0074
+     },
+     "D": {
+      "mae": 0.5519,
+      "crps": 0.3537,
+      "bias": -0.0132
+     },
+     "E": {
+      "mae": 0.5464,
+      "crps": 0.3482,
+      "bias": -0.0083
+     },
+     "F": {
+      "mae": 0.5473,
+      "crps": 0.3478,
+      "bias": -0.0102
+     },
+     "C_hist_slot": {
+      "mae": 0.5605,
+      "crps": 0.3656,
+      "bias": -0.0073
+     },
+     "D_hist_slot": {
+      "mae": 0.557,
+      "crps": 0.3636,
+      "bias": -0.0122
+     },
+     "E_hist_slot": {
+      "mae": 0.5469,
+      "crps": 0.3554,
+      "bias": -0.0067
+     }
+    },
+    "holdout": {
+     "model": "F",
+     "n_obs": 43686,
+     "n_clusters": 2427,
+     "mae": 0.5718,
+     "rmse": 0.7351,
+     "crps": 0.3662,
+     "bias": -0.0017,
+     "cover_80": 0.7799,
+     "cover_90": 0.8864,
+     "pit_var_ratio": 1.0404,
+     "mean_threshold_brier": 0.1494,
+     "thresholds": {
+      "4": {
+       "brier": 0.13476332660319473,
+       "log_loss": 0.42022221856943454,
+       "mean_p": 0.7994980820358232,
+       "hit_rate": 0.79483129606739
+      },
+      "5": {
+       "brier": 0.16412176754980456,
+       "log_loss": 0.4977226011427592,
+       "mean_p": 0.23855877290902378,
+       "hit_rate": 0.2547955866868104
+      }
+     },
+     "vs_baseline": {
+      "mean_diff": -0.02341,
+      "ci95": [
+       -0.02539,
+       -0.02159
+      ],
+      "metric": "crps"
+     },
+     "vs_baseline_mae": {
+      "mean_diff": -0.01239,
+      "ci95": [
+       -0.01514,
+       -0.00991
+      ]
+     },
+     "vs_incumbent": {
+      "mean_diff": -0.08884,
+      "ci95": [
+       -0.10382,
+       -0.07561
+      ],
+      "metric": "CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)",
+      "mae_diff": -0.0885,
+      "mae_ci95": [
+       -0.1082,
+       -0.0703
+      ]
+     }
+    },
+    "slot_knowledge": {
+     "PA|validation": {
+      "crps_known": 0.3537,
+      "crps_hist": 0.3636,
+      "mae_known": 0.5519,
+      "mae_hist": 0.557,
+      "diff_hist_minus_known": {
+       "mean_diff": 0.00993221910198134,
+       "ci95": [
+        0.00892130704063786,
+        0.010987482915056813
+       ],
+       "n_obs": 43668,
+       "n_clusters": 2426
+      },
+      "share_slot_changed": 0.4099
+     },
+     "PA|holdout": {
+      "crps_known": 0.3744,
+      "crps_hist": 0.3852,
+      "mae_known": 0.5778,
+      "mae_hist": 0.5848,
+      "diff_hist_minus_known": {
+       "mean_diff": 0.010755706741560008,
+       "ci95": [
+        0.009644921476861447,
+        0.0119012042559062
+       ],
+       "n_obs": 43686,
+       "n_clusters": 2427
+      },
+      "share_slot_changed": 0.4179
+     },
+     "H|validation": {
+      "crps_known": 0.4552,
+      "crps_hist": 0.4558,
+      "mae_known": 0.6854,
+      "mae_hist": 0.6855,
+      "diff_hist_minus_known": {
+       "mean_diff": 0.0006054792625086403,
+       "ci95": [
+        0.00037174215938228465,
+        0.0008369244212377249
+       ],
+       "n_obs": 43668,
+       "n_clusters": 2426
+      },
+      "share_slot_changed": 0.4099
+     },
+     "H|holdout": {
+      "crps_known": 0.4524,
+      "crps_hist": 0.4531,
+      "mae_known": 0.6843,
+      "mae_hist": 0.6844,
+      "diff_hist_minus_known": {
+       "mean_diff": 0.0006431062787991043,
+       "ci95": [
+        0.00037800372752254527,
+        0.0008849648620777989
+       ],
+       "n_obs": 43686,
+       "n_clusters": 2427
+      },
+      "share_slot_changed": 0.4179
+     },
+     "TB|validation": {
+      "crps_known": 0.8797,
+      "crps_hist": 0.8804,
+      "mae_known": 1.3469,
+      "mae_hist": 1.3485,
+      "diff_hist_minus_known": {
+       "mean_diff": 0.0007763513002206504,
+       "ci95": [
+        0.00041115754981387937,
+        0.0011378613416512845
+       ],
+       "n_obs": 43668,
+       "n_clusters": 2426
+      },
+      "share_slot_changed": 0.4099
+     },
+     "TB|holdout": {
+      "crps_known": 0.8664,
+      "crps_hist": 0.8674,
+      "mae_known": 1.3349,
+      "mae_hist": 1.3368,
+      "diff_hist_minus_known": {
+       "mean_diff": 0.001015653680924889,
+       "ci95": [
+        0.0006088865698207362,
+        0.0013844601511495238
+       ],
+       "n_obs": 43686,
+       "n_clusters": 2427
+      },
+      "share_slot_changed": 0.4179
+     },
+     "R|validation": {
+      "crps_known": 0.3182,
+      "crps_hist": 0.3186,
+      "mae_known": 0.5759,
+      "mae_hist": 0.5767,
+      "diff_hist_minus_known": {
+       "mean_diff": 0.0004522422984957887,
+       "ci95": [
+        0.00032154763095851074,
+        0.0005849523006833055
+       ],
+       "n_obs": 43668,
+       "n_clusters": 2426
+      },
+      "share_slot_changed": 0.4099
+     },
+     "R|holdout": {
+      "crps_known": 0.3169,
+      "crps_hist": 0.3174,
+      "mae_known": 0.5754,
+      "mae_hist": 0.5762,
+      "diff_hist_minus_known": {
+       "mean_diff": 0.00041842284608384025,
+       "ci95": [
+        0.00027562949229358394,
+        0.0005564017796410721
+       ],
+       "n_obs": 43686,
+       "n_clusters": 2427
+      },
+      "share_slot_changed": 0.4179
+     },
+     "RBI|validation": {
+      "crps_known": 0.3514,
+      "crps_hist": 0.3515,
+      "mae_known": 0.6292,
+      "mae_hist": 0.6301,
+      "diff_hist_minus_known": {
+       "mean_diff": 5.349615255187774e-05,
+       "ci95": [
+        -0.00011200831400093829,
+        0.00021341233722830795
+       ],
+       "n_obs": 43668,
+       "n_clusters": 2426
+      },
+      "share_slot_changed": 0.4099
+     },
+     "RBI|holdout": {
+      "crps_known": 0.348,
+      "crps_hist": 0.3482,
+      "mae_known": 0.6277,
+      "mae_hist": 0.6288,
+      "diff_hist_minus_known": {
+       "mean_diff": 0.00010628336802968569,
+       "ci95": [
+        -7.255698381737208e-05,
+        0.00026341709847362243
+       ],
+       "n_obs": 43686,
+       "n_clusters": 2427
+      },
+      "share_slot_changed": 0.4179
+     },
+     "HRR|validation": {
+      "crps_known": 0.9993,
+      "crps_hist": 1.0005,
+      "mae_known": 1.5012,
+      "mae_hist": 1.5048,
+      "diff_hist_minus_known": {
+       "mean_diff": 0.0012718094926818337,
+       "ci95": [
+        0.0006775644428767474,
+        0.00186191846362316
+       ],
+       "n_obs": 43668,
+       "n_clusters": 2426
+      },
+      "share_slot_changed": 0.4099
+     },
+     "HRR|holdout": {
+      "crps_known": 0.9923,
+      "crps_hist": 0.9939,
+      "mae_known": 1.4944,
+      "mae_hist": 1.4982,
+      "diff_hist_minus_known": {
+       "mean_diff": 0.001620667597473772,
+       "ci95": [
+        0.0009686239006942648,
+        0.0022231262642116853
+       ],
+       "n_obs": 43686,
+       "n_clusters": 2427
+      },
+      "share_slot_changed": 0.4179
+     }
+    }
+   }
+  ]
+ },
+ "calibration": {
+  "summary": "Threshold calibration on the 2026 holdout at Kalshi rungs (mean predicted P(X>=k) vs hit rate), frozen winners.",
+  "results": [
+   {
+    "family": "batters_faced",
+    "split": "holdout",
+    "rung": "18+",
+    "mean_p": 0.8589,
+    "hit_rate": 0.8661,
+    "brier": 0.0694,
+    "ece": 0.0099
+   },
+   {
+    "family": "batters_faced",
+    "split": "holdout",
+    "rung": "20+",
+    "mean_p": 0.7677,
+    "hit_rate": 0.7738,
+    "brier": 0.1278,
+    "ece": 0.0163
+   },
+   {
+    "family": "batters_faced",
+    "split": "holdout",
+    "rung": "22+",
+    "mean_p": 0.594,
+    "hit_rate": 0.6018,
+    "brier": 0.1917,
+    "ece": 0.0179
+   },
+   {
+    "family": "batters_faced",
+    "split": "holdout",
+    "rung": "24+",
+    "mean_p": 0.3723,
+    "hit_rate": 0.3756,
+    "brier": 0.2039,
+    "ece": 0.0198
+   },
+   {
+    "family": "batters_faced",
+    "split": "holdout",
+    "rung": "26+",
+    "mean_p": 0.1688,
+    "hit_rate": 0.1691,
+    "brier": 0.129,
+    "ece": 0.0182
+   },
+   {
+    "family": "outs",
+    "split": "holdout",
+    "rung": "12+",
+    "mean_p": 0.8336,
+    "hit_rate": 0.8422,
+    "brier": 0.0925,
+    "ece": 0.0139
+   },
+   {
+    "family": "outs",
+    "split": "holdout",
+    "rung": "15+",
+    "mean_p": 0.6623,
+    "hit_rate": 0.6786,
+    "brier": 0.1804,
+    "ece": 0.0249
+   },
+   {
+    "family": "outs",
+    "split": "holdout",
+    "rung": "16+",
+    "mean_p": 0.4998,
+    "hit_rate": 0.4889,
+    "brier": 0.2158,
+    "ece": 0.0156
+   },
+   {
+    "family": "outs",
+    "split": "holdout",
+    "rung": "17+",
+    "mean_p": 0.431,
+    "hit_rate": 0.4265,
+    "brier": 0.2127,
+    "ece": 0.0165
+   },
+   {
+    "family": "outs",
+    "split": "holdout",
+    "rung": "18+",
+    "mean_p": 0.3592,
+    "hit_rate": 0.364,
+    "brier": 0.2035,
+    "ece": 0.0208
+   },
+   {
+    "family": "outs",
+    "split": "holdout",
+    "rung": "19+",
+    "mean_p": 0.1727,
+    "hit_rate": 0.1553,
+    "brier": 0.1235,
+    "ece": 0.0193
+   },
+   {
+    "family": "pitcher_strikeouts",
+    "split": "holdout",
+    "rung": "3+",
+    "mean_p": 0.8121,
+    "hit_rate": 0.8006,
+    "brier": 0.1317,
+    "ece": 0.0126
+   },
+   {
+    "family": "pitcher_strikeouts",
+    "split": "holdout",
+    "rung": "4+",
+    "mean_p": 0.6697,
+    "hit_rate": 0.6597,
+    "brier": 0.1909,
+    "ece": 0.0146
+   },
+   {
+    "family": "pitcher_strikeouts",
+    "split": "holdout",
+    "rung": "5+",
+    "mean_p": 0.5095,
+    "hit_rate": 0.4965,
+    "brier": 0.2129,
+    "ece": 0.0145
+   },
+   {
+    "family": "pitcher_strikeouts",
+    "split": "holdout",
+    "rung": "6+",
+    "mean_p": 0.3567,
+    "hit_rate": 0.35,
+    "brier": 0.1955,
+    "ece": 0.0104
+   },
+   {
+    "family": "pitcher_strikeouts",
+    "split": "holdout",
+    "rung": "7+",
+    "mean_p": 0.2302,
+    "hit_rate": 0.2285,
+    "brier": 0.1535,
+    "ece": 0.0078
+   },
+   {
+    "family": "pitcher_strikeouts",
+    "split": "holdout",
+    "rung": "8+",
+    "mean_p": 0.1373,
+    "hit_rate": 0.1323,
+    "brier": 0.1024,
+    "ece": 0.0098
+   },
+   {
+    "family": "pitcher_strikeouts",
+    "split": "holdout",
+    "rung": "9+",
+    "mean_p": 0.0759,
+    "hit_rate": 0.0797,
+    "brier": 0.0672,
+    "ece": 0.0063
+   },
+   {
+    "family": "pitcher_walks",
+    "split": "holdout",
+    "rung": "1+",
+    "mean_p": 0.8217,
+    "hit_rate": 0.8269,
+    "brier": 0.1347,
+    "ece": 0.0108
+   },
+   {
+    "family": "pitcher_walks",
+    "split": "holdout",
+    "rung": "2+",
+    "mean_p": 0.5282,
+    "hit_rate": 0.5418,
+    "brier": 0.2343,
+    "ece": 0.0217
+   },
+   {
+    "family": "pitcher_walks",
+    "split": "holdout",
+    "rung": "3+",
+    "mean_p": 0.259,
+    "hit_rate": 0.2598,
+    "brier": 0.184,
+    "ece": 0.0127
+   },
+   {
+    "family": "pitcher_walks",
+    "split": "holdout",
+    "rung": "4+",
+    "mean_p": 0.0999,
+    "hit_rate": 0.0989,
+    "brier": 0.0869,
+    "ece": 0.005
+   },
+   {
+    "family": "pitcher_hits_allowed",
+    "split": "holdout",
+    "rung": "3+",
+    "mean_p": 0.842,
+    "hit_rate": 0.8331,
+    "brier": 0.1143,
+    "ece": 0.0149
+   },
+   {
+    "family": "pitcher_hits_allowed",
+    "split": "holdout",
+    "rung": "4+",
+    "mean_p": 0.7031,
+    "hit_rate": 0.6939,
+    "brier": 0.1844,
+    "ece": 0.0115
+   },
+   {
+    "family": "pitcher_hits_allowed",
+    "split": "holdout",
+    "rung": "5+",
+    "mean_p": 0.532,
+    "hit_rate": 0.5288,
+    "brier": 0.2253,
+    "ece": 0.0091
+   },
+   {
+    "family": "pitcher_hits_allowed",
+    "split": "holdout",
+    "rung": "6+",
+    "mean_p": 0.3606,
+    "hit_rate": 0.3618,
+    "brier": 0.2152,
+    "ece": 0.0095
+   },
+   {
+    "family": "pitcher_hits_allowed",
+    "split": "holdout",
+    "rung": "7+",
+    "mean_p": 0.2179,
+    "hit_rate": 0.2176,
+    "brier": 0.1632,
+    "ece": 0.009
+   },
+   {
+    "family": "pitcher_runs_allowed",
+    "split": "holdout",
+    "rung": "1+",
+    "mean_p": 0.8394,
+    "hit_rate": 0.8331,
+    "brier": 0.1291,
+    "ece": 0.0087
+   },
+   {
+    "family": "pitcher_runs_allowed",
+    "split": "holdout",
+    "rung": "2+",
+    "mean_p": 0.6446,
+    "hit_rate": 0.63,
+    "brier": 0.2214,
+    "ece": 0.0146
+   },
+   {
+    "family": "pitcher_runs_allowed",
+    "split": "holdout",
+    "rung": "3+",
+    "mean_p": 0.4567,
+    "hit_rate": 0.4411,
+    "brier": 0.2378,
+    "ece": 0.0239
+   },
+   {
+    "family": "pitcher_runs_allowed",
+    "split": "holdout",
+    "rung": "4+",
+    "mean_p": 0.3004,
+    "hit_rate": 0.2849,
+    "brier": 0.1989,
+    "ece": 0.0207
+   },
+   {
+    "family": "pitcher_runs_allowed",
+    "split": "holdout",
+    "rung": "5+",
+    "mean_p": 0.1811,
+    "hit_rate": 0.1731,
+    "brier": 0.1408,
+    "ece": 0.0082
+   },
+   {
+    "family": "plate_appearances",
+    "split": "holdout",
+    "rung": "4+",
+    "mean_p": 0.7995,
+    "hit_rate": 0.7948,
+    "brier": 0.1348,
+    "ece": 0.006
+   },
+   {
+    "family": "plate_appearances",
+    "split": "holdout",
+    "rung": "5+",
+    "mean_p": 0.2386,
+    "hit_rate": 0.2548,
+    "brier": 0.1641,
+    "ece": 0.0162
+   },
+   {
+    "family": "hits",
+    "split": "holdout",
+    "rung": "1+",
+    "mean_p": 0.6135,
+    "hit_rate": 0.6063,
+    "brier": 0.2352,
+    "ece": 0.0072
+   },
+   {
+    "family": "hits",
+    "split": "holdout",
+    "rung": "2+",
+    "mean_p": 0.217,
+    "hit_rate": 0.215,
+    "brier": 0.1661,
+    "ece": 0.0039
+   },
+   {
+    "family": "hits",
+    "split": "holdout",
+    "rung": "3+",
+    "mean_p": 0.0444,
+    "hit_rate": 0.0461,
+    "brier": 0.0437,
+    "ece": 0.0019
+   },
+   {
+    "family": "total_bases",
+    "split": "holdout",
+    "rung": "1+",
+    "mean_p": 0.6212,
+    "hit_rate": 0.6063,
+    "brier": 0.2354,
+    "ece": 0.015
+   },
+   {
+    "family": "total_bases",
+    "split": "holdout",
+    "rung": "2+",
+    "mean_p": 0.3579,
+    "hit_rate": 0.35,
+    "brier": 0.2241,
+    "ece": 0.008
+   },
+   {
+    "family": "total_bases",
+    "split": "holdout",
+    "rung": "3+",
+    "mean_p": 0.2062,
+    "hit_rate": 0.2043,
+    "brier": 0.1602,
+    "ece": 0.0023
+   },
+   {
+    "family": "total_bases",
+    "split": "holdout",
+    "rung": "4+",
+    "mean_p": 0.146,
+    "hit_rate": 0.1429,
+    "brier": 0.1206,
+    "ece": 0.0031
+   },
+   {
+    "family": "home_runs",
+    "split": "holdout",
+    "rung": "1+",
+    "mean_p": 0.1201,
+    "hit_rate": 0.1148,
+    "brier": 0.1,
+    "ece": 0.0053
+   },
+   {
+    "family": "runs",
+    "split": "holdout",
+    "rung": "1+",
+    "mean_p": 0.3849,
+    "hit_rate": 0.3775,
+    "brier": 0.2312,
+    "ece": 0.0088
+   },
+   {
+    "family": "runs",
+    "split": "holdout",
+    "rung": "2+",
+    "mean_p": 0.0774,
+    "hit_rate": 0.08,
+    "brier": 0.0728,
+    "ece": 0.0028
+   },
+   {
+    "family": "rbis",
+    "split": "holdout",
+    "rung": "1+",
+    "mean_p": 0.2926,
+    "hit_rate": 0.2941,
+    "brier": 0.2056,
+    "ece": 0.0015
+   },
+   {
+    "family": "rbis",
+    "split": "holdout",
+    "rung": "2+",
+    "mean_p": 0.1057,
+    "hit_rate": 0.1053,
+    "brier": 0.0935,
+    "ece": 0.0006
+   },
+   {
+    "family": "rbis",
+    "split": "holdout",
+    "rung": "3+",
+    "mean_p": 0.0353,
+    "hit_rate": 0.0355,
+    "brier": 0.0342,
+    "ece": 0.0003
+   },
+   {
+    "family": "hits_runs_rbis",
+    "split": "holdout",
+    "rung": "1+",
+    "mean_p": 0.6772,
+    "hit_rate": 0.675,
+    "brier": 0.2163,
+    "ece": 0.0066
+   },
+   {
+    "family": "hits_runs_rbis",
+    "split": "holdout",
+    "rung": "2+",
+    "mean_p": 0.4576,
+    "hit_rate": 0.4541,
+    "brier": 0.2439,
+    "ece": 0.0056
+   },
+   {
+    "family": "hits_runs_rbis",
+    "split": "holdout",
+    "rung": "3+",
+    "mean_p": 0.2883,
+    "hit_rate": 0.2908,
+    "brier": 0.203,
+    "ece": 0.0027
+   },
+   {
+    "family": "hits_runs_rbis",
+    "split": "holdout",
+    "rung": "4+",
+    "mean_p": 0.1712,
+    "hit_rate": 0.1725,
+    "brier": 0.1409,
+    "ece": 0.0042
+   },
+   {
+    "family": "hits_runs_rbis",
+    "split": "holdout",
+    "rung": "5+",
+    "mean_p": 0.0977,
+    "hit_rate": 0.0965,
+    "brier": 0.0863,
+    "ece": 0.0012
+   },
+   {
+    "family": "team_runs",
+    "split": "holdout",
+    "rung": "2+",
+    "mean_p": 0.841,
+    "hit_rate": 0.828,
+    "brier": 0.1415,
+    "ece": 0.013
+   },
+   {
+    "family": "team_runs",
+    "split": "holdout",
+    "rung": "3+",
+    "mean_p": 0.7038,
+    "hit_rate": 0.6885,
+    "brier": 0.2131,
+    "ece": 0.0153
+   },
+   {
+    "family": "team_runs",
+    "split": "holdout",
+    "rung": "4+",
+    "mean_p": 0.5604,
+    "hit_rate": 0.5523,
+    "brier": 0.2449,
+    "ece": 0.0094
+   },
+   {
+    "family": "team_runs",
+    "split": "holdout",
+    "rung": "5+",
+    "mean_p": 0.4283,
+    "hit_rate": 0.4324,
+    "brier": 0.2429,
+    "ece": 0.0081
+   },
+   {
+    "family": "team_runs",
+    "split": "holdout",
+    "rung": "6+",
+    "mean_p": 0.3165,
+    "hit_rate": 0.3265,
+    "brier": 0.2176,
+    "ece": 0.015
+   },
+   {
+    "family": "team_runs",
+    "split": "holdout",
+    "rung": "7+",
+    "mean_p": 0.2273,
+    "hit_rate": 0.2295,
+    "brier": 0.1746,
+    "ece": 0.0164
+   }
+  ]
+ },
+ "failed_experiments": [
+  {
+   "name": "Pitch-level Statcast (whiff%, velocity change) for strikeouts",
+   "what_was_learned": "No gain on 468 late-2026 test starts (-0.0004 [-0.0133, +0.0116] MAE).",
+   "changes_future_decisions": "Do not build Statcast features until a multi-season pitch archive exists (Savant blocked; repo holds 7 weeks)."
+  },
+  {
+   "name": "Structural pitch-count leash model for batters faced (C/D)",
+   "what_was_learned": "Pitches EWMA / pitches-per-BF ignores role; it over-projects openers by ~3.5 BF.",
+   "changes_future_decisions": "Workload models must condition on days since last appearance and recent relief usage."
+  },
+  {
+   "name": "Schedule-adjusted ridge team ratings (D_ridge)",
+   "what_was_learned": "No improvement over raw shrunk offence/defence factors: +0.0037 [+0.0005, +0.0073] CRPS on validation.",
+   "changes_future_decisions": "Keep the simpler PIT factors; MLB schedules are balanced enough that schedule adjustment matters little."
+  },
+  {
+   "name": "Pitcher walks: black-box gain",
+   "what_was_learned": "lowest validation CRPS: E; advantage over transparent D not significant (-0.0019 [-0.004926731731763374, 0.0010387264644427113]) -> D",
+   "changes_future_decisions": "Walk rate is dominated by noise at game level; the transparent model is frozen."
+  }
+ ],
+ "gate": {
+  "summary": {
+   "pitcher:bf": {
+    "n": 4854,
+    "status_counts": {
+     "PASS": 4586,
+     "REVIEW": 268
+    },
+    "check_counts": {
+     "role:REVIEW": 266,
+     "confidence:REVIEW": 251,
+     "freshness:REVIEW": 2,
+     "plausibility:REVIEW": 2
+    }
+   },
+   "pitcher:outs": {
+    "n": 4854,
+    "status_counts": {
+     "PASS": 4586,
+     "REVIEW": 268
+    },
+    "check_counts": {
+     "role:REVIEW": 266,
+     "confidence:REVIEW": 251,
+     "freshness:REVIEW": 2
+    }
+   },
+   "pitcher:k": {
+    "n": 4854,
+    "status_counts": {
+     "PASS": 4586,
+     "REVIEW": 268
+    },
+    "check_counts": {
+     "role:REVIEW": 266,
+     "confidence:REVIEW": 251,
+     "freshness:REVIEW": 2
+    }
+   },
+   "pitcher:bb": {
+    "n": 4854,
+    "status_counts": {
+     "PASS": 4586,
+     "REVIEW": 268
+    },
+    "check_counts": {
+     "role:REVIEW": 266,
+     "confidence:REVIEW": 251,
+     "freshness:REVIEW": 2
+    }
+   },
+   "pitcher:h": {
+    "n": 4854,
+    "status_counts": {
+     "PASS": 4584,
+     "REVIEW": 270
+    },
+    "check_counts": {
+     "role:REVIEW": 266,
+     "confidence:REVIEW": 251,
+     "freshness:REVIEW": 2,
+     "plausibility:REVIEW": 2
+    }
+   },
+   "pitcher:r": {
+    "n": 4854,
+    "status_counts": {
+     "PASS": 4586,
+     "REVIEW": 268
+    },
+    "check_counts": {
+     "role:REVIEW": 266,
+     "confidence:REVIEW": 251,
+     "freshness:REVIEW": 2,
+     "plausibility:REVIEW": 2
+    }
+   },
+   "hitter:PA": {
+    "n": 8000,
+    "status_counts": {
+     "PASS": 7942,
+     "REVIEW": 58
+    },
+    "check_counts": {
+     "role:REVIEW": 53,
+     "confidence:REVIEW": 38,
+     "freshness:REVIEW": 5
+    }
+   },
+   "hitter:H": {
+    "n": 8000,
+    "status_counts": {
+     "PASS": 7942,
+     "REVIEW": 58
+    },
+    "check_counts": {
+     "role:REVIEW": 53,
+     "confidence:REVIEW": 38,
+     "freshness:REVIEW": 5
+    }
+   },
+   "hitter:TB": {
+    "n": 8000,
+    "status_counts": {
+     "PASS": 7931,
+     "REVIEW": 69
+    },
+    "check_counts": {
+     "role:REVIEW": 53,
+     "confidence:REVIEW": 38,
+     "plausibility:REVIEW": 11,
+     "freshness:REVIEW": 5
+    }
+   },
+   "hitter:HR": {
+    "n": 8000,
+    "status_counts": {
+     "PASS": 7942,
+     "REVIEW": 58
+    },
+    "check_counts": {
+     "role:REVIEW": 53,
+     "confidence:REVIEW": 38,
+     "freshness:REVIEW": 5
+    }
+   },
+   "hitter:R": {
+    "n": 8000,
+    "status_counts": {
+     "PASS": 7942,
+     "REVIEW": 58
+    },
+    "check_counts": {
+     "role:REVIEW": 53,
+     "confidence:REVIEW": 38,
+     "freshness:REVIEW": 5
+    }
+   },
+   "hitter:RBI": {
+    "n": 8000,
+    "status_counts": {
+     "PASS": 7942,
+     "REVIEW": 58
+    },
+    "check_counts": {
+     "role:REVIEW": 53,
+     "confidence:REVIEW": 38,
+     "freshness:REVIEW": 5
+    }
+   },
+   "hitter:HRR": {
+    "n": 8000,
+    "status_counts": {
+     "PASS": 7934,
+     "REVIEW": 66
+    },
+    "check_counts": {
+     "role:REVIEW": 53,
+     "confidence:REVIEW": 38,
+     "plausibility:REVIEW": 8,
+     "freshness:REVIEW": 5
+    }
+   },
+   "team_runs": {
+    "n": 4854,
+    "status_counts": {
+     "PASS": 4852,
+     "REVIEW": 2
+    },
+    "check_counts": {
+     "freshness:REVIEW": 2
+    }
+   }
+  },
+  "error_by_status": {
+   "pitcher:bf": {
+    "PASS": {
+     "n": 4586,
+     "share": 0.9448,
+     "mae": 2.5808,
+     "crps": 1.8672,
+     "bias": -0.0069
+    },
+    "REVIEW": {
+     "n": 268,
+     "share": 0.0552,
+     "mae": 3.2332,
+     "crps": 2.314,
+     "bias": 0.9432
+    }
+   },
+   "pitcher:outs": {
+    "PASS": {
+     "n": 4586,
+     "share": 0.9448,
+     "mae": 2.7027,
+     "crps": 1.9304,
+     "bias": -0.0047
+    },
+    "REVIEW": {
+     "n": 268,
+     "share": 0.0552,
+     "mae": 2.8183,
+     "crps": 2.0325,
+     "bias": 1.2429
+    }
+   },
+   "pitcher:k": {
+    "PASS": {
+     "n": 4586,
+     "share": 0.9448,
+     "mae": 1.7523,
+     "crps": 1.2193,
+     "bias": 0.0316
+    },
+    "REVIEW": {
+     "n": 268,
+     "share": 0.0552,
+     "mae": 1.4118,
+     "crps": 0.9575,
+     "bias": 0.556
+    }
+   },
+   "pitcher:bb": {
+    "PASS": {
+     "n": 4586,
+     "share": 0.9448,
+     "mae": 1.0003,
+     "crps": 0.6823,
+     "bias": -0.0123
+    },
+    "REVIEW": {
+     "n": 268,
+     "share": 0.0552,
+     "mae": 0.9948,
+     "crps": 0.651,
+     "bias": -0.1443
+    }
+   },
+   "pitcher:h": {
+    "PASS": {
+     "n": 4584,
+     "share": 0.9444,
+     "mae": 1.6795,
+     "crps": 1.1689,
+     "bias": 0.0326
+    },
+    "REVIEW": {
+     "n": 270,
+     "share": 0.0556,
+     "mae": 1.4928,
+     "crps": 1.0326,
+     "bias": 0.1724
+    }
+   },
+   "pitcher:r": {
+    "PASS": {
+     "n": 4586,
+     "share": 0.9448,
+     "mae": 1.6305,
+     "crps": 1.1053,
+     "bias": 0.051
+    },
+    "REVIEW": {
+     "n": 268,
+     "share": 0.0552,
+     "mae": 1.3284,
+     "crps": 0.8702,
+     "bias": 0.1867
+    }
+   },
+   "hitter:PA": {
+    "PASS": {
+     "n": 7942,
+     "share": 0.9928,
+     "mae": 0.5679,
+     "crps": 0.3634,
+     "bias": -0.0009
+    },
+    "REVIEW": {
+     "n": 58,
+     "share": 0.0073,
+     "mae": 0.5565,
+     "crps": 0.3512,
+     "bias": 0.0301
+    }
+   },
+   "hitter:H": {
+    "PASS": {
+     "n": 7942,
+     "share": 0.9928,
+     "mae": 0.6705,
+     "crps": 0.4437,
+     "bias": 0.0174
+    },
+    "REVIEW": {
+     "n": 58,
+     "share": 0.0073,
+     "mae": 0.7061,
+     "crps": 0.4659,
+     "bias": -0.0497
+    }
+   },
+   "hitter:TB": {
+    "PASS": {
+     "n": 7931,
+     "share": 0.9914,
+     "mae": 1.3162,
+     "crps": 0.8523,
+     "bias": 0.0473
+    },
+    "REVIEW": {
+     "n": 69,
+     "share": 0.0086,
+     "mae": 1.4679,
+     "crps": 0.9822,
+     "bias": -0.3058
+    }
+   },
+   "hitter:HR": {
+    "PASS": {
+     "n": 7942,
+     "share": 0.9928,
+     "mae": 0.2152,
+     "crps": 0.1061,
+     "bias": 0.007
+    },
+    "REVIEW": {
+     "n": 58,
+     "share": 0.0073,
+     "mae": 0.2383,
+     "crps": 0.1426,
+     "bias": -0.0631
+    }
+   },
+   "hitter:R": {
+    "PASS": {
+     "n": 7942,
+     "share": 0.9928,
+     "mae": 0.5688,
+     "crps": 0.3114,
+     "bias": 0.0081
+    },
+    "REVIEW": {
+     "n": 58,
+     "share": 0.0073,
+     "mae": 0.5664,
+     "crps": 0.3199,
+     "bias": -0.0673
+    }
+   },
+   "hitter:RBI": {
+    "PASS": {
+     "n": 7942,
+     "share": 0.9928,
+     "mae": 0.6223,
+     "crps": 0.344,
+     "bias": 0.0063
+    },
+    "REVIEW": {
+     "n": 58,
+     "share": 0.0073,
+     "mae": 0.5941,
+     "crps": 0.3393,
+     "bias": -0.0586
+    }
+   },
+   "hitter:HRR": {
+    "PASS": {
+     "n": 7934,
+     "share": 0.9918,
+     "mae": 1.4829,
+     "crps": 0.9813,
+     "bias": 0.0287
+    },
+    "REVIEW": {
+     "n": 66,
+     "share": 0.0083,
+     "mae": 1.4283,
+     "crps": 0.9665,
+     "bias": -0.2317
+    }
+   },
+   "team_runs": {
+    "PASS": {
+     "n": 4852,
+     "share": 0.9996,
+     "mae": 2.4981,
+     "crps": 1.7247,
+     "bias": 0.0272
+    },
+    "REVIEW": {
+     "n": 2,
+     "share": 0.0004,
+     "mae": 3.0144,
+     "crps": 1.8289,
+     "bias": -0.0311
+    }
+   }
+  },
+  "team_reconciliation": {
+   "PASS": 4854
+  }
+ },
+ "priorities": [
+  {
+   "rank": 1,
+   "item": "Prospective shadow of the frozen pitcher K/BF/outs models against archived pregame probables (data/slates) and the existing hash-chained shadow store",
+   "impact": "Converts a walk-forward win over the incumbent into archived-forecast evidence; required before any display change",
+   "evidence": "MLB-PF-P6: holdout wins vs champion with CIs excluding zero",
+   "complexity": "low (reuse project.py + workflow)",
+   "data": "daily slates (already archived)"
+  },
+  {
+   "rank": 2,
+   "item": "Archive confirmed lineups for every game (pregame_lineups_*) and re-score hitters on genuinely pregame slots",
+   "impact": "Hitter families are SHADOW VALIDATION only because slots are post-game",
+   "evidence": "MLB-PF-H1 slot-knowledge gap",
+   "complexity": "low",
+   "data": "LINEUP_CONFIRMATION checkpoint already captures; needs to persist all games"
+  },
+  {
+   "rank": 3,
+   "item": "Injury / IL and pitch-count restriction feed",
+   "impact": "Early exits (<=12 BF) are ~5% of starts but ~18% of BF error and are invisible to every model",
+   "evidence": "MLB-PF-P1 segments",
+   "complexity": "medium",
+   "data": "missing (no source in repo)"
+  },
+  {
+   "rank": 4,
+   "item": "Postseason leash and postseason hitter box lines",
+   "impact": "Forward projections in October use regular-season parameters and stale hitter form",
+   "evidence": "projections_latest.json labels",
+   "complexity": "medium",
+   "data": "research_cache has only pitcher postseason lines"
+  },
+  {
+   "rank": 5,
+   "item": "Multi-season Statcast backfill (whiff/CSW/velo) once GitHub-hosted archives allow",
+   "impact": "Unknown; 7-week test is null",
+   "evidence": "MLB-PF-P5",
+   "complexity": "high",
+   "data": "blocked network"
+  }
+ ]
+}

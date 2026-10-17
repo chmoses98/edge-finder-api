@@ -1,0 +1,83 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:38:22Z",
+  "data_provenance": [
+    "data/research/hitter_w2/mlb_feed (batting, pa)",
+    "pitcher frame (opposing starter)"
+  ],
+  "distribution": {
+    "cover_50": 0.505358615004122,
+    "cover_80": 0.8000824402308326,
+    "cover_90": 0.8984840157552442,
+    "crps": 0.11003233554640508,
+    "dist": "binom_mix",
+    "log_score": 0.3832114538094407,
+    "pit_deciles": [
+      0.1019,
+      0.0976,
+      0.0972,
+      0.1037,
+      0.1023,
+      0.0995,
+      0.1013,
+      0.0993,
+      0.0992,
+      0.098
+    ],
+    "pit_var_ratio": 0.9952305746055805,
+    "thresholds": {
+      "1": {
+        "brier": 0.10149978883848032,
+        "hit_rate": 0.1172712283594394,
+        "log_loss": 0.3518936360058708,
+        "mean_p": 0.12003587983756443
+      }
+    }
+  },
+  "eval_period": "2025 RS",
+  "experiment_id": "MLB-PF-home_runs-F-validation",
+  "family": "home_runs",
+  "features": [
+    "see mlb/hitters.py E_FEATURES / COVARS"
+  ],
+  "fingerprint": "ba59d1512ded46cb",
+  "hyperparameters": {
+    "HR_B": 0.0,
+    "HR_D": 0.716781673793499,
+    "HR_E": 0.2832183262065009
+  },
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Batting order is the post-game official lineup (retrospective; pregame lineups archived only for 527 games)."
+  ],
+  "model": "F",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2426,
+  "n_independent": 43668,
+  "n_obs": 43668,
+  "point": {
+    "bias": 0.0010261653875256955,
+    "corr": 0.14478299354330773,
+    "mae": 0.21903594783405586,
+    "mean_actual": 0.1259045525327471,
+    "mean_pred": 0.1269307179202728,
+    "rmse": 0.35472228487133595
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model F for home_runs?",
+  "split": "validation",
+  "sport": "MLB",
+  "train_period": "2024 (fit from 2024-05-01)",
+  "verdict": "frozen winner",
+  "vs_baseline": {
+    "ci95": [
+      -0.0007719421914431098,
+      -0.00046588731135110907
+    ],
+    "mean_diff": -0.000618915388228545,
+    "n_clusters": 2426,
+    "n_obs": 43668
+  },
+  "vs_incumbent": {}
+}

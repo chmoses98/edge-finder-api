@@ -206,6 +206,12 @@ def stage_project(ctx: Ctx):
         if st_:
             pcount[st_] = pcount.get(st_, 0) + 1
     stats["challenger_gate"] = gcount
+    fcount = {}
+    for p in out["players"]:
+        for fd in p["gate"]["findings"]:
+            k = f"{fd['check']}:{fd['severity']}"
+            fcount[k] = fcount.get(k, 0) + 1
+    stats["gate_findings_all_published_rows"] = fcount
     stats["challenger_participation"] = pcount
     pub_players = [p for p in out["players"]]
     stats["published_players"] = len(pub_players)
@@ -230,7 +236,7 @@ def stage_project(ctx: Ctx):
         json.dump(out, f, default=lambda o: None if isinstance(o, float) else str(o))
     log("project", f"games {len(slate['games'])}; forecasts archived {arch['written']} (late rejected {arch['late_rejected']}, "
                    f"invalid {arch['invalid']}, duplicates {arch['duplicates']}, unchanged skipped {skipped_same}); "
-                   f"incumbent records {len(inc)}; gate {gcount}; participation {pcount}; "
+                   f"incumbent records {len(inc)}; gate {gcount}; findings {fcount}; inputs through {inputs['asof_utc']}; history games used {inputs['n_extra_games']}; participation {pcount}; "
                    f"coverage pitchers {cov_p['mean_coverage']} hitters {cov_h['mean_coverage']}")
     return stats
 

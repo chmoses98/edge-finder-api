@@ -80,7 +80,9 @@ def slate_from_games(games: list[dict], lat: dict, abbr_known: set[str]) -> tupl
 
 # --------------------------------------------------------------------------- archive records
 def _digest(r: dict) -> str:
-    key = json.dumps([round(float(r["mean"]), 5), (r.get("participation") or {}).get("status"), r.get("gate_status"),
+    part = r.get("participation")
+    part = part if isinstance(part, dict) else {}
+    key = json.dumps([round(float(r["mean"]), 5), part.get("status"), r.get("gate_status"),
                       [round(float(x), 5) for x in (r.get("probs") or [])]], sort_keys=True)
     return hashlib.sha1(key.encode()).hexdigest()
 

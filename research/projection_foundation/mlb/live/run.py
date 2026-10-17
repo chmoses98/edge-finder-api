@@ -73,6 +73,7 @@ class Ctx:
         self._sched = {}
         self.games = None
         self.captured_iso = None
+        self.history_verified = False      # set by the results stage when this run fetched every final game of the window
         self.url_by_date = {}
         self.summary = {"sport": SPORT, "now": self.now_iso, "dry_run": self.dry_run, "stages": {}}
 
@@ -177,7 +178,14 @@ def stage_project(ctx: Ctx):
 
     cutoff = now - timedelta(hours=FC.HISTORY_HOURS)
     inputs = PJ.build_inputs(slate, cutoff=cutoff, extra_root=ctx.archive)
-    stats["history"] = {"archived_box_games_used": inputs["n_extra_games"], "inputs_through": inputs["asof_utc"]}
+    if ctx.history_verified:
+        # this run listed every final game of the last --history-days days and stored its box score, so the inputs are complete
+        # up to the history cutoff (games that started in the last 3 h are final-less by construction). Without this the
+        # freshness check would compare 'last game played' with now and flag every off-day (postseason gaps, all-star break).
+        cut_iso = api.iso(cutoff)
+        inputs["asof_utc"] = {k: max(v or "", cut_iso) for k, v in inputs["asof_utc"].items()}
+    stats["history"] = {"archived_box_games_used": inputs["n_extra_games"], "inputs_through": inputs["asof_utc"],
+                        "completeness_verified_this_run": ctx.history_verified}
     info = {"status": "LIVE_PREGAME", "label": "Live pregame projections for games starting in the next %.0f h. Who plays comes "
             "from archived availability observations (probable pitcher: certainty per observation; hitters: posted lineup card "
             "only). Research only." % ctx.horizon, "date": ctx.now_iso[:10], "inputs_through": inputs["asof_utc"]}
@@ -221,7 +229,7 @@ def stage_project(ctx: Ctx):
         w = who.get(g["game_pk"])
         if not w:
             continue
-        cut[g["game_pk"]] = g["start_utc"]
+        cut[g["game_pk"]] = ctx.now_iso          # coverage is "observed before this run's clock" (never later captures)
         exp_p[g["game_pk"]] = [w[s]["pitcher"]["id"] for s in ("away", "home") if w[s]["pitcher"]]
     for p in out["players"]:
         if p.get("slot") is not None:
@@ -372,6 +380,7 @@ def stage_results(ctx: Ctx):
         if box and any(box["pitchers"][s] for s in ("away", "home")):
             recs.append(HIST.record_from_box(g, box))
     stats["history_games_written"] = HIST.write_records(recs, ctx.archive, ctx.now)
+    ctx.history_verified = not stats["errors"]
     log("results", f"games {stats['games_checked']}: final {stats['final']}, pending {stats['pending']}, not played {stats['not_played']}; "
                    f"outcome rows written {arch['written']}; box-score history games stored {stats['history_games_written']}"
                    + (f"; ERRORS {stats['errors']}" if stats["errors"] else ""))

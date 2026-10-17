@@ -112,6 +112,12 @@ class Ctx:
         self.captured_iso = self.now_iso if self.fixed_now else max(fetched)
         return games
 
+    def refresh_clock(self):
+        """Live runs: every stage sees the real current time (a capture made seconds ago must be 'before now')."""
+        if not self.fixed_now:
+            self.now = datetime.now(timezone.utc).replace(microsecond=0)
+            self.now_iso = api.iso(self.now)
+
     def avail_rows(self):
         days = sorted({(self.now - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(4)})
         return av.load_snapshots(self.archive, SPORT, days)
@@ -443,6 +449,8 @@ def _run(ctx, a):
     failed = None
     for s in stages:
         t0 = time.time()
+        if s != "capture":
+            ctx.refresh_clock()
         try:
             ctx.summary["stages"][s] = FUNCS[s](ctx)
         except Exception as e:  # noqa: BLE001

@@ -142,7 +142,10 @@ jobs:
           for i in 1 2 3 4; do
             if git -C "$WT" push origin HEAD:projection-data; then exit 0; fi
             sleep $((2 ** i))
-            git -C "$WT" fetch origin projection-data && git -C "$WT" rebase origin/projection-data || true
+            git -C "$WT" fetch origin projection-data:refs/remotes/origin/projection-data
+            # only this workflow writes projection-data (single concurrency group); a conflict means
+            # something unexpected happened, so abort cleanly instead of pushing a half-rebased tree
+            git -C "$WT" rebase origin/projection-data || { git -C "$WT" rebase --abort; echo "rebase conflict" >&2; exit 1; }
           done
           echo "push failed after retries" >&2
           exit 1

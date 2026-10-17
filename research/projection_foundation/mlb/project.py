@@ -117,13 +117,13 @@ def build_inputs(slate):
                     lu[c] = np.nan
             lu = lu.assign(game_pk=pk, side=side, season=2026, date=date, start_utc=start, venue_id=ven, opp_id=oid,
                            team=abbr_by_id[tid], opp=abbr_by_id[oid], is_home=int(side == "H"), opp_starter_id=opp_pid,
-                           opp_starter_hand=hand_map.get(opp_pid, np.nan), assumed_lineup_from=str(lu["date"].iat[0].date()))
+                           opp_starter_hand=hand_map.get(opp_pid, np.nan), assumed_lineup_from=str(lu["date"].iat[0].date()), future=1)
             new_bat.append(lu)
     pl2 = pd.concat([pl, ps[pl.columns], pd.DataFrame(new_pl)[pl.columns]], ignore_index=True)
     pl2 = pl2.sort_values(["start_utc", "game_pk", "side", "order"]).reset_index(drop=True)
     tb2 = pd.concat([tbat, pd.DataFrame(new_tb)], ignore_index=True)
     nb = pd.concat(new_bat, ignore_index=True)
-    bat2 = pd.concat([bat, nb[bat.columns]], ignore_index=True)
+    bat2 = pd.concat([bat, nb[list(bat.columns) + ["future", "assumed_lineup_from"]]], ignore_index=True)
     asof = {"pitchers": str(ps["date"].max().date()) if len(ps) else str(pl["date"].max().date()),
             "hitters": str(bat["date"].max().date()), "teams": str(tbat["date"].max().date())}
     return {"pl": pl2, "tb": tb2, "bat": bat2, "pa": pa, "games": gmeta, "new_pks": [m["game_pk"] for m in gmeta],
@@ -259,7 +259,7 @@ def main(argv=None):
     pad = build_dist(hfin["dist_params"]["PA"][paw], b.loc[hn, f"PA_{paw}"].to_numpy(float), hmix, hn)
     names = {}
     hp = os.path.join(D.DATA, "edgelab", "hitter_projection_snapshots")
-    for f in sorted(os.listdir(hp))[-3:]:
+    for f in sorted(os.listdir(hp)):
         for line in open(os.path.join(hp, f)):
             try:
                 x = json.loads(line)

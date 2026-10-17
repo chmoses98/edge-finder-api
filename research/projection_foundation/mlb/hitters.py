@@ -57,7 +57,8 @@ def platoon_table(pa: pd.DataFrame, dev_seasons=DEV) -> pd.DataFrame:
 def build_frame(pitch_frame: pd.DataFrame, refresh: bool = False) -> pd.DataFrame:
     def build():
         b = D.load_batting()
-        b = b[b["PA"].notna()].copy()
+        fut = b["future"].fillna(0).astype(bool) if "future" in b else pd.Series(False, index=b.index)
+        b = b[b["PA"].notna() | fut].copy()
         b["slot"] = b["slot"].where(b["is_starter"] == 1)
         b = sort_chrono(b, "player_id", "start_utc", "game_pk")
         b = lagged_features(b, "player_id", STATS, halflives=HL, season_col="season")

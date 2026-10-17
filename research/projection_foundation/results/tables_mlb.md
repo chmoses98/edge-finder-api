@@ -1,6 +1,6 @@
 # MLB Projection Foundation — generated tables
 
-Generated 2026-10-17T06:40:17Z, code cd88bfb166.
+Generated 2026-10-17T06:59:24Z, code 7e66d2379f.
 
 
 ### batters_faced (pitchers; validation 2025)

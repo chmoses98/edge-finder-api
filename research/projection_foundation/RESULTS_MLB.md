@@ -1,6 +1,6 @@
 # MLB Projection Foundation — results
 
-Research only (`authority: research_only`). Generated 2026-10-17T06:40:17Z from code `cd88bfb166`, pf_core 1.0.0. Machine-readable twin: `results/summary.json`; per-model records: `results/experiments/`; full tables: `results/tables_mlb.md`.
+Research only (`authority: research_only`). Generated 2026-10-17T06:59:24Z from code `7e66d2379f`, pf_core 1.0.0. Machine-readable twin: `results/summary.json`; per-model records: `results/experiments/`; full tables: `results/tables_mlb.md`.
 
 ## 1. Bottom line
 

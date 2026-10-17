@@ -1,6 +1,18 @@
 {
   "data": {
     "byFamilyState": {
+      "KXEBASKETBALLGAME": {
+        "AMBIGUOUS_TICKER_MATCH": 0,
+        "FULLY_EVALUATED": 0,
+        "GAME_MAPPING_UNRESOLVED": 0,
+        "MISSING_REQUIRED_CONTEXT": 0,
+        "NOT_APPLICABLE": 0,
+        "NOT_EVALUATED_BUG": 0,
+        "PARSER_UNRESOLVED": 4,
+        "RESEARCH_MODEL_ONLY": 0,
+        "STARTED_GAME_EXCLUDED": 0,
+        "UNSUPPORTED_MODEL_FAMILY": 0
+      },
       "KXESOCCERGAME": {
         "AMBIGUOUS_TICKER_MATCH": 0,
         "FULLY_EVALUATED": 0,
@@ -8,7 +20,19 @@
         "MISSING_REQUIRED_CONTEXT": 0,
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
-        "PARSER_UNRESOLVED": 21,
+        "PARSER_UNRESOLVED": 15,
+        "RESEARCH_MODEL_ONLY": 0,
+        "STARTED_GAME_EXCLUDED": 0,
+        "UNSUPPORTED_MODEL_FAMILY": 0
+      },
+      "KXNBATOTAL": {
+        "AMBIGUOUS_TICKER_MATCH": 0,
+        "FULLY_EVALUATED": 0,
+        "GAME_MAPPING_UNRESOLVED": 0,
+        "MISSING_REQUIRED_CONTEXT": 0,
+        "NOT_APPLICABLE": 0,
+        "NOT_EVALUATED_BUG": 0,
+        "PARSER_UNRESOLVED": 1,
         "RESEARCH_MODEL_ONLY": 0,
         "STARTED_GAME_EXCLUDED": 0,
         "UNSUPPORTED_MODEL_FAMILY": 0
@@ -183,8 +207,8 @@
       }
     },
     "coverageAccounting": {
-      "accountedTotal": 170,
-      "archivedTotal": 170,
+      "accountedTotal": 169,
+      "archivedTotal": 169,
       "byState": {
         "AMBIGUOUS_TICKER_MATCH": 0,
         "FULLY_EVALUATED": 60,
@@ -192,7 +216,7 @@
         "MISSING_REQUIRED_CONTEXT": 0,
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
-        "PARSER_UNRESOLVED": 21,
+        "PARSER_UNRESOLVED": 20,
         "RESEARCH_MODEL_ONLY": 83,
         "STARTED_GAME_EXCLUDED": 0,
         "UNSUPPORTED_MODEL_FAMILY": 6
@@ -203,13 +227,13 @@
     "discoverySummary": {
       "classified": 149,
       "date": "2026-10-16",
-      "discovered": 170,
+      "discovered": 169,
       "exposed": 60,
-      "generatedAt": "2026-10-16T22:48:04Z",
+      "generatedAt": "2026-10-17T00:09:31Z",
       "modeled": 60,
       "otherDateExcluded": 0,
       "parseFailures": 0,
-      "unsupported": 110
+      "unsupported": 109
     },
     "hitterLegacyBoardFallbackStatus": "NOT_AVAILABLE",
     "hitterProspectiveSnapshotCount": 83,
@@ -220,26 +244,26 @@
       "pregameMappingUnresolved": 0,
       "pregameMissingRequiredContext": 0,
       "pregameNotEvaluatedBug": 0,
-      "pregameParserUnresolved": 21,
+      "pregameParserUnresolved": 20,
       "pregameResearchSupportedHitterMarkets": 83,
       "pregameUnsupportedByAllModels": 6,
       "startedGameExcluded": 0,
-      "totalValidArchivedMlbMarkets": 170,
+      "totalValidArchivedMlbMarkets": 169,
       "trueSilentRemainder": 0,
-      "validPregameMarkets": 170
+      "validPregameMarkets": 169
     },
     "rawArchiveAccounting": {
-      "accountedTickerCount": 170,
+      "accountedTickerCount": 169,
       "duplicateRawTickerCount": 0,
       "entriesWithoutTicker": 0,
       "missingTickers": [],
-      "rawArchivedUnique": 170,
-      "totalRawEntriesSeen": 170,
+      "rawArchivedUnique": 169,
+      "totalRawEntriesSeen": 169,
       "trueSilentRemainderCount": 0
     }
   },
   "meta": {
-    "createdAt": "2026-10-16T22:48:04Z",
+    "createdAt": "2026-10-17T00:09:31Z",
     "producedBy": "scripts/build_full_market_coverage.py",
     "schemaVersion": "1.0",
     "slateDate": "2026-10-16",

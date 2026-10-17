@@ -116,6 +116,9 @@ class Ctx:
         """Live runs: every stage sees the real current time (a capture made seconds ago must be 'before now')."""
         if not self.fixed_now:
             self.now = datetime.now(timezone.utc).replace(microsecond=0)
+            if self.captured_iso and api.iso(self.now) <= self.captured_iso:
+                time.sleep(1.2)           # timestamps have 1 s resolution: the capture must be strictly before 'now'
+                self.now = datetime.now(timezone.utc).replace(microsecond=0)
             self.now_iso = api.iso(self.now)
 
     def avail_rows(self):

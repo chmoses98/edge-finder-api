@@ -188,7 +188,7 @@ def build_inputs(slate, cutoff=None, extra_root=None):
                                opp_starter_hand=hand_map.get(opp_pid, np.nan),
                                assumed_lineup_from=str(lu["date"].iat[0].date()), future=1)
             new_bat.append(lu)
-    pl2 = pd.concat([pl, ps[pl.columns], pd.DataFrame(new_pl, columns=list(pl.columns))], ignore_index=True)
+    pl2 = pd.concat([pl, ps[pl.columns], (pd.DataFrame(new_pl)[list(pl.columns)] if new_pl else pl.iloc[0:0])], ignore_index=True)
     pl2 = pl2.sort_values(["start_utc", "game_pk", "side", "order"]).reset_index(drop=True)
     tb2 = pd.concat([tbat, pd.DataFrame(new_tb)], ignore_index=True)
     nb = pd.concat(new_bat, ignore_index=True)

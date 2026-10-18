@@ -1,73 +1,27 @@
 {
-  "generatedAt": "2026-10-18T14:56:20.031207+00:00",
+  "generatedAt": "2026-10-18T18:49:28.589663+00:00",
   "date": "2026-10-18",
   "realMoney": [],
   "priceMoved": [],
   "paperOnly": [
     {
       "game": "TB@CLE",
-      "market": "ML_Away",
-      "side": "ML_Away",
-      "ticker": null,
-      "modelProb": "52.06%",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "46.4\u00a2 or better",
-      "snapshotTs": "2026-10-18T14:56:10Z",
-      "reasonCodes": [
-        "LINEUP_MISSING"
-      ],
-      "gatesFired": [
-        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER"
-      ],
-      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
-      "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "TB@CLE",
-      "market": "ML_Home",
-      "side": "ML_Home",
-      "ticker": null,
-      "modelProb": "47.94%",
-      "execPrice": "\u2014",
-      "rawEdge": "\u2014",
-      "calEdge": "\u2014",
-      "conf": "\u2014",
-      "betSize": null,
-      "maxBetPrice": "42.31\u00a2 or better",
-      "snapshotTs": "2026-10-18T14:56:10Z",
-      "reasonCodes": [
-        "LINEUP_MISSING"
-      ],
-      "gatesFired": [
-        "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER"
-      ],
-      "rejectionReason": "Rule 51: lineupConfirmedOfficial=False (away, home) \u2014 ML downgraded to PAPER",
-      "status": "Rejected",
-      "lineupStatus": "missing"
-    },
-    {
-      "game": "TB@CLE",
       "market": "Game_Total",
       "side": "Game_Total",
       "ticker": null,
-      "modelProb": "59.83%",
+      "modelProb": "59.77%",
       "execPrice": "\u2014",
       "rawEdge": "\u2014",
       "calEdge": "\u2014",
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-18T14:56:10Z",
+      "snapshotTs": "2026-10-18T18:49:18Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=52% N>=30",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "TB@CLE",
@@ -81,12 +35,12 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-18T14:56:10Z",
+      "snapshotTs": "2026-10-18T18:49:18Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     },
     {
       "game": "TB@CLE",
@@ -100,21 +54,64 @@
       "conf": "\u2014",
       "betSize": null,
       "maxBetPrice": "\u2014",
-      "snapshotTs": "2026-10-18T14:56:10Z",
+      "snapshotTs": "2026-10-18T18:49:18Z",
       "reasonCodes": [],
       "gatesFired": [],
       "rejectionReason": "Rule 81: RL suspended \u2014 WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0% N>=15",
       "status": "Rejected",
-      "lineupStatus": "missing"
+      "lineupStatus": "confirmed"
     }
   ],
-  "rejectedBlocked": [],
+  "rejectedBlocked": [
+    {
+      "game": "TB@CLE",
+      "market": "ML_Away",
+      "side": "ML_Away",
+      "ticker": null,
+      "modelProb": "50.72%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "45.07\u00a2 or better",
+      "snapshotTs": "2026-10-18T18:49:18Z",
+      "reasonCodes": [
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+      ],
+      "gatesFired": [],
+      "rejectionReason": "edge None% below 1.0% floor",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    },
+    {
+      "game": "TB@CLE",
+      "market": "ML_Home",
+      "side": "ML_Home",
+      "ticker": null,
+      "modelProb": "49.28%",
+      "execPrice": "\u2014",
+      "rawEdge": "\u2014",
+      "calEdge": "\u2014",
+      "conf": "\u2014",
+      "betSize": null,
+      "maxBetPrice": "43.64\u00a2 or better",
+      "snapshotTs": "2026-10-18T18:49:18Z",
+      "reasonCodes": [
+        "EXECUTABLE_EDGE_BELOW_THRESHOLD"
+      ],
+      "gatesFired": [],
+      "rejectionReason": "edge None% below 1.0% floor",
+      "status": "Rejected",
+      "lineupStatus": "confirmed"
+    }
+  ],
   "liveGameBlockedGames": [],
   "summary": {
     "realMoneyCount": 0,
     "priceMovedCount": 0,
-    "paperOnlyCount": 5,
-    "rejectedBlockedCount": 0,
+    "paperOnlyCount": 3,
+    "rejectedBlockedCount": 2,
     "liveGameBlockedCount": 0
   }
 }

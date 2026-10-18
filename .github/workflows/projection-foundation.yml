@@ -60,7 +60,7 @@ concurrency:
 
 env:
   PF_DIR: research/projection_foundation
-  PIP_DEPS: numpy pandas scipy scikit-learn statsmodels lightgbm pyarrow pytest
+  REQS: research/projection_foundation/requirements-pf.txt
 
 jobs:
   gate:
@@ -115,8 +115,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+          cache: pip
+          cache-dependency-path: research/projection_foundation/requirements-pf.txt
       - name: Install dependencies
-        run: python -m pip install --quiet $PIP_DEPS
+        run: python -m pip install --quiet -r "$REQS"
       - name: Contract tests (fast)
         working-directory: ${{ env.PF_DIR }}
         run: python -m pytest -q tests/test_mlb_live.py tests/test_mlb_pf.py tests/test_pf_core.py tests/test_pf_live.py
@@ -176,8 +178,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+          cache: pip
+          cache-dependency-path: research/projection_foundation/requirements-pf.txt
       - name: Install dependencies
-        run: python -m pip install --quiet $PIP_DEPS
+        run: python -m pip install --quiet -r "$REQS"
       - name: Contract tests (fast)
         working-directory: ${{ env.PF_DIR }}
         run: python -m pytest -q tests/test_mlb_live.py tests/test_mlb_pf.py tests/test_pf_core.py tests/test_pf_live.py

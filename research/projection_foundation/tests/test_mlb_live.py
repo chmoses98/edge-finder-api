@@ -288,3 +288,18 @@ def test_no_games_is_a_noop_success(tmp_path):
     latest = json.load(open(arch / "projections" / "mlb" / "latest.json"))
     assert latest["games"] == [] and latest["slate"]["status"] == "NO_GAMES_IN_WINDOW"
     assert "archive_guard: OK" in out.stdout
+
+
+def test_hitter_incumbent_from_snapshots(tmp_path):
+    d = tmp_path / "data" / "edgelab" / "hitter_projection_snapshots"
+    d.mkdir(parents=True)
+    rows = []
+    for rung in (1, 2, 3):      # one row per Kalshi rung: one forecast per (player, family, generation)
+        rows.append({"gameId": 9001, "playerId": "1001", "player": "P", "marketFamily": "hitter_hits", "projectionStatus": "PROJECTED",
+                     "distributionMean": 1.1, "projectionGeneratedAt": "2026-10-20T21:00:00Z", "threshold": rung, "checkpoint": "LINEUP_CONFIRMATION",
+                     "engineCommitSha": "abc"})
+    rows.append(dict(rows[0], projectionGeneratedAt="2026-10-20T23:30:00Z"))                    # after the start
+    rows.append(dict(rows[0], playerId="1002", projectionStatus="PLAYER_NOT_IN_STARTING_LINEUP"))  # not a projection
+    (d / "2026-10-20.jsonl").write_text("\n".join(json.dumps(r) for r in rows))
+    recs, st = INC.hitter_records(str(tmp_path), games(), api.parse_ts("2026-10-20T22:00:00Z"))
+    assert len(recs) == 1 and recs[0]["family"] == "hits" and recs[0]["mean"] == 1.1 and st["not_pregame"] == 1

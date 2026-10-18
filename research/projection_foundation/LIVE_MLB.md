@@ -100,6 +100,30 @@ checks for the priority pitcher families: opener flag, short rest (<= 4 days), s
 (BF <= 12, outcome-defined), starter certainty at forecast time (CONFIRMED vs PROJECTED), and counts of starter
 no-shows, relief appearances and unforecast actual starters.
 
+## Measured so far (2026-10-17/18)
+
+* Real runner dry-run (`pull_request`, run 39080349680, head 2f94cb6c): schedule fetch with the real statsapi shape parsed
+  (1 game, probables 2/2, lineups posted 2/2, 20 observations), 59 real box scores archived as history (the box-score parser
+  worked on real payloads), 144 forecasts archived into the temp copy (see the run log), 9 incumbent records, gate PASS 135, participation CONFIRMED_ACTIVE 132, archive_guard OK.
+* Replay on REAL recorded data (`python -m mlb.live.smoke`): scenario A (2026-09-12, two pregame runs at the real 22:00:53Z and
+  23:29:55Z lineup captures, final box scores from the committed feed): 816 forecasts archived (810 challenger, 6 incumbent), 0
+  archived at/after start, all settled actuals equal the committed feed (12/12 starters' K), re-running every stage archived
+  nothing new, a simulated stat correction wrote exactly one correction and left the original settlement untouched. Scenario B
+  (2026-10-15 ALCS/NLCS night): real probables, real champion incumbent forecasts, real outcomes; settled challenger and
+  incumbent on identical keys.
+* Probable with posted lineup equals the actual starter 1011/1014 (99.7%); the recorded captures were 74 min (median) and 130 min
+  (p90) before first pitch.
+
 ## Unverified until Opening Day
 
-See the final report of the live-integration task; the list is kept next to the measured results there.
+* Live statsapi `lineups` on a regular-season slate (15 games, staggered posting) and the late-scratch / probable-change
+  `NOT_STARTING` paths against real changes (only unit-tested and replayed).
+* A real scheduled run: the first run on `main` creates `projection-data`, pushes through `scripts/ci/git_data_commit.py`
+  and runs the post-push guard. The PR dry-run proves everything except the push path.
+* Incumbent hitter and pitcher forecasts in the live archive depend on the production shadow collectors running in the same
+  hours; the team-run incumbent depends on run cadence (a version overwritten between two runs is lost).
+* Cadence vs lineup posting: pregame runs are fixed-time, not per game. Hitters whose lineup posts after the last run before
+  first pitch are never archived (counted as `hitters_assumed_not_archived`).
+* The hand-specific strikeout factor does not update after the last committed per-PA game (per-PA events are not archived).
+* No injury / IL / pitch-count source (REPORTED certainty is never emitted); early exits remain unforecastable.
+* Postseason and regular-season history from the box-score archive has only been exercised for 59 games.

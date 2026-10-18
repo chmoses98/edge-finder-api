@@ -1,0 +1,1058 @@
+{
+ "evaluated_at": "2026-10-18T16:34:32+00:00",
+ "evaluations": {
+  "baseline/pregame/regular_season": {
+   "arm": "baseline",
+   "capture_window": "pregame",
+   "dnp_policy": "void",
+   "eligible_for_independent_value_verdict": false,
+   "market_informed_source": false,
+   "n_decisions": 0,
+   "n_games": 0,
+   "report": {
+    "accounting": {
+     "decisions": 0,
+     "decisions_by_settlement": {},
+     "groups_total": 0,
+     "groups_where_rule_declined": 0,
+     "groups_with_candidates": 0,
+     "groups_without_executable_candidate": 0,
+     "outcome_rows": 36,
+     "probability_rungs": 0,
+     "quote_rows": 131,
+     "rungs_at_other_as_of_dropped": 0
+    },
+    "by_market": {},
+    "by_side": {},
+    "by_statistic": {},
+    "closing_line_value": {
+     "definition": "closing mid for the side (last quote after as_of and at or before min(kickoff, close_time) on the same ticker) minus the executed entry price; clv_executable uses the closing ask for the side minus the quoted entry ask",
+     "n_decisions": 0,
+     "n_with_pre_close_quote": 0,
+     "role": "DIAGNOSTIC_ONLY_NOT_IN_VERDICT"
+    },
+    "config": {
+     "as_of_policy": "earliest",
+     "bootstrap": 2000,
+     "calibration_fit_end": null,
+     "cluster_by": [
+      "game",
+      "player"
+     ],
+     "decision_unit": "one decision per (sport, game_id, player_id, statistic)",
+     "dnp_policy": "void",
+     "edge_bands": [
+      -0.1,
+      -0.05,
+      -0.02,
+      0.0,
+      0.02,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "fees": {
+      "coefficient": "0.07",
+      "contracts_per_order": 1,
+      "formula": "round_up(coefficient x multiplier x C x P x (1-P)) to $0.01, per order, / C",
+      "multiplier": 1.0,
+      "price_policy": "entry at the executable ask for the side (YES ask; NO ask = 1 - YES bid) plus slippage; role only selects the fee coefficient",
+      "role": "taker",
+      "rounding": "cent",
+      "slippage_per_contract": 0.01,
+      "tick": 0.01
+     },
+     "max_quote_age_seconds": 21600,
+     "rule": "max_edge_after_fees(min_edge=0.02)",
+     "seed": 20261010
+    },
+    "decisions_summary": {
+     "n_decisions": 0,
+     "n_games": 0,
+     "n_players": 0
+    },
+    "edge_bands": {
+     "all_executable_candidates_descriptive": [],
+     "decisions": [],
+     "note": "reliability by predicted-edge band; the all-candidates table counts every rung and both sides, which are correlated, so it has no CIs and is not evidence"
+    },
+    "input_flags": {},
+    "market_informed_source": false,
+    "note": "Betting value only, separate from accuracy promotion. Entry quotes are at or before as_of; CLV is diagnostic. Not a recommendation, not a stake, and not wagering authority.",
+    "preregistration": {
+     "sha256": "c5ffc2cdc0e379c2424470350fe25aedc4ed8f96c00fba4a40afb332b77fa17a",
+     "thresholds": {
+      "min_decisions": 200,
+      "min_games": 40,
+      "min_roi_ci_lower": 0.0
+     },
+     "thresholds_source": "preregistration"
+    },
+    "scorecard": "value",
+    "verdict": {
+     "reasons": [
+      "n_decisions 0 < preregistered min_decisions 200",
+      "n_games 0 < preregistered min_games 40"
+     ],
+     "thresholds": {
+      "min_decisions": 200,
+      "min_games": 40,
+      "min_roi_ci_lower": 0.0
+     },
+     "verdict": "INSUFFICIENT_SAMPLE"
+    },
+    "version": "value_scorecard 1.0.0"
+   },
+   "role": "secondary_descriptive",
+   "season_phase": "regular_season",
+   "verdict": "INSUFFICIENT_SAMPLE",
+   "verdict_counts_toward_preregistered_decision": false,
+   "verdict_reasons": [
+    "n_decisions 0 < preregistered min_decisions 200",
+    "n_games 0 < preregistered min_games 40"
+   ]
+  },
+  "challenger/morning/regular_season": {
+   "arm": "challenger",
+   "capture_window": "morning",
+   "dnp_policy": "void",
+   "eligible_for_independent_value_verdict": false,
+   "market_informed_source": false,
+   "n_decisions": 0,
+   "n_games": 0,
+   "report": {
+    "accounting": {
+     "decisions": 0,
+     "decisions_by_settlement": {},
+     "groups_total": 0,
+     "groups_where_rule_declined": 0,
+     "groups_with_candidates": 0,
+     "groups_without_executable_candidate": 0,
+     "outcome_rows": 36,
+     "probability_rungs": 0,
+     "quote_rows": 131,
+     "rungs_at_other_as_of_dropped": 0
+    },
+    "by_market": {},
+    "by_side": {},
+    "by_statistic": {},
+    "closing_line_value": {
+     "definition": "closing mid for the side (last quote after as_of and at or before min(kickoff, close_time) on the same ticker) minus the executed entry price; clv_executable uses the closing ask for the side minus the quoted entry ask",
+     "n_decisions": 0,
+     "n_with_pre_close_quote": 0,
+     "role": "DIAGNOSTIC_ONLY_NOT_IN_VERDICT"
+    },
+    "config": {
+     "as_of_policy": "earliest",
+     "bootstrap": 2000,
+     "calibration_fit_end": null,
+     "cluster_by": [
+      "game",
+      "player"
+     ],
+     "decision_unit": "one decision per (sport, game_id, player_id, statistic)",
+     "dnp_policy": "void",
+     "edge_bands": [
+      -0.1,
+      -0.05,
+      -0.02,
+      0.0,
+      0.02,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "fees": {
+      "coefficient": "0.07",
+      "contracts_per_order": 1,
+      "formula": "round_up(coefficient x multiplier x C x P x (1-P)) to $0.01, per order, / C",
+      "multiplier": 1.0,
+      "price_policy": "entry at the executable ask for the side (YES ask; NO ask = 1 - YES bid) plus slippage; role only selects the fee coefficient",
+      "role": "taker",
+      "rounding": "cent",
+      "slippage_per_contract": 0.01,
+      "tick": 0.01
+     },
+     "max_quote_age_seconds": 21600,
+     "rule": "max_edge_after_fees(min_edge=0.02)",
+     "seed": 20261010
+    },
+    "decisions_summary": {
+     "n_decisions": 0,
+     "n_games": 0,
+     "n_players": 0
+    },
+    "edge_bands": {
+     "all_executable_candidates_descriptive": [],
+     "decisions": [],
+     "note": "reliability by predicted-edge band; the all-candidates table counts every rung and both sides, which are correlated, so it has no CIs and is not evidence"
+    },
+    "input_flags": {},
+    "market_informed_source": false,
+    "note": "Betting value only, separate from accuracy promotion. Entry quotes are at or before as_of; CLV is diagnostic. Not a recommendation, not a stake, and not wagering authority.",
+    "preregistration": {
+     "sha256": "c5ffc2cdc0e379c2424470350fe25aedc4ed8f96c00fba4a40afb332b77fa17a",
+     "thresholds": {
+      "min_decisions": 200,
+      "min_games": 40,
+      "min_roi_ci_lower": 0.0
+     },
+     "thresholds_source": "preregistration"
+    },
+    "scorecard": "value",
+    "verdict": {
+     "reasons": [
+      "n_decisions 0 < preregistered min_decisions 200",
+      "n_games 0 < preregistered min_games 40"
+     ],
+     "thresholds": {
+      "min_decisions": 200,
+      "min_games": 40,
+      "min_roi_ci_lower": 0.0
+     },
+     "verdict": "INSUFFICIENT_SAMPLE"
+    },
+    "version": "value_scorecard 1.0.0"
+   },
+   "role": "secondary_descriptive",
+   "season_phase": "regular_season",
+   "verdict": "INSUFFICIENT_SAMPLE",
+   "verdict_counts_toward_preregistered_decision": false,
+   "verdict_reasons": [
+    "n_decisions 0 < preregistered min_decisions 200",
+    "n_games 0 < preregistered min_games 40"
+   ]
+  },
+  "challenger/pregame/postseason": {
+   "arm": "challenger",
+   "capture_window": "pregame",
+   "dnp_policy": "void",
+   "eligible_for_independent_value_verdict": false,
+   "market_informed_source": false,
+   "n_decisions": 7,
+   "n_games": 3,
+   "report": {
+    "accounting": {
+     "decisions": 7,
+     "decisions_by_settlement": {
+      "SETTLED": 7
+     },
+     "groups_total": 18,
+     "groups_where_rule_declined": 5,
+     "groups_with_candidates": 12,
+     "groups_without_executable_candidate": 6,
+     "outcome_rows": 36,
+     "probability_rungs": 228,
+     "quote_rows": 131,
+     "rungs_at_other_as_of_dropped": 0,
+     "rungs_considered": 228,
+     "rungs_with_entry_quote": 47,
+     "rungs_without_any_quote": 181
+    },
+    "by_market": {
+     "KXMLBKS": {
+      "hit_rate": 0.0,
+      "mean_executed_price": 0.37,
+      "mean_fee_per_contract": 0.02,
+      "mean_predicted_edge_after_fees": 0.134619,
+      "mean_probability": 0.524619,
+      "mean_return_ci95_game_clustered": null,
+      "mean_return_ci95_player_clustered": [
+       -0.47,
+       -0.3
+      ],
+      "mean_return_per_contract": -0.39,
+      "mean_spread": 0.01,
+      "n_decisions": 3,
+      "n_dnp_settled": 0,
+      "n_games": 2,
+      "n_players": 3,
+      "realized_minus_predicted_per_contract": -0.524619,
+      "roi_after_fees": -1.0,
+      "roi_ci95_game_clustered": null,
+      "roi_ci95_player_clustered": [
+       -1.0,
+       -1.0
+      ],
+      "total_cost_per_contract_units": 1.17,
+      "total_return": -1.17
+     },
+     "KXMLBOUTS": {
+      "hit_rate": 0.5,
+      "mean_executed_price": 0.55,
+      "mean_fee_per_contract": 0.02,
+      "mean_predicted_edge_after_fees": 0.180947,
+      "mean_probability": 0.750946,
+      "mean_return_ci95_game_clustered": [
+       -0.42,
+       0.42
+      ],
+      "mean_return_ci95_player_clustered": [
+       -0.555,
+       0.415
+      ],
+      "mean_return_per_contract": -0.07,
+      "mean_spread": 0.015,
+      "n_decisions": 4,
+      "n_dnp_settled": 0,
+      "n_games": 3,
+      "n_players": 4,
+      "realized_minus_predicted_per_contract": -0.250947,
+      "roi_after_fees": -0.122807,
+      "roi_ci95_game_clustered": [
+       -1.0,
+       0.724138
+      ],
+      "roi_ci95_player_clustered": [
+       -1.0,
+       0.709402
+      ],
+      "total_cost_per_contract_units": 2.28,
+      "total_return": -0.28
+     }
+    },
+    "by_side": {
+     "NO": {
+      "hit_rate": 0.0,
+      "mean_executed_price": 0.525,
+      "mean_fee_per_contract": 0.02,
+      "mean_predicted_edge_after_fees": 0.067904,
+      "mean_probability": 0.612904,
+      "mean_return_ci95_game_clustered": null,
+      "mean_return_ci95_player_clustered": null,
+      "mean_return_per_contract": -0.545,
+      "mean_spread": 0.01,
+      "n_decisions": 2,
+      "n_dnp_settled": 0,
+      "n_games": 1,
+      "n_players": 1,
+      "realized_minus_predicted_per_contract": -0.612903,
+      "roi_after_fees": -1.0,
+      "roi_ci95_game_clustered": null,
+      "roi_ci95_player_clustered": null,
+      "total_cost_per_contract_units": 1.09,
+      "total_return": -1.09
+     },
+     "YES": {
+      "hit_rate": 0.4,
+      "mean_executed_price": 0.452,
+      "mean_fee_per_contract": 0.02,
+      "mean_predicted_edge_after_fees": 0.198367,
+      "mean_probability": 0.670367,
+      "mean_return_ci95_game_clustered": [
+       -0.36,
+       0.42
+      ],
+      "mean_return_ci95_player_clustered": [
+       -0.36,
+       0.42
+      ],
+      "mean_return_per_contract": -0.072,
+      "mean_spread": 0.014,
+      "n_decisions": 5,
+      "n_dnp_settled": 0,
+      "n_games": 3,
+      "n_players": 3,
+      "realized_minus_predicted_per_contract": -0.270367,
+      "roi_after_fees": -0.152542,
+      "roi_ci95_game_clustered": [
+       -1.0,
+       0.724138
+      ],
+      "roi_ci95_player_clustered": [
+       -1.0,
+       0.724138
+      ],
+      "total_cost_per_contract_units": 2.36,
+      "total_return": -0.36
+     }
+    },
+    "by_statistic": {
+     "MLB:pitcher_outs": {
+      "hit_rate": 0.5,
+      "mean_executed_price": 0.55,
+      "mean_fee_per_contract": 0.02,
+      "mean_predicted_edge_after_fees": 0.180947,
+      "mean_probability": 0.750946,
+      "mean_return_ci95_game_clustered": [
+       -0.42,
+       0.42
+      ],
+      "mean_return_ci95_player_clustered": [
+       -0.555,
+       0.415
+      ],
+      "mean_return_per_contract": -0.07,
+      "mean_spread": 0.015,
+      "n_decisions": 4,
+      "n_dnp_settled": 0,
+      "n_games": 3,
+      "n_players": 4,
+      "realized_minus_predicted_per_contract": -0.250947,
+      "roi_after_fees": -0.122807,
+      "roi_ci95_game_clustered": [
+       -1.0,
+       0.724138
+      ],
+      "roi_ci95_player_clustered": [
+       -1.0,
+       0.709402
+      ],
+      "total_cost_per_contract_units": 2.28,
+      "total_return": -0.28
+     },
+     "MLB:pitcher_strikeouts": {
+      "hit_rate": 0.0,
+      "mean_executed_price": 0.37,
+      "mean_fee_per_contract": 0.02,
+      "mean_predicted_edge_after_fees": 0.134619,
+      "mean_probability": 0.524619,
+      "mean_return_ci95_game_clustered": null,
+      "mean_return_ci95_player_clustered": [
+       -0.47,
+       -0.3
+      ],
+      "mean_return_per_contract": -0.39,
+      "mean_spread": 0.01,
+      "n_decisions": 3,
+      "n_dnp_settled": 0,
+      "n_games": 2,
+      "n_players": 3,
+      "realized_minus_predicted_per_contract": -0.524619,
+      "roi_after_fees": -1.0,
+      "roi_ci95_game_clustered": null,
+      "roi_ci95_player_clustered": [
+       -1.0,
+       -1.0
+      ],
+      "total_cost_per_contract_units": 1.17,
+      "total_return": -1.17
+     }
+    },
+    "closing_line_value": {
+     "definition": "closing mid for the side (last quote after as_of and at or before min(kickoff, close_time) on the same ticker) minus the executed entry price; clv_executable uses the closing ask for the side minus the quoted entry ask",
+     "n_decisions": 7,
+     "n_with_pre_close_quote": 0,
+     "role": "DIAGNOSTIC_ONLY_NOT_IN_VERDICT"
+    },
+    "config": {
+     "as_of_policy": "earliest",
+     "bootstrap": 2000,
+     "calibration_fit_end": null,
+     "cluster_by": [
+      "game",
+      "player"
+     ],
+     "decision_unit": "one decision per (sport, game_id, player_id, statistic)",
+     "dnp_policy": "void",
+     "edge_bands": [
+      -0.1,
+      -0.05,
+      -0.02,
+      0.0,
+      0.02,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "fees": {
+      "coefficient": "0.07",
+      "contracts_per_order": 1,
+      "formula": "round_up(coefficient x multiplier x C x P x (1-P)) to $0.01, per order, / C",
+      "multiplier": 1.0,
+      "price_policy": "entry at the executable ask for the side (YES ask; NO ask = 1 - YES bid) plus slippage; role only selects the fee coefficient",
+      "role": "taker",
+      "rounding": "cent",
+      "slippage_per_contract": 0.01,
+      "tick": 0.01
+     },
+     "max_quote_age_seconds": 21600,
+     "rule": "max_edge_after_fees(min_edge=0.02)",
+     "seed": 20261010
+    },
+    "decisions_summary": {
+     "hit_rate": 0.285714,
+     "mean_executed_price": 0.472857,
+     "mean_fee_per_contract": 0.02,
+     "mean_predicted_edge_after_fees": 0.161092,
+     "mean_probability": 0.653949,
+     "mean_return_ci95_game_clustered": [
+      -0.36,
+      0.42
+     ],
+     "mean_return_ci95_player_clustered": [
+      -0.4525,
+      0.12
+     ],
+     "mean_return_per_contract": -0.207143,
+     "mean_spread": 0.012857,
+     "n_decisions": 7,
+     "n_dnp_settled": 0,
+     "n_games": 3,
+     "n_players": 4,
+     "realized_minus_predicted_per_contract": -0.368235,
+     "roi_after_fees": -0.42029,
+     "roi_ci95_game_clustered": [
+      -1.0,
+      0.724138
+     ],
+     "roi_ci95_player_clustered": [
+      -1.0,
+      0.219512
+     ],
+     "total_cost_per_contract_units": 3.45,
+     "total_return": -1.45
+    },
+    "edge_bands": {
+     "all_executable_candidates_descriptive": [
+      {
+       "band": "lt_-0.1",
+       "mean_cost_per_contract": 0.641765,
+       "mean_predicted_edge_after_fees": -0.204562,
+       "mean_predicted_probability": 0.437203,
+       "mean_realized_return_per_contract": 0.122941,
+       "n": 17,
+       "n_games": 3,
+       "observed_win_rate": 0.764706,
+       "roi_after_fees": 0.191567
+      },
+      {
+       "band": "-0.1_to_-0.05",
+       "mean_cost_per_contract": 0.521765,
+       "mean_predicted_edge_after_fees": -0.073599,
+       "mean_predicted_probability": 0.448166,
+       "mean_realized_return_per_contract": -0.051176,
+       "n": 17,
+       "n_games": 3,
+       "observed_win_rate": 0.470588,
+       "roi_after_fees": -0.098083
+      },
+      {
+       "band": "-0.05_to_-0.02",
+       "mean_cost_per_contract": 0.593158,
+       "mean_predicted_edge_after_fees": -0.034777,
+       "mean_predicted_probability": 0.558381,
+       "mean_realized_return_per_contract": -0.014211,
+       "n": 19,
+       "n_games": 3,
+       "observed_win_rate": 0.578947,
+       "roi_after_fees": -0.023957
+      },
+      {
+       "band": "-0.02_to_0",
+       "mean_cost_per_contract": 0.438333,
+       "mean_predicted_edge_after_fees": -0.008659,
+       "mean_predicted_probability": 0.429674,
+       "mean_realized_return_per_contract": 0.061667,
+       "n": 12,
+       "n_games": 3,
+       "observed_win_rate": 0.5,
+       "roi_after_fees": 0.140684
+      },
+      {
+       "band": "0_to_0.02",
+       "mean_cost_per_contract": 0.54,
+       "mean_predicted_edge_after_fees": 0.011322,
+       "mean_predicted_probability": 0.551322,
+       "mean_realized_return_per_contract": -0.123333,
+       "n": 12,
+       "n_games": 3,
+       "observed_win_rate": 0.416667,
+       "roi_after_fees": -0.228395
+      },
+      {
+       "band": "0.02_to_0.05",
+       "mean_cost_per_contract": 0.33,
+       "mean_predicted_edge_after_fees": 0.027468,
+       "mean_predicted_probability": 0.357468,
+       "mean_realized_return_per_contract": -0.33,
+       "n": 2,
+       "n_games": 1,
+       "observed_win_rate": 0.0,
+       "roi_after_fees": -1.0
+      },
+      {
+       "band": "0.05_to_0.1",
+       "mean_cost_per_contract": 0.56,
+       "mean_predicted_edge_after_fees": 0.072463,
+       "mean_predicted_probability": 0.632463,
+       "mean_realized_return_per_contract": 0.19,
+       "n": 4,
+       "n_games": 2,
+       "observed_win_rate": 0.75,
+       "roi_after_fees": 0.339286
+      },
+      {
+       "band": "0.1_to_0.2",
+       "mean_cost_per_contract": 0.378571,
+       "mean_predicted_edge_after_fees": 0.129211,
+       "mean_predicted_probability": 0.507783,
+       "mean_realized_return_per_contract": -0.378571,
+       "n": 7,
+       "n_games": 2,
+       "observed_win_rate": 0.0,
+       "roi_after_fees": -1.0
+      },
+      {
+       "band": "ge_0.2",
+       "mean_cost_per_contract": 0.45,
+       "mean_predicted_edge_after_fees": 0.242071,
+       "mean_predicted_probability": 0.692071,
+       "mean_realized_return_per_contract": -0.2,
+       "n": 4,
+       "n_games": 2,
+       "observed_win_rate": 0.25,
+       "roi_after_fees": -0.444444
+      }
+     ],
+     "decisions": [
+      {
+       "band": "0.02_to_0.05",
+       "mean_cost_per_contract": 0.4,
+       "mean_predicted_edge_after_fees": 0.031261,
+       "mean_predicted_probability": 0.431261,
+       "mean_realized_return_per_contract": -0.4,
+       "n": 1,
+       "n_games": 1,
+       "observed_win_rate": 0.0,
+       "roi_after_fees": -1.0
+      },
+      {
+       "band": "0.05_to_0.1",
+       "mean_cost_per_contract": 0.58,
+       "mean_predicted_edge_after_fees": 0.071492,
+       "mean_predicted_probability": 0.651492,
+       "mean_realized_return_per_contract": 0.42,
+       "n": 1,
+       "n_games": 1,
+       "observed_win_rate": 1.0,
+       "roi_after_fees": 0.724138
+      },
+      {
+       "band": "0.1_to_0.2",
+       "mean_cost_per_contract": 0.58,
+       "mean_predicted_edge_after_fees": 0.131626,
+       "mean_predicted_probability": 0.711626,
+       "mean_realized_return_per_contract": -0.58,
+       "n": 2,
+       "n_games": 1,
+       "observed_win_rate": 0.0,
+       "roi_after_fees": -1.0
+      },
+      {
+       "band": "ge_0.2",
+       "mean_cost_per_contract": 0.436667,
+       "mean_predicted_edge_after_fees": 0.253879,
+       "mean_predicted_probability": 0.690545,
+       "mean_realized_return_per_contract": -0.103333,
+       "n": 3,
+       "n_games": 2,
+       "observed_win_rate": 0.333333,
+       "roi_after_fees": -0.236641
+      }
+     ],
+     "note": "reliability by predicted-edge band; the all-candidates table counts every rung and both sides, which are correlated, so it has no CIs and is not evidence"
+    },
+    "input_flags": {},
+    "market_informed_source": false,
+    "note": "Betting value only, separate from accuracy promotion. Entry quotes are at or before as_of; CLV is diagnostic. Not a recommendation, not a stake, and not wagering authority.",
+    "preregistration": {
+     "sha256": "c5ffc2cdc0e379c2424470350fe25aedc4ed8f96c00fba4a40afb332b77fa17a",
+     "thresholds": {
+      "min_decisions": 200,
+      "min_games": 40,
+      "min_roi_ci_lower": 0.0
+     },
+     "thresholds_source": "preregistration"
+    },
+    "scorecard": "value",
+    "verdict": {
+     "reasons": [
+      "n_decisions 7 < preregistered min_decisions 200",
+      "n_games 3 < preregistered min_games 40"
+     ],
+     "thresholds": {
+      "min_decisions": 200,
+      "min_games": 40,
+      "min_roi_ci_lower": 0.0
+     },
+     "verdict": "INSUFFICIENT_SAMPLE"
+    },
+    "version": "value_scorecard 1.0.0"
+   },
+   "role": "secondary_descriptive",
+   "season_phase": "postseason",
+   "validation_status": "BLOCKED_NOT_VALIDATED_POSTSEASON",
+   "verdict": "INSUFFICIENT_SAMPLE",
+   "verdict_counts_toward_preregistered_decision": false,
+   "verdict_reasons": [
+    "n_decisions 7 < preregistered min_decisions 200",
+    "n_games 3 < preregistered min_games 40"
+   ]
+  },
+  "challenger/pregame/regular_season": {
+   "arm": "challenger",
+   "capture_window": "pregame",
+   "dnp_policy": "void",
+   "eligible_for_independent_value_verdict": true,
+   "market_informed_source": false,
+   "n_decisions": 0,
+   "n_games": 0,
+   "report": {
+    "accounting": {
+     "decisions": 0,
+     "decisions_by_settlement": {},
+     "groups_total": 0,
+     "groups_where_rule_declined": 0,
+     "groups_with_candidates": 0,
+     "groups_without_executable_candidate": 0,
+     "outcome_rows": 36,
+     "probability_rungs": 0,
+     "quote_rows": 131,
+     "rungs_at_other_as_of_dropped": 0
+    },
+    "by_market": {},
+    "by_side": {},
+    "by_statistic": {},
+    "closing_line_value": {
+     "definition": "closing mid for the side (last quote after as_of and at or before min(kickoff, close_time) on the same ticker) minus the executed entry price; clv_executable uses the closing ask for the side minus the quoted entry ask",
+     "n_decisions": 0,
+     "n_with_pre_close_quote": 0,
+     "role": "DIAGNOSTIC_ONLY_NOT_IN_VERDICT"
+    },
+    "config": {
+     "as_of_policy": "earliest",
+     "bootstrap": 2000,
+     "calibration_fit_end": null,
+     "cluster_by": [
+      "game",
+      "player"
+     ],
+     "decision_unit": "one decision per (sport, game_id, player_id, statistic)",
+     "dnp_policy": "void",
+     "edge_bands": [
+      -0.1,
+      -0.05,
+      -0.02,
+      0.0,
+      0.02,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "fees": {
+      "coefficient": "0.07",
+      "contracts_per_order": 1,
+      "formula": "round_up(coefficient x multiplier x C x P x (1-P)) to $0.01, per order, / C",
+      "multiplier": 1.0,
+      "price_policy": "entry at the executable ask for the side (YES ask; NO ask = 1 - YES bid) plus slippage; role only selects the fee coefficient",
+      "role": "taker",
+      "rounding": "cent",
+      "slippage_per_contract": 0.01,
+      "tick": 0.01
+     },
+     "max_quote_age_seconds": 21600,
+     "rule": "max_edge_after_fees(min_edge=0.02)",
+     "seed": 20261010
+    },
+    "decisions_summary": {
+     "n_decisions": 0,
+     "n_games": 0,
+     "n_players": 0
+    },
+    "edge_bands": {
+     "all_executable_candidates_descriptive": [],
+     "decisions": [],
+     "note": "reliability by predicted-edge band; the all-candidates table counts every rung and both sides, which are correlated, so it has no CIs and is not evidence"
+    },
+    "input_flags": {},
+    "market_informed_source": false,
+    "note": "Betting value only, separate from accuracy promotion. Entry quotes are at or before as_of; CLV is diagnostic. Not a recommendation, not a stake, and not wagering authority.",
+    "preregistration": {
+     "sha256": "c5ffc2cdc0e379c2424470350fe25aedc4ed8f96c00fba4a40afb332b77fa17a",
+     "thresholds": {
+      "min_decisions": 200,
+      "min_games": 40,
+      "min_roi_ci_lower": 0.0
+     },
+     "thresholds_source": "preregistration"
+    },
+    "scorecard": "value",
+    "verdict": {
+     "reasons": [
+      "n_decisions 0 < preregistered min_decisions 200",
+      "n_games 0 < preregistered min_games 40"
+     ],
+     "thresholds": {
+      "min_decisions": 200,
+      "min_games": 40,
+      "min_roi_ci_lower": 0.0
+     },
+     "verdict": "INSUFFICIENT_SAMPLE"
+    },
+    "version": "value_scorecard 1.0.0"
+   },
+   "role": "primary",
+   "season_phase": "regular_season",
+   "verdict": "INSUFFICIENT_SAMPLE",
+   "verdict_counts_toward_preregistered_decision": true,
+   "verdict_reasons": [
+    "n_decisions 0 < preregistered min_decisions 200",
+    "n_games 0 < preregistered min_games 40"
+   ]
+  },
+  "challenger/pregame/regular_season/dnp_settle_by_actual": {
+   "arm": "challenger",
+   "capture_window": "pregame",
+   "dnp_policy": "settle_by_actual",
+   "eligible_for_independent_value_verdict": false,
+   "market_informed_source": false,
+   "n_decisions": 0,
+   "n_games": 0,
+   "report": {
+    "accounting": {
+     "decisions": 0,
+     "decisions_by_settlement": {},
+     "groups_total": 0,
+     "groups_where_rule_declined": 0,
+     "groups_with_candidates": 0,
+     "groups_without_executable_candidate": 0,
+     "outcome_rows": 36,
+     "probability_rungs": 0,
+     "quote_rows": 131,
+     "rungs_at_other_as_of_dropped": 0
+    },
+    "by_market": {},
+    "by_side": {},
+    "by_statistic": {},
+    "closing_line_value": {
+     "definition": "closing mid for the side (last quote after as_of and at or before min(kickoff, close_time) on the same ticker) minus the executed entry price; clv_executable uses the closing ask for the side minus the quoted entry ask",
+     "n_decisions": 0,
+     "n_with_pre_close_quote": 0,
+     "role": "DIAGNOSTIC_ONLY_NOT_IN_VERDICT"
+    },
+    "config": {
+     "as_of_policy": "earliest",
+     "bootstrap": 2000,
+     "calibration_fit_end": null,
+     "cluster_by": [
+      "game",
+      "player"
+     ],
+     "decision_unit": "one decision per (sport, game_id, player_id, statistic)",
+     "dnp_policy": "settle_by_actual",
+     "edge_bands": [
+      -0.1,
+      -0.05,
+      -0.02,
+      0.0,
+      0.02,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "fees": {
+      "coefficient": "0.07",
+      "contracts_per_order": 1,
+      "formula": "round_up(coefficient x multiplier x C x P x (1-P)) to $0.01, per order, / C",
+      "multiplier": 1.0,
+      "price_policy": "entry at the executable ask for the side (YES ask; NO ask = 1 - YES bid) plus slippage; role only selects the fee coefficient",
+      "role": "taker",
+      "rounding": "cent",
+      "slippage_per_contract": 0.01,
+      "tick": 0.01
+     },
+     "max_quote_age_seconds": 21600,
+     "rule": "max_edge_after_fees(min_edge=0.02)",
+     "seed": 20261010
+    },
+    "decisions_summary": {
+     "n_decisions": 0,
+     "n_games": 0,
+     "n_players": 0
+    },
+    "edge_bands": {
+     "all_executable_candidates_descriptive": [],
+     "decisions": [],
+     "note": "reliability by predicted-edge band; the all-candidates table counts every rung and both sides, which are correlated, so it has no CIs and is not evidence"
+    },
+    "input_flags": {},
+    "market_informed_source": false,
+    "note": "Betting value only, separate from accuracy promotion. Entry quotes are at or before as_of; CLV is diagnostic. Not a recommendation, not a stake, and not wagering authority.",
+    "preregistration": {
+     "sha256": "c5ffc2cdc0e379c2424470350fe25aedc4ed8f96c00fba4a40afb332b77fa17a",
+     "thresholds": {
+      "min_decisions": 200,
+      "min_games": 40,
+      "min_roi_ci_lower": 0.0
+     },
+     "thresholds_source": "preregistration"
+    },
+    "scorecard": "value",
+    "verdict": {
+     "reasons": [
+      "n_decisions 0 < preregistered min_decisions 200",
+      "n_games 0 < preregistered min_games 40"
+     ],
+     "thresholds": {
+      "min_decisions": 200,
+      "min_games": 40,
+      "min_roi_ci_lower": 0.0
+     },
+     "verdict": "INSUFFICIENT_SAMPLE"
+    },
+    "version": "value_scorecard 1.0.0"
+   },
+   "role": "dnp_sensitivity",
+   "season_phase": "regular_season",
+   "verdict": "INSUFFICIENT_SAMPLE",
+   "verdict_counts_toward_preregistered_decision": false,
+   "verdict_reasons": [
+    "n_decisions 0 < preregistered min_decisions 200",
+    "n_games 0 < preregistered min_games 40"
+   ]
+  },
+  "champion/pregame/regular_season": {
+   "arm": "champion",
+   "capture_window": "pregame",
+   "dnp_policy": "void",
+   "eligible_for_independent_value_verdict": false,
+   "market_informed_source": false,
+   "n_decisions": 0,
+   "n_games": 0,
+   "report": {
+    "accounting": {
+     "decisions": 0,
+     "decisions_by_settlement": {},
+     "groups_total": 0,
+     "groups_where_rule_declined": 0,
+     "groups_with_candidates": 0,
+     "groups_without_executable_candidate": 0,
+     "outcome_rows": 36,
+     "probability_rungs": 0,
+     "quote_rows": 131,
+     "rungs_at_other_as_of_dropped": 0
+    },
+    "by_market": {},
+    "by_side": {},
+    "by_statistic": {},
+    "closing_line_value": {
+     "definition": "closing mid for the side (last quote after as_of and at or before min(kickoff, close_time) on the same ticker) minus the executed entry price; clv_executable uses the closing ask for the side minus the quoted entry ask",
+     "n_decisions": 0,
+     "n_with_pre_close_quote": 0,
+     "role": "DIAGNOSTIC_ONLY_NOT_IN_VERDICT"
+    },
+    "config": {
+     "as_of_policy": "earliest",
+     "bootstrap": 2000,
+     "calibration_fit_end": null,
+     "cluster_by": [
+      "game",
+      "player"
+     ],
+     "decision_unit": "one decision per (sport, game_id, player_id, statistic)",
+     "dnp_policy": "void",
+     "edge_bands": [
+      -0.1,
+      -0.05,
+      -0.02,
+      0.0,
+      0.02,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "fees": {
+      "coefficient": "0.07",
+      "contracts_per_order": 1,
+      "formula": "round_up(coefficient x multiplier x C x P x (1-P)) to $0.01, per order, / C",
+      "multiplier": 1.0,
+      "price_policy": "entry at the executable ask for the side (YES ask; NO ask = 1 - YES bid) plus slippage; role only selects the fee coefficient",
+      "role": "taker",
+      "rounding": "cent",
+      "slippage_per_contract": 0.01,
+      "tick": 0.01
+     },
+     "max_quote_age_seconds": 21600,
+     "rule": "max_edge_after_fees(min_edge=0.02)",
+     "seed": 20261010
+    },
+    "decisions_summary": {
+     "n_decisions": 0,
+     "n_games": 0,
+     "n_players": 0
+    },
+    "edge_bands": {
+     "all_executable_candidates_descriptive": [],
+     "decisions": [],
+     "note": "reliability by predicted-edge band; the all-candidates table counts every rung and both sides, which are correlated, so it has no CIs and is not evidence"
+    },
+    "input_flags": {},
+    "market_informed_source": false,
+    "note": "Betting value only, separate from accuracy promotion. Entry quotes are at or before as_of; CLV is diagnostic. Not a recommendation, not a stake, and not wagering authority.",
+    "preregistration": {
+     "sha256": "c5ffc2cdc0e379c2424470350fe25aedc4ed8f96c00fba4a40afb332b77fa17a",
+     "thresholds": {
+      "min_decisions": 200,
+      "min_games": 40,
+      "min_roi_ci_lower": 0.0
+     },
+     "thresholds_source": "preregistration"
+    },
+    "scorecard": "value",
+    "verdict": {
+     "reasons": [
+      "n_decisions 0 < preregistered min_decisions 200",
+      "n_games 0 < preregistered min_games 40"
+     ],
+     "thresholds": {
+      "min_decisions": 200,
+      "min_games": 40,
+      "min_roi_ci_lower": 0.0
+     },
+     "verdict": "INSUFFICIENT_SAMPLE"
+    },
+    "version": "value_scorecard 1.0.0"
+   },
+   "role": "secondary_descriptive",
+   "season_phase": "regular_season",
+   "verdict": "INSUFFICIENT_SAMPLE",
+   "verdict_counts_toward_preregistered_decision": false,
+   "verdict_reasons": [
+    "n_decisions 0 < preregistered min_decisions 200",
+    "n_games 0 < preregistered min_games 40"
+   ]
+  }
+ },
+ "mode": "DRY_RUN_DIAGNOSTIC",
+ "note": "Betting value only, separate from accuracy promotion. Only the preregistered PURE arm, window and season phase are eligible for an independent-value verdict.",
+ "preregistration": {
+  "file_sha256": "4ca20631d69624d59f2b42e0a60d47ced77e7857526b8099baf92965475a1fe1",
+  "id": "mlb_pitcher_pure_shadow_value_v1",
+  "path": "docs/research/PITCHER_SHADOW_VALUE_PREREG.json"
+ },
+ "primary": {
+  "arm": "challenger",
+  "capture_window": "pregame",
+  "n_decisions": 0,
+  "n_games": 0,
+  "season_phase": "regular_season",
+  "verdict": "INSUFFICIENT_SAMPLE",
+  "verdict_reasons": [
+   "n_decisions 0 < preregistered min_decisions 200",
+   "n_games 0 < preregistered min_games 40"
+  ]
+ },
+ "quote_mapping": {
+  "cohort_rows": 166,
+  "dropped_unmatched_player": 7,
+  "listing_rows": 173,
+  "quote_duplicate_across_snapshots": 35,
+  "quote_rows": 131
+ },
+ "record": "value_scorecard",
+ "record_version": 1,
+ "run_id": "mlb_pitcher_shadow_eval_20261018T163432Z",
+ "sport": "MLB",
+ "wagering": "diagnostic only: no order is placed or sized, no stake, no routing, no production surface; the verdict is a statement about a recorded evaluation window, not wagering authority"
+}

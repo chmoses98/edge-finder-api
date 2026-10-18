@@ -1,0 +1,172 @@
+{
+ "dry_run": false,
+ "line": "MLB-PF SUMMARY: stages ['capture', 'results', 'settle', 'project', 'publish', 'score', 'guard']; archived 142; settled 0",
+ "now": "2026-10-18T18:15:42Z",
+ "sport": "MLB",
+ "stages": {
+  "capture": {
+   "duplicate": false,
+   "errors": [],
+   "games_pregame": 2,
+   "games_seen": 3,
+   "lineup_posted_share": 0.5,
+   "lineups_posted": 2,
+   "minutes_to_next_start": 172.3,
+   "not_starting_emitted": 0,
+   "observations": 20,
+   "probable_share": 0.5,
+   "probables_listed": 2,
+   "rejected": 0,
+   "seconds": 0.4,
+   "snapshot": "/home/runner/work/_temp/archive/availability/mlb/2026-10-18/181542Z_f710b525fffd.jsonl.gz",
+   "stage": "capture",
+   "team_sides": 4,
+   "written": 20
+  },
+  "guard": {
+   "ok": true,
+   "seconds": 0.0,
+   "stage": "guard"
+  },
+  "project": {
+   "archived": {
+    "duplicates": 6,
+    "invalid": 0,
+    "late_rejected": 0,
+    "written": 142
+   },
+   "by_family": {
+    "challenger:batters_faced": 2,
+    "challenger:game_total": 1,
+    "challenger:hits": 18,
+    "challenger:hits_runs_rbis": 18,
+    "challenger:home_runs": 18,
+    "challenger:outs": 2,
+    "challenger:pitcher_strikeouts": 2,
+    "challenger:plate_appearances": 18,
+    "challenger:rbis": 18,
+    "challenger:runs": 18,
+    "challenger:total_bases": 18,
+    "incumbent:batters_faced": 4,
+    "incumbent:game_total": 1,
+    "incumbent:outs": 4,
+    "incumbent:pitcher_strikeouts": 4,
+    "incumbent:team_runs": 2
+   },
+   "challenger_gate": {
+    "PASS": 135
+   },
+   "challenger_participation": {
+    "CONFIRMED_ACTIVE": 132
+   },
+   "challenger_records": 135,
+   "challenger_unchanged_skipped": 2,
+   "coverage": {
+    "events": 1,
+    "hitter_games_with_posted_lineup": 1,
+    "hitters": 1.0,
+    "per_event_pitchers": {
+     "849817": {
+      "coverage": 1.0,
+      "expected": 2,
+      "newest_age_minutes": 0.1,
+      "newest_capture_utc": "2026-10-18T18:15:42Z",
+      "observed": 2,
+      "sources": [
+       "mlb_statsapi_schedule_lineups",
+       "mlb_statsapi_schedule_probable_pitcher"
+      ]
+     }
+    },
+    "pitchers": 1.0
+   },
+   "gate_findings_all_published_rows": {},
+   "history": {
+    "archived_box_games_used": 8,
+    "completeness_verified_this_run": true,
+    "inputs_through": {
+     "hitters": "2026-10-18T15:15:45Z",
+     "pitchers": "2026-10-18T15:15:45Z",
+     "teams": "2026-10-18T15:15:45Z"
+    }
+   },
+   "hitters_assumed_not_archived": 0,
+   "horizon_hours": 20.0,
+   "incumbent_records": 15,
+   "incumbent_sources": {
+    "hitters": {
+     "not_pregame": 0,
+     "rows_seen": 0,
+     "usable": 0
+    },
+    "pitchers": {
+     "after_start_or_stale": 0,
+     "rows_seen": 12,
+     "usable": 12
+    },
+    "team_runs": {
+     "files": 1,
+     "games_seen": 1,
+     "not_pregame": 0,
+     "usable": 1
+    }
+   },
+   "published_players": 138,
+   "seconds": 44.1,
+   "skipped_games": [],
+   "stage": "project",
+   "target_games": 1
+  },
+  "publish": {
+   "changed": true,
+   "games": 1,
+   "players": 138,
+   "seconds": 0.0,
+   "stage": "publish"
+  },
+  "results": {
+   "errors": [],
+   "final": 0,
+   "games_checked": 0,
+   "history_games_written": 0,
+   "not_played": 0,
+   "pending": 0,
+   "rows_written": 0,
+   "seconds": 2.9,
+   "stage": "results"
+  },
+  "score": {
+   "seconds": 0.0,
+   "stage": "score",
+   "windows": {
+    "daily": {
+     "alerts": [],
+     "corrections": 0,
+     "settled": 0,
+     "void": 0
+    },
+    "season": {
+     "alerts": [],
+     "corrections": 0,
+     "settled": 0,
+     "void": 0
+    },
+    "weekly": {
+     "alerts": [],
+     "corrections": 0,
+     "settled": 0,
+     "void": 0
+    }
+   }
+  },
+  "settle": {
+   "already_settled": 0,
+   "corrections": 0,
+   "pending": 15,
+   "seconds": 0.0,
+   "settled": 0,
+   "stage": "settle",
+   "void": 0
+  }
+ }
+}

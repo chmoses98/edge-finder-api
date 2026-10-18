@@ -1,0 +1,202 @@
+name: Research - MLB Projection Foundation (live shadow)
+
+# SIFT Projection Foundation, MLB, LIVE prospective validation. RESEARCH ONLY: authority is always research_only; nothing
+# here changes a production model, pricer, ledger or betting file.
+#
+# One entry point, `python -m mlb.live.run` (research/projection_foundation), runs idempotent stages (all = capture, results,
+# settle, project, publish, score, guard; results/settle come first so the projection sees every game that just finished):
+#   capture  MLB schedule -> probable pitchers + posted lineups -> immutable availability snapshot (certainty per observation)
+#   project  frozen models for games starting in the next 20 h, using ONLY archived as-of availability; archives pregame
+#            forecasts (challenger) and the incumbents' current pregame forecasts (never anything for a started game)
+#   publish  projections/mlb/latest.json (+ timestamped copy when content changed), summary/mlb/latest.json
+#   results  FINAL box scores -> outcomes (+ box-score history that keeps the model inputs current)
+#   settle   settle-once; a changed official stat becomes a correction record
+#   score    daily / weekly / season scorecards + segment checks -> $GITHUB_STEP_SUMMARY
+#   guard    pf_core.archive_guard: the archive may only gain files in its immutable directories
+#
+# Where the data goes: the ORPHAN branch `projection-data` (created on the first live run if missing). Only this workflow
+# writes it. Nothing is committed after a failed stage; the next run redoes the idempotent stages.
+#
+# Triggers
+#   schedule  (UTC, March-November; a cheap `gate` job skips everything when the MLB schedule has no game in the window, so the
+#             off-season costs seconds and ends in a green no-op)
+#             15:27 matinees (~11:30 ET) | 19:07 (~15:00 ET) | 22:07 (~18:00 ET) | 00:37 (~20:35 ET, ~90 min before the
+#             10:10 pm ET starts) | 08:37 nightly settle (~04:30 ET: finals, box-score history, settlement, scorecards)
+#   workflow_dispatch  input dry_run (true = run everything against a temporary copy of the archive, push nothing)
+#   pull_request  on this workflow and research/projection_foundation/**: the FULL chain with --dry-run (live fetches, real
+#             projections, gate, archive into a temp copy, settle/score on the existing archive if present). Read-only token,
+#             no push.
+
+on:
+  schedule:
+    - cron: '27 15 * 3-11 *'
+    - cron: '7 19 * 3-11 *'
+    - cron: '7 22 * 3-11 *'
+    - cron: '37 0 * 3-11 *'
+    - cron: '37 8 * 3-11 *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'true = temporary copy of the archive, nothing pushed'
+        required: false
+        default: 'false'
+      stage:
+        description: 'Stages (comma list or all)'
+        required: false
+        default: 'all'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'research/projection_foundation/**'
+      - '.github/workflows/projection-foundation.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  # live runs write one branch, so they queue (never cancel); PR dry-runs are per PR and cancel their own predecessors
+  group: projection-foundation-mlb-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'live' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PF_DIR: research/projection_foundation
+  REQS: research/projection_foundation/requirements-pf.txt
+
+jobs:
+  gate:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      work: ${{ steps.gate.outputs.work }}
+    steps:
+      - name: Checkout (sparse; stdlib gate only)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          sparse-checkout: |
+            research/projection_foundation/mlb
+            research/projection_foundation/pf_core
+      - name: Is there an MLB game to work on?
+        id: gate
+        working-directory: research/projection_foundation
+        run: python3 -m mlb.live.gate --github-output "$GITHUB_OUTPUT"
+
+  live:
+    needs: gate
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && (github.event_name != 'schedule' || needs.gate.result != 'success' || needs.gate.outputs.work == 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && 'true' || 'false' }}
+      # the nightly run settles and scores (and captures tomorrow's probables); the pregame runs do the whole chain
+      STAGE: ${{ github.event.inputs.stage || (github.event.schedule == '37 8 * 3-11 *' && 'capture,results,settle,score,guard' || 'all') }}
+    steps:
+      - name: Checkout (sparse, blobless; only the inputs the projection reads)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            research/projection_foundation
+            scripts/ci
+            data/research/hitter_w2/mlb_feed
+            data/research_cache/starter_workload
+            data/research_cache/batting_backtest
+            data/research_cache/bullpen_backtest
+            data/pipeline
+            data/edgelab/hitter_projection_snapshots
+            data/shadow_pure/mlb_pitcher
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: research/projection_foundation/requirements-pf.txt
+      - name: Install dependencies
+        run: python -m pip install --quiet -r "$REQS"
+      - name: Contract tests (fast)
+        working-directory: ${{ env.PF_DIR }}
+        run: python -m pytest -q tests/test_mlb_live.py tests/test_mlb_pf.py tests/test_pf_core.py tests/test_pf_live.py
+      - name: Check out the projection-data branch (creates the orphan on the first run)
+        run: bash "$PF_DIR/ci/setup_archive.sh" "$RUNNER_TEMP/archive" "${{ env.DRY_RUN == 'true' && 'false' || 'true' }}"
+      - name: Run the stages (capture, results, settle, project, publish, score, guard)
+        working-directory: ${{ env.PF_DIR }}
+        run: |
+          set -euo pipefail
+          EXTRA=""
+          if [ "$DRY_RUN" = "true" ]; then EXTRA="--dry-run"; fi
+          python -m mlb.live.run --stage "$STAGE" --archive "$RUNNER_TEMP/archive" --repo "$GITHUB_WORKSPACE" \
+            --summary-out "$RUNNER_TEMP/run_summary.json" $EXTRA
+      - name: Commit the archive additions (only if something changed; never after a failed stage)
+        if: ${{ success() && env.DRY_RUN != 'true' }}
+        run: |
+          set -euo pipefail
+          python3 scripts/ci/git_data_commit.py --branch projection-data --cwd "$RUNNER_TEMP/archive" \
+            --message "mlb projection-foundation $(date -u +'%Y-%m-%dT%H:%M:%SZ') run ${GITHUB_RUN_ID}" \
+            availability forecasts outcomes settlements corrections scorecards projections summary runs boxscores
+      - name: Archive guard after the push (additions only)
+        if: ${{ success() && env.DRY_RUN != 'true' }}
+        working-directory: ${{ env.PF_DIR }}
+        run: python -m pf_core.archive_guard "$RUNNER_TEMP/archive"
+      - name: Upload run summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: projection-foundation-mlb-live
+          path: ${{ runner.temp }}/run_summary.json
+          if-no-files-found: ignore
+
+  dry-run:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout the PR merge ref (sparse, blobless)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            research/projection_foundation
+            scripts/ci
+            data/research/hitter_w2/mlb_feed
+            data/research_cache/starter_workload
+            data/research_cache/batting_backtest
+            data/research_cache/bullpen_backtest
+            data/pipeline
+            data/edgelab/hitter_projection_snapshots
+            data/shadow_pure/mlb_pitcher
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: research/projection_foundation/requirements-pf.txt
+      - name: Install dependencies
+        run: python -m pip install --quiet -r "$REQS"
+      - name: Contract tests (fast)
+        working-directory: ${{ env.PF_DIR }}
+        run: python -m pytest -q tests/test_mlb_live.py tests/test_mlb_pf.py tests/test_pf_core.py tests/test_pf_live.py
+      - name: Read the projection-data branch (local temp repo when it does not exist yet)
+        run: bash "$PF_DIR/ci/setup_archive.sh" "$RUNNER_TEMP/archive" false
+      - name: Full chain with --dry-run (live fetches, real projections, archive into a temp copy)
+        working-directory: ${{ env.PF_DIR }}
+        run: |
+          set -euo pipefail
+          python -m mlb.live.run --stage all --dry-run --archive "$RUNNER_TEMP/archive" --repo "$GITHUB_WORKSPACE" \
+            --summary-out "$RUNNER_TEMP/run_summary.json"
+      - name: Upload run summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: projection-foundation-mlb-dryrun
+          path: ${{ runner.temp }}/run_summary.json
+          if-no-files-found: ignore

@@ -1,0 +1,95 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:38:22Z",
+  "data_provenance": [
+    "data/research/hitter_w2/mlb_feed (batting, pa)",
+    "pitcher frame (opposing starter)"
+  ],
+  "distribution": {
+    "cover_50": 0.502495078514856,
+    "cover_80": 0.8001419218971753,
+    "cover_90": 0.899807718719956,
+    "crps": 0.3476428490500939,
+    "dist": "empirical_resid",
+    "log_score": 0.8943258343417143,
+    "pit_deciles": [
+      0.0997,
+      0.096,
+      0.1006,
+      0.1009,
+      0.1008,
+      0.1009,
+      0.0983,
+      0.1013,
+      0.1014,
+      0.1002
+    ],
+    "pit_var_ratio": 0.9963101134058263,
+    "thresholds": {
+      "1": {
+        "brier": 0.20558133625556854,
+        "hit_rate": 0.29407590532436023,
+        "log_loss": 0.6008474698095354,
+        "mean_p": 0.29259908980658345
+      },
+      "2": {
+        "brier": 0.09354439946055447,
+        "hit_rate": 0.10527400082406263,
+        "log_loss": 0.3330312963962079,
+        "mean_p": 0.10569480676971281
+      },
+      "3": {
+        "brier": 0.03415458348712767,
+        "hit_rate": 0.03554914617955409,
+        "log_loss": 0.15160776229713113,
+        "mean_p": 0.03525900974424862
+      }
+    }
+  },
+  "eval_period": "2026 RS",
+  "experiment_id": "MLB-PF-rbis-F-holdout",
+  "family": "rbis",
+  "features": [
+    "see mlb/hitters.py E_FEATURES / COVARS"
+  ],
+  "fingerprint": "882a7543a3b6291c",
+  "hyperparameters": {
+    "RBI_B": 0.0,
+    "RBI_D": 0.6852467067460422,
+    "RBI_E": 0.31475329325395796
+  },
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Batting order is the post-game official lineup (retrospective; pregame lineups archived only for 527 games)."
+  ],
+  "model": "F",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2427,
+  "n_independent": 43686,
+  "n_obs": 43686,
+  "point": {
+    "bias": -0.0018626083659576294,
+    "corr": 0.10455865378107429,
+    "mae": 0.6256204656608717,
+    "mean_actual": 0.44938882021700316,
+    "mean_pred": 0.44752621185104546,
+    "rmse": 0.83174696063131
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model F for rbis?",
+  "split": "holdout",
+  "sport": "MLB",
+  "train_period": "2024 (fit from 2024-05-01)",
+  "verdict": "frozen winner",
+  "vs_baseline": {
+    "ci95": [
+      -0.0017501537320552903,
+      -0.0009248833503455564
+    ],
+    "mean_diff": -0.0013410021684757162,
+    "n_clusters": 2427,
+    "n_obs": 43686
+  },
+  "vs_incumbent": {}
+}

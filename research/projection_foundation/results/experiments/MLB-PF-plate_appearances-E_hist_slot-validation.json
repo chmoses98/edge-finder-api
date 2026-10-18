@@ -1,0 +1,85 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:38:22Z",
+  "data_provenance": [
+    "data/research/hitter_w2/mlb_feed (batting, pa)",
+    "pitcher frame (opposing starter)"
+  ],
+  "distribution": {
+    "cover_50": 0.49335898140514794,
+    "cover_80": 0.7990061372171842,
+    "cover_90": 0.8994458184482916,
+    "crps": 0.3553590171905922,
+    "dist": "empirical_resid",
+    "log_score": 1.0608963462933392,
+    "pit_deciles": [
+      0.0978,
+      0.1017,
+      0.1,
+      0.0965,
+      0.0996,
+      0.0989,
+      0.0981,
+      0.1017,
+      0.1024,
+      0.1032
+    ],
+    "pit_var_ratio": 1.00766939480186,
+    "thresholds": {
+      "4": {
+        "brier": 0.13327215959964248,
+        "hit_rate": 0.8036090501053403,
+        "log_loss": 0.4185711160213988,
+        "mean_p": 0.8050373870126514
+      },
+      "5": {
+        "brier": 0.16516858409838442,
+        "hit_rate": 0.24606118897132911,
+        "log_loss": 0.5018422568421653,
+        "mean_p": 0.23691401532236295
+      }
+    }
+  },
+  "eval_period": "2025 RS",
+  "experiment_id": "MLB-PF-plate_appearances-E_hist_slot-validation",
+  "family": "plate_appearances",
+  "features": [
+    "see mlb/hitters.py E_FEATURES / COVARS"
+  ],
+  "fingerprint": "86aaf1d54b438c85",
+  "hyperparameters": {},
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Batting order is the post-game official lineup (retrospective; pregame lineups archived only for 527 games)."
+  ],
+  "model": "E_hist_slot",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2426,
+  "n_independent": 43668,
+  "n_obs": 43668,
+  "point": {
+    "bias": -0.006698897560715861,
+    "corr": 0.43303085731718605,
+    "mae": 0.5469052605879063,
+    "mean_actual": 4.025419071173399,
+    "mean_pred": 4.018720173612683,
+    "rmse": 0.7177177310575673
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model E_hist_slot for plate_appearances?",
+  "split": "validation",
+  "sport": "MLB",
+  "train_period": "2024 (fit from 2024-05-01)",
+  "verdict": "",
+  "vs_baseline": {
+    "ci95": [
+      -0.02011477885840119,
+      -0.016809333467631037
+    ],
+    "mean_diff": -0.01845750743926419,
+    "n_clusters": 2426,
+    "n_obs": 43668
+  },
+  "vs_incumbent": {}
+}

@@ -1,0 +1,103 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:16:33Z",
+  "data_provenance": [
+    "data/research_cache/starter_workload",
+    "data/research/hitter_w2/mlb_feed"
+  ],
+  "distribution": {
+    "cover_50": 0.518755152514427,
+    "cover_80": 0.8112118713932399,
+    "cover_90": 0.9027205276174773,
+    "crps": 2.0863310483101047,
+    "dist": "empirical_resid",
+    "log_score": 2.5638157103181696,
+    "pit_deciles": [
+      0.0946,
+      0.0921,
+      0.1103,
+      0.1109,
+      0.0995,
+      0.1119,
+      0.0981,
+      0.0969,
+      0.0915,
+      0.0942
+    ],
+    "pit_var_ratio": 0.9563984076285376,
+    "thresholds": {
+      "12": {
+        "brier": 0.10248153879793152,
+        "hit_rate": 0.875515251442704,
+        "log_loss": 0.352490298927667,
+        "mean_p": 0.8549233040776792
+      },
+      "15": {
+        "brier": 0.1934675798511541,
+        "hit_rate": 0.7102225886232482,
+        "log_loss": 0.5713557746076618,
+        "mean_p": 0.691868254407792
+      },
+      "16": {
+        "brier": 0.23378784605100533,
+        "hit_rate": 0.5063891178895301,
+        "log_loss": 0.6587248411986151,
+        "mean_p": 0.5253053822192906
+      },
+      "17": {
+        "brier": 0.23151298568096298,
+        "hit_rate": 0.4460016488046167,
+        "log_loss": 0.6539019035514337,
+        "mean_p": 0.4599340935281218
+      },
+      "18": {
+        "brier": 0.22258632894722152,
+        "hit_rate": 0.38520197856554,
+        "log_loss": 0.635696107313963,
+        "mean_p": 0.38784654929509466
+      },
+      "19": {
+        "brier": 0.13091260378651362,
+        "hit_rate": 0.1628194558944765,
+        "log_loss": 0.42336814809731543,
+        "mean_p": 0.19103811388736583
+      }
+    }
+  },
+  "eval_period": "2025 RS",
+  "experiment_id": "MLB-PF-outs-A-validation",
+  "family": "outs",
+  "features": [
+    "see mlb/pitchers.py E_FEATURES / ladder definitions"
+  ],
+  "fingerprint": "26ae95881bde24ab",
+  "hyperparameters": {
+    "k_games": 2.3490892625006192
+  },
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Starter identity is the actual starter (probable == starter 99.9% in the post-game feed; scratches unmeasurable)."
+  ],
+  "model": "A",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2426,
+  "n_independent": 4852,
+  "n_obs": 4852,
+  "point": {
+    "bias": 0.012652391235409144,
+    "corr": 0.3528890834908724,
+    "mae": 2.9065565644502973,
+    "mean_actual": 15.565952184666116,
+    "mean_pred": 15.57860457590153,
+    "rmse": 3.857547925930124
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model A for outs?",
+  "split": "validation",
+  "sport": "MLB",
+  "train_period": "2022-2024 (history 2022; fitting 2023-2024)",
+  "verdict": "",
+  "vs_baseline": {},
+  "vs_incumbent": {}
+}

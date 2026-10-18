@@ -1,0 +1,71 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:38:22Z",
+  "data_provenance": [
+    "data/research/hitter_w2/mlb_feed (batting, pa)",
+    "pitcher frame (opposing starter)"
+  ],
+  "distribution": {
+    "cover_50": 0.5037311724579957,
+    "cover_80": 0.800027468754292,
+    "cover_90": 0.8999679531199927,
+    "crps": 0.10801942994259234,
+    "dist": "binom_mix",
+    "log_score": 0.37951631080795667,
+    "pit_deciles": [
+      0.1004,
+      0.0972,
+      0.0965,
+      0.102,
+      0.1022,
+      0.0991,
+      0.1018,
+      0.1002,
+      0.101,
+      0.0996
+    ],
+    "pit_var_ratio": 0.9968074918162758,
+    "thresholds": {
+      "1": {
+        "brier": 0.10057445215450003,
+        "hit_rate": 0.11481939294053015,
+        "log_loss": 0.35130277042799557,
+        "mean_p": 0.11431428784554198
+      }
+    }
+  },
+  "eval_period": "2026 RS",
+  "experiment_id": "MLB-PF-home_runs-A-holdout",
+  "family": "home_runs",
+  "features": [
+    "see mlb/hitters.py E_FEATURES / COVARS"
+  ],
+  "fingerprint": "d58ce20f8587f4c3",
+  "hyperparameters": {},
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Batting order is the post-game official lineup (retrospective; pregame lineups archived only for 527 games)."
+  ],
+  "model": "A",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2427,
+  "n_independent": 43686,
+  "n_obs": 43686,
+  "point": {
+    "bias": -0.0021996209612519246,
+    "corr": 0.10795025879974582,
+    "mae": 0.21299287116664473,
+    "mean_actual": 0.12232751911367486,
+    "mean_pred": 0.12012789815242295,
+    "rmse": 0.3489740112521763
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model A for home_runs?",
+  "split": "holdout",
+  "sport": "MLB",
+  "train_period": "2024 (fit from 2024-05-01)",
+  "verdict": "",
+  "vs_baseline": {},
+  "vs_incumbent": {}
+}

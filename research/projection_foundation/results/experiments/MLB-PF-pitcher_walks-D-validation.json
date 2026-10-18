@@ -1,0 +1,101 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:16:33Z",
+  "data_provenance": [
+    "data/research_cache/starter_workload",
+    "data/research/hitter_w2/mlb_feed"
+  ],
+  "distribution": {
+    "cover_50": 0.48866446826051113,
+    "cover_80": 0.7943116240725474,
+    "cover_90": 0.8981863149216818,
+    "crps": 0.6844344407687886,
+    "dist": "empirical_resid",
+    "log_score": 1.5852593832110065,
+    "pit_deciles": [
+      0.1055,
+      0.1024,
+      0.1047,
+      0.0995,
+      0.0967,
+      0.0989,
+      0.0911,
+      0.1012,
+      0.0998,
+      0.1002
+    ],
+    "pit_var_ratio": 1.017464779508954,
+    "thresholds": {
+      "1": {
+        "brier": 0.14591351556888577,
+        "hit_rate": 0.8126545754328112,
+        "log_loss": 0.4632744031497833,
+        "mean_p": 0.8226904097111286
+      },
+      "2": {
+        "brier": 0.23952427711594437,
+        "hit_rate": 0.5169002473206925,
+        "log_loss": 0.6714154397400794,
+        "mean_p": 0.5223757267722425
+      },
+      "3": {
+        "brier": 0.18406012703680852,
+        "hit_rate": 0.2524732069249794,
+        "log_loss": 0.5517608514166575,
+        "mean_p": 0.2525303464897518
+      },
+      "4": {
+        "brier": 0.08457094384790204,
+        "hit_rate": 0.09460016488046166,
+        "log_loss": 0.3056696908148862,
+        "mean_p": 0.0954000031652005
+      }
+    }
+  },
+  "eval_period": "2025 RS",
+  "experiment_id": "MLB-PF-pitcher_walks-D-validation",
+  "family": "pitcher_walks",
+  "features": [
+    "see mlb/pitchers.py E_FEATURES / ladder definitions"
+  ],
+  "fingerprint": "cc235c15a218285d",
+  "hyperparameters": {
+    "icpt": 0.018907995878649678,
+    "opp": 1.2730792604389076,
+    "park": -0.08367331962487162
+  },
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Starter identity is the actual starter (probable == starter 99.9% in the post-game feed; scratches unmeasurable)."
+  ],
+  "model": "D",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2426,
+  "n_independent": 4852,
+  "n_obs": 4852,
+  "point": {
+    "bias": 0.023066233356947456,
+    "corr": 0.2292924800905289,
+    "mae": 1.0153691383526016,
+    "mean_actual": 1.7077493816982687,
+    "mean_pred": 1.7308156150552159,
+    "rmse": 1.254718890028219
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model D for pitcher_walks?",
+  "split": "validation",
+  "sport": "MLB",
+  "train_period": "2022-2024 (history 2022; fitting 2023-2024)",
+  "verdict": "frozen winner",
+  "vs_baseline": {
+    "ci95": [
+      -0.00989869470809375,
+      -0.002968615233206099
+    ],
+    "mean_diff": -0.0066201699133182825,
+    "n_clusters": 2426,
+    "n_obs": 4852
+  },
+  "vs_incumbent": {}
+}

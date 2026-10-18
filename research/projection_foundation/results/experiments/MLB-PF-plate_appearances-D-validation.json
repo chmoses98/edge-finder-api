@@ -1,0 +1,90 @@
+{
+  "code_sha": "cd88bfb166ca3a591f3a2e6d3823fe3674db827f",
+  "compute_seconds": 0.0,
+  "created_utc": "2026-10-17T06:38:22Z",
+  "data_provenance": [
+    "data/research/hitter_w2/mlb_feed (batting, pa)",
+    "pitcher frame (opposing starter)"
+  ],
+  "distribution": {
+    "cover_50": 0.4933131812769076,
+    "cover_80": 0.7949070257396721,
+    "cover_90": 0.8969039113309517,
+    "crps": 0.35367152564165744,
+    "dist": "empirical_resid",
+    "log_score": 1.0578191264312105,
+    "pit_deciles": [
+      0.0994,
+      0.0983,
+      0.0967,
+      0.1016,
+      0.0973,
+      0.0985,
+      0.098,
+      0.1004,
+      0.1043,
+      0.1057
+    ],
+    "pit_var_ratio": 1.0136067798985489,
+    "thresholds": {
+      "4": {
+        "brier": 0.13443670475588718,
+        "hit_rate": 0.8036090501053403,
+        "log_loss": 0.42294106939772125,
+        "mean_p": 0.8016290072401135
+      },
+      "5": {
+        "brier": 0.1616593996444374,
+        "hit_rate": 0.24606118897132911,
+        "log_loss": 0.49192504798594966,
+        "mean_p": 0.2351121855318014
+      }
+    }
+  },
+  "eval_period": "2025 RS",
+  "experiment_id": "MLB-PF-plate_appearances-D-validation",
+  "family": "plate_appearances",
+  "features": [
+    "see mlb/hitters.py E_FEATURES / COVARS"
+  ],
+  "fingerprint": "19bbf9ddc785b823",
+  "hyperparameters": {
+    "icpt": 0.015518603389357535,
+    "own_obp": -0.3684514696251104,
+    "park_obp": 0.2669988648453694,
+    "sp_h": 0.15992854898084172
+  },
+  "hypothesis": "Each ladder rung adds information over the shrunk-average baseline.",
+  "limitations": [
+    "Batting order is the post-game official lineup (retrospective; pregame lineups archived only for 527 games)."
+  ],
+  "model": "D",
+  "model_version": "pf-mlb-1.0.0",
+  "n_clusters": 2426,
+  "n_independent": 43668,
+  "n_obs": 43668,
+  "point": {
+    "bias": -0.013241601273572651,
+    "corr": 0.4331511328562778,
+    "mae": 0.5518886670517132,
+    "mean_actual": 4.025419071173399,
+    "mean_pred": 4.012177469899827,
+    "rmse": 0.717147272496864
+  },
+  "python": "3.13.16",
+  "question": "How accurate is ladder model D for plate_appearances?",
+  "split": "validation",
+  "sport": "MLB",
+  "train_period": "2024 (fit from 2024-05-01)",
+  "verdict": "",
+  "vs_baseline": {
+    "ci95": [
+      -0.02204697698773836,
+      -0.018139584268699365
+    ],
+    "mean_diff": -0.02014499898819898,
+    "n_clusters": 2426,
+    "n_obs": 43668
+  },
+  "vs_incumbent": {}
+}

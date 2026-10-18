@@ -82,10 +82,23 @@ def _v1(root, now, date=None):
     return root
 
 
+# data/oppquality.json is a daily-overwritten snapshot: in the postseason every team's oppQualityAdj is null (too few
+# games in the rolling window), which the exporter correctly reports as UNAVAILABLE. The capability matrix above is the
+# regular-season audit, so the test pins a regular-season-shaped snapshot instead of reading whatever main holds today.
+OPPQ_FIXTURE = os.path.join(ROOT, "tests", "fixtures", "oppquality_regular_season.json")
+
+
+def _load_inputs(root):
+    inputs = research_export.load_inputs(DATA, str(root), **BOUNDS)
+    with open(OPPQ_FIXTURE, encoding="utf-8") as fh:
+        inputs["oppquality"] = json.load(fh)
+    return inputs
+
+
 @pytest.fixture(scope="module")
 def published(tmp_path_factory):
     root = _v1(tmp_path_factory.mktemp("app") / "latest", NOW)
-    inputs = research_export.load_inputs(DATA, str(root), **BOUNDS)
+    inputs = _load_inputs(root)
     index = research_export.export_explorer(str(root), data_root=DATA, inputs=inputs)
     return root, inputs, index
 
@@ -107,8 +120,22 @@ def test_two_publishes_are_byte_identical(published, tmp_path):
     root, _inputs, _index = published
     other = tmp_path / "latest"
     shutil.copytree(root, other, ignore=shutil.ignore_patterns("explorer"))
-    research_export.export_explorer(str(other), data_root=DATA, inputs=research_export.load_inputs(DATA, str(other), **BOUNDS))
+    research_export.export_explorer(str(other), data_root=DATA, inputs=_load_inputs(other))
     assert R.digest_tree(other) == R.digest_tree(root)
+
+
+# 4b. an all-null opponent-quality snapshot (postseason) is reported honestly as UNAVAILABLE, not VERIFIED
+def test_all_null_opponent_quality_is_unavailable(published, tmp_path):
+    root, _inputs, _index = published
+    other = tmp_path / "latest"
+    shutil.copytree(root, other, ignore=shutil.ignore_patterns("explorer"))
+    inputs = _load_inputs(other)
+    for t in inputs["oppquality"]["teams"].values():
+        t["oppQualityAdj"] = None
+        t["oppXFIPavg"] = None
+    research_export.export_explorer(str(other), data_root=DATA, inputs=inputs)
+    got = {c["capability"]: c["status"] for c in _read(other, "explorer/capabilities.json")["items"]}
+    assert got["opponent_adjustment"] == "UNAVAILABLE"
 
 
 # 3. identity: every v1 event has event research, every v1 participant a profile, same ids

@@ -1,6 +1,6 @@
 {
  "authority": "research_only",
- "data_asof_utc": "2026-10-19T02:29:10Z",
+ "data_asof_utc": "2026-10-19T14:24:22Z",
  "families": {
   "batters_faced": {
    "model": "E",
@@ -110,58 +110,104 @@
     },
     {
      "family": "team_runs",
-     "mean": 4.192,
+     "mean": 4.174,
      "model": "D",
      "p10": 1,
      "p90": 8,
      "readiness": "SHADOW VALIDATION",
      "reconciliation": {
       "note": "sum of projected starters' runs vs the starters' historical share of team runs",
-      "ratio": 0.966,
+      "ratio": 0.938,
       "status": "PASS"
      },
      "team": "TB",
      "thresholds": {
-      "2": 0.8125,
-      "3": 0.664,
-      "4": 0.5164,
-      "5": 0.386,
-      "6": 0.2794,
-      "7": 0.1971
+      "2": 0.8112,
+      "3": 0.662,
+      "4": 0.5141,
+      "5": 0.3836,
+      "6": 0.2773,
+      "7": 0.1952
      }
     },
     {
      "family": "game_total",
-     "mean": 8.076,
-     "median": 8,
+     "mean": 8.057,
+     "median": 7,
      "p10": 3,
      "p90": 14,
      "readiness": "SHADOW VALIDATION",
      "team": "TOTAL",
      "thresholds": {
-      "10": 0.3236,
-      "11": 0.2517,
-      "7": 0.6015,
-      "8": 0.5013,
-      "9": 0.4074
+      "10": 0.3219,
+      "11": 0.2502,
+      "7": 0.5999,
+      "8": 0.4995,
+      "9": 0.4056
      }
     }
    ]
   }
  ],
- "generated_utc": "2026-10-19T05:29:10Z",
+ "generated_utc": "2026-10-19T17:24:22Z",
  "model": {
   "authority": "research_only",
   "id": "pf-mlb",
-  "version": "pf-1.0.0+21a75189c5"
+  "version": "pf-1.0.0+e3f346fd48"
  },
  "players": [
+  {
+   "adjustments": [
+    "Pitched 1 day(s) before this start: treated as an opener/short outing.",
+    "Recent usage is mostly relief / very short starts (opener flag).",
+    "Pitcher lines through 2026-10-18 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-19T14:24:22Z",
+   "family": "batters_faced",
+   "game_id": "849815",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 4.198,
+   "median": 4,
+   "model": "E",
+   "name": "Shawn Armstrong",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 1.0,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 0,
+   "p90": 9,
+   "participation": {
+    "captured_utc": "2026-10-19T17:24:17Z",
+    "certainty": "PROJECTED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: projected probable (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "LIKELY_ACTIVE"
+   },
+   "player_id": "542888",
+   "readiness": "READY",
+   "role": "shadow",
+   "team": "CLE",
+   "thresholds": {
+    "18": 0.0,
+    "20": 0.0,
+    "22": 0.0,
+    "24": 0.0,
+    "26": 0.0
+   }
+  },
   {
    "adjustments": [
     "Pitched 2 day(s) before this start: treated as an opener/short outing.",
     "Pitcher lines through 2026-10-18 included as history; regular-season parameters, no postseason leash adjustment."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "batters_faced",
    "game_id": "849815",
    "gate": {
@@ -181,7 +227,7 @@
    "p10": 12,
    "p90": 22,
    "participation": {
-    "captured_utc": "2026-10-19T05:29:05Z",
+    "captured_utc": "2026-10-19T17:24:17Z",
     "certainty": "PROJECTED",
     "reasons": [
      "mlb_statsapi_schedule_probable_pitcher: projected probable (starter)"
@@ -203,17 +249,69 @@
   },
   {
    "adjustments": [
-    "Pitched 2 day(s) before this start: treated as an opener/short outing.",
+    "Pitched 1 day(s) before this start: treated as an opener/short outing.",
+    "Recent usage is mostly relief / very short starts (opener flag).",
     "Pitcher lines through 2026-10-18 included as history; regular-season parameters, no postseason leash adjustment."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "outs",
    "game_id": "849815",
    "gate": {
     "findings": [],
     "status": "PASS"
    },
-   "mean": 13.665,
+   "mean": 5.035,
+   "median": 5,
+   "model": "F",
+   "name": "Shawn Armstrong",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 1.0,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 4.2,
+    "p10": 0,
+    "p90": 9
+   },
+   "p10": 0,
+   "p90": 9,
+   "participation": {
+    "captured_utc": "2026-10-19T17:24:17Z",
+    "certainty": "PROJECTED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: projected probable (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "LIKELY_ACTIVE"
+   },
+   "player_id": "542888",
+   "readiness": "READY",
+   "role": "shadow",
+   "team": "CLE",
+   "thresholds": {
+    "12": 0.025,
+    "15": 0.0025,
+    "16": 0.0025,
+    "17": 0.0,
+    "18": 0.0,
+    "19": 0.0
+   }
+  },
+  {
+   "adjustments": [
+    "Pitched 2 day(s) before this start: treated as an opener/short outing.",
+    "Pitcher lines through 2026-10-18 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-19T14:24:22Z",
+   "family": "outs",
+   "game_id": "849815",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 13.667,
    "median": 14,
    "model": "F",
    "name": "Freddy Peralta",
@@ -231,7 +329,7 @@
    "p10": 9,
    "p90": 18,
    "participation": {
-    "captured_utc": "2026-10-19T05:29:05Z",
+    "captured_utc": "2026-10-19T17:24:17Z",
     "certainty": "PROJECTED",
     "reasons": [
      "mlb_statsapi_schedule_probable_pitcher: projected probable (starter)"
@@ -254,18 +352,72 @@
   },
   {
    "adjustments": [
-    "Pitched 2 day(s) before this start: treated as an opener/short outing.",
-    "Opponent factor x0.90 (point-in-time, shrunk; elasticity fitted on 2023-24).",
+    "Pitched 1 day(s) before this start: treated as an opener/short outing.",
+    "Recent usage is mostly relief / very short starts (opener flag).",
+    "Opponent factor x0.89 (point-in-time, shrunk; elasticity fitted on 2023-24).",
     "Pitcher lines through 2026-10-18 included as history; regular-season parameters, no postseason leash adjustment."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "pitcher_strikeouts",
    "game_id": "849815",
    "gate": {
     "findings": [],
     "status": "PASS"
    },
-   "mean": 4.058,
+   "mean": 1.89,
+   "median": 2,
+   "model": "F",
+   "name": "Shawn Armstrong",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.886,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 4.2,
+    "p10": 0,
+    "p90": 9
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-19T17:24:17Z",
+    "certainty": "PROJECTED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: projected probable (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "LIKELY_ACTIVE"
+   },
+   "player_id": "542888",
+   "readiness": "READY",
+   "role": "shadow",
+   "team": "CLE",
+   "thresholds": {
+    "3": 0.3196,
+    "4": 0.1676,
+    "5": 0.0781,
+    "6": 0.0329,
+    "7": 0.0125,
+    "8": 0.0043,
+    "9": 0.0013
+   }
+  },
+  {
+   "adjustments": [
+    "Pitched 2 day(s) before this start: treated as an opener/short outing.",
+    "Opponent factor x0.90 (point-in-time, shrunk; elasticity fitted on 2023-24).",
+    "Pitcher lines through 2026-10-18 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-19T14:24:22Z",
+   "family": "pitcher_strikeouts",
+   "game_id": "849815",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 4.059,
    "median": 4,
    "model": "F",
    "name": "Freddy Peralta",
@@ -283,7 +435,7 @@
    "p10": 1,
    "p90": 7,
    "participation": {
-    "captured_utc": "2026-10-19T05:29:05Z",
+    "captured_utc": "2026-10-19T17:24:17Z",
     "certainty": "PROJECTED",
     "reasons": [
      "mlb_statsapi_schedule_probable_pitcher: projected probable (starter)"
@@ -296,13 +448,64 @@
    "role": "shadow",
    "team": "TB",
    "thresholds": {
-    "3": 0.7508,
-    "4": 0.5781,
-    "5": 0.3978,
-    "6": 0.2439,
+    "3": 0.7509,
+    "4": 0.5782,
+    "5": 0.398,
+    "6": 0.244,
     "7": 0.1337,
     "8": 0.066,
     "9": 0.0296
+   }
+  },
+  {
+   "adjustments": [
+    "Pitched 1 day(s) before this start: treated as an opener/short outing.",
+    "Recent usage is mostly relief / very short starts (opener flag).",
+    "Opponent factor x0.93 (point-in-time, shrunk; elasticity fitted on 2023-24).",
+    "Pitcher lines through 2026-10-18 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-19T14:24:22Z",
+   "family": "pitcher_walks",
+   "game_id": "849815",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.513,
+   "median": 0,
+   "model": "D",
+   "name": "Shawn Armstrong",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.928,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 4.2,
+    "p10": 0,
+    "p90": 9
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-19T17:24:17Z",
+    "certainty": "PROJECTED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: projected probable (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "LIKELY_ACTIVE"
+   },
+   "player_id": "542888",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "team": "CLE",
+   "thresholds": {
+    "1": 0.3525,
+    "2": 0.1225,
+    "3": 0.0325,
+    "4": 0.005
    }
   },
   {
@@ -311,7 +514,7 @@
     "Opponent factor x1.00 (point-in-time, shrunk; elasticity fitted on 2023-24).",
     "Pitcher lines through 2026-10-18 included as history; regular-season parameters, no postseason leash adjustment."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "pitcher_walks",
    "game_id": "849815",
    "gate": {
@@ -336,7 +539,7 @@
    "p10": 0,
    "p90": 3,
    "participation": {
-    "captured_utc": "2026-10-19T05:29:05Z",
+    "captured_utc": "2026-10-19T17:24:17Z",
     "certainty": "PROJECTED",
     "reasons": [
      "mlb_statsapi_schedule_probable_pitcher: projected probable (starter)"
@@ -357,18 +560,70 @@
   },
   {
    "adjustments": [
-    "Pitched 2 day(s) before this start: treated as an opener/short outing.",
-    "Opponent factor x1.00 (point-in-time, shrunk; elasticity fitted on 2023-24).",
+    "Pitched 1 day(s) before this start: treated as an opener/short outing.",
+    "Recent usage is mostly relief / very short starts (opener flag).",
+    "Opponent factor x1.03 (point-in-time, shrunk; elasticity fitted on 2023-24).",
     "Pitcher lines through 2026-10-18 included as history; regular-season parameters, no postseason leash adjustment."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "pitcher_hits_allowed",
    "game_id": "849815",
    "gate": {
     "findings": [],
     "status": "PASS"
    },
-   "mean": 3.579,
+   "mean": 1.53,
+   "median": 1,
+   "model": "F",
+   "name": "Shawn Armstrong",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 1.027,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 4.2,
+    "p10": 0,
+    "p90": 9
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-19T17:24:17Z",
+    "certainty": "PROJECTED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: projected probable (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "LIKELY_ACTIVE"
+   },
+   "player_id": "542888",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "team": "CLE",
+   "thresholds": {
+    "3": 0.2306,
+    "4": 0.1025,
+    "5": 0.0398,
+    "6": 0.0137,
+    "7": 0.0042
+   }
+  },
+  {
+   "adjustments": [
+    "Pitched 2 day(s) before this start: treated as an opener/short outing.",
+    "Opponent factor x1.00 (point-in-time, shrunk; elasticity fitted on 2023-24).",
+    "Pitcher lines through 2026-10-18 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-19T14:24:22Z",
+   "family": "pitcher_hits_allowed",
+   "game_id": "849815",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 3.58,
    "median": 3,
    "model": "F",
    "name": "Freddy Peralta",
@@ -386,7 +641,7 @@
    "p10": 1,
    "p90": 6,
    "participation": {
-    "captured_utc": "2026-10-19T05:29:05Z",
+    "captured_utc": "2026-10-19T17:24:17Z",
     "certainty": "PROJECTED",
     "reasons": [
      "mlb_statsapi_schedule_probable_pitcher: projected probable (starter)"
@@ -399,11 +654,63 @@
    "role": "shadow",
    "team": "TB",
    "thresholds": {
-    "3": 0.6861,
-    "4": 0.4894,
-    "5": 0.3054,
-    "6": 0.1667,
-    "7": 0.0802
+    "3": 0.6863,
+    "4": 0.4897,
+    "5": 0.3056,
+    "6": 0.1669,
+    "7": 0.0803
+   }
+  },
+  {
+   "adjustments": [
+    "Pitched 1 day(s) before this start: treated as an opener/short outing.",
+    "Recent usage is mostly relief / very short starts (opener flag).",
+    "Opponent factor x1.00 (point-in-time, shrunk; elasticity fitted on 2023-24).",
+    "Pitcher lines through 2026-10-18 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-19T14:24:22Z",
+   "family": "pitcher_runs_allowed",
+   "game_id": "849815",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.305,
+   "median": 1,
+   "model": "F",
+   "name": "Shawn Armstrong",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 1.001,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 4.2,
+    "p10": 0,
+    "p90": 9
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-19T17:24:17Z",
+    "certainty": "PROJECTED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: projected probable (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "LIKELY_ACTIVE"
+   },
+   "player_id": "542888",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "team": "CLE",
+   "thresholds": {
+    "1": 0.55,
+    "2": 0.3575,
+    "3": 0.2025,
+    "4": 0.105,
+    "5": 0.05
    }
   },
   {
@@ -412,7 +719,7 @@
     "Opponent factor x0.98 (point-in-time, shrunk; elasticity fitted on 2023-24).",
     "Pitcher lines through 2026-10-18 included as history; regular-season parameters, no postseason leash adjustment."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "pitcher_runs_allowed",
    "game_id": "849815",
    "gate": {
@@ -437,7 +744,7 @@
    "p10": 0,
    "p90": 4,
    "participation": {
-    "captured_utc": "2026-10-19T05:29:05Z",
+    "captured_utc": "2026-10-19T17:24:17Z",
     "certainty": "PROJECTED",
     "reasons": [
      "mlb_statsapi_schedule_probable_pitcher: projected probable (starter)"
@@ -463,7 +770,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -520,10 +827,10 @@
   {
    "adjustments": [
     "Batting slot 1 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -551,7 +858,7 @@
    "name": "Yandy D\u00edaz",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": null,
@@ -583,7 +890,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -640,10 +947,10 @@
   {
    "adjustments": [
     "Batting slot 2 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -665,17 +972,17 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 4.29,
+   "mean": 4.148,
    "median": 4,
    "model": "F",
    "name": "Jonathan Aranda",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": null,
-   "p10": 4,
+   "p10": 3,
    "p90": 5,
    "participation": {
     "captured_utc": null,
@@ -693,8 +1000,8 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "4": 0.94,
-    "5": 0.3425
+    "4": 0.9,
+    "5": 0.2475
    }
   },
   {
@@ -703,7 +1010,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -760,10 +1067,10 @@
   {
    "adjustments": [
     "Batting slot 3 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -785,13 +1092,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 3.448,
+   "mean": 3.445,
    "median": 4,
    "model": "F",
    "name": "Ryan Vilade",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": null,
@@ -820,10 +1127,10 @@
   {
    "adjustments": [
     "Batting slot 9 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -845,13 +1152,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 3.448,
+   "mean": 3.445,
    "median": 4,
    "model": "F",
    "name": "Taylor Walls",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": null,
@@ -883,7 +1190,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -940,10 +1247,10 @@
   {
    "adjustments": [
     "Batting slot 6 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -971,7 +1278,7 @@
    "name": "Jonny DeLuca",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": null,
@@ -1003,7 +1310,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -1063,7 +1370,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -1123,7 +1430,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -1180,10 +1487,10 @@
   {
    "adjustments": [
     "Batting slot 7 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -1205,17 +1512,17 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 3.738,
+   "mean": 3.448,
    "median": 4,
    "model": "F",
    "name": null,
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": null,
-   "p10": 3,
+   "p10": 2,
    "p90": 4,
    "participation": {
     "captured_utc": null,
@@ -1233,8 +1540,8 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "4": 0.6925,
-    "5": 0.0975
+    "4": 0.505,
+    "5": 0.055
    }
   },
   {
@@ -1243,7 +1550,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -1265,7 +1572,7 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 3.103,
+   "mean": 3.1,
    "median": 3,
    "model": "F",
    "name": "Petey Halpin",
@@ -1293,17 +1600,17 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "CLE",
    "thresholds": {
-    "4": 0.3275,
+    "4": 0.325,
     "5": 0.0325
    }
   },
   {
    "adjustments": [
     "Batting slot 4 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -1331,7 +1638,7 @@
    "name": "Junior Caminero",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": null,
@@ -1363,7 +1670,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -1420,10 +1727,10 @@
   {
    "adjustments": [
     "Batting slot 5 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -1451,7 +1758,7 @@
    "name": "Chandler Simpson",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": null,
@@ -1480,10 +1787,10 @@
   {
    "adjustments": [
     "Batting slot 8 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "plate_appearances",
    "game_id": "849815",
    "gate": {
@@ -1511,7 +1818,7 @@
    "name": "Ben Williamson",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": null,
@@ -1543,7 +1850,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -1606,10 +1913,10 @@
   {
    "adjustments": [
     "Batting slot 1 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -1631,13 +1938,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.119,
+   "mean": 1.042,
    "median": 1,
    "model": "F",
    "name": "Yandy D\u00edaz",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -1664,9 +1971,9 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.714,
-    "2": 0.3131,
-    "3": 0.0804
+    "1": 0.6846,
+    "2": 0.2813,
+    "3": 0.0671
    }
   },
   {
@@ -1675,7 +1982,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -1731,17 +2038,17 @@
    "team": "CLE",
    "thresholds": {
     "1": 0.5877,
-    "2": 0.1923,
+    "2": 0.1922,
     "3": 0.0351
    }
   },
   {
    "adjustments": [
     "Batting slot 2 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -1763,19 +2070,19 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.992,
+   "mean": 0.929,
    "median": 1,
    "model": "F",
    "name": "Jonathan Aranda",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
     "family": "plate_appearances",
-    "mean": 4.29,
-    "p10": 4,
+    "mean": 4.15,
+    "p10": 3,
     "p90": 5
    },
    "p10": 0,
@@ -1796,9 +2103,9 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.6665,
-    "2": 0.2606,
-    "3": 0.0578
+    "1": 0.6393,
+    "2": 0.2351,
+    "3": 0.0488
    }
   },
   {
@@ -1807,7 +2114,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -1862,7 +2169,7 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "CLE",
    "thresholds": {
-    "1": 0.612,
+    "1": 0.6119,
     "2": 0.2137,
     "3": 0.0426
    }
@@ -1870,10 +2177,10 @@
   {
    "adjustments": [
     "Batting slot 3 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -1895,13 +2202,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.69,
+   "mean": 0.656,
    "median": 1,
    "model": "F",
    "name": "Ryan Vilade",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -1928,18 +2235,18 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.5205,
-    "2": 0.1452,
-    "3": 0.0224
+    "1": 0.5013,
+    "2": 0.1334,
+    "3": 0.0196
    }
   },
   {
    "adjustments": [
     "Batting slot 9 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -1961,13 +2268,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.711,
+   "mean": 0.664,
    "median": 1,
    "model": "F",
    "name": "Taylor Walls",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -1994,9 +2301,9 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.5369,
-    "2": 0.1505,
-    "3": 0.0221
+    "1": 0.5106,
+    "2": 0.1342,
+    "3": 0.0184
    }
   },
   {
@@ -2005,7 +2312,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -2060,18 +2367,18 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "CLE",
    "thresholds": {
-    "1": 0.552,
-    "2": 0.1635,
+    "1": 0.5519,
+    "2": 0.1634,
     "3": 0.0261
    }
   },
   {
    "adjustments": [
     "Batting slot 6 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -2093,13 +2400,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.9,
+   "mean": 0.818,
    "median": 1,
    "model": "F",
    "name": "Jonny DeLuca",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -2126,9 +2433,9 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.6295,
-    "2": 0.2233,
-    "3": 0.0433
+    "1": 0.5901,
+    "2": 0.1911,
+    "3": 0.0336
    }
   },
   {
@@ -2137,7 +2444,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -2192,7 +2499,7 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "CLE",
    "thresholds": {
-    "1": 0.5812,
+    "1": 0.5813,
     "2": 0.1812,
     "3": 0.0298
    }
@@ -2203,7 +2510,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -2269,7 +2576,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -2332,10 +2639,10 @@
   {
    "adjustments": [
     "Batting slot 7 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -2357,19 +2664,19 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.903,
+   "mean": 0.835,
    "median": 1,
    "model": "F",
    "name": null,
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
     "family": "plate_appearances",
-    "mean": 3.74,
-    "p10": 3,
+    "mean": 3.45,
+    "p10": 2,
     "p90": 4
    },
    "p10": 0,
@@ -2390,9 +2697,9 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.6308,
-    "2": 0.2244,
-    "3": 0.0437
+    "1": 0.6017,
+    "2": 0.1968,
+    "3": 0.0341
    }
   },
   {
@@ -2401,7 +2708,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -2424,7 +2731,7 @@
     "status": "REVIEW"
    },
    "mean": 0.65,
-   "median": 1,
+   "median": 0,
    "model": "F",
    "name": "Petey Halpin",
    "opponent": "TB",
@@ -2458,16 +2765,16 @@
    "thresholds": {
     "1": 0.5,
     "2": 0.1304,
-    "3": 0.0183
+    "3": 0.0182
    }
   },
   {
    "adjustments": [
     "Batting slot 4 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -2489,13 +2796,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.971,
+   "mean": 0.906,
    "median": 1,
    "model": "F",
    "name": "Junior Caminero",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -2522,9 +2829,9 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.6592,
-    "2": 0.2521,
-    "3": 0.054
+    "1": 0.6302,
+    "2": 0.2257,
+    "3": 0.045
    }
   },
   {
@@ -2533,7 +2840,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -2596,10 +2903,10 @@
   {
    "adjustments": [
     "Batting slot 5 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -2621,13 +2928,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.14,
+   "mean": 1.042,
    "median": 1,
    "model": "F",
    "name": "Chandler Simpson",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -2654,18 +2961,18 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.7256,
-    "2": 0.322,
-    "3": 0.0815
+    "1": 0.6885,
+    "2": 0.2812,
+    "3": 0.0648
    }
   },
   {
    "adjustments": [
     "Batting slot 8 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits",
    "game_id": "849815",
    "gate": {
@@ -2687,13 +2994,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.726,
+   "mean": 0.685,
    "median": 1,
    "model": "F",
    "name": "Ben Williamson",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -2720,9 +3027,9 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.5451,
-    "2": 0.1559,
-    "3": 0.0234
+    "1": 0.522,
+    "2": 0.1412,
+    "3": 0.02
    }
   },
   {
@@ -2731,7 +3038,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -2753,7 +3060,7 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.466,
+   "mean": 1.465,
    "median": 1,
    "model": "F",
    "name": "Jos\u00e9 Ram\u00edrez",
@@ -2795,10 +3102,10 @@
   {
    "adjustments": [
     "Batting slot 1 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -2820,13 +3127,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.705,
+   "mean": 1.654,
    "median": 1,
    "model": "F",
    "name": "Yandy D\u00edaz",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -2853,10 +3160,10 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.7071,
-    "2": 0.4259,
-    "3": 0.2462,
-    "4": 0.1659
+    "1": 0.6947,
+    "2": 0.4127,
+    "3": 0.2366,
+    "4": 0.1597
    }
   },
   {
@@ -2865,7 +3172,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -2922,17 +3229,17 @@
    "thresholds": {
     "1": 0.5899,
     "2": 0.3259,
-    "3": 0.1823,
+    "3": 0.1822,
     "4": 0.1293
    }
   },
   {
    "adjustments": [
     "Batting slot 2 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -2954,19 +3261,19 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.639,
+   "mean": 1.55,
    "median": 1,
    "model": "F",
    "name": "Jonathan Aranda",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
     "family": "plate_appearances",
-    "mean": 4.29,
-    "p10": 4,
+    "mean": 4.15,
+    "p10": 3,
     "p90": 5
    },
    "p10": 0,
@@ -2987,10 +3294,10 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.6836,
-    "2": 0.4046,
-    "3": 0.2351,
-    "4": 0.1632
+    "1": 0.6606,
+    "2": 0.3818,
+    "3": 0.219,
+    "4": 0.1527
    }
   },
   {
@@ -2999,7 +3306,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -3063,10 +3370,10 @@
   {
    "adjustments": [
     "Batting slot 3 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -3088,13 +3395,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.226,
+   "mean": 1.112,
    "median": 1,
    "model": "F",
    "name": "Ryan Vilade",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -3121,19 +3428,19 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.5503,
-    "2": 0.2916,
-    "3": 0.1683,
-    "4": 0.1247
+    "1": 0.5126,
+    "2": 0.2628,
+    "3": 0.1498,
+    "4": 0.112
    }
   },
   {
    "adjustments": [
     "Batting slot 9 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -3155,13 +3462,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.052,
+   "mean": 0.974,
    "median": 1,
    "model": "F",
    "name": "Taylor Walls",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -3188,10 +3495,10 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.5396,
-    "2": 0.2643,
-    "3": 0.1246,
-    "4": 0.0764
+    "1": 0.51,
+    "2": 0.2427,
+    "3": 0.1122,
+    "4": 0.0695
    }
   },
   {
@@ -3200,7 +3507,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -3264,10 +3571,10 @@
   {
    "adjustments": [
     "Batting slot 6 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -3289,13 +3596,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.38,
+   "mean": 1.238,
    "median": 1,
    "model": "F",
    "name": "Jonny DeLuca",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -3322,10 +3629,10 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.6227,
-    "2": 0.3439,
-    "3": 0.1871,
-    "4": 0.1261
+    "1": 0.5786,
+    "2": 0.3062,
+    "3": 0.1626,
+    "4": 0.1108
    }
   },
   {
@@ -3334,7 +3641,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -3389,8 +3696,8 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "CLE",
    "thresholds": {
-    "1": 0.5654,
-    "2": 0.3028,
+    "1": 0.5655,
+    "2": 0.3029,
     "3": 0.1652,
     "4": 0.1171
    }
@@ -3401,7 +3708,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -3423,7 +3730,7 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.465,
+   "mean": 1.464,
    "median": 1,
    "model": "F",
    "name": "Steven Kwan",
@@ -3468,7 +3775,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -3524,7 +3831,7 @@
    "team": "CLE",
    "thresholds": {
     "1": 0.6114,
-    "2": 0.3509,
+    "2": 0.351,
     "3": 0.2069,
     "4": 0.1505
    }
@@ -3532,10 +3839,10 @@
   {
    "adjustments": [
     "Batting slot 7 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -3557,23 +3864,23 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.299,
+   "mean": 1.162,
    "median": 1,
    "model": "F",
    "name": null,
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
     "family": "plate_appearances",
-    "mean": 3.74,
-    "p10": 3,
+    "mean": 3.45,
+    "p10": 2,
     "p90": 4
    },
    "p10": 0,
-   "p90": 4,
+   "p90": 3,
    "participation": {
     "captured_utc": null,
     "certainty": "UNKNOWN",
@@ -3590,10 +3897,10 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.617,
-    "2": 0.3203,
-    "3": 0.1673,
-    "4": 0.1107
+    "1": 0.5739,
+    "2": 0.2824,
+    "3": 0.1437,
+    "4": 0.0965
    }
   },
   {
@@ -3602,7 +3909,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -3657,7 +3964,7 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "CLE",
    "thresholds": {
-    "1": 0.4911,
+    "1": 0.491,
     "2": 0.2348,
     "3": 0.1264,
     "4": 0.0928
@@ -3666,10 +3973,10 @@
   {
    "adjustments": [
     "Batting slot 4 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -3691,13 +3998,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.714,
+   "mean": 1.621,
    "median": 1,
    "model": "F",
    "name": "Junior Caminero",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -3724,10 +4031,10 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.662,
-    "2": 0.4066,
-    "3": 0.2571,
-    "4": 0.1969
+    "1": 0.6389,
+    "2": 0.3847,
+    "3": 0.2409,
+    "4": 0.1853
    }
   },
   {
@@ -3736,7 +4043,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -3800,10 +4107,10 @@
   {
    "adjustments": [
     "Batting slot 5 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -3825,13 +4132,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.396,
+   "mean": 1.294,
    "median": 1,
    "model": "F",
    "name": "Chandler Simpson",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -3858,19 +4165,19 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.7021,
-    "2": 0.3721,
-    "3": 0.1728,
-    "4": 0.0871
+    "1": 0.6707,
+    "2": 0.34,
+    "3": 0.1536,
+    "4": 0.0775
    }
   },
   {
    "adjustments": [
     "Batting slot 8 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "total_bases",
    "game_id": "849815",
    "gate": {
@@ -3892,13 +4199,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.045,
+   "mean": 0.976,
    "median": 1,
    "model": "F",
    "name": "Ben Williamson",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -3925,10 +4232,10 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.5381,
-    "2": 0.256,
-    "3": 0.1232,
-    "4": 0.0788
+    "1": 0.5115,
+    "2": 0.2368,
+    "3": 0.1124,
+    "4": 0.0726
    }
   },
   {
@@ -3937,7 +4244,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -3998,10 +4305,10 @@
   {
    "adjustments": [
     "Batting slot 1 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4023,13 +4330,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.151,
+   "mean": 0.129,
    "median": 0,
    "model": "F",
    "name": "Yandy D\u00edaz",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -4056,7 +4363,7 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.1423
+    "1": 0.1225
    }
   },
   {
@@ -4065,7 +4372,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4126,10 +4433,10 @@
   {
    "adjustments": [
     "Batting slot 2 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4151,19 +4458,19 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.167,
+   "mean": 0.154,
    "median": 0,
    "model": "F",
    "name": "Jonathan Aranda",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
     "family": "plate_appearances",
-    "mean": 4.29,
-    "p10": 4,
+    "mean": 4.15,
+    "p10": 3,
     "p90": 5
    },
    "p10": 0,
@@ -4184,7 +4491,7 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.1561
+    "1": 0.1446
    }
   },
   {
@@ -4193,7 +4500,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4254,10 +4561,10 @@
   {
    "adjustments": [
     "Batting slot 3 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4279,13 +4586,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.149,
+   "mean": 0.121,
    "median": 0,
    "model": "F",
    "name": "Ryan Vilade",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -4312,16 +4619,16 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.1403
+    "1": 0.1153
    }
   },
   {
    "adjustments": [
     "Batting slot 9 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4343,13 +4650,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.06,
+   "mean": 0.054,
    "median": 0,
    "model": "F",
    "name": "Taylor Walls",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -4376,7 +4683,7 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.0586
+    "1": 0.0526
    }
   },
   {
@@ -4385,7 +4692,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4446,10 +4753,10 @@
   {
    "adjustments": [
     "Batting slot 6 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4471,13 +4778,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.117,
+   "mean": 0.098,
    "median": 0,
    "model": "F",
    "name": "Jonny DeLuca",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -4487,7 +4794,7 @@
     "p90": 4
    },
    "p10": 0,
-   "p90": 1,
+   "p90": 0,
    "participation": {
     "captured_utc": null,
     "certainty": "UNKNOWN",
@@ -4504,7 +4811,7 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.112
+    "1": 0.094
    }
   },
   {
@@ -4513,7 +4820,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4577,7 +4884,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4641,7 +4948,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4702,10 +5009,10 @@
   {
    "adjustments": [
     "Batting slot 7 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4727,19 +5034,19 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.099,
+   "mean": 0.086,
    "median": 0,
    "model": "F",
    "name": null,
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
     "family": "plate_appearances",
-    "mean": 3.74,
-    "p10": 3,
+    "mean": 3.45,
+    "p10": 2,
     "p90": 4
    },
    "p10": 0,
@@ -4760,7 +5067,7 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.0952
+    "1": 0.0833
    }
   },
   {
@@ -4769,7 +5076,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4830,10 +5137,10 @@
   {
    "adjustments": [
     "Batting slot 4 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4855,13 +5162,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.199,
+   "mean": 0.174,
    "median": 0,
    "model": "F",
    "name": "Junior Caminero",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -4888,7 +5195,7 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.1839
+    "1": 0.1622
    }
   },
   {
@@ -4897,7 +5204,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4952,16 +5259,16 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "CLE",
    "thresholds": {
-    "1": 0.1273
+    "1": 0.1272
    }
   },
   {
    "adjustments": [
     "Batting slot 5 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -4983,13 +5290,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.047,
+   "mean": 0.044,
    "median": 0,
    "model": "F",
    "name": "Chandler Simpson",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -5016,16 +5323,16 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.0461
+    "1": 0.0434
    }
   },
   {
    "adjustments": [
     "Batting slot 8 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "home_runs",
    "game_id": "849815",
    "gate": {
@@ -5047,13 +5354,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.069,
+   "mean": 0.062,
    "median": 0,
    "model": "F",
    "name": "Ben Williamson",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -5080,7 +5387,7 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.0676
+    "1": 0.0609
    }
   },
   {
@@ -5089,7 +5396,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -5151,10 +5458,10 @@
   {
    "adjustments": [
     "Batting slot 1 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -5182,7 +5489,7 @@
    "name": "Yandy D\u00edaz",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -5209,7 +5516,7 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.4459,
+    "1": 0.446,
     "2": 0.1042
    }
   },
@@ -5219,7 +5526,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -5274,17 +5581,17 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "CLE",
    "thresholds": {
-    "1": 0.316,
+    "1": 0.3159,
     "2": 0.0498
    }
   },
   {
    "adjustments": [
     "Batting slot 2 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -5306,19 +5613,19 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.467,
+   "mean": 0.465,
    "median": 0,
    "model": "F",
    "name": "Jonathan Aranda",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
     "family": "plate_appearances",
-    "mean": 4.29,
-    "p10": 4,
+    "mean": 4.15,
+    "p10": 3,
     "p90": 5
    },
    "p10": 0,
@@ -5339,8 +5646,8 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.384,
-    "2": 0.0747
+    "1": 0.3824,
+    "2": 0.0741
    }
   },
   {
@@ -5349,7 +5656,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -5411,10 +5718,10 @@
   {
    "adjustments": [
     "Batting slot 3 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -5436,13 +5743,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.374,
+   "mean": 0.372,
    "median": 0,
    "model": "F",
    "name": "Ryan Vilade",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -5469,17 +5776,17 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.3185,
-    "2": 0.0506
+    "1": 0.3169,
+    "2": 0.0501
    }
   },
   {
    "adjustments": [
     "Batting slot 9 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -5501,13 +5808,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.408,
+   "mean": 0.386,
    "median": 0,
    "model": "F",
    "name": "Taylor Walls",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -5534,8 +5841,8 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.3453,
-    "2": 0.0573
+    "1": 0.3298,
+    "2": 0.0521
    }
   },
   {
@@ -5544,7 +5851,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -5606,10 +5913,10 @@
   {
    "adjustments": [
     "Batting slot 6 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -5631,13 +5938,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.376,
+   "mean": 0.361,
    "median": 0,
    "model": "F",
    "name": "Jonny DeLuca",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -5664,8 +5971,8 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.321,
-    "2": 0.0503
+    "1": 0.3099,
+    "2": 0.0468
    }
   },
   {
@@ -5674,7 +5981,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -5739,7 +6046,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -5804,7 +6111,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -5866,10 +6173,10 @@
   {
    "adjustments": [
     "Batting slot 7 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -5891,19 +6198,19 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.367,
+   "mean": 0.353,
    "median": 0,
    "model": "F",
    "name": null,
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
     "family": "plate_appearances",
-    "mean": 3.74,
-    "p10": 3,
+    "mean": 3.45,
+    "p10": 2,
     "p90": 4
    },
    "p10": 0,
@@ -5924,8 +6231,8 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.3146,
-    "2": 0.0483
+    "1": 0.305,
+    "2": 0.0443
    }
   },
   {
@@ -5934,7 +6241,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -5989,17 +6296,17 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "CLE",
    "thresholds": {
-    "1": 0.3016,
+    "1": 0.3017,
     "2": 0.0443
    }
   },
   {
    "adjustments": [
     "Batting slot 4 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -6021,13 +6328,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.507,
+   "mean": 0.47,
    "median": 0,
    "model": "F",
    "name": "Junior Caminero",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -6054,8 +6361,8 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.4108,
-    "2": 0.0856
+    "1": 0.3867,
+    "2": 0.0752
    }
   },
   {
@@ -6064,7 +6371,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -6126,10 +6433,10 @@
   {
    "adjustments": [
     "Batting slot 5 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -6151,13 +6458,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.41,
+   "mean": 0.387,
    "median": 0,
    "model": "F",
    "name": "Chandler Simpson",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -6184,17 +6491,17 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.3449,
-    "2": 0.0591
+    "1": 0.3286,
+    "2": 0.0535
    }
   },
   {
    "adjustments": [
     "Batting slot 8 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "runs",
    "game_id": "849815",
    "gate": {
@@ -6216,13 +6523,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.351,
+   "mean": 0.34,
    "median": 0,
    "model": "F",
    "name": "Ben Williamson",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -6249,8 +6556,8 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.3033,
-    "2": 0.0438
+    "1": 0.2957,
+    "2": 0.0416
    }
   },
   {
@@ -6259,7 +6566,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -6322,10 +6629,10 @@
   {
    "adjustments": [
     "Batting slot 1 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -6353,7 +6660,7 @@
    "name": "Yandy D\u00edaz",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -6391,7 +6698,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -6454,10 +6761,10 @@
   {
    "adjustments": [
     "Batting slot 2 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -6479,19 +6786,19 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.5,
+   "mean": 0.463,
    "median": 0,
    "model": "F",
    "name": "Jonathan Aranda",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
     "family": "plate_appearances",
-    "mean": 4.29,
-    "p10": 4,
+    "mean": 4.15,
+    "p10": 3,
     "p90": 5
    },
    "p10": 0,
@@ -6512,9 +6819,9 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.3175,
-    "2": 0.1225,
-    "3": 0.0425
+    "1": 0.305,
+    "2": 0.11,
+    "3": 0.035
    }
   },
   {
@@ -6523,7 +6830,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -6586,10 +6893,10 @@
   {
    "adjustments": [
     "Batting slot 3 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -6611,13 +6918,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.418,
+   "mean": 0.383,
    "median": 0,
    "model": "F",
    "name": "Ryan Vilade",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -6644,18 +6951,18 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.28,
-    "2": 0.095,
-    "3": 0.0325
+    "1": 0.2625,
+    "2": 0.0875,
+    "3": 0.0225
    }
   },
   {
    "adjustments": [
     "Batting slot 9 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -6683,7 +6990,7 @@
    "name": "Taylor Walls",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -6721,7 +7028,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -6784,10 +7091,10 @@
   {
    "adjustments": [
     "Batting slot 6 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -6815,7 +7122,7 @@
    "name": "Jonny DeLuca",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -6853,7 +7160,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -6919,7 +7226,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -6985,7 +7292,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -7048,10 +7355,10 @@
   {
    "adjustments": [
     "Batting slot 7 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -7073,19 +7380,19 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.418,
+   "mean": 0.383,
    "median": 0,
    "model": "F",
    "name": null,
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
     "family": "plate_appearances",
-    "mean": 3.74,
-    "p10": 3,
+    "mean": 3.45,
+    "p10": 2,
     "p90": 4
    },
    "p10": 0,
@@ -7106,9 +7413,9 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.28,
-    "2": 0.095,
-    "3": 0.0325
+    "1": 0.2625,
+    "2": 0.0875,
+    "3": 0.0225
    }
   },
   {
@@ -7117,7 +7424,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -7180,10 +7487,10 @@
   {
    "adjustments": [
     "Batting slot 4 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -7205,13 +7512,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 0.593,
+   "mean": 0.5,
    "median": 0,
    "model": "F",
    "name": "Junior Caminero",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -7238,9 +7545,9 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.365,
-    "2": 0.145,
-    "3": 0.0575
+    "1": 0.3175,
+    "2": 0.1225,
+    "3": 0.0425
    }
   },
   {
@@ -7249,7 +7556,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -7312,10 +7619,10 @@
   {
    "adjustments": [
     "Batting slot 5 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -7343,7 +7650,7 @@
    "name": "Chandler Simpson",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -7378,10 +7685,10 @@
   {
    "adjustments": [
     "Batting slot 8 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "rbis",
    "game_id": "849815",
    "gate": {
@@ -7409,7 +7716,7 @@
    "name": "Ben Williamson",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -7447,7 +7754,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -7512,10 +7819,10 @@
   {
    "adjustments": [
     "Batting slot 1 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -7537,13 +7844,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 2.225,
+   "mean": 1.978,
    "median": 2,
    "model": "F",
    "name": "Yandy D\u00edaz",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -7570,11 +7877,11 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.75,
-    "2": 0.545,
-    "3": 0.3725,
-    "4": 0.24,
-    "5": 0.1425
+    "1": 0.7225,
+    "2": 0.5025,
+    "3": 0.3225,
+    "4": 0.19,
+    "5": 0.115
    }
   },
   {
@@ -7583,7 +7890,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -7648,10 +7955,10 @@
   {
    "adjustments": [
     "Batting slot 2 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -7673,19 +7980,19 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.978,
-   "median": 2,
+   "mean": 1.893,
+   "median": 1,
    "model": "F",
    "name": "Jonathan Aranda",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
     "family": "plate_appearances",
-    "mean": 4.29,
-    "p10": 4,
+    "mean": 4.15,
+    "p10": 3,
     "p90": 5
    },
    "p10": 0,
@@ -7706,11 +8013,11 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.7225,
-    "2": 0.5025,
-    "3": 0.3225,
-    "4": 0.19,
-    "5": 0.115
+    "1": 0.7075,
+    "2": 0.4825,
+    "3": 0.3075,
+    "4": 0.1825,
+    "5": 0.1075
    }
   },
   {
@@ -7719,7 +8026,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -7784,10 +8091,10 @@
   {
    "adjustments": [
     "Batting slot 3 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -7815,7 +8122,7 @@
    "name": "Ryan Vilade",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -7852,10 +8159,10 @@
   {
    "adjustments": [
     "Batting slot 9 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -7883,7 +8190,7 @@
    "name": "Taylor Walls",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -7923,7 +8230,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -7988,10 +8295,10 @@
   {
    "adjustments": [
     "Batting slot 6 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -8013,13 +8320,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.743,
+   "mean": 1.553,
    "median": 1,
    "model": "F",
    "name": "Jonny DeLuca",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -8046,11 +8353,11 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.6725,
-    "2": 0.445,
-    "3": 0.2775,
-    "4": 0.165,
-    "5": 0.09
+    "1": 0.63,
+    "2": 0.405,
+    "3": 0.2425,
+    "4": 0.1375,
+    "5": 0.0725
    }
   },
   {
@@ -8059,7 +8366,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -8127,7 +8434,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -8195,7 +8502,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -8260,10 +8567,10 @@
   {
    "adjustments": [
     "Batting slot 7 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -8285,19 +8592,19 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.743,
+   "mean": 1.553,
    "median": 1,
    "model": "F",
    "name": null,
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
     "family": "plate_appearances",
-    "mean": 3.74,
-    "p10": 3,
+    "mean": 3.45,
+    "p10": 2,
     "p90": 4
    },
    "p10": 0,
@@ -8318,11 +8625,11 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.6725,
-    "2": 0.445,
-    "3": 0.2775,
-    "4": 0.165,
-    "5": 0.09
+    "1": 0.63,
+    "2": 0.405,
+    "3": 0.2425,
+    "4": 0.1375,
+    "5": 0.0725
    }
   },
   {
@@ -8331,7 +8638,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -8396,10 +8703,10 @@
   {
    "adjustments": [
     "Batting slot 4 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -8421,13 +8728,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 2.218,
+   "mean": 1.978,
    "median": 2,
    "model": "F",
    "name": "Junior Caminero",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -8454,11 +8761,11 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.75,
-    "2": 0.5425,
-    "3": 0.37,
-    "4": 0.24,
-    "5": 0.14
+    "1": 0.7225,
+    "2": 0.5025,
+    "3": 0.3225,
+    "4": 0.19,
+    "5": 0.115
    }
   },
   {
@@ -8467,7 +8774,7 @@
     "Opposing starter hit-rate factor x0.93 over an expected 28% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -8532,10 +8839,10 @@
   {
    "adjustments": [
     "Batting slot 5 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -8557,13 +8864,13 @@
     ],
     "status": "REVIEW"
    },
-   "mean": 1.893,
+   "mean": 1.743,
    "median": 1,
    "model": "F",
    "name": "Chandler Simpson",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -8573,7 +8880,7 @@
     "p90": 5
    },
    "p10": 0,
-   "p90": 5,
+   "p90": 4,
    "participation": {
     "captured_utc": null,
     "certainty": "UNKNOWN",
@@ -8590,20 +8897,20 @@
    "slot_source": "ASSUMED_LAST_LINEUP",
    "team": "TB",
    "thresholds": {
-    "1": 0.7075,
-    "2": 0.4825,
-    "3": 0.3075,
-    "4": 0.1825,
-    "5": 0.1075
+    "1": 0.6725,
+    "2": 0.445,
+    "3": 0.2775,
+    "4": 0.165,
+    "5": 0.09
    }
   },
   {
    "adjustments": [
     "Batting slot 8 assumed from 2026-10-18 (lineup unconfirmed).",
-    "Opposing starter hit-rate factor xnan over an expected 52% of PAs.",
+    "Opposing starter hit-rate factor x0.94 over an expected 10% of PAs.",
     "Hitter form is through 2026-10-18 (the repo/archive history available at run time)."
    ],
-   "data_asof_utc": "2026-10-19T02:29:10Z",
+   "data_asof_utc": "2026-10-19T14:24:22Z",
    "family": "hits_runs_rbis",
    "game_id": "849815",
    "gate": {
@@ -8631,7 +8938,7 @@
    "name": "Ben Williamson",
    "opponent": "CLE",
    "opponent_adjustment": {
-    "factor": NaN,
+    "factor": 0.938,
     "sample_games": null
    },
    "opportunity": {
@@ -8670,9 +8977,9 @@
  "slate": {
   "date": "2026-10-19",
   "inputs_through": {
-   "hitters": "2026-10-19T02:29:10Z",
-   "pitchers": "2026-10-19T02:29:10Z",
-   "teams": "2026-10-19T02:29:10Z"
+   "hitters": "2026-10-19T14:24:22Z",
+   "pitchers": "2026-10-19T14:24:22Z",
+   "teams": "2026-10-19T14:24:22Z"
   },
   "label": "Live pregame projections for games starting in the next 20 h. Who plays comes from archived availability observations (probable pitcher: certainty per observation; hitters: posted lineup card only). Research only.",
   "status": "LIVE_PREGAME"

@@ -121,7 +121,7 @@ jobs:
         run: python -m pip install --quiet -r "$REQS"
       - name: Contract tests (fast)
         working-directory: ${{ env.PF_DIR }}
-        run: python -m pytest -q tests/test_mlb_live.py tests/test_mlb_pf.py tests/test_pf_core.py tests/test_pf_live.py
+        run: python -m pytest -q tests/test_mlb_live.py tests/test_mlb_pf.py tests/test_pf_core.py tests/test_pf_live.py tests/test_mlb_feed.py
       - name: Check out the projection-data branch (creates the orphan on the first run)
         run: bash "$PF_DIR/ci/setup_archive.sh" "$RUNNER_TEMP/archive" "${{ env.DRY_RUN == 'true' && 'false' || 'true' }}"
       - name: Run the stages (capture, results, settle, project, publish, score, guard)
@@ -132,6 +132,8 @@ jobs:
           if [ "$DRY_RUN" = "true" ]; then EXTRA="--dry-run"; fi
           python -m mlb.live.run --stage "$STAGE" --archive "$RUNNER_TEMP/archive" --repo "$GITHUB_WORKSPACE" \
             --summary-out "$RUNNER_TEMP/run_summary.json" $EXTRA
+      - name: Every published JSON file is strict JSON (no NaN or Infinity, which browsers cannot parse)
+        run: python3 "$PF_DIR/ci/strict_json_check.py" "$RUNNER_TEMP/archive"
       - name: Commit the archive additions (only if something changed; never after a failed stage)
         if: ${{ success() && env.DRY_RUN != 'true' }}
         run: |
@@ -184,7 +186,7 @@ jobs:
         run: python -m pip install --quiet -r "$REQS"
       - name: Contract tests (fast)
         working-directory: ${{ env.PF_DIR }}
-        run: python -m pytest -q tests/test_mlb_live.py tests/test_mlb_pf.py tests/test_pf_core.py tests/test_pf_live.py
+        run: python -m pytest -q tests/test_mlb_live.py tests/test_mlb_pf.py tests/test_pf_core.py tests/test_pf_live.py tests/test_mlb_feed.py
       - name: Read the projection-data branch (local temp repo when it does not exist yet)
         run: bash "$PF_DIR/ci/setup_archive.sh" "$RUNNER_TEMP/archive" false
       - name: Full chain with --dry-run (live fetches, real projections, archive into a temp copy)

@@ -30,7 +30,7 @@ if PF not in sys.path:
 warnings.filterwarnings("ignore")
 
 from pf_core import gate as G  # noqa: E402
-from mlb import data as D, evaluate as EV  # noqa: E402
+from mlb import data as D, evaluate as EV, feed  # noqa: E402
 from mlb.ladder import build_dist, walkforward_lgbm  # noqa: E402
 
 NEW_BLOCK = 999999
@@ -385,7 +385,7 @@ def compute(inputs, now, participation_fn=None, emit_pmf=False, slate_info=None)
                 adj.append(f"Pitched {int(row['days_rest'])} day(s) before this start: treated as an opener/short outing.")
             if row["opener_flag"]:
                 adj.append("Recent usage is mostly relief / very short starts (opener flag).")
-            if fac:
+            if fac and feed.finite_round(row[fac]) is not None:
                 adj.append(f"Opponent factor x{row[fac]:.2f} (point-in-time, shrunk; elasticity fitted on 2023-24).")
             adj.append(("Pitcher lines through %s included as history; regular-season parameters, no postseason leash adjustment." if live else
                         "Postseason pitcher lines through %s included as history; regular-season parameters, no postseason leash adjustment.") % inputs["asof"]["pitchers"])
@@ -393,7 +393,7 @@ def compute(inputs, now, participation_fn=None, emit_pmf=False, slate_info=None)
                     "game_id": str(row["game_pk"]), "family": fam, **ds,
                     "opportunity": None if c == "bf" else {"family": "batters_faced", "mean": round(float(bfd.mean[i]), 2),
                                                            "p10": int(bfd.quantile(0.1)[i]), "p90": int(bfd.quantile(0.9)[i])},
-                    "opponent_adjustment": {"factor": round(float(row[fac]), 3) if fac else 1.0, "sample_games": None},
+                    "opponent_adjustment": {"factor": feed.finite_round(row[fac]) if fac else 1.0, "sample_games": None},
                     "adjustments": adj, "readiness": ready.get(fam, {}).get("readiness", "SHADOW VALIDATION"),
                     "model": w, "gate": {"status": gate["status"], "findings": [{k: f[k] for k in ("check", "severity", "what", "category", "action")} for f in gate["findings"]]},
                     "data_asof_utc": _asof_iso(inputs, "pitchers", end_of_day=True), **lc}
@@ -453,9 +453,11 @@ def compute(inputs, now, participation_fn=None, emit_pmf=False, slate_info=None)
                     "opponent": row["opp"], "game_id": str(row["game_pk"]), "family": fam, **ds,
                     "opportunity": None if c == "PA" else {"family": "plate_appearances", "mean": round(float(pad.mean[i]), 2),
                                                            "p10": int(pad.quantile(0.1)[i]), "p90": int(pad.quantile(0.9)[i])},
-                    "opponent_adjustment": {"factor": round(float(row["sp_h_fac"]), 3), "sample_games": None},
+                    "opponent_adjustment": {"factor": feed.finite_round(row["sp_h_fac"]), "sample_games": None},
                     "adjustments": [slot_txt,
-                                    f"Opposing starter hit-rate factor x{row['sp_h_fac']:.2f} over an expected {row['sp_share']*100:.0f}% of PAs.",
+                                    (f"Opposing starter hit-rate factor x{row['sp_h_fac']:.2f} over an expected {row['sp_share']*100:.0f}% of PAs."
+                                     if feed.finite_round(row["sp_h_fac"]) is not None and feed.finite_round(row["sp_share"]) is not None else
+                                     "Opposing starter not announced or without enough history: no starter hit-rate factor is shown."),
                                     ("Hitter form is through %s (the repo/archive history available at run time)." % inputs["asof"]["hitters"]) if live else
                                     "No 2026 postseason hitter lines in the repo: form is through the end of the regular season."],
                     "readiness": ready.get(fam, {}).get("readiness", "SHADOW VALIDATION"), "model": w,
@@ -527,7 +529,7 @@ def main(argv=None):
     out = compute(inputs, now, slate_info=info)
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
     with open(a.out, "w") as f:
-        json.dump(out, f, indent=1, default=lambda o: None if isinstance(o, float) and not np.isfinite(o) else str(o))
+        f.write(feed.dumps(feed.validate(out), indent=1, default=str))
     print(f"wrote {a.out}: {len(out['players'])} player projections, {len(out['games'])} games")
     return out
 

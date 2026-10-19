@@ -38,6 +38,7 @@ if PF not in sys.path:
 warnings.filterwarnings("ignore")
 
 from pf_core import availability as av, prospective as pr  # noqa: E402
+from mlb import feed  # noqa: E402
 from mlb.live import availability as live_av, forecast as FC, incumbent as INC, results as RES, score as SC, statsapi as api  # noqa: E402
 
 SPORT = "MLB"
@@ -258,7 +259,7 @@ def _strip(o):
 
 
 def _same(a, b):
-    drop = lambda d: None if d is None else {k: v for k, v in d.items() if k != "generated_utc"}  # noqa: E731
+    drop = lambda d: None if d is None else {k: v for k, v in d.items() if k not in ("generated_utc", "_nulled_optional")}  # noqa: E731
     return drop(a) == drop(b)
 
 
@@ -268,6 +269,10 @@ def stage_publish(ctx: Ctx):
         raise RuntimeError("publish needs the project stage output (run --stage project,publish together)")
     out = _strip(json.load(open(p)))
     out["authority"] = "research_only"
+    # strict JSON only: optional descriptors that are genuinely missing become null, anything else non-finite or missing fails the
+    # publication (the last good feed stays and ages out visibly) instead of writing a file browsers cannot parse
+    out = feed.validate(out)
+    nulled = out.get("_nulled_optional", 0)
     d = os.path.join(ctx.archive, "projections", "mlb")
     os.makedirs(d, exist_ok=True)
     latest = os.path.join(d, "latest.json")
@@ -277,7 +282,7 @@ def stage_publish(ctx: Ctx):
         stamp = ctx.now.strftime("%Y-%m-%dT%H%MZ")
         for name in ("latest.json", f"{stamp}.json"):
             with open(os.path.join(d, name), "w") as f:
-                json.dump(out, f, indent=1, sort_keys=True)
+                f.write(feed.dumps(out, indent=1, sort_keys=True))
     sd = os.path.join(ctx.archive, "summary", "mlb")
     os.makedirs(sd, exist_ok=True)
     src = os.path.join(PF, "results", "summary.json")
@@ -285,8 +290,9 @@ def stage_publish(ctx: Ctx):
         dst = os.path.join(sd, "latest.json")
         if not os.path.exists(dst) or open(dst).read() != open(src).read():
             shutil.copyfile(src, dst)
-    res = {"stage": "publish", "changed": changed, "games": len(out["games"]), "players": len(out["players"])}
-    log("publish", f"projections latest.json {'updated' if changed else 'unchanged'}: {res['games']} games, {res['players']} player rows")
+    res = {"stage": "publish", "changed": changed, "games": len(out["games"]), "players": len(out["players"]), "optional_values_nulled": nulled}
+    log("publish", f"projections latest.json {'updated' if changed else 'unchanged'}: {res['games']} games, {res['players']} player rows"
+                   + (f"; {nulled} missing optional values published as null" if nulled else ""))
     return res
 
 
@@ -409,12 +415,14 @@ def stage_score(ctx: Ctx):
         since = card["window"]["since_utc"]
         seg = SC.segments(ctx.archive, SPORT, since)
         card["segments"] = seg
-        path = pr.write_scorecard(card, ctx.archive, tag=tag)
+        # the file is strict JSON (an undefined statistic, e.g. the z of one cluster, is null); the markdown renders the in-memory card
+        published, undefined = feed.nullify_nonfinite(card)
+        path = pr.write_scorecard(published, ctx.archive, tag=tag)
         md = pr.render_markdown(card, title=f"MLB projection scorecard ({tag})") + SC.render_segments(seg)
         with open(path.replace(".json", ".md"), "w") as fh:
             fh.write(md)
         md_all.append(md)
-        out["windows"][tag] = {"settled": card["settlement"]["settled"], "void": card["settlement"]["void"],
+        out["windows"][tag] = {"undefined_statistics_nulled": undefined, "settled": card["settlement"]["settled"], "void": card["settlement"]["void"],
                                "corrections": card["settlement"]["corrections"], "alerts": [a["status"] for a in card["alerts"]]}
     gs = os.environ.get("GITHUB_STEP_SUMMARY")
     if gs and not ctx.a.no_step_summary:

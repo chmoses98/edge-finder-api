@@ -1,6 +1,6 @@
 # Near-close capture health
 
-_generated 2026-10-19T12:54:23Z (schema `capture_health_v1`)_
+_generated 2026-10-19T15:25:25Z (schema `capture_health_v1`)_
 > **No near-close window was covered today.** Every CLV figure for this date rests on quotes taken well before first pitch.
 
 

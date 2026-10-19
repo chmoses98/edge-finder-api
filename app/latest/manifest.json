@@ -1,10 +1,10 @@
 {
-  "commit_sha": "8aca600671a4a665dba4ea8c2b20960501761141",
+  "commit_sha": "282bf03f9ce8994f871c7f177b35c2667051db00",
   "counts": {
     "board": 1,
     "events": 1,
     "markets": 465,
-    "model_prices": 0,
+    "model_prices": 7,
     "recommendations": 0,
     "runs": 1,
     "settlements": 152,
@@ -13,81 +13,81 @@
   },
   "files": {
     "board": {
-      "bytes": 1013,
+      "bytes": 1010,
       "count": 1,
       "kind": "board",
       "path": "board.json",
-      "sha256": "0fad91e10f812b729a5192e6ff805db7837896fe9bbb89af6368d30c97e2f139"
+      "sha256": "963aaf17adf4d492eb558292142a0679a8c63d71317df24cde40d03b35045d37"
     },
     "event_detail/evt_6f0d74d763d82fba30a3": {
-      "bytes": 517535,
+      "bytes": 533905,
       "count": null,
       "kind": "event_detail",
       "path": "event_detail/evt_6f0d74d763d82fba30a3.json",
-      "sha256": "d8739d4b4347882dc258673738c692509145fb7f938c72b0284e122caab0e3f7"
+      "sha256": "4da716f31818c6f9ee7866466e117e1f79f50eb98462c8fd07da095a9789be34"
     },
     "events": {
-      "bytes": 1733,
+      "bytes": 1752,
       "count": 1,
       "kind": "events",
       "path": "events.json",
-      "sha256": "ec47def08212dc5572f44fd9fcf90ff269f2d24b59cfc59c91923ab40da73190"
+      "sha256": "e0bb421e55af6d24e39ee9f8f477add2281358466d19509aad8f1d20f5d97bb7"
     },
     "markets": {
-      "bytes": 625600,
+      "bytes": 636846,
       "count": 465,
       "kind": "markets",
       "path": "markets.json",
-      "sha256": "f1d316362e27f6b38d22b6838cd04ebff53e95327fdaca7fb713a7d098497a75"
+      "sha256": "3ef94e9398f33472f7933ea0a2c170e54ae278e0bc3777d13e01cfeeefde293e"
     },
     "model_prices": {
-      "bytes": 171,
-      "count": 0,
+      "bytes": 5285,
+      "count": 7,
       "kind": "model_prices",
       "path": "model_prices.json",
-      "sha256": "d24a8c936705070eb7a6c910f0c26fa632f7b090de47dc030ebc7eadf9f5a343"
+      "sha256": "73c8301d0c70c55034102ed3cfb3c988d3921ff32e76349e417ceeb60a059da3"
     },
     "performance": {
       "bytes": 22975,
       "count": null,
       "kind": "performance",
       "path": "performance.json",
-      "sha256": "05c31fec226f1e74dcdb2fbc0c3ab2730aac3ca6164da608d654758dc2391cbf"
+      "sha256": "2bbff3dac8133087dfed8471ed3a292c4409d87220faf3ca66693fc79be49a8d"
     },
     "recommendations": {
       "bytes": 174,
       "count": 0,
       "kind": "recommendations",
       "path": "recommendations.json",
-      "sha256": "271af61b9af6bfbc9d523d4faf5e5341ab73f03bfb60c3fdfe006b3b6d86751e"
+      "sha256": "bb418161b5857db1216eabdcafe2b18cf9c30dc8b2d353d5556a6739bb205f6d"
     },
     "runs": {
-      "bytes": 1396,
+      "bytes": 1365,
       "count": 1,
       "kind": "runs",
       "path": "runs.json",
-      "sha256": "425f0d0412292341ce728f92497d936581d71753c4c3e1ecbb074b2da1c60d8a"
+      "sha256": "0164bc1792ad3f5deca257408636223354da7d97a72b3827433a6ab08d21b085"
     },
     "settlements": {
       "bytes": 105889,
       "count": 152,
       "kind": "settlements",
       "path": "settlements.json",
-      "sha256": "8590ed399d4996f811fd47dddad4ad3b81dadcd09336cd37a02805d0beafc8eb"
+      "sha256": "f33136216fecea1971f5801d5b0d4dc96731222902e6c0aea8748d937b697e34"
     },
     "theses": {
-      "bytes": 1800,
+      "bytes": 1794,
       "count": 1,
       "kind": "theses",
       "path": "theses.json",
-      "sha256": "a8bd3d8181f542b68b78a8d60623238b7bbc88444b2fdeffaa120076c7600fac"
+      "sha256": "777ae856233e249afac9a875ad4199bf3366ad3626c8c6c4ff6db004807be8a5"
     },
     "wagers": {
       "bytes": 258138,
       "count": 157,
       "kind": "wagers",
       "path": "wagers.json",
-      "sha256": "4f83449951a6975c39df97786541dd107e8b07c8bb4bdd90fe13da2f60d1ff2b"
+      "sha256": "1fcca3e067a0699de0f1132306d45aae6a1babb05b886e6b239bea79b05b78d3"
     }
   },
   "freshness": {
@@ -96,15 +96,15 @@
       "status": "FRESH"
     },
     "model": {
-      "as_of": null,
-      "status": "UNKNOWN"
+      "as_of": "2026-10-19T21:46:38Z",
+      "status": "FRESH"
     },
     "router": {
       "as_of": "2026-10-12T00:38:45Z",
       "status": "STALE"
     },
     "schedule": {
-      "as_of": "2026-10-19T13:09:19Z",
+      "as_of": "2026-10-19T21:46:38Z",
       "status": "FRESH"
     },
     "settlement": {
@@ -112,16 +112,14 @@
       "status": "STALE"
     }
   },
-  "generated_at": "2026-10-19T21:43:37Z",
+  "generated_at": "2026-10-19T21:49:29Z",
   "kind": "manifest",
   "model_version": null,
-  "run_id": "run_5b42a78f4adba8088cef",
+  "run_id": "run_0be4a8dd26c31af6d6dc",
   "schema_version": "edge_finder.app.v1",
   "source_branch": "main",
   "source_repo": "chmoses98/edge-finder-api",
   "sport": "MLB",
   "status": "SUCCESS",
-  "warnings": [
-    "no model price could be exported for 2026-10-19"
-  ]
+  "warnings": []
 }

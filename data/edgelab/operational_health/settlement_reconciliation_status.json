@@ -1,23 +1,24 @@
 {
-  "asOf": "2026-10-15T07:55:20Z",
+  "asOf": "2026-10-20T01:17:44Z",
   "lastRun": {
-    "completedAt": "2026-10-15T07:55:20Z",
+    "completedAt": "2026-10-20T01:17:44Z",
     "counts": {
       "betsSettled": 1,
-      "datesChanged": 1,
-      "datesConsidered": 1,
-      "reportsRegenerated": 1,
-      "settlementsMeaningfullyChanged": 317,
-      "wagersStillPending": 0
+      "datesChanged": 2,
+      "datesConsidered": 2,
+      "reportsRegenerated": 2,
+      "settlementsMeaningfullyChanged": 954,
+      "wagersStillPending": 3
     },
     "datesConsidered": [
-      "2026-10-14"
+      "2026-10-15",
+      "2026-10-19"
     ],
-    "githubRunId": "38701893692",
+    "githubRunId": "39352515185",
     "refusalReason": null,
-    "trigger": "SCHEDULED_SWEEP"
+    "trigger": "PUSH_CANONICAL_LEDGER"
   },
-  "newestPendingDate": "2026-09-17",
+  "newestPendingDate": "2026-10-19",
   "oldestPendingDate": "2026-06-12",
   "pendingByDate": {
     "2026-06-12": 5,
@@ -37,9 +38,10 @@
     "2026-08-30": 2,
     "2026-09-03": 1,
     "2026-09-07": 2,
-    "2026-09-17": 3
+    "2026-09-17": 3,
+    "2026-10-19": 3
   },
-  "pendingTotal": 47,
+  "pendingTotal": 50,
   "pendingWagers": [
     {
       "betId": "0ebaacd152b07b0be3df6e22a766c193ade1de23",
@@ -463,6 +465,33 @@
       "settlementRefusalClass": "CONTRADICTION",
       "settlementRefusalReason": "SETTLEMENT_CONTRADICTED_SETTLEMENT_GAME_IS_NOT_THE_WAGERS_GAME",
       "trackingType": null
+    },
+    {
+      "betId": "0088c1fcdecad2b047918d6dfff9613756e7d043",
+      "gameDate": "2026-10-19",
+      "marketFamily": null,
+      "marketTicker": "KXMLBOUTS-26OCT192008CLETB-TBFPERALTA51-15",
+      "settlementRefusalClass": null,
+      "settlementRefusalReason": null,
+      "trackingType": "REAL"
+    },
+    {
+      "betId": "00e1adc43b8ef1e56d6074ae173e079d1f1cae85",
+      "gameDate": "2026-10-19",
+      "marketFamily": null,
+      "marketTicker": "KXMLBOUTS-26OCT192008CLETB-TBFPERALTA51-15",
+      "settlementRefusalClass": null,
+      "settlementRefusalReason": null,
+      "trackingType": "REAL"
+    },
+    {
+      "betId": "0d872591722ae85c7a9ebe1d9a458e88d660a689",
+      "gameDate": "2026-10-19",
+      "marketFamily": null,
+      "marketTicker": "KXMLBF7-26OCT192008CLETB-TIE",
+      "settlementRefusalClass": null,
+      "settlementRefusalReason": null,
+      "trackingType": "REAL"
     }
   ],
   "refusalClassCounts": {

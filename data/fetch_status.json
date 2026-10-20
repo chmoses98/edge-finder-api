@@ -1,8 +1,25 @@
 {
-  "status": "OK",
-  "requestedDate": "2026-10-19",
-  "actualDate": "2026-10-19",
-  "fetchedAt": "2026-10-20T01:01:02Z",
+  "status": "NO_GAMES_SCHEDULED",
+  "requestedDate": "2026-10-20",
+  "actualDate": "no-games",
+  "failedAt": "2026-10-20T19:50:56Z",
   "source": "fetch-slate/post_fetch_gate",
-  "quarantinedGames": []
+  "reason": "no MLB games scheduled on 2026-10-20; an empty slate is correct",
+  "quarantinedGames": [],
+  "scheduleEvidence": {
+    "date": "2026-10-20",
+    "source": "statsapi.mlb.com/api/v1/schedule",
+    "fetchedAt": "2026-10-20T19:50:55Z",
+    "gameTypes": [
+      "R",
+      "F",
+      "D",
+      "L",
+      "W"
+    ],
+    "status": "NO_GAMES_SCHEDULED",
+    "scheduledGames": 0,
+    "playableGames": 0,
+    "reason": "no playable MLB games scheduled (0 on the schedule)"
+  }
 }

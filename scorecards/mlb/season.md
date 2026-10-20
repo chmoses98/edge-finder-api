@@ -1,6 +1,6 @@
 ## MLB projection scorecard (season) — season to date
 
-Generated 2026-10-20T19:32:54Z. Research only; nothing here is a betting signal.
+Generated 2026-10-20T22:40:12Z. Research only; nothing here is a betting signal.
 
 Archived pregame forecasts: 450 across 2 games. Settled: 356 (void/DNP 6, stat corrections 0).
 

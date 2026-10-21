@@ -1,23 +1,23 @@
 {
   "bet_authority": "MANUAL",
-  "commit_sha": "cdcf6ec4987e782623747b3f1974e0f2456eab23",
+  "commit_sha": "aa14e24e8209b3915a62a557a8195cf31044f1eb",
   "components": {
     "daily_health": {
-      "age_seconds": 162249.9,
+      "age_seconds": 163865.9,
       "as_of": "2026-10-20T02:08:57Z",
       "detail": "edgelab daily health 2026-10-19 status=HEALTHY",
       "status": "OK"
     },
     "export": {
       "age_seconds": 0.9,
-      "as_of": "2026-10-21T23:13:06Z",
+      "as_of": "2026-10-21T23:40:02Z",
       "detail": null,
       "status": "OK"
     },
     "market_data": {
-      "age_seconds": 1140.9,
-      "as_of": "2026-10-21T22:54:06Z",
-      "detail": "no MLB market listed for 2026-10-21: data/kalshi_registry_snapshots/kalshi_search_2026-10-21_2254.json found 0 markets with every series endpoint complete; every event on the 2026-10-19 slate is FINAL/POSTPONED/CANCELLED",
+      "age_seconds": 137.9,
+      "as_of": "2026-10-21T23:37:45Z",
+      "detail": "no MLB market listed for 2026-10-21: data/kalshi_registry_snapshots/kalshi_search_2026-10-21_2337.json found 0 markets with every series endpoint complete; every event on the 2026-10-19 slate is FINAL/POSTPONED/CANCELLED",
       "status": "NOT_APPLICABLE"
     },
     "model": {
@@ -27,40 +27,40 @@
       "status": "NOT_APPLICABLE"
     },
     "production_gate": {
-      "age_seconds": 18805.9,
+      "age_seconds": 20421.9,
       "as_of": "2026-10-21T17:59:41Z",
       "detail": "production_health_gate overall=HEALTHY",
       "status": "OK"
     },
     "router": {
-      "age_seconds": 512526.9,
+      "age_seconds": 514142.9,
       "as_of": "2026-10-16T00:51:00Z",
       "detail": null,
       "status": "STALE"
     },
     "settlement": {
-      "age_seconds": 129151.9,
+      "age_seconds": 130767.9,
       "as_of": "2026-10-20T11:20:35Z",
       "detail": null,
       "status": "OK"
     }
   },
-  "data_age_seconds": 1140.9,
+  "data_age_seconds": 137.9,
   "errors": [],
   "freshness_status": "FRESH",
-  "generated_at": "2026-10-21T23:13:06Z",
+  "generated_at": "2026-10-21T23:40:02Z",
   "kind": "health",
-  "last_export_attempt": "2026-10-21T23:13:06Z",
+  "last_export_attempt": "2026-10-21T23:40:02Z",
   "last_market_capture": "2026-10-20T02:55:27Z",
   "last_model_generated": "2026-10-20T11:19:42Z",
-  "last_successful_run": "2026-10-21T23:13:06Z",
+  "last_successful_run": "2026-10-21T23:40:02Z",
   "market_data_status": "NOT_APPLICABLE",
   "model_status": "NOT_APPLICABLE",
-  "next_scheduled_run": "2026-10-21T23:30:00Z",
+  "next_scheduled_run": "2026-10-22T00:00:00Z",
   "overall_status": "HEALTHY",
-  "payload_run_id": "run_adf5e49db6d80d2c4467",
+  "payload_run_id": "run_b8f4d2ecddb10fe8fd0c",
   "router_status": "STALE",
-  "run_id": "run_adf5e49db6d80d2c4467",
+  "run_id": "run_b8f4d2ecddb10fe8fd0c",
   "schema_version": "edge_finder.app.v1",
   "settlement_status": "OK",
   "sport": "MLB",
@@ -98,6 +98,6 @@
     "307 full-universe recommendation row(s) with status in ('INSUFFICIENT_MODEL_SUPPORT', 'NOT_EVALUATED') not exported",
     "9 recommendation row(s) skipped: ticker, event or contract side could not be established",
     "no slate for today (2026-10-21); exporting newest slate date 2026-10-19",
-    "market capture idle: no MLB market listed for 2026-10-21: data/kalshi_registry_snapshots/kalshi_search_2026-10-21_2254.json found 0 markets with every series endpoint complete; every event on the 2026-10-19 slate is FINAL/POSTPONED/CANCELLED; market_data and model are NOT_APPLICABLE (last market capture 2026-10-20T02:55:27Z)"
+    "market capture idle: no MLB market listed for 2026-10-21: data/kalshi_registry_snapshots/kalshi_search_2026-10-21_2337.json found 0 markets with every series endpoint complete; every event on the 2026-10-19 slate is FINAL/POSTPONED/CANCELLED; market_data and model are NOT_APPLICABLE (last market capture 2026-10-20T02:55:27Z)"
   ]
 }

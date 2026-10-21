@@ -151,7 +151,8 @@ def scenario_a(out):
     bat = pd.read_csv(os.path.join(FEED, "batting.csv.gz"))
     names = {}
     pl = D.load_pitcher_lines()
-    names.update(dict(zip(pl["pitcher_id"], pl["name"])))
+    # pitcher lines without a recorded name fall back to "P<id>"; a NaN name is not valid in the strict feed
+    names.update({k: v for k, v in zip(pl["pitcher_id"], pl["name"]) if isinstance(v, str) and v})
     pre = pre[pre.gamePk.isin(games.gamePk)]
 
     def schedule_at(now):

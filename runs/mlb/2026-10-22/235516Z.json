@@ -1,0 +1,136 @@
+{
+ "dry_run": false,
+ "line": "MLB-PF SUMMARY: stages ['capture', 'results', 'settle', 'project', 'publish', 'score', 'guard']; archived 0; settled 0",
+ "now": "2026-10-22T23:55:09Z",
+ "sport": "MLB",
+ "stages": {
+  "capture": {
+   "duplicate": false,
+   "errors": [],
+   "games_pregame": 1,
+   "games_seen": 1,
+   "lineup_posted_share": 0.0,
+   "lineups_posted": 0,
+   "minutes_to_next_start": 1444.8,
+   "not_starting_emitted": 0,
+   "observations": 2,
+   "probable_share": 1.0,
+   "probables_listed": 2,
+   "rejected": 0,
+   "seconds": 0.6,
+   "snapshot": "/home/runner/work/_temp/archive/availability/mlb/2026-10-22/235510Z_f526851b461c.jsonl.gz",
+   "stage": "capture",
+   "team_sides": 2,
+   "written": 2
+  },
+  "guard": {
+   "ok": true,
+   "seconds": 0.0,
+   "stage": "guard"
+  },
+  "project": {
+   "archived": {
+    "written": 0
+   },
+   "horizon_hours": 20.0,
+   "note": "No MLB games start in the next 20 hours (offseason / off-day): nothing to project.",
+   "seconds": 0.0,
+   "stage": "project",
+   "target_games": 0
+  },
+  "publish": {
+   "changed": false,
+   "games": 0,
+   "optional_values_nulled": 0,
+   "players": 0,
+   "seconds": 0.0,
+   "stage": "publish"
+  },
+  "results": {
+   "errors": [],
+   "final": 2,
+   "games_checked": 2,
+   "history_games_written": 0,
+   "not_played": 0,
+   "pending": 0,
+   "rows_written": 0,
+   "seconds": 5.2,
+   "stage": "results"
+  },
+  "score": {
+   "seconds": 0.7,
+   "stage": "score",
+   "windows": {
+    "daily": {
+     "alerts": [
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT"
+     ],
+     "corrections": 0,
+     "settled": 356,
+     "undefined_statistics_nulled": 0,
+     "void": 6
+    },
+    "season": {
+     "alerts": [
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT"
+     ],
+     "corrections": 0,
+     "settled": 356,
+     "undefined_statistics_nulled": 0,
+     "void": 6
+    },
+    "weekly": {
+     "alerts": [
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT"
+     ],
+     "corrections": 0,
+     "settled": 356,
+     "undefined_statistics_nulled": 0,
+     "void": 6
+    }
+   }
+  },
+  "settle": {
+   "already_settled": 362,
+   "corrections": 0,
+   "pending": 0,
+   "seconds": 0.1,
+   "settled": 0,
+   "stage": "settle",
+   "void": 0
+  }
+ }
+}

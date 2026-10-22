@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-21T17:59:41Z",
+  "checkedAt": "2026-10-22T18:49:28Z",
   "summary": {
     "overall": "HEALTHY",
     "criticalFailureCount": 0,
@@ -12,20 +12,26 @@
       "id": "PROD-1",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Slate pipeline active: last slate 2026-10-19 (2 day(s) old)",
+      "summary": "No MLB game day missed: last slate 2026-10-19 (3 calendar day(s) old), and the MLB schedule shows no playable game on 3 day(s) since (2026-10-20, 2026-10-21, 2026-10-22) -- off-day/offseason gap, not an outage",
       "detail": {
         "slateDate": "2026-10-19",
-        "lagDays": 2
+        "lagDays": 3,
+        "effectiveLagDays": 2,
+        "verifiedOffDays": [
+          "2026-10-20",
+          "2026-10-21",
+          "2026-10-22"
+        ]
       }
     },
     {
       "id": "PROD-2",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Settlement corpus current: latest partition 2026-10-20 (1 day(s) old)",
+      "summary": "Settlement corpus current: latest partition 2026-10-21 (0 day(s) old)",
       "detail": {
-        "latestPartition": "2026-10-20",
-        "lagDays": 1,
+        "latestPartition": "2026-10-21",
+        "lagDays": 0,
         "maxLagDays": 2
       }
     },
@@ -33,10 +39,10 @@
       "id": "PROD-3",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Recommendation ledger current: latest partition 2026-10-20 (1 day(s) old)",
+      "summary": "Recommendation ledger current: latest partition 2026-10-21 (0 day(s) old)",
       "detail": {
-        "latestPartition": "2026-10-20",
-        "lagDays": 1,
+        "latestPartition": "2026-10-21",
+        "lagDays": 0,
         "maxLagDays": 2
       }
     },
@@ -44,7 +50,7 @@
       "id": "PROD-4",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Prediction and settlement partitions are in step (evaluations 2026-10-20, settlements 2026-10-20)",
+      "summary": "Prediction and settlement partitions are in step (evaluations 2026-10-21, settlements 2026-10-21)",
       "detail": {
         "divergenceDays": 0
       }
@@ -53,9 +59,9 @@
       "id": "PROD-5",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Ledger persisted recently: data/edgelab/bets/bets.jsonl last committed 2026-10-20 (1 day(s) ago)",
+      "summary": "Ledger persisted recently: data/edgelab/bets/bets.jsonl last committed 2026-10-20 (2 day(s) ago)",
       "detail": {
-        "lagDays": 1,
+        "lagDays": 2,
         "legacyBetsJsonCommitDate": "2026-09-18"
       }
     },
@@ -63,10 +69,10 @@
       "id": "PROD-6",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Model-evaluation corpus current: latest partition 2026-10-20 (1 day(s) old)",
+      "summary": "Model-evaluation corpus current: latest partition 2026-10-21 (0 day(s) old)",
       "detail": {
-        "latestPartition": "2026-10-20",
-        "lagDays": 1,
+        "latestPartition": "2026-10-21",
+        "lagDays": 0,
         "maxLagDays": 2
       }
     },
@@ -93,8 +99,8 @@
       "status": "PASS",
       "summary": "Every authenticated MLB wager the router holds is on the canonical ledger (router newest game date 2026-10-19, canonical 2026-10-19, 122 eligible)",
       "detail": {
-        "latestRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/39643672837",
-        "judgedRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/39613758892",
+        "latestRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/39820307859",
+        "judgedRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/39790200293",
         "routerCoverage": {
           "eligible": 122,
           "newestFirstFillUtc": "2026-10-19",
@@ -116,7 +122,7 @@
       "id": "RSCH-1",
       "severity": "RESEARCH_DEGRADATION",
       "status": "PASS",
-      "summary": "Research heartbeat current (latest 2026-10-20)",
+      "summary": "Research heartbeat current (latest 2026-10-21)",
       "detail": {}
     }
   ],
@@ -124,7 +130,8 @@
     "2026-10-09",
     "2026-10-16",
     "2026-10-20",
-    "2026-10-21"
+    "2026-10-21",
+    "2026-10-22"
   ],
   "thresholds": {
     "maxSettlementLagDays": 2,

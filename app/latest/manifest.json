@@ -13,81 +13,81 @@
   },
   "files": {
     "board": {
-      "bytes": 1983,
+      "bytes": 1985,
       "count": 1,
       "kind": "board",
       "path": "board.json",
-      "sha256": "d36962d53e3170b69c4ae16c8bc7fea03d9e1ad835dfaad73831839a815299bb"
+      "sha256": "cc523c326784acd9d8b4f4e0c8dc715802141bc071b60176e89ef1fab923f308"
     },
     "event_detail/evt_6f0d74d763d82fba30a3": {
       "bytes": 627974,
       "count": null,
       "kind": "event_detail",
       "path": "event_detail/evt_6f0d74d763d82fba30a3.json",
-      "sha256": "c28447506ed7d94605127aaba9dc79cdf7f6334dcb3b3527d680bdbcc567b772"
+      "sha256": "4ea32040bef6ee57a1d923848bf1fd8478b496d732500543d0240354bb3d0c15"
     },
     "events": {
       "bytes": 1727,
       "count": 1,
       "kind": "events",
       "path": "events.json",
-      "sha256": "b9f8fe5ca604aa1a4bba903ca1ecbf49d1fba895f3da0c75ab512bae38388e58"
+      "sha256": "7fcaa4f28eacf1e3152dcd85a1a93dcfea06443f5a564220192474d6f2247e25"
     },
     "markets": {
       "bytes": 665336,
       "count": 469,
       "kind": "markets",
       "path": "markets.json",
-      "sha256": "ab343bd37407e1a4ddefaf033f3c4d68e818d86829c2750802ab9fb40a271f2f"
+      "sha256": "9721d6aa5cec900e68ffaba402479ca9fbc0112c00d0ea43e11f96ae3ab9ee03"
     },
     "model_prices": {
       "bytes": 65746,
       "count": 60,
       "kind": "model_prices",
       "path": "model_prices.json",
-      "sha256": "18533e02964aec84b4016eb4d0cf8f07bdc75fa8a0cd0b95bad026ce3f309ebe"
+      "sha256": "9689836e468031ec293ad3d0980f91e4ff345794abd4e78d3589725b35e52dff"
     },
     "performance": {
       "bytes": 22953,
       "count": null,
       "kind": "performance",
       "path": "performance.json",
-      "sha256": "76b544101567c66cd1f5d392ec80dd9bfe1976d606e4776d041d11b5b834cde3"
+      "sha256": "2c12ece03f65bb322df2a8b633cb0c39ca0192e6102c595a7775d0aa109a0b57"
     },
     "recommendations": {
       "bytes": 5984,
       "count": 4,
       "kind": "recommendations",
       "path": "recommendations.json",
-      "sha256": "fca085a4abef687f9e06f0c8f8dbaff35f3b228af95b7c44975e4ca35373ca22"
+      "sha256": "953bef97c76a14e03a5e2a9268bfae49bc75bcc54f80c75fea20789dbc216ce5"
     },
     "runs": {
-      "bytes": 1675,
+      "bytes": 2004,
       "count": 1,
       "kind": "runs",
       "path": "runs.json",
-      "sha256": "9f62464752cb4b656ef120a206205f0d1d3ae1818aaf752118a615231f56c814"
+      "sha256": "0ee14aee77e0febcdf649f88f145abf6970b54f7cb79b8a12a6dfa73ba681597"
     },
     "settlements": {
       "bytes": 106586,
       "count": 153,
       "kind": "settlements",
       "path": "settlements.json",
-      "sha256": "9c72a752e2b2c3347584fc5187cc70a5a9402fd941045017a1b0097e4ec9d94e"
+      "sha256": "47add7cd72d7f6b59cf32f07c57ef7289d9aab6f4a90a15f06179db4934a9b8d"
     },
     "theses": {
       "bytes": 1841,
       "count": 1,
       "kind": "theses",
       "path": "theses.json",
-      "sha256": "24853282eb648cf6e11efd8e29f8bbe8cae3c0ff37838ffb787c023f778688f5"
+      "sha256": "a22339a3a07c4dcac2f4cba3167ae63398b8480576d826b39eb77e08ac079af3"
     },
     "wagers": {
       "bytes": 259758,
       "count": 158,
       "kind": "wagers",
       "path": "wagers.json",
-      "sha256": "041f78b52b9706c9dd3aa54dfac1459693da1da4e942352b2f4268f45fe5cd01"
+      "sha256": "05306122668d54c1b822b31387793eb103c6f70420b213828a25441c5cfde569"
     }
   },
   "freshness": {
@@ -112,10 +112,10 @@
       "status": "AGING"
     }
   },
-  "generated_at": "2026-10-22T18:37:57Z",
+  "generated_at": "2026-10-22T19:39:19Z",
   "kind": "manifest",
   "model_version": "1.0+c3c24d78122e",
-  "run_id": "run_2f81c7afbcfa5a5a088e",
+  "run_id": "run_d4e7a27005775a5b645f",
   "schema_version": "edge_finder.app.v1",
   "source_branch": "main",
   "source_repo": "chmoses98/edge-finder-api",
@@ -124,6 +124,7 @@
   "warnings": [
     "307 full-universe recommendation row(s) with status in ('INSUFFICIENT_MODEL_SUPPORT', 'NOT_EVALUATED') not exported",
     "9 recommendation row(s) skipped: ticker, event or contract side could not be established",
-    "no slate for today (2026-10-22); exporting newest slate date 2026-10-19"
+    "no slate for today (2026-10-22); exporting newest slate date 2026-10-19",
+    "market capture idle: no MLB market listed for 2026-10-22: data/kalshi_registry_snapshots/kalshi_search_2026-10-22_1913.json found 0 markets with every series endpoint complete; every event on the 2026-10-19 slate is FINAL/POSTPONED/CANCELLED; market_data and model are NOT_APPLICABLE (last market capture 2026-10-20T02:55:27Z)"
   ]
 }

@@ -8,21 +8,21 @@
   "PRODUCTION_MODEL_SUPPORT": "the production model prices it (config/rules.json market_list)"
  },
  "bankroll": {
-  "ageMinutes": 33.108,
+  "ageMinutes": 5.637,
   "consumerSizingVerdict": {
    "mayPresentDollarStakes": false,
-   "reason": "bankroll observed 33.1 minutes ago, older than the 30-minute sizing window -- this is NOT the current bankroll",
-   "verdict": "NO_DOLLAR_SIZING"
+   "reason": "NO_DOLLAR_SIZING_FOR_THIS_CONSUMER: an authenticated, fresh bankroll EXISTS and the private workflow that produced this artifact was permitted to size against it -- but its numeric value is redacted from this copy, because this repository is public. You do not know the amount, so you cannot compute a dollar stake. Handicap normally, give edge, confidence and a bet-up-to fraction, and say that the bankroll exists but is redacted from this consumer.",
+   "verdict": "NO_DOLLAR_SIZING_FOR_THIS_CONSUMER"
   },
   "currency": "USD",
   "maxAgeMinutes": 30,
   "numericBankrollAvailable": false,
-  "observedAt": "2026-10-23T20:08:15Z",
-  "resolvedAt": "2026-10-23T20:41:21Z",
-  "sizingAllowed": false,
+  "observedAt": "2026-10-23T23:00:47Z",
+  "resolvedAt": "2026-10-23T23:06:25Z",
+  "sizingAllowed": true,
   "source": "kalshi_authenticated_balance",
-  "status": "STALE",
-  "unavailableReason": "bankroll observed 33.1 minutes ago, older than the 30-minute sizing window -- this is NOT the current bankroll",
+  "status": "FRESH",
+  "unavailableReason": null,
   "valueType": "KALSHI_AVAILABLE_CASH_BALANCE"
  },
  "completeness": {
@@ -45,20 +45,20 @@
   "bettingEligibleGames": 0,
   "eligibleMarketsTotal": 0,
   "gamesTotal": 1,
-  "normalizedRegistryValidatedMarkets": 225,
-  "rawUniverseContracts": 225,
+  "normalizedRegistryValidatedMarkets": 319,
+  "rawUniverseContracts": 319,
   "registryExcludedMarkets": 0,
   "researchOnlyByReason": {
    "BLOCKED_LINEUPS_UNCONFIRMED": 1
   },
   "researchOnlyGames": 1,
-  "researchOnlyMarketsTotal": 225,
-  "runtimeBundleMarketRows": 225,
+  "researchOnlyMarketsTotal": 319,
+  "runtimeBundleMarketRows": 319,
   "silentRemainderTotal": 0,
   "unclassifiedRawContracts": 0
  },
  "date": "2026-10-23",
- "eligibilityEvaluatedAt": "2026-10-23T20:41:21Z",
+ "eligibilityEvaluatedAt": "2026-10-23T23:06:25Z",
  "eligibilityPolicy": "Only games that have NOT started and have BOTH official lineups confirmed (lineupConfirmedOfficial on awayTeamStats AND homeTeamStats) are real-money candidates. Probable/projected lineups are never treated as confirmed. Every other game stays archived and researchable and must not produce a real-money recommendation from the normal slate card.",
  "executionConstants": {
   "_note": "Projected verbatim from config/rules.json at build time. RULES.md and MODEL_CORE.md remain authoritative for everything else; this is the subset needed to size and threshold a wager without loading them.",
@@ -186,12 +186,12 @@
  },
  "games": [
   {
-   "accounted": 225,
+   "accounted": 319,
    "bettingEligible": false,
    "bundle": "data/handicap_runtime/2026-10-23/games/849805.json",
-   "bundleBytes": 62544,
+   "bundleBytes": 77090,
    "bundleGzip": "data/handicap_runtime/2026-10-23/games/849805.json.gz",
-   "bundleGzipBytes": 12713,
+   "bundleGzipBytes": 14567,
    "eligibilityReason": "BOTH official lineups must be confirmed for real-money analysis; unconfirmed: away(TB): official lineup not posted yet, home(MIL): official lineup not posted yet",
    "eligibilityStatus": "BLOCKED_LINEUPS_UNCONFIRMED",
    "excludedOrUnresolved": 0,
@@ -224,11 +224,11 @@
     "first_inning_run": 1,
     "game_result": 2,
     "game_total": 10,
-    "hitter_hits": 33,
-    "hitter_hits_runs_rbis": 53,
-    "hitter_rbis": 20,
-    "hitter_stolen_bases": 11,
-    "hitter_total_bases": 39,
+    "hitter_hits": 54,
+    "hitter_hits_runs_rbis": 84,
+    "hitter_rbis": 34,
+    "hitter_stolen_bases": 18,
+    "hitter_total_bases": 60,
     "inning_result": 9,
     "inning_total": 7,
     "pitcher_outs": 2,
@@ -236,10 +236,10 @@
     "team_total": 14,
     "winning_margin": 10
    },
-   "marketsToInspect": 225,
+   "marketsToInspect": 319,
    "matchup": "TB@MIL",
-   "normalizedMarkets": 225,
-   "rawAttributableContracts": 225,
+   "normalizedMarkets": 319,
+   "rawAttributableContracts": 319,
    "realMoneyEligible": false,
    "registryExcluded": 0,
    "scheduledStart": "2026-10-24T00:00:00Z",
@@ -248,7 +248,7 @@
    "unclassified": 0
   }
  ],
- "generatedAt": "2026-10-23T20:41:21Z",
+ "generatedAt": "2026-10-23T23:06:25Z",
  "guarantees": [
   "Only games that have NOT started and have BOTH official lineups confirmed appear under bettingEligibleGames. Everything else is researchOnly and carries realMoneyEligible=false on every market row.",
   "For a betting-eligible game, EVERY raw Kalshi contract attributable to it is accounted for in exactly one visible state: a normalized market, a registry exclusion with its reason, or an unclassified contract with the normalizer's reason. contractAccounting.silentRemainderCount is 0 on every game of a written card -- a violation aborts the build rather than publishing a falsely complete file.",
@@ -259,7 +259,7 @@
  "playbookVersion": "1.2.0",
  "provenance": {
   "derivation": "A lossless projection of the canonical handicapping card. This layer runs no market discovery, no normalisation, no registry and no eligibility logic of its own.",
-  "rawUniverseSnapshot": "data/kalshi_registry_snapshots/kalshi_search_2026-10-23_1957.json",
+  "rawUniverseSnapshot": "data/kalshi_registry_snapshots/kalshi_search_2026-10-23_2302.json",
   "slateSource": "data/slate.json",
   "sourceArtifact": "data/handicapping_card/2026-10-23.json",
   "sourceArtifactType": "REAL_MONEY_HANDICAPPING_CARD"

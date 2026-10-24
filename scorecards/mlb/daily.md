@@ -1,6 +1,6 @@
 ## MLB projection scorecard (daily) — last 7 days
 
-Generated 2026-10-24T05:45:41Z. Research only; nothing here is a betting signal.
+Generated 2026-10-24T12:54:52Z. Research only; nothing here is a betting signal.
 
 Archived pregame forecasts: 659 across 4 games. Settled: 543 (void/DNP 6, stat corrections 0).
 

@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-23T17:40:14Z",
+  "checkedAt": "2026-10-24T16:44:54Z",
   "summary": {
     "overall": "HEALTHY",
     "criticalFailureCount": 0,
@@ -12,9 +12,9 @@
       "id": "PROD-1",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Slate pipeline active: last slate 2026-10-23 (0 day(s) old)",
+      "summary": "Slate pipeline active: last slate 2026-10-24 (0 day(s) old)",
       "detail": {
-        "slateDate": "2026-10-23",
+        "slateDate": "2026-10-24",
         "lagDays": 0
       }
     },
@@ -22,10 +22,10 @@
       "id": "PROD-2",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Settlement corpus current: latest partition 2026-10-22 (-1 day(s) old)",
+      "summary": "Settlement corpus current: latest partition 2026-10-23 (-2 day(s) old)",
       "detail": {
-        "latestPartition": "2026-10-22",
-        "lagDays": -1,
+        "latestPartition": "2026-10-23",
+        "lagDays": -2,
         "maxLagDays": 2
       }
     },
@@ -33,10 +33,10 @@
       "id": "PROD-3",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Recommendation ledger current: latest partition 2026-10-22 (-1 day(s) old)",
+      "summary": "Recommendation ledger current: latest partition 2026-10-23 (-2 day(s) old)",
       "detail": {
-        "latestPartition": "2026-10-22",
-        "lagDays": -1,
+        "latestPartition": "2026-10-23",
+        "lagDays": -2,
         "maxLagDays": 2
       }
     },
@@ -44,7 +44,7 @@
       "id": "PROD-4",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Prediction and settlement partitions are in step (evaluations 2026-10-22, settlements 2026-10-22)",
+      "summary": "Prediction and settlement partitions are in step (evaluations 2026-10-23, settlements 2026-10-23)",
       "detail": {
         "divergenceDays": 0
       }
@@ -53,9 +53,9 @@
       "id": "PROD-5",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Ledger persisted recently: data/edgelab/bets/bets.jsonl last committed 2026-10-20 (2 day(s) ago)",
+      "summary": "Ledger persisted recently: data/edgelab/bets/bets.jsonl last committed 2026-10-24 (-2 day(s) ago)",
       "detail": {
-        "lagDays": 2,
+        "lagDays": -2,
         "legacyBetsJsonCommitDate": "2026-09-18"
       }
     },
@@ -63,10 +63,10 @@
       "id": "PROD-6",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Model-evaluation corpus current: latest partition 2026-10-22 (-1 day(s) old)",
+      "summary": "Model-evaluation corpus current: latest partition 2026-10-23 (-2 day(s) old)",
       "detail": {
-        "latestPartition": "2026-10-22",
-        "lagDays": -1,
+        "latestPartition": "2026-10-23",
+        "lagDays": -2,
         "maxLagDays": 2
       }
     },
@@ -91,37 +91,36 @@
       "id": "PROD-9",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Every authenticated MLB wager the router holds is on the canonical ledger (router newest game date 2026-10-19, canonical 2026-10-19, 122 eligible)",
+      "summary": "Every authenticated MLB wager the router holds is on the canonical ledger (router newest game date 2026-10-23, canonical 2026-10-23, 124 eligible)",
       "detail": {
-        "latestRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/39992526702",
-        "judgedRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/39965347886",
+        "latestRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/40110547933",
+        "judgedRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/40095787495",
         "routerCoverage": {
-          "eligible": 122,
-          "newestFirstFillUtc": "2026-10-19",
-          "newestGameDate": "2026-10-19",
+          "eligible": 124,
+          "newestFirstFillUtc": "2026-10-23",
+          "newestGameDate": "2026-10-23",
           "refusedProvably": 0
         },
         "routerReconciliation": {
-          "eligible": 122,
-          "on_ledger": 122,
+          "eligible": 124,
+          "on_ledger": 124,
           "proposed_not_merged": 0,
           "refused": 0,
           "unaccounted": 0
         },
-        "canonicalRouterNewestGameDate": "2026-10-19",
-        "canonicalRouterRowCount": 122
+        "canonicalRouterNewestGameDate": "2026-10-23",
+        "canonicalRouterRowCount": 124
       }
     },
     {
       "id": "RSCH-1",
       "severity": "RESEARCH_DEGRADATION",
       "status": "PASS",
-      "summary": "Research heartbeat current (latest 2026-10-22)",
+      "summary": "Research heartbeat current (latest 2026-10-23)",
       "detail": {}
     }
   ],
   "verifiedOffDays": [
-    "2026-10-09",
     "2026-10-16",
     "2026-10-20",
     "2026-10-21",

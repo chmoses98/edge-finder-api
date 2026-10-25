@@ -1,23 +1,23 @@
 {
-  "asOf": "2026-10-24T07:49:34Z",
+  "asOf": "2026-10-25T01:58:16Z",
   "lastRun": {
-    "completedAt": "2026-10-24T07:49:34Z",
+    "completedAt": "2026-10-25T01:58:16Z",
     "counts": {
-      "betsSettled": 2,
+      "betsSettled": 0,
       "datesChanged": 1,
       "datesConsidered": 1,
       "reportsRegenerated": 1,
-      "settlementsMeaningfullyChanged": 330,
-      "wagersStillPending": 0
+      "settlementsMeaningfullyChanged": 337,
+      "wagersStillPending": 2
     },
     "datesConsidered": [
-      "2026-10-23"
+      "2026-10-24"
     ],
-    "githubRunId": "40075581284",
+    "githubRunId": "40150784894",
     "refusalReason": null,
-    "trigger": "SCHEDULED_SWEEP"
+    "trigger": "PUSH_CANONICAL_LEDGER"
   },
-  "newestPendingDate": "2026-09-17",
+  "newestPendingDate": "2026-10-24",
   "oldestPendingDate": "2026-06-12",
   "pendingByDate": {
     "2026-06-12": 5,
@@ -37,9 +37,10 @@
     "2026-08-30": 2,
     "2026-09-03": 1,
     "2026-09-07": 2,
-    "2026-09-17": 3
+    "2026-09-17": 3,
+    "2026-10-24": 2
   },
-  "pendingTotal": 47,
+  "pendingTotal": 49,
   "pendingWagers": [
     {
       "betId": "0ebaacd152b07b0be3df6e22a766c193ade1de23",
@@ -463,6 +464,24 @@
       "settlementRefusalClass": "CONTRADICTION",
       "settlementRefusalReason": "SETTLEMENT_CONTRADICTED_SETTLEMENT_GAME_IS_NOT_THE_WAGERS_GAME",
       "trackingType": null
+    },
+    {
+      "betId": "3cbbecc2cda158767598c4c327901af0b4cde6bc",
+      "gameDate": "2026-10-24",
+      "marketFamily": "inning_result",
+      "marketTicker": "KXMLBF5-26OCT242000TBMIL-TIE",
+      "settlementRefusalClass": null,
+      "settlementRefusalReason": null,
+      "trackingType": "REAL"
+    },
+    {
+      "betId": "e86998ff6d80c801105418ee7a32dca02ad47d3f",
+      "gameDate": "2026-10-24",
+      "marketFamily": "pitcher_outs",
+      "marketTicker": "KXMLBOUTS-26OCT242000TBMIL-TBDRASMUSSEN57-17",
+      "settlementRefusalClass": null,
+      "settlementRefusalReason": null,
+      "trackingType": "REAL"
     }
   ],
   "refusalClassCounts": {

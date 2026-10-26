@@ -1,0 +1,214 @@
+{
+ "dry_run": false,
+ "line": "MLB-PF SUMMARY: stages ['capture', 'results', 'settle', 'project', 'publish', 'score', 'guard']; archived 141; settled 0",
+ "now": "2026-10-26T20:51:36Z",
+ "sport": "MLB",
+ "stages": {
+  "capture": {
+   "duplicate": false,
+   "errors": [],
+   "games_pregame": 2,
+   "games_seen": 2,
+   "lineup_posted_share": 0.5,
+   "lineups_posted": 2,
+   "minutes_to_next_start": 188.4,
+   "not_starting_emitted": 0,
+   "observations": 20,
+   "probable_share": 0.5,
+   "probables_listed": 2,
+   "rejected": 0,
+   "seconds": 0.7,
+   "snapshot": "/home/runner/work/_temp/archive/availability/mlb/2026-10-26/205137Z_f6ac62894d40.jsonl.gz",
+   "stage": "capture",
+   "team_sides": 4,
+   "written": 20
+  },
+  "guard": {
+   "ok": true,
+   "seconds": 0.0,
+   "stage": "guard"
+  },
+  "project": {
+   "archived": {
+    "duplicates": 0,
+    "invalid": 0,
+    "late_rejected": 0,
+    "written": 141
+   },
+   "by_family": {
+    "challenger:batters_faced": 2,
+    "challenger:hits": 18,
+    "challenger:hits_runs_rbis": 18,
+    "challenger:home_runs": 18,
+    "challenger:outs": 2,
+    "challenger:pitcher_strikeouts": 2,
+    "challenger:plate_appearances": 18,
+    "challenger:rbis": 18,
+    "challenger:runs": 18,
+    "challenger:total_bases": 18,
+    "incumbent:batters_faced": 2,
+    "incumbent:game_total": 1,
+    "incumbent:outs": 2,
+    "incumbent:pitcher_strikeouts": 2,
+    "incumbent:team_runs": 2
+   },
+   "challenger_gate": {
+    "PASS": 135
+   },
+   "challenger_participation": {
+    "CONFIRMED_ACTIVE": 132
+   },
+   "challenger_records": 135,
+   "challenger_unchanged_skipped": 3,
+   "coverage": {
+    "events": 1,
+    "hitter_games_with_posted_lineup": 1,
+    "hitters": 1.0,
+    "per_event_pitchers": {
+     "849804": {
+      "coverage": 1.0,
+      "expected": 2,
+      "newest_age_minutes": 0.1,
+      "newest_capture_utc": "2026-10-26T20:51:37Z",
+      "observed": 2,
+      "sources": [
+       "mlb_statsapi_schedule_lineups",
+       "mlb_statsapi_schedule_probable_pitcher"
+      ]
+     }
+    },
+    "pitchers": 1.0
+   },
+   "gate_findings_all_published_rows": {},
+   "history": {
+    "archived_box_games_used": 12,
+    "completeness_verified_this_run": true,
+    "inputs_through": {
+     "hitters": "2026-10-26T17:51:42Z",
+     "pitchers": "2026-10-26T17:51:42Z",
+     "teams": "2026-10-26T17:51:42Z"
+    }
+   },
+   "hitters_assumed_not_archived": 0,
+   "horizon_hours": 20.0,
+   "incumbent_records": 9,
+   "incumbent_sources": {
+    "hitters": {
+     "not_pregame": 0,
+     "rows_seen": 0,
+     "usable": 0
+    },
+    "pitchers": {
+     "after_start_or_stale": 0,
+     "rows_seen": 6,
+     "usable": 6
+    },
+    "team_runs": {
+     "files": 1,
+     "games_seen": 1,
+     "not_pregame": 0,
+     "usable": 1
+    }
+   },
+   "published_players": 138,
+   "seconds": 34.2,
+   "skipped_games": [],
+   "stage": "project",
+   "target_games": 1
+  },
+  "publish": {
+   "changed": true,
+   "games": 1,
+   "optional_values_nulled": 0,
+   "players": 138,
+   "seconds": 0.0,
+   "stage": "publish"
+  },
+  "results": {
+   "errors": [],
+   "final": 3,
+   "games_checked": 3,
+   "history_games_written": 0,
+   "not_played": 0,
+   "pending": 0,
+   "rows_written": 0,
+   "seconds": 5.3,
+   "stage": "results"
+  },
+  "score": {
+   "seconds": 0.9,
+   "stage": "score",
+   "windows": {
+    "daily": {
+     "alerts": [
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT"
+     ],
+     "corrections": 0,
+     "settled": 731,
+     "undefined_statistics_nulled": 0,
+     "void": 6
+    },
+    "season": {
+     "alerts": [
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT"
+     ],
+     "corrections": 0,
+     "settled": 731,
+     "undefined_statistics_nulled": 0,
+     "void": 6
+    },
+    "weekly": {
+     "alerts": [
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT"
+     ],
+     "corrections": 0,
+     "settled": 731,
+     "undefined_statistics_nulled": 0,
+     "void": 6
+    }
+   }
+  },
+  "settle": {
+   "already_settled": 737,
+   "corrections": 0,
+   "pending": 9,
+   "seconds": 0.1,
+   "settled": 0,
+   "stage": "settle",
+   "void": 0
+  }
+ }
+}

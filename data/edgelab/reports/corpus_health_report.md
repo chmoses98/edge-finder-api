@@ -1,5 +1,5 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-10-25T12:30:52Z
+Generated: 2026-10-26T14:10:20Z
 
 ## Operational health: **FAILED**
 - Reasons: HARD_FAIL:FORWARD_MISSING_SNAPSHOT
@@ -9,7 +9,7 @@ Generated: 2026-10-25T12:30:52Z
 - Boundary date: 2026-08-03
 - Activated at: 2026-08-04T09:38:45Z
 - Exit should fail: True
-- Exit-code reason: 4 forward-era date(s) with an unacknowledged hard-fail gate status: [('2026-10-09', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-20', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-21', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-22', 'FORWARD_MISSING_SNAPSHOT')] (plus 5 acknowledged legacy gap(s), excluded from this failure per data/edgelab/corpus_acknowledged_forward_gaps.json: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15'])
+- Exit-code reason: 5 forward-era date(s) with an unacknowledged hard-fail gate status: [('2026-10-09', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-20', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-21', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-22', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-25', 'FORWARD_MISSING_SNAPSHOT')] (plus 5 acknowledged legacy gap(s), excluded from this failure per data/edgelab/corpus_acknowledged_forward_gaps.json: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15'])
 
 ## Historical corpus quality (descriptive only -- never fails this check)
 - Historical/backfill dates: 4
@@ -18,29 +18,28 @@ Generated: 2026-10-25T12:30:52Z
 
 ## Forward operational health (drives pass/fail)
 - Population note: expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates and noSlateDates (schedule-verified days with no MLB games). snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.
-- Expected forward runs: 81
-- Forward snapshots captured: 72
-- Forward snapshots missing (no manifest at all): 9 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15', '2026-10-09', '2026-10-20', '2026-10-21', '2026-10-22']
+- Expected forward runs: 83
+- Forward snapshots captured: 73
+- Forward snapshots missing (no manifest at all): 10 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15', '2026-10-09', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-25']
 - Forward incomplete captures (manifest exists, missing a required component): 0 []
-- Forward dates pending today (not yet due): 1 ['2026-10-25']
+- Forward dates pending today (not yet due): 0 []
 - Forward no-slate dates (MLB schedule verified no games; no production expected): 2 ['2026-09-28', '2026-10-02']
-- Forward provenance coverage: 72/81
-- Forward replay: attempted 289, completed 134, failed 155
+- Forward provenance coverage: 73/83
+- Forward replay: attempted 290, completed 134, failed 156
 - Forward CLV-linked markets: 44
 - Forward settlement-linked markets: 89
 - Consecutive degraded forward runs: 0
-- Hard-fail dates (drive exitShouldFail): ['2026-10-09', '2026-10-20', '2026-10-21', '2026-10-22']
+- Hard-fail dates (drive exitShouldFail): ['2026-10-09', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-25']
 - Acknowledged legacy gap dates (excluded from exitShouldFail, see data/edgelab/corpus_acknowledged_forward_gaps.json): ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
 - FORWARD_HEALTHY: 41
-- FORWARD_MISSING_SNAPSHOT: 9
+- FORWARD_MISSING_SNAPSHOT: 10
 - FORWARD_NO_SLATE: 2
-- FORWARD_PENDING_TODAY: 1
-- FORWARD_RESEARCH_ONLY_NO_DECISION: 31
+- FORWARD_RESEARCH_ONLY_NO_DECISION: 32
 
 ## Storage
-- Snapshots: 386,906,888 bytes
-- Replay runs: 27,992,422 bytes
-- Total: 414,899,310 bytes
+- Snapshots: 387,106,920 bytes
+- Replay runs: 27,993,862 bytes
+- Total: 415,100,782 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Stored Completeness | Effective Completeness | Research-Only | Commit SHA Known | Replay | Runs | Acknowledged Gap |
@@ -132,4 +131,5 @@ Generated: 2026-10-25T12:30:52Z
 | 2026-10-22 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | None | False | False | None | 0 |  |
 | 2026-10-23 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 4 |  |
 | 2026-10-24 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 4 |  |
-| 2026-10-25 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |
+| 2026-10-25 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | None | False | False | None | 0 |  |
+| 2026-10-26 | FORWARD | HEALTHY | FORWARD_RESEARCH_ONLY_NO_DECISION | PARTIAL_REPLAY | PARTIAL_REPLAY | True | True | NOT_APPLICABLE_NO_DECISION | 1 |  |

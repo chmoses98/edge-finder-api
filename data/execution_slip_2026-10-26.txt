@@ -3,29 +3,42 @@
 EXECUTION SLIP — 2026-10-26
 ======================================================================
 
-=== REAL-MONEY BETS (0) ===
-  (none)
+=== REAL-MONEY BETS (2) ===
+  MIL@TB | F5_ML_Away | F5_ML_Away
+    Ticker:    KXMLBF5-26OCT262000MILTB-MIL
+    Model%:    48.09% | Exec Price: 38.0¢ | Raw Edge: +10.09% | Cal Edge: +2.57%
+    Tier:      MEDIUM | Stake: $4.5
+    MaxBet:    42.46¢ or better
+    Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
+    Snapshot:  2026-10-26T22:33:13Z
+
+  MIL@TB | TT_Away_Over | TT_Away_Over
+    Ticker:    KXMLBTEAMTOTAL-26OCT262000MILTB-MIL4
+    Model%:    63.27% | Exec Price: 48.0¢ | Raw Edge: +15.27% | Cal Edge: +3.89%
+    Tier:      MEDIUM | Stake: $4.0
+    MaxBet:    57.63¢ or better
+    Gates:     Tier cap: model/market disagreement 15.8pt > 7pt -- Tier A withheld pending explanation
+    Codes:     MARKET_REAL_MONEY_ELIGIBLE, EXECUTABLE_EDGE_ABOVE_THRESHOLD, RAW_EDGE_STRONG, LINEUP_CONFIRMED_OFFICIAL, LINEUP_ADJ_APPLIED
+    Snapshot:  2026-10-26T22:33:13Z
+
 
 === PRICE-MOVED PASSES (0) ===
   (none)
 
-=== PAPER-ONLY (11) ===
-  MIL@TB | NRFI | Cal Edge: -4.17% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  MIL@TB | YRFI | Cal Edge: +3.92% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
-  MIL@TB | F5_ML_Away | Cal Edge: +2.68% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
-  MIL@TB | F5_ML_Home | Cal Edge: -3.86% | Rule 53: F5 requires confirmed lineups for both teams — away, home unconfirmed (
-  MIL@TB | TT_Away_Over | Cal Edge: +3.95% | Rule 50: lineupConfirmedOfficial=False → TT Paper only, Tier cap: model/market d
-  MIL@TB | TT_Home_Over | Cal Edge: +1.51% | Rule 50: lineupConfirmedOfficial=False → TT Paper only
-  MIL@TB | ML_Away | Cal Edge: +1.98% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER; Ru
-  MIL@TB | ML_Home | Cal Edge: -2.23% | Rule 51: lineupConfirmedOfficial=False (away, home) — ML downgraded to PAPER; Ru
+=== PAPER-ONLY (5) ===
+  MIL@TB | NRFI | Cal Edge: -3.82% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
+  MIL@TB | YRFI | Cal Edge: +3.56% | MLB-RSCH-0032 market suspension: KXMLBRFI paper only. Model Brier 0.2577 vs Kals
   MIL@TB | Game_Total | Cal Edge: — | Rule 71 market suspension: Game Total WR 41%, CLV -1.43%. Paper only until WR>=5
   MIL@TB | RL_Away | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
   MIL@TB | RL_Home | Cal Edge: — | Rule 81: RL suspended — WR 36%, CLV -4.09%. Paper until WR>=48% N>=20 AND CLV>=0
 
-=== REJECTED / BLOCKED (0) ===
-  (none)
+=== REJECTED / BLOCKED (4) ===
+  MIL@TB | F5_ML_Home | Raw Edge: -14.79% | Rule71-F5: model 32.2% vs KalshiF5VF 46.3% = 14.1% > 12%
+  MIL@TB | TT_Home_Over | Raw Edge: +5.38% | edge 0.925% below 1.0% floor
+  MIL@TB | ML_Away | Raw Edge: +8.70% | Rule71: model 56.7% vs PinVF 48.4% = 8.3% gap > 8%
+  MIL@TB | ML_Home | Raw Edge: -9.70% | Rule71: model 43.3% vs PinVF 51.6% = 8.3% gap > 8%
 
 ======================================================================
-SLIP SUMMARY: Real=0 PriceMoved=0 Paper=11 Rejected=0
+SLIP SUMMARY: Real=2 PriceMoved=0 Paper=5 Rejected=4
 ======================================================================
 ======================================================================

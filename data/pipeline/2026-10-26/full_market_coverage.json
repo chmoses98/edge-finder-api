@@ -1,14 +1,14 @@
 {
   "data": {
     "byFamilyState": {
-      "first_inning_run": {
+      "KXNBATEAMTOTAL": {
         "AMBIGUOUS_TICKER_MATCH": 0,
-        "FULLY_EVALUATED": 1,
+        "FULLY_EVALUATED": 0,
         "GAME_MAPPING_UNRESOLVED": 0,
         "MISSING_REQUIRED_CONTEXT": 0,
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
-        "PARSER_UNRESOLVED": 0,
+        "PARSER_UNRESOLVED": 2,
         "RESEARCH_MODEL_ONLY": 0,
         "STARTED_GAME_EXCLUDED": 0,
         "UNSUPPORTED_MODEL_FAMILY": 0
@@ -45,9 +45,9 @@
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
-        "RESEARCH_MODEL_ONLY": 0,
+        "RESEARCH_MODEL_ONLY": 54,
         "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 54
+        "UNSUPPORTED_MODEL_FAMILY": 0
       },
       "hitter_hits_runs_rbis": {
         "AMBIGUOUS_TICKER_MATCH": 0,
@@ -57,9 +57,9 @@
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
-        "RESEARCH_MODEL_ONLY": 0,
+        "RESEARCH_MODEL_ONLY": 82,
         "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 82
+        "UNSUPPORTED_MODEL_FAMILY": 0
       },
       "hitter_rbis": {
         "AMBIGUOUS_TICKER_MATCH": 0,
@@ -69,9 +69,9 @@
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
-        "RESEARCH_MODEL_ONLY": 0,
+        "RESEARCH_MODEL_ONLY": 35,
         "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 35
+        "UNSUPPORTED_MODEL_FAMILY": 0
       },
       "hitter_stolen_bases": {
         "AMBIGUOUS_TICKER_MATCH": 0,
@@ -93,9 +93,9 @@
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
         "PARSER_UNRESOLVED": 0,
-        "RESEARCH_MODEL_ONLY": 0,
+        "RESEARCH_MODEL_ONLY": 58,
         "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 58
+        "UNSUPPORTED_MODEL_FAMILY": 0
       },
       "inning_result": {
         "AMBIGUOUS_TICKER_MATCH": 0,
@@ -171,63 +171,63 @@
       }
     },
     "coverageAccounting": {
-      "accountedTotal": 316,
-      "archivedTotal": 316,
+      "accountedTotal": 317,
+      "archivedTotal": 317,
       "byState": {
         "AMBIGUOUS_TICKER_MATCH": 0,
-        "FULLY_EVALUATED": 70,
+        "FULLY_EVALUATED": 69,
         "GAME_MAPPING_UNRESOLVED": 0,
         "MISSING_REQUIRED_CONTEXT": 0,
         "NOT_APPLICABLE": 0,
         "NOT_EVALUATED_BUG": 0,
-        "PARSER_UNRESOLVED": 0,
-        "RESEARCH_MODEL_ONLY": 0,
+        "PARSER_UNRESOLVED": 2,
+        "RESEARCH_MODEL_ONLY": 229,
         "STARTED_GAME_EXCLUDED": 0,
-        "UNSUPPORTED_MODEL_FAMILY": 246
+        "UNSUPPORTED_MODEL_FAMILY": 17
       },
       "unaccountedCount": 0
     },
     "date": "2026-10-26",
     "discoverySummary": {
-      "classified": 316,
+      "classified": 315,
       "date": "2026-10-26",
-      "discovered": 316,
-      "exposed": 70,
-      "generatedAt": "2026-10-26T22:38:51Z",
-      "modeled": 70,
+      "discovered": 317,
+      "exposed": 69,
+      "generatedAt": "2026-10-27T02:04:29Z",
+      "modeled": 69,
       "otherDateExcluded": 0,
       "parseFailures": 0,
-      "unsupported": 246
+      "unsupported": 248
     },
     "hitterLegacyBoardFallbackStatus": "NOT_AVAILABLE",
-    "hitterProspectiveSnapshotCount": 0,
-    "hitterProspectiveSnapshotStoreStatus": "NOT_AVAILABLE",
+    "hitterProspectiveSnapshotCount": 229,
+    "hitterProspectiveSnapshotStoreStatus": "LOADED",
     "pregameView": {
       "pregameAmbiguousTickerMatch": 0,
-      "pregameFullyEvaluatedProduction": 70,
+      "pregameFullyEvaluatedProduction": 69,
       "pregameMappingUnresolved": 0,
       "pregameMissingRequiredContext": 0,
       "pregameNotEvaluatedBug": 0,
-      "pregameParserUnresolved": 0,
-      "pregameResearchSupportedHitterMarkets": 0,
-      "pregameUnsupportedByAllModels": 246,
+      "pregameParserUnresolved": 2,
+      "pregameResearchSupportedHitterMarkets": 229,
+      "pregameUnsupportedByAllModels": 17,
       "startedGameExcluded": 0,
-      "totalValidArchivedMlbMarkets": 316,
+      "totalValidArchivedMlbMarkets": 317,
       "trueSilentRemainder": 0,
-      "validPregameMarkets": 316
+      "validPregameMarkets": 317
     },
     "rawArchiveAccounting": {
-      "accountedTickerCount": 316,
+      "accountedTickerCount": 317,
       "duplicateRawTickerCount": 0,
       "entriesWithoutTicker": 0,
       "missingTickers": [],
-      "rawArchivedUnique": 316,
-      "totalRawEntriesSeen": 316,
+      "rawArchivedUnique": 317,
+      "totalRawEntriesSeen": 317,
       "trueSilentRemainderCount": 0
     }
   },
   "meta": {
-    "createdAt": "2026-10-26T22:38:51Z",
+    "createdAt": "2026-10-27T02:04:29Z",
     "producedBy": "scripts/build_full_market_coverage.py",
     "schemaVersion": "1.0",
     "slateDate": "2026-10-26",

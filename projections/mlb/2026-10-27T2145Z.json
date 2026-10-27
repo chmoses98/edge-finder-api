@@ -1,0 +1,7086 @@
+{
+ "authority": "research_only",
+ "data_asof_utc": "2026-10-27T18:44:27Z",
+ "families": {
+  "batters_faced": {
+   "model": "E",
+   "readiness": "READY",
+   "reason": "holdout CRPS vs baseline -0.3785 [-0.42755, -0.33174]; 80% PIT coverage 0.8078, PIT variance ratio 0.9757; incumbent: better (-0.2488 [-0.26765, -0.22882], rung RPS over incumbent rungs 15..30 (matched n=4524)); ready for research-only publication in place of the incumbent; prospective (archived pregame) confirmation still recommended"
+  },
+  "game_total": {
+   "model": "D_convolution",
+   "readiness": "SHADOW VALIDATION",
+   "reason": "Convolution of the two team-run distributions; holdout cover80 0.7923, PIT var 1.0272; no archived pregame total projection to compare against except the incumbent team projections."
+  },
+  "hits": {
+   "model": "F",
+   "readiness": "SHADOW VALIDATION",
+   "reason": "holdout CRPS vs baseline -0.0028 [-0.00353, -0.00215]; 80% PIT coverage 0.8014, PIT variance ratio 1.0009; incumbent: better (-0.0110 [-0.01401, -0.0081], CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)); inputs use the post-game official batting order (equivalent to a confirmed lineup); where an archived pregame lineup exists (527 games) it gives the same slot 99.5% of the time, but a prospective confirmed-lineup shadow is still required"
+  },
+  "hits_runs_rbis": {
+   "model": "F",
+   "readiness": "SHADOW VALIDATION",
+   "reason": "holdout CRPS vs baseline -0.0059 [-0.00752, -0.00427]; 80% PIT coverage 0.8032, PIT variance ratio 1.0011; incumbent: none; inputs use the post-game official batting order (equivalent to a confirmed lineup); where an archived pregame lineup exists (527 games) it gives the same slot 99.5% of the time, but a prospective confirmed-lineup shadow is still required"
+  },
+  "home_runs": {
+   "model": "F",
+   "readiness": "SHADOW VALIDATION",
+   "reason": "holdout CRPS vs baseline -0.0006 [-0.00075, -0.00043]; 80% PIT coverage 0.8031, PIT variance ratio 0.9883; incumbent: better (-0.0026 [-0.00343, -0.0019], CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)); inputs use the post-game official batting order (equivalent to a confirmed lineup); where an archived pregame lineup exists (527 games) it gives the same slot 99.5% of the time, but a prospective confirmed-lineup shadow is still required; NOTE MAE of the mean is worse than the incumbent (+0.0279 [0.0264, 0.0296]) because the incumbent's downward-biased mean sits nearer the modal 0 for this zero-heavy count; CRPS/Brier/bias all favour the new model"
+  },
+  "outs": {
+   "model": "F",
+   "readiness": "READY",
+   "reason": "holdout CRPS vs baseline -0.2552 [-0.28619, -0.22407]; 80% PIT coverage 0.8193, PIT variance ratio 0.9605; incumbent: better (-0.0763 [-0.09137, -0.06308], rung RPS over incumbent rungs 9..21 (matched n=4524)); ready for research-only publication in place of the incumbent; prospective (archived pregame) confirmation still recommended"
+  },
+  "pitcher_hits_allowed": {
+   "model": "F",
+   "readiness": "SHADOW VALIDATION",
+   "reason": "holdout CRPS vs baseline -0.0749 [-0.08634, -0.0634]; 80% PIT coverage 0.7963, PIT variance ratio 1.0032; incumbent: none; no incumbent engine exists for this family (Kalshi lists <100 markets); prospective shadow needed"
+  },
+  "pitcher_runs_allowed": {
+   "model": "F",
+   "readiness": "SHADOW VALIDATION",
+   "reason": "holdout CRPS vs baseline -0.0319 [-0.03857, -0.0256]; 80% PIT coverage 0.8057, PIT variance ratio 0.9855; incumbent: none; no incumbent engine exists for this family (Kalshi lists <100 markets); prospective shadow needed"
+  },
+  "pitcher_strikeouts": {
+   "model": "F",
+   "readiness": "READY",
+   "reason": "holdout CRPS vs baseline -0.0658 [-0.07666, -0.05521]; 80% PIT coverage 0.802, PIT variance ratio 0.9956; incumbent: better (-0.0323 [-0.03901, -0.02553], rung RPS over incumbent rungs 2..10 (matched n=4524)); ready for research-only publication in place of the incumbent; prospective (archived pregame) confirmation still recommended"
+  },
+  "pitcher_walks": {
+   "model": "D",
+   "readiness": "SHADOW VALIDATION",
+   "reason": "holdout CRPS vs baseline -0.0114 [-0.01527, -0.00744]; 80% PIT coverage 0.8063, PIT variance ratio 0.9887; incumbent: none; no incumbent engine exists for this family (Kalshi lists <100 markets); prospective shadow needed"
+  },
+  "plate_appearances": {
+   "model": "F",
+   "readiness": "SHADOW VALIDATION",
+   "reason": "holdout CRPS vs baseline -0.0234 [-0.02539, -0.02159]; 80% PIT coverage 0.7799, PIT variance ratio 1.0404; incumbent: better (-0.0888 [-0.10382, -0.07561], CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)); inputs use the post-game official batting order (equivalent to a confirmed lineup); where an archived pregame lineup exists (527 games) it gives the same slot 99.5% of the time, but a prospective confirmed-lineup shadow is still required"
+  },
+  "rbis": {
+   "model": "F",
+   "readiness": "SHADOW VALIDATION",
+   "reason": "holdout CRPS vs baseline -0.0013 [-0.00175, -0.00092]; 80% PIT coverage 0.8001, PIT variance ratio 0.9963; incumbent: better (-0.0139 [-0.01661, -0.0111], CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)); inputs use the post-game official batting order (equivalent to a confirmed lineup); where an archived pregame lineup exists (527 games) it gives the same slot 99.5% of the time, but a prospective confirmed-lineup shadow is still required; NOTE MAE of the mean is worse than the incumbent (+0.0473 [0.0436, 0.0513]) because the incumbent's downward-biased mean sits nearer the modal 0 for this zero-heavy count; CRPS/Brier/bias all favour the new model"
+  },
+  "runs": {
+   "model": "F",
+   "readiness": "SHADOW VALIDATION",
+   "reason": "holdout CRPS vs baseline -0.0024 [-0.0029, -0.00184]; 80% PIT coverage 0.8009, PIT variance ratio 0.9951; incumbent: better (-0.0091 [-0.01162, -0.00648], CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)); inputs use the post-game official batting order (equivalent to a confirmed lineup); where an archived pregame lineup exists (527 games) it gives the same slot 99.5% of the time, but a prospective confirmed-lineup shadow is still required; NOTE MAE of the mean is worse than the incumbent (+0.0152 [0.0121, 0.0187]) because the incumbent's downward-biased mean sits nearer the modal 0 for this zero-heavy count; CRPS/Brier/bias all favour the new model"
+  },
+  "team_runs": {
+   "model": "D",
+   "readiness": "SHADOW VALIDATION",
+   "reason": "holdout CRPS vs baseline -0.0197 [-0.02723, -0.01228]; 80% PIT coverage 0.7895, PIT variance ratio 1.0418; incumbent: parity (-0.0169 [-0.04966, 0.01403], CRPS vs archived production projection (NB alpha 0.2815), matched n=614); incumbent parity (difference not significant); needs prospective archived-forecast evidence"
+  },
+  "total_bases": {
+   "model": "F",
+   "readiness": "SHADOW VALIDATION",
+   "reason": "holdout CRPS vs baseline -0.0050 [-0.00622, -0.00385]; 80% PIT coverage 0.8036, PIT variance ratio 1.0058; incumbent: better (-0.0142 [-0.01753, -0.01094], CRPS vs production hitter engine rerun, matched n=8883 (2026-08-16..2026-09-27)); inputs use the post-game official batting order (equivalent to a confirmed lineup); where an archived pregame lineup exists (527 games) it gives the same slot 99.5% of the time, but a prospective confirmed-lineup shadow is still required"
+  }
+ },
+ "games": [
+  {
+   "away": "MIL",
+   "game_id": "849803",
+   "home": "TB",
+   "series": "World Series",
+   "start_utc": "2026-10-28T00:00:00+00:00",
+   "teams": [
+    {
+     "family": "team_runs",
+     "mean": 3.998,
+     "model": "D",
+     "p10": 1,
+     "p90": 8,
+     "readiness": "SHADOW VALIDATION",
+     "reconciliation": {
+      "note": "sum of projected starters' runs vs the starters' historical share of team runs",
+      "ratio": 1.027,
+      "status": "PASS"
+     },
+     "team": "TB",
+     "thresholds": {
+      "2": 0.7979,
+      "3": 0.6425,
+      "4": 0.4915,
+      "5": 0.3609,
+      "6": 0.2565,
+      "7": 0.1775
+     }
+    },
+    {
+     "family": "team_runs",
+     "mean": 4.441,
+     "model": "D",
+     "p10": 1,
+     "p90": 9,
+     "readiness": "SHADOW VALIDATION",
+     "reconciliation": {
+      "note": "sum of projected starters' runs vs the starters' historical share of team runs",
+      "ratio": 1.058,
+      "status": "PASS"
+     },
+     "team": "MIL",
+     "thresholds": {
+      "2": 0.8402,
+      "3": 0.7005,
+      "4": 0.5546,
+      "5": 0.4207,
+      "6": 0.3081,
+      "7": 0.2192
+     }
+    },
+    {
+     "family": "game_total",
+     "mean": 8.439,
+     "median": 8,
+     "p10": 3,
+     "p90": 14,
+     "readiness": "SHADOW VALIDATION",
+     "team": "TOTAL",
+     "thresholds": {
+      "10": 0.3556,
+      "11": 0.2798,
+      "7": 0.6366,
+      "8": 0.5374,
+      "9": 0.4423
+     }
+    }
+   ]
+  }
+ ],
+ "generated_utc": "2026-10-27T21:44:27Z",
+ "model": {
+  "authority": "research_only",
+  "id": "pf-mlb",
+  "version": "pf-1.0.0+97600adfeb"
+ },
+ "players": [
+  {
+   "adjustments": [
+    "Pitcher lines through 2026-10-26 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "batters_faced",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 17.67,
+   "median": 18,
+   "model": "E",
+   "name": "Griffin Jax",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.0,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 13,
+   "p90": 23,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: confirmed starting (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "643377",
+   "readiness": "READY",
+   "role": "shadow",
+   "team": "TB",
+   "thresholds": {
+    "18": 0.535,
+    "20": 0.3125,
+    "22": 0.155,
+    "24": 0.065,
+    "26": 0.025
+   }
+  },
+  {
+   "adjustments": [
+    "Pitched 3 day(s) before this start: treated as an opener/short outing.",
+    "Pitcher lines through 2026-10-26 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "batters_faced",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 10.738,
+   "median": 11,
+   "model": "E",
+   "name": "Dustin May",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 1.0,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 6,
+   "p90": 16,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: confirmed starting (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "669160",
+   "readiness": "READY",
+   "role": "shadow",
+   "team": "MIL",
+   "thresholds": {
+    "18": 0.0425,
+    "20": 0.015,
+    "22": 0.0025,
+    "24": 0.0,
+    "26": 0.0
+   }
+  },
+  {
+   "adjustments": [
+    "Pitcher lines through 2026-10-26 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "outs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 13.355,
+   "median": 14,
+   "model": "F",
+   "name": "Griffin Jax",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.0,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 17.67,
+    "p10": 13,
+    "p90": 23
+   },
+   "p10": 9,
+   "p90": 18,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: confirmed starting (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "643377",
+   "readiness": "READY",
+   "role": "shadow",
+   "team": "TB",
+   "thresholds": {
+    "12": 0.705,
+    "15": 0.3875,
+    "16": 0.265,
+    "17": 0.195,
+    "18": 0.115,
+    "19": 0.06
+   }
+  },
+  {
+   "adjustments": [
+    "Pitched 3 day(s) before this start: treated as an opener/short outing.",
+    "Pitcher lines through 2026-10-26 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "outs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 9.293,
+   "median": 10,
+   "model": "F",
+   "name": "Dustin May",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 1.0,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 10.74,
+    "p10": 6,
+    "p90": 16
+   },
+   "p10": 5,
+   "p90": 14,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: confirmed starting (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "669160",
+   "readiness": "READY",
+   "role": "shadow",
+   "team": "MIL",
+   "thresholds": {
+    "12": 0.2575,
+    "15": 0.055,
+    "16": 0.0375,
+    "17": 0.0175,
+    "18": 0.01,
+    "19": 0.005
+   }
+  },
+  {
+   "adjustments": [
+    "Opponent factor x1.04 (point-in-time, shrunk; elasticity fitted on 2023-24).",
+    "Pitcher lines through 2026-10-26 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "pitcher_strikeouts",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 4.592,
+   "median": 4,
+   "model": "F",
+   "name": "Griffin Jax",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.044,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 17.67,
+    "p10": 13,
+    "p90": 23
+   },
+   "p10": 2,
+   "p90": 7,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: confirmed starting (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "643377",
+   "readiness": "READY",
+   "role": "shadow",
+   "team": "TB",
+   "thresholds": {
+    "3": 0.8274,
+    "4": 0.6697,
+    "5": 0.4885,
+    "6": 0.3195,
+    "7": 0.1874,
+    "8": 0.0989,
+    "9": 0.0473
+   }
+  },
+  {
+   "adjustments": [
+    "Pitched 3 day(s) before this start: treated as an opener/short outing.",
+    "Opponent factor x0.89 (point-in-time, shrunk; elasticity fitted on 2023-24).",
+    "Pitcher lines through 2026-10-26 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "pitcher_strikeouts",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 3.036,
+   "median": 3,
+   "model": "F",
+   "name": "Dustin May",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.887,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 10.74,
+    "p10": 6,
+    "p90": 16
+   },
+   "p10": 1,
+   "p90": 6,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: confirmed starting (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "669160",
+   "readiness": "READY",
+   "role": "shadow",
+   "team": "MIL",
+   "thresholds": {
+    "3": 0.5786,
+    "4": 0.3728,
+    "5": 0.209,
+    "6": 0.1029,
+    "7": 0.045,
+    "8": 0.0178,
+    "9": 0.0064
+   }
+  },
+  {
+   "adjustments": [
+    "Opponent factor x1.13 (point-in-time, shrunk; elasticity fitted on 2023-24).",
+    "Pitcher lines through 2026-10-26 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "pitcher_walks",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.51,
+   "median": 1,
+   "model": "D",
+   "name": "Griffin Jax",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.127,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 17.67,
+    "p10": 13,
+    "p90": 23
+   },
+   "p10": 0,
+   "p90": 3,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: confirmed starting (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "643377",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.7825,
+    "2": 0.4525,
+    "3": 0.1925,
+    "4": 0.0625
+   }
+  },
+  {
+   "adjustments": [
+    "Pitched 3 day(s) before this start: treated as an opener/short outing.",
+    "Opponent factor x0.93 (point-in-time, shrunk; elasticity fitted on 2023-24).",
+    "Pitcher lines through 2026-10-26 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "pitcher_walks",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.13,
+   "median": 1,
+   "model": "D",
+   "name": "Dustin May",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.929,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 10.74,
+    "p10": 6,
+    "p90": 16
+   },
+   "p10": 0,
+   "p90": 3,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: confirmed starting (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "669160",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.6725,
+    "2": 0.31,
+    "3": 0.1125,
+    "4": 0.03
+   }
+  },
+  {
+   "adjustments": [
+    "Opponent factor x1.03 (point-in-time, shrunk; elasticity fitted on 2023-24).",
+    "Pitcher lines through 2026-10-26 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "pitcher_hits_allowed",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 3.858,
+   "median": 4,
+   "model": "F",
+   "name": "Griffin Jax",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.033,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 17.67,
+    "p10": 13,
+    "p90": 23
+   },
+   "p10": 1,
+   "p90": 6,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: confirmed starting (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "643377",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "team": "TB",
+   "thresholds": {
+    "3": 0.743,
+    "4": 0.5441,
+    "5": 0.3477,
+    "6": 0.1936,
+    "7": 0.0944
+   }
+  },
+  {
+   "adjustments": [
+    "Pitched 3 day(s) before this start: treated as an opener/short outing.",
+    "Opponent factor x1.02 (point-in-time, shrunk; elasticity fitted on 2023-24).",
+    "Pitcher lines through 2026-10-26 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "pitcher_hits_allowed",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 3.103,
+   "median": 3,
+   "model": "F",
+   "name": "Dustin May",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 1.019,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 10.74,
+    "p10": 6,
+    "p90": 16
+   },
+   "p10": 1,
+   "p90": 6,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: confirmed starting (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "669160",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "team": "MIL",
+   "thresholds": {
+    "3": 0.597,
+    "4": 0.3883,
+    "5": 0.2181,
+    "6": 0.1065,
+    "7": 0.0458
+   }
+  },
+  {
+   "adjustments": [
+    "Opponent factor x1.09 (point-in-time, shrunk; elasticity fitted on 2023-24).",
+    "Pitcher lines through 2026-10-26 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "pitcher_runs_allowed",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 2.185,
+   "median": 2,
+   "model": "F",
+   "name": "Griffin Jax",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.09,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 17.67,
+    "p10": 13,
+    "p90": 23
+   },
+   "p10": 0,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: confirmed starting (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "643377",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.8525,
+    "2": 0.565,
+    "3": 0.3625,
+    "4": 0.2075,
+    "5": 0.1075
+   }
+  },
+  {
+   "adjustments": [
+    "Pitched 3 day(s) before this start: treated as an opener/short outing.",
+    "Opponent factor x0.99 (point-in-time, shrunk; elasticity fitted on 2023-24).",
+    "Pitcher lines through 2026-10-26 included as history; regular-season parameters, no postseason leash adjustment."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "pitcher_runs_allowed",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.698,
+   "median": 1,
+   "model": "F",
+   "name": "Dustin May",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.993,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "batters_faced",
+    "mean": 10.74,
+    "p10": 6,
+    "p90": 16
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_probable_pitcher: confirmed starting (starter)"
+    ],
+    "source": "mlb_statsapi_schedule_probable_pitcher",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "669160",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.71,
+    "2": 0.4425,
+    "3": 0.2725,
+    "4": 0.145,
+    "5": 0.07
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 3 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 4.148,
+   "median": 4,
+   "model": "F",
+   "name": "Christian Yelich",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 3,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "592885",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 3,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "4": 0.9,
+    "5": 0.2475
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 2 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 4.29,
+   "median": 4,
+   "model": "F",
+   "name": "Jake Bauers",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 4,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "641343",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 2,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "4": 0.94,
+    "5": 0.3425
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 1 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 4.507,
+   "median": 5,
+   "model": "F",
+   "name": "Yandy D\u00edaz",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 4,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "650490",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 1,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "4": 0.9625,
+    "5": 0.51
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 4 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 4.29,
+   "median": 4,
+   "model": "F",
+   "name": "William Contreras",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 4,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "661388",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 4,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "4": 0.94,
+    "5": 0.3425
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 2 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 4.148,
+   "median": 4,
+   "model": "F",
+   "name": "Jonathan Aranda",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 3,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "666018",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 2,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "4": 0.9,
+    "5": 0.2475
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 9 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 3.445,
+   "median": 4,
+   "model": "F",
+   "name": "David Hamilton",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 2,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "666152",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 9,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "4": 0.505,
+    "5": 0.055
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 7 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 3.445,
+   "median": 4,
+   "model": "F",
+   "name": "Ryan Vilade",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 2,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "668723",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 7,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "4": 0.505,
+    "5": 0.055
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 5 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 4.29,
+   "median": 4,
+   "model": "F",
+   "name": "Brice Turang",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 4,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "668930",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 5,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "4": 0.94,
+    "5": 0.3425
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 8 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 3.948,
+   "median": 4,
+   "model": "F",
+   "name": "Garrett Mitchell",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 3,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "669003",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 8,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "4": 0.81,
+    "5": 0.1575
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 9 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 3.445,
+   "median": 4,
+   "model": "F",
+   "name": "Taylor Walls",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 2,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "670764",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 9,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "4": 0.505,
+    "5": 0.055
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 5 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 3.738,
+   "median": 4,
+   "model": "F",
+   "name": "Jonny DeLuca",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 3,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "676356",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 5,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "4": 0.6925,
+    "5": 0.0975
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 8 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 3.445,
+   "median": 4,
+   "model": "F",
+   "name": "Richie Palacios",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 2,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "680700",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 8,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "4": 0.505,
+    "5": 0.055
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 6 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 3.738,
+   "median": 4,
+   "model": "F",
+   "name": "Sal Frelick",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 3,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "686217",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 6,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "4": 0.6925,
+    "5": 0.0975
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 4 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 3.738,
+   "median": 4,
+   "model": "F",
+   "name": "Liam Hicks",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 3,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "689414",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 4,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "4": 0.6925,
+    "5": 0.0975
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 3 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 4.148,
+   "median": 4,
+   "model": "F",
+   "name": "Junior Caminero",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 3,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "691406",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 3,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "4": 0.9,
+    "5": 0.2475
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 1 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 4.507,
+   "median": 5,
+   "model": "F",
+   "name": "Jackson Chourio",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 4,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "694192",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 1,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "4": 0.9625,
+    "5": 0.51
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 6 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 3.738,
+   "median": 4,
+   "model": "F",
+   "name": "Chandler Simpson",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 3,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "802415",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 6,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "4": 0.6925,
+    "5": 0.0975
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 7 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "plate_appearances",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 3.948,
+   "median": 4,
+   "model": "F",
+   "name": "Cooper Pratt",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": null,
+   "p10": 3,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "806198",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 7,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "4": 0.81,
+    "5": 0.1575
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 3 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.907,
+   "median": 1,
+   "model": "F",
+   "name": "Christian Yelich",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "592885",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 3,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.6251,
+    "2": 0.2275,
+    "3": 0.0486
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 2 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.859,
+   "median": 1,
+   "model": "F",
+   "name": "Jake Bauers",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "641343",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 2,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.6028,
+    "2": 0.2086,
+    "3": 0.0422
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 1 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.066,
+   "median": 1,
+   "model": "F",
+   "name": "Yandy D\u00edaz",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.51,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "650490",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 1,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.6941,
+    "2": 0.2913,
+    "3": 0.0711
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 4 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.998,
+   "median": 1,
+   "model": "F",
+   "name": "William Contreras",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "661388",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 4,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.667,
+    "2": 0.2635,
+    "3": 0.0602
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 2 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.965,
+   "median": 1,
+   "model": "F",
+   "name": "Jonathan Aranda",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "666018",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 2,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.6553,
+    "2": 0.2499,
+    "3": 0.0539
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 9 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.717,
+   "median": 1,
+   "model": "F",
+   "name": "David Hamilton",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "666152",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 9,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.54,
+    "2": 0.1526,
+    "3": 0.0226
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 7 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.613,
+   "median": 0,
+   "model": "F",
+   "name": "Ryan Vilade",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "668723",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 7,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.4802,
+    "2": 0.1169,
+    "3": 0.0148
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 5 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.961,
+   "median": 1,
+   "model": "F",
+   "name": "Brice Turang",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "668930",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 5,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.6536,
+    "2": 0.2483,
+    "3": 0.0533
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 8 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.784,
+   "median": 1,
+   "model": "F",
+   "name": "Garrett Mitchell",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.95,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "669003",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 8,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.5729,
+    "2": 0.1783,
+    "3": 0.03
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 9 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.659,
+   "median": 1,
+   "model": "F",
+   "name": "Taylor Walls",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "670764",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 9,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.5075,
+    "2": 0.1323,
+    "3": 0.018
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 5 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.849,
+   "median": 1,
+   "model": "F",
+   "name": "Jonny DeLuca",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "676356",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 5,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.6039,
+    "2": 0.2037,
+    "3": 0.038
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 8 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.715,
+   "median": 1,
+   "model": "F",
+   "name": "Richie Palacios",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "680700",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 8,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.5392,
+    "2": 0.1521,
+    "3": 0.0225
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 6 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.829,
+   "median": 1,
+   "model": "F",
+   "name": "Sal Frelick",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "686217",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 6,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.594,
+    "2": 0.1958,
+    "3": 0.0357
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 4 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.867,
+   "median": 1,
+   "model": "F",
+   "name": "Liam Hicks",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "689414",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 4,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.6121,
+    "2": 0.2104,
+    "3": 0.0401
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 3 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.956,
+   "median": 1,
+   "model": "F",
+   "name": "Junior Caminero",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "691406",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 3,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.651,
+    "2": 0.2459,
+    "3": 0.0525
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 1 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.095,
+   "median": 1,
+   "model": "F",
+   "name": "Jackson Chourio",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.51,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "694192",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 1,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.7021,
+    "2": 0.303,
+    "3": 0.0781
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 6 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.047,
+   "median": 1,
+   "model": "F",
+   "name": "Chandler Simpson",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "802415",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 6,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.6923,
+    "2": 0.283,
+    "3": 0.0642
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 7 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.855,
+   "median": 1,
+   "model": "F",
+   "name": "Cooper Pratt",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.95,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "806198",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 7,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.6066,
+    "2": 0.2059,
+    "3": 0.0387
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 3 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.483,
+   "median": 1,
+   "model": "F",
+   "name": "Christian Yelich",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "592885",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 3,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.6401,
+    "2": 0.3667,
+    "3": 0.2089,
+    "4": 0.1427
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 2 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.483,
+   "median": 1,
+   "model": "F",
+   "name": "Jake Bauers",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "641343",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 2,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.613,
+    "2": 0.356,
+    "3": 0.2145,
+    "4": 0.1596
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 1 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.673,
+   "median": 1,
+   "model": "F",
+   "name": "Yandy D\u00edaz",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.51,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "650490",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 1,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.6934,
+    "2": 0.4157,
+    "3": 0.2414,
+    "4": 0.1652
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 4 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.658,
+   "median": 1,
+   "model": "F",
+   "name": "William Contreras",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "661388",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 4,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.6863,
+    "2": 0.4087,
+    "3": 0.2391,
+    "4": 0.166
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 2 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.545,
+   "median": 1,
+   "model": "F",
+   "name": "Jonathan Aranda",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "666018",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 2,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.663,
+    "2": 0.3827,
+    "3": 0.2173,
+    "4": 0.1495
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 9 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.099,
+   "median": 1,
+   "model": "F",
+   "name": "David Hamilton",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 3,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "666152",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 9,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.5479,
+    "2": 0.2711,
+    "3": 0.1356,
+    "4": 0.0882
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 7 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.032,
+   "median": 0,
+   "model": "F",
+   "name": "Ryan Vilade",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "668723",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 7,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.4879,
+    "2": 0.2431,
+    "3": 0.1365,
+    "4": 0.1026
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 5 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.672,
+   "median": 1,
+   "model": "F",
+   "name": "Brice Turang",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "668930",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 5,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.6809,
+    "2": 0.4187,
+    "3": 0.2452,
+    "4": 0.1686
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 8 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.274,
+   "median": 1,
+   "model": "F",
+   "name": "Garrett Mitchell",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.95,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "669003",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 8,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.5782,
+    "2": 0.3146,
+    "3": 0.1726,
+    "4": 0.1197
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 9 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.935,
+   "median": 0,
+   "model": "F",
+   "name": "Taylor Walls",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 3,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "670764",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 9,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.4927,
+    "2": 0.232,
+    "3": 0.1068,
+    "4": 0.0667
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 5 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.296,
+   "median": 1,
+   "model": "F",
+   "name": "Jonny DeLuca",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "676356",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 5,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.5958,
+    "2": 0.3231,
+    "3": 0.1728,
+    "4": 0.1163
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 8 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.136,
+   "median": 1,
+   "model": "F",
+   "name": "Richie Palacios",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "680700",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 8,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.5328,
+    "2": 0.2766,
+    "3": 0.149,
+    "4": 0.1066
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 6 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.231,
+   "median": 1,
+   "model": "F",
+   "name": "Sal Frelick",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "686217",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 6,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.5852,
+    "2": 0.3125,
+    "3": 0.159,
+    "4": 0.1016
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 4 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.316,
+   "median": 1,
+   "model": "F",
+   "name": "Liam Hicks",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "689414",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 4,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.6139,
+    "2": 0.3219,
+    "3": 0.1724,
+    "4": 0.1172
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 3 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.696,
+   "median": 1,
+   "model": "F",
+   "name": "Junior Caminero",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "691406",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 3,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.6554,
+    "2": 0.402,
+    "3": 0.2542,
+    "4": 0.1952
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 1 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.898,
+   "median": 1,
+   "model": "F",
+   "name": "Jackson Chourio",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.51,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "694192",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 1,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.7379,
+    "2": 0.4613,
+    "3": 0.282,
+    "4": 0.1996
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 6 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.325,
+   "median": 1,
+   "model": "F",
+   "name": "Chandler Simpson",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 3,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "802415",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 6,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.6829,
+    "2": 0.3497,
+    "3": 0.1583,
+    "4": 0.0796
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 7 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "total_bases",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.238,
+   "median": 1,
+   "model": "F",
+   "name": "Cooper Pratt",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.95,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 3,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "806198",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 7,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.6131,
+    "2": 0.3098,
+    "3": 0.1535,
+    "4": 0.0941
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 3 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.132,
+   "median": 0,
+   "model": "F",
+   "name": "Christian Yelich",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "592885",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 3,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.1256
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 2 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.154,
+   "median": 0,
+   "model": "F",
+   "name": "Jake Bauers",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "641343",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 2,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.1448
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 1 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.139,
+   "median": 0,
+   "model": "F",
+   "name": "Yandy D\u00edaz",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.51,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "650490",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 1,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.1319
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 4 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.156,
+   "median": 0,
+   "model": "F",
+   "name": "William Contreras",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "661388",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 4,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.1468
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 2 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.142,
+   "median": 0,
+   "model": "F",
+   "name": "Jonathan Aranda",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "666018",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 2,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.1339
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 9 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.067,
+   "median": 0,
+   "model": "F",
+   "name": "David Hamilton",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 0,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "666152",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 9,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.0655
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 7 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.102,
+   "median": 0,
+   "model": "F",
+   "name": "Ryan Vilade",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 0,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "668723",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 7,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.0977
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 5 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.15,
+   "median": 0,
+   "model": "F",
+   "name": "Brice Turang",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "668930",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 5,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.1418
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 8 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.107,
+   "median": 0,
+   "model": "F",
+   "name": "Garrett Mitchell",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.95,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "669003",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 8,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.1024
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 9 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.055,
+   "median": 0,
+   "model": "F",
+   "name": "Taylor Walls",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 0,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "670764",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 9,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.0538
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 5 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.098,
+   "median": 0,
+   "model": "F",
+   "name": "Jonny DeLuca",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 0,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "676356",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 5,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.0948
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 8 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.088,
+   "median": 0,
+   "model": "F",
+   "name": "Richie Palacios",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 0,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "680700",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 8,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.0854
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 6 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.083,
+   "median": 0,
+   "model": "F",
+   "name": "Sal Frelick",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 0,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "686217",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 6,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.0799
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 4 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.098,
+   "median": 0,
+   "model": "F",
+   "name": "Liam Hicks",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 0,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "689414",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 4,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.0943
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 3 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.179,
+   "median": 0,
+   "model": "F",
+   "name": "Junior Caminero",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "691406",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 3,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.1665
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 1 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.185,
+   "median": 0,
+   "model": "F",
+   "name": "Jackson Chourio",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.51,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "694192",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 1,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.1721
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 6 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.043,
+   "median": 0,
+   "model": "F",
+   "name": "Chandler Simpson",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 0,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "802415",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 6,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.0423
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 7 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "home_runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.077,
+   "median": 0,
+   "model": "F",
+   "name": "Cooper Pratt",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.95,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 0,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "806198",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 7,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.0744
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 3 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.505,
+   "median": 0,
+   "model": "F",
+   "name": "Christian Yelich",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "592885",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 3,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.4067,
+    "2": 0.0867
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 2 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.569,
+   "median": 0,
+   "model": "F",
+   "name": "Jake Bauers",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "641343",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 2,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.4468,
+    "2": 0.1061
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 1 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.582,
+   "median": 0,
+   "model": "F",
+   "name": "Yandy D\u00edaz",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.51,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "650490",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 1,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.4563,
+    "2": 0.1095
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 4 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.499,
+   "median": 0,
+   "model": "F",
+   "name": "William Contreras",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "661388",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 4,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.4044,
+    "2": 0.0844
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 2 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.477,
+   "median": 0,
+   "model": "F",
+   "name": "Jonathan Aranda",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "666018",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 2,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.3905,
+    "2": 0.0774
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 9 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.393,
+   "median": 0,
+   "model": "F",
+   "name": "David Hamilton",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "666152",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 9,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.3345,
+    "2": 0.0537
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 7 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.33,
+   "median": 0,
+   "model": "F",
+   "name": "Ryan Vilade",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "668723",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 7,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.288,
+    "2": 0.0394
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 5 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.549,
+   "median": 0,
+   "model": "F",
+   "name": "Brice Turang",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "668930",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 5,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.4371,
+    "2": 0.0986
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 8 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.467,
+   "median": 0,
+   "model": "F",
+   "name": "Garrett Mitchell",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.95,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "669003",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 8,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.3853,
+    "2": 0.0738
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 9 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.401,
+   "median": 0,
+   "model": "F",
+   "name": "Taylor Walls",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "670764",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 9,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.3405,
+    "2": 0.0557
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 5 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.37,
+   "median": 0,
+   "model": "F",
+   "name": "Jonny DeLuca",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "676356",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 5,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.3163,
+    "2": 0.0494
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 8 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.39,
+   "median": 0,
+   "model": "F",
+   "name": "Richie Palacios",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "680700",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 8,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.3325,
+    "2": 0.053
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 6 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.38,
+   "median": 0,
+   "model": "F",
+   "name": "Sal Frelick",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "686217",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 6,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.3236,
+    "2": 0.0518
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 4 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.4,
+   "median": 0,
+   "model": "F",
+   "name": "Liam Hicks",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "689414",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 4,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.338,
+    "2": 0.0567
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 3 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.519,
+   "median": 0,
+   "model": "F",
+   "name": "Junior Caminero",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "691406",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 3,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.4181,
+    "2": 0.0896
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 1 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.652,
+   "median": 0,
+   "model": "F",
+   "name": "Jackson Chourio",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.51,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "694192",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 1,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.4959,
+    "2": 0.1334
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 6 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.409,
+   "median": 0,
+   "model": "F",
+   "name": "Chandler Simpson",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "802415",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 6,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.3452,
+    "2": 0.0585
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 7 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "runs",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.425,
+   "median": 0,
+   "model": "F",
+   "name": "Cooper Pratt",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.95,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "806198",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 7,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.3556,
+    "2": 0.063
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 3 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.5,
+   "median": 0,
+   "model": "F",
+   "name": "Christian Yelich",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "592885",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 3,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.3175,
+    "2": 0.1225,
+    "3": 0.0425
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 2 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.5,
+   "median": 0,
+   "model": "F",
+   "name": "Jake Bauers",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "641343",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 2,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.3175,
+    "2": 0.1225,
+    "3": 0.0425
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 1 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.463,
+   "median": 0,
+   "model": "F",
+   "name": "Yandy D\u00edaz",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.51,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "650490",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 1,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.305,
+    "2": 0.11,
+    "3": 0.035
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 4 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.593,
+   "median": 0,
+   "model": "F",
+   "name": "William Contreras",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "661388",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 4,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.365,
+    "2": 0.145,
+    "3": 0.0575
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 2 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.463,
+   "median": 0,
+   "model": "F",
+   "name": "Jonathan Aranda",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "666018",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 2,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.305,
+    "2": 0.11,
+    "3": 0.035
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 9 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.325,
+   "median": 0,
+   "model": "F",
+   "name": "David Hamilton",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "666152",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 9,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.225,
+    "2": 0.0725,
+    "3": 0.02
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 7 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.325,
+   "median": 0,
+   "model": "F",
+   "name": "Ryan Vilade",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "668723",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 7,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.225,
+    "2": 0.0725,
+    "3": 0.02
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 5 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.593,
+   "median": 0,
+   "model": "F",
+   "name": "Brice Turang",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "668930",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 5,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.365,
+    "2": 0.145,
+    "3": 0.0575
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 8 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.383,
+   "median": 0,
+   "model": "F",
+   "name": "Garrett Mitchell",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.95,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "669003",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 8,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.2625,
+    "2": 0.0875,
+    "3": 0.0225
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 9 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.325,
+   "median": 0,
+   "model": "F",
+   "name": "Taylor Walls",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "670764",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 9,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.225,
+    "2": 0.0725,
+    "3": 0.02
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 5 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.383,
+   "median": 0,
+   "model": "F",
+   "name": "Jonny DeLuca",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "676356",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 5,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.2625,
+    "2": 0.0875,
+    "3": 0.0225
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 8 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.383,
+   "median": 0,
+   "model": "F",
+   "name": "Richie Palacios",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "680700",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 8,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.2625,
+    "2": 0.0875,
+    "3": 0.0225
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 6 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.383,
+   "median": 0,
+   "model": "F",
+   "name": "Sal Frelick",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "686217",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 6,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.2625,
+    "2": 0.0875,
+    "3": 0.0225
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 4 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.463,
+   "median": 0,
+   "model": "F",
+   "name": "Liam Hicks",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "689414",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 4,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.305,
+    "2": 0.11,
+    "3": 0.035
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 3 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.593,
+   "median": 0,
+   "model": "F",
+   "name": "Junior Caminero",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "691406",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 3,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.365,
+    "2": 0.145,
+    "3": 0.0575
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 1 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.5,
+   "median": 0,
+   "model": "F",
+   "name": "Jackson Chourio",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.51,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 2,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "694192",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 1,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.3175,
+    "2": 0.1225,
+    "3": 0.0425
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 6 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.325,
+   "median": 0,
+   "model": "F",
+   "name": "Chandler Simpson",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "802415",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 6,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.225,
+    "2": 0.0725,
+    "3": 0.02
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 7 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 0.418,
+   "median": 0,
+   "model": "F",
+   "name": "Cooper Pratt",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.95,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 1,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "806198",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 7,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.28,
+    "2": 0.095,
+    "3": 0.0325
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 3 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.893,
+   "median": 1,
+   "model": "F",
+   "name": "Christian Yelich",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "592885",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 3,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.7075,
+    "2": 0.4825,
+    "3": 0.3075,
+    "4": 0.1825,
+    "5": 0.1075
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 2 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.893,
+   "median": 1,
+   "model": "F",
+   "name": "Jake Bauers",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "641343",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 2,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.7075,
+    "2": 0.4825,
+    "3": 0.3075,
+    "4": 0.1825,
+    "5": 0.1075
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 1 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 2.218,
+   "median": 2,
+   "model": "F",
+   "name": "Yandy D\u00edaz",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.51,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "650490",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 1,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.75,
+    "2": 0.5425,
+    "3": 0.37,
+    "4": 0.24,
+    "5": 0.14
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 4 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 2.225,
+   "median": 2,
+   "model": "F",
+   "name": "William Contreras",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "661388",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 4,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.75,
+    "2": 0.545,
+    "3": 0.3725,
+    "4": 0.24,
+    "5": 0.1425
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 2 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.893,
+   "median": 1,
+   "model": "F",
+   "name": "Jonathan Aranda",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "666018",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 2,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.7075,
+    "2": 0.4825,
+    "3": 0.3075,
+    "4": 0.1825,
+    "5": 0.1075
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 9 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.365,
+   "median": 1,
+   "model": "F",
+   "name": "David Hamilton",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "666152",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 9,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.5775,
+    "2": 0.3625,
+    "3": 0.205,
+    "4": 0.11,
+    "5": 0.0575
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 7 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.365,
+   "median": 1,
+   "model": "F",
+   "name": "Ryan Vilade",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "668723",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 7,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.5775,
+    "2": 0.3625,
+    "3": 0.205,
+    "4": 0.11,
+    "5": 0.0575
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 5 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 2.225,
+   "median": 2,
+   "model": "F",
+   "name": "Brice Turang",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.29,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "668930",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 5,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.75,
+    "2": 0.545,
+    "3": 0.3725,
+    "4": 0.24,
+    "5": 0.1425
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 8 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.553,
+   "median": 1,
+   "model": "F",
+   "name": "Garrett Mitchell",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.95,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "669003",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 8,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.63,
+    "2": 0.405,
+    "3": 0.2425,
+    "4": 0.1375,
+    "5": 0.0725
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 9 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.365,
+   "median": 1,
+   "model": "F",
+   "name": "Taylor Walls",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "670764",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 9,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.5775,
+    "2": 0.3625,
+    "3": 0.205,
+    "4": 0.11,
+    "5": 0.0575
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 5 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.553,
+   "median": 1,
+   "model": "F",
+   "name": "Jonny DeLuca",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "676356",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 5,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.63,
+    "2": 0.405,
+    "3": 0.2425,
+    "4": 0.1375,
+    "5": 0.0725
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 8 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.365,
+   "median": 1,
+   "model": "F",
+   "name": "Richie Palacios",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.45,
+    "p10": 2,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "680700",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 8,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.5775,
+    "2": 0.3625,
+    "3": 0.205,
+    "4": 0.11,
+    "5": 0.0575
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 6 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.553,
+   "median": 1,
+   "model": "F",
+   "name": "Sal Frelick",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "686217",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 6,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.63,
+    "2": 0.405,
+    "3": 0.2425,
+    "4": 0.1375,
+    "5": 0.0725
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 4 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.743,
+   "median": 1,
+   "model": "F",
+   "name": "Liam Hicks",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "689414",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 4,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.6725,
+    "2": 0.445,
+    "3": 0.2775,
+    "4": 0.165,
+    "5": 0.09
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 3 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.978,
+   "median": 2,
+   "model": "F",
+   "name": "Junior Caminero",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.15,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "691406",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 3,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.7225,
+    "2": 0.5025,
+    "3": 0.3225,
+    "4": 0.19,
+    "5": 0.115
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 1 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 2.238,
+   "median": 2,
+   "model": "F",
+   "name": "Jackson Chourio",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 4.51,
+    "p10": 4,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 5,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "694192",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 1,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.755,
+    "2": 0.5475,
+    "3": 0.375,
+    "4": 0.2425,
+    "5": 0.1425
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 6 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x1.00 over an expected 26% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.743,
+   "median": 1,
+   "model": "F",
+   "name": "Chandler Simpson",
+   "opponent": "MIL",
+   "opponent_adjustment": {
+    "factor": 1.003,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.74,
+    "p10": 3,
+    "p90": 4
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "802415",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 6,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "TB",
+   "thresholds": {
+    "1": 0.6725,
+    "2": 0.445,
+    "3": 0.2775,
+    "4": 0.165,
+    "5": 0.09
+   }
+  },
+  {
+   "adjustments": [
+    "Batting slot 7 from the club's POSTED lineup card.",
+    "Opposing starter hit-rate factor x0.97 over an expected 45% of PAs.",
+    "Hitter form is through 2026-10-26 (the repo/archive history available at run time)."
+   ],
+   "data_asof_utc": "2026-10-27T18:44:27Z",
+   "family": "hits_runs_rbis",
+   "game_id": "849803",
+   "gate": {
+    "findings": [],
+    "status": "PASS"
+   },
+   "mean": 1.743,
+   "median": 1,
+   "model": "F",
+   "name": "Cooper Pratt",
+   "opponent": "TB",
+   "opponent_adjustment": {
+    "factor": 0.972,
+    "sample_games": null
+   },
+   "opportunity": {
+    "family": "plate_appearances",
+    "mean": 3.95,
+    "p10": 3,
+    "p90": 5
+   },
+   "p10": 0,
+   "p90": 4,
+   "participation": {
+    "captured_utc": "2026-10-27T21:44:24Z",
+    "certainty": "CONFIRMED",
+    "reasons": [
+     "mlb_statsapi_schedule_lineups: confirmed starting (lineup)"
+    ],
+    "source": "mlb_statsapi_schedule_lineups",
+    "status": "CONFIRMED_ACTIVE"
+   },
+   "player_id": "806198",
+   "readiness": "SHADOW VALIDATION",
+   "role": "shadow",
+   "slot": 7,
+   "slot_source": "CONFIRMED_POSTED_LINEUP",
+   "team": "MIL",
+   "thresholds": {
+    "1": 0.6725,
+    "2": 0.445,
+    "3": 0.2775,
+    "4": 0.165,
+    "5": 0.09
+   }
+  }
+ ],
+ "schema": "sift.projections.v1",
+ "slate": {
+  "date": "2026-10-27",
+  "inputs_through": {
+   "hitters": "2026-10-27T18:44:27Z",
+   "pitchers": "2026-10-27T18:44:27Z",
+   "teams": "2026-10-27T18:44:27Z"
+  },
+  "label": "Live pregame projections for games starting in the next 20 h. Who plays comes from archived availability observations (probable pitcher: certainty per observation; hitters: posted lineup card only). Research only.",
+  "status": "LIVE_PREGAME"
+ },
+ "sport": "MLB"
+}

@@ -1,6 +1,6 @@
 # Near-close capture health
 
-_generated 2026-10-27T12:01:31Z (schema `capture_health_v1`)_
+_generated 2026-10-27T14:14:47Z (schema `capture_health_v1`)_
 
 **Requested** is what the schedule asked for. **Delivered** is what the
 archive proves arrived. They are separate columns on purpose.

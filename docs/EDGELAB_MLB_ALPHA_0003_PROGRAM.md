@@ -158,3 +158,29 @@ after that queue is consumed. Cancellations ahead of us are ignored (conservativ
   between that and the filled-order ROI IS the adverse-selection cost); the taker alternative at the same
   moment (cross the spread at the archived ask/bid-complement).
 * The postseason is reported separately and never pooled into the significance claim.
+
+## Live execution design (specification only; DISABLED)
+
+Nothing here is enabled, scheduled or credentialed. The skeleton in `lib/edgelab/mlb_alpha/live_guard.py` fixes the controls so they
+can be reviewed and frozen before anyone is asked to authorise execution:
+
+| Control | Mechanism |
+|---|---|
+| Disabled by construction | `LIVE_EXECUTION_CODE_ENABLED = False`; `submit_order` raises `LiveExecutionDisabled` unconditionally; no exchange client exists in the repo |
+| No network, no secrets | the module imports no network library and reads no environment variable (an AST test enforces both) |
+| Authorisation | a file naming the exact rule hash at `data/edgelab/research_artifacts/mlb_alpha_0003/LIVE_EXECUTION_AUTHORIZATION.json`; **not created** |
+| Strategy gate | `ExecutionPolicy.validate` refuses any strategy whose validation status is not `QUALIFIED` |
+| Bankroll | `BankrollProvider` interface = the authenticated account balance; only a `PaperBankroll` implementation exists; per-trade size is capped at a fraction of it |
+| Limits | per trade, per game, portfolio open exposure, daily realised loss, price floor/ceiling |
+| Idempotency | `client_order_id = sha256(rule hash, run id, ticker, side)`; the paper ledger uses the same discipline |
+| Reconciliation | `reconcile(intended, reported)` reports missing / unexpected / quantity / price-through-limit discrepancies |
+| Emergency stop | file-backed `EmergencyStop`; presence blocks every order; no code path removes it |
+
+Read-only security boundary: unchanged. The collectors remain public-endpoint, read-only.
+
+## Status at 2026-10-27
+
+H3-A rejected, H3-B inconclusive/flat, H3-F no seasonality, H3-H infeasible at inside prices, H3-D untestable. No candidate frozen for prospective
+shadow: freezing a rule with no fee-positive development evidence would only spend future data (same decision as MRV). Results:
+`EDGELAB_MLB_ALPHA_0003_RESULTS.md`. Registered multiplicity counts in the amendments are upper bounds; the cells actually tested were
+H3-A m = 11, H3-F m = 7 + 7, H3-H m = 3.

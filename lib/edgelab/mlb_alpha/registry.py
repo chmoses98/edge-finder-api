@@ -15,7 +15,8 @@ STATUS LADDER (per series), each rung requires the one before it:
   PARSEABLE      >=99% of observed market tickers parse into structured fields
   PRICEABLE      a model path exists (unified sim, or an existing player model)
   SETTLEABLE     settlement truth for the series exists in the archive
-  TESTED         >= MIN_TESTED_SETTLED settled contracts across >= MIN_TESTED_GAMES games
+  SAMPLE_FLOOR_MET  >= MIN_TESTED_SETTLED settled contracts across >= MIN_TESTED_GAMES games: enough
+                 data EXISTS to test the family. It says nothing about whether any test was run or passed.
   QUALIFIED      never assigned here: only an explicit validation program can
 
 A series that stops short of a rung is listed in `gaps` with the exact
@@ -30,7 +31,7 @@ MIN_TESTED_SETTLED = 200
 MIN_TESTED_GAMES = 60
 PARSEABLE_FLOOR = 0.99
 
-LADDER = ("DISCOVERED", "CLASSIFIED", "PARSEABLE", "PRICEABLE", "SETTLEABLE", "TESTED")
+LADDER = ("DISCOVERED", "CLASSIFIED", "PARSEABLE", "PRICEABLE", "SETTLEABLE", "SAMPLE_FLOOR_MET")
 
 
 def _price(x):
@@ -164,7 +165,7 @@ def build_registry(series_rows, market_rows, settlement_rows=(), collector_polic
         elif cls["membership"] == tx.MLB and cls["domain"] in (tx.D_GAME, tx.D_PLAYER_GAME):
             reasons.append("SETTLEMENT_TRUTH_MISSING (archived settled rows: %d)" % st["settled"])
         if "SETTLEABLE" in rungs and st["settled"] >= MIN_TESTED_SETTLED and len(st["games"]) >= MIN_TESTED_GAMES:
-            rungs.append("TESTED")
+            rungs.append("SAMPLE_FLOOR_MET")
         elif "SETTLEABLE" in rungs:
             reasons.append("BELOW_TEST_FLOOR (%d settled / %d games)" % (st["settled"], len(st["games"])))
 
@@ -232,8 +233,8 @@ def _research_status(cls, rungs):
         return "NEEDS_REVIEW"
     if cls["domain"] in (tx.D_AWARD, tx.D_LEADER, tx.D_SEASON, tx.D_SERIES, tx.D_EVENT, tx.D_CORPORATE):
         return "CATALOGUED_NO_GAME_PATH_NO_MODEL"
-    if "TESTED" in rungs:
-        return "TESTED_NO_QUALIFIED_EDGE_UNLESS_LISTED_IN_RESULTS"
+    if "SAMPLE_FLOOR_MET" in rungs:
+        return "TESTABLE_SEE_RESULTS_NO_QUALIFIED_EDGE"
     if "SETTLEABLE" in rungs:
         return "SETTLEABLE_UNDER_TEST_FLOOR"
     if "PRICEABLE" in rungs:

@@ -47,7 +47,7 @@ Game-level families (13 priced by the one simulator; 12 player-stat series):
 | Game total, F5 total, team total | yes (all rungs) | yes (`≥ N` semantics, date-aware) | 784 | H3-A, H3-C, H3-H |
 | NRFI/YRFI `KXMLBRFI` | yes | yes | 780 | H3-C; H3-A below floor |
 | Inning winner, inning total, extras | yes through the 8th (rules for the 9th unverified) | **none in the archive** | 0 | **research gap** |
-| Hitter hits/TB/HRR/RBI/SB, pitcher K/outs | **no** (existing player model not wired; production evaluations say `NO_MODEL_SUPPORT`) | yes | 740–777 | H3-C calibration only |
+| Hitter hits/TB/HRR/RBI/SB, pitcher K/outs | **not by this engine.** Research projections exist (pitcher beta-binomial, hitter lineup Monte Carlo) and **lose to Kalshi** (see B); the production `model_evaluations` path says `NO_MODEL_SUPPORT` | yes | 740–777 | H3-C calibration only |
 | Hitter HR, pitcher hits/walks/ER allowed, walks | no | **none** (12.6k HR markets, 0 settled) | 0 | research gap |
 | Futures, awards, leaders, series, events | no | no | – | catalogued |
 
@@ -61,6 +61,8 @@ Game-level families (13 priced by the one simulator; 12 player-stat series):
 | F5-moneyline reversal (C01-F5REV), maker version | predictable move 1–5¢ vs 4–9¢ spread; maker fills 6–16%, adverse selection −2.1¢ at +1 min | **and this program found its shadow could never run** (null prices, see G) |
 | Production model residual (RSCH-0022/0024/0026) | `EDGELAB_FROZEN_FORWARD_SCORECARD`: production − market Brier **+0.0161** (CI 0.0127–0.0195), 687 games | the production Poisson heads are *worse* than Kalshi's price |
 | NRFI/YRFI | real-money suspended | lost to Kalshi and to a constant over 225 games |
+| Pitcher K / outs research model (`EDGELAB_MLB_PLAYER_PROPS_2026_10`) | calibrated (slope 1.03–1.13) and far better than the incumbent, but **Brier +0.0091 (K) / +0.0193 (outs) worse than Kalshi**; model-≥10-points-above-mid YES bucket ROI −24% (K) | the market already prices the leash; calibration cannot add information |
+| Hitter prop engine (RSCH-0028) | Brier 0.158 vs Kalshi 0.155, slope 0.86 | over-confident hits; measurement only |
 
 Taker economics (MRV): −1.93¢/contract (half-spread 0.58 + fee 1.68 − drift 0.33). This program's H3-C re-measures the
 same on three months of observation data: **the average taker loses in every family on both sides** (below).
@@ -127,7 +129,7 @@ TAKER_NEXT_BOOK / MAKER_TAPE fills, settlement, drawdown) → live guard (disabl
    its scheduled runs are now `skipped` — the `MRV_CONTINUOUS_CAPTURE_ENABLED` kill switch is set.
 3. **The 400-book cap starves the core families.** In the joined sample, F5-total had 354 games of books but game total / team total / spread had 39–41.
 4. **No settlement truth** for inning winner, inning total, extras, HR, hits/walks/ER allowed (the inning rules for the 9th are also unseen).
-5. **No player-level model in the evaluation path** (production says `NO_MODEL_SUPPORT` for every prop); props are ~80% of contracts.
+5. **Props are ~80% of contracts and the only families nobody has a winning model for.** Research models exist but are worse than the price (B); they are not in the production evaluation path (`NO_MODEL_SUPPORT`), and HR / hits-allowed / walks-allowed / ER have no settlement truth at all.
 6. Defects found and handled: Eastern-time conversion is fixed at UTC-4 (wrong from 2026-11-01; PR `claude/fix-identity-dst-offset`); the
    Odds API returns *live* lines for games already started (excluded by commence-time); observation quote units change inside 2026-09-10
    (19:04Z → 21:48Z); a `"MLB" in ticker` filter admits `KXMLBBGAME` (esports) unless excluded.
@@ -154,7 +156,7 @@ TAKER_NEXT_BOOK / MAKER_TAPE fills, settlement, drawdown) → live guard (disabl
   `lam` (team offence, starters, bullpen, park, weather, Statcast) is the production input family, and its forward record against Kalshi is
   **worse than the price** (Brier +0.0161, 687 games). A unified simulator cannot repair a worse mean. The next legitimate experiment is to model the
   *anchor's residual* with point-in-time features, preregistered, on 2027 data.
-* **No player-level pricing.** Props are calibrated (H3-C) but not modelled; production evaluations mark them `NO_MODEL_SUPPORT`.
+* **No player-level pricing in the engine.** Props get the market's calibration table (H3-C) and the repo's existing research projections (which lose to Kalshi); the engine returns `PASS_UNPRICEABLE` for them rather than a fabricated probability.
 * **No inference on inning winner / inning total / extras / HR** (no settlement truth), and no postseason claim (about 30 games per family).
 * **No sizing or portfolio optimisation beyond the paper-ledger limits** because nothing qualified.
 

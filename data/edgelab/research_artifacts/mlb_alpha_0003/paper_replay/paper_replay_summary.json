@@ -1,0 +1,89 @@
+{
+ "corpus": "MRV v1 (10-minute cadence)",
+ "cycles": 78,
+ "gameScans": 114,
+ "ledger": {
+  "bankroll": 1000.0,
+  "cashSettled": 0,
+  "fills": 0,
+  "maxDrawdown": 0.0,
+  "maxGameExposure": 0.0,
+  "meanSlippage": null,
+  "net": 0,
+  "open": 0,
+  "openCash": 0,
+  "partialFills": 0,
+  "rejections": {},
+  "roi": null,
+  "settled": 0,
+  "wins": 0
+ },
+ "program": "MLB-ALPHA-0003",
+ "reading": "Replay of a two-day, 41-game corpus. A result of this size is an infrastructure demonstration, never evidence.",
+ "scansWithoutAnchor": 0,
+ "section": "paper replay",
+ "signals": 0,
+ "topPassReasons": [
+  [
+   [
+    "PASS_ILLIQUID",
+    "top-of-book size 10 < 50"
+   ],
+   474
+  ],
+  [
+   [
+    "PASS_ILLIQUID",
+    "top-of-book size 20 < 50"
+   ],
+   321
+  ],
+  [
+   [
+    "PASS_UNPRICEABLE",
+    "no usable sharp anchor"
+   ],
+   315
+  ],
+  [
+   [
+    "PASS_ILLIQUID",
+    "one-sided book or outside the 5.0-240.0 minute w"
+   ],
+   236
+  ],
+  [
+   [
+    "PASS_UNPRICEABLE",
+    "inning >= 9: unplayed/extra half-inning rules no"
+   ],
+   226
+  ],
+  [
+   [
+    "PASS_ILLIQUID",
+    "top-of-book size 1 < 50"
+   ],
+   127
+  ],
+  [
+   [
+    "PASS_ILLIQUID",
+    "top-of-book size 40 < 50"
+   ],
+   87
+  ],
+  [
+   [
+    "PASS_ILLIQUID",
+    "top-of-book size 3 < 50"
+   ],
+   78
+  ]
+ ],
+ "verdictCounts": {
+  "PASS_ILLIQUID": 1784,
+  "PASS_NO_EDGE": 6007,
+  "PASS_UNPRICEABLE": 541
+ }
+}

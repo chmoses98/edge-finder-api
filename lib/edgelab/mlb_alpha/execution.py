@@ -99,7 +99,7 @@ def contracts_for_budget(book, side, budget_usd, max_contracts=100000):
 
 
 def max_size_within_slippage(book, side, max_slippage=0.01):
-    """Largest order whose average price is within `max_slippage` dollars of the top of book."""
+    """Largest whole-contract order whose AVERAGE price stays within `max_slippage` dollars of the top of book."""
     resting = (book or {}).get("no_dollars" if side == "YES" else "yes_dollars")
     lv = sorted(_levels(resting), key=lambda x: -x[0])
     if not lv:
@@ -108,24 +108,22 @@ def max_size_within_slippage(book, side, max_slippage=0.01):
     got, cost = 0, 0.0
     for bid, size in lv:
         price = round(1.0 - bid, 4)
-        for _ in range(1):
-            take = int(size)
-            if take <= 0:
-                continue
-            new_avg = (cost + take * price) / (got + take)
-            if new_avg - top <= max_slippage + 1e-12:
-                got += take
-                cost += take * price
+        take = int(size)
+        if take <= 0:
+            continue
+        # largest k in [0, take] with (cost + k*price) / (got + k) <= top + max_slippage  (levels are non-improving)
+        lo, hi, k_best = 0, take, 0
+        while lo <= hi:
+            k = (lo + hi) // 2
+            avg = (cost + k * price) / (got + k) if got + k > 0 else top
+            if avg - top <= max_slippage + 1e-12:
+                k_best, lo = k, k + 1
             else:
-                # partial level: largest k with (cost + k*price)/(got+k) - top <= max_slippage
-                lo, hi, k_best = 0, take, 0
-                while lo <= hi:
-                    k = (lo + hi) // 2
-                    if (cost + k * price) / (got + k) - top <= max_slippage + 1e-12:
-                        k_best, lo = k, k + 1
-                    else:
-                        hi = k - 1
-                return got + k_best
+                hi = k - 1
+        got += k_best
+        cost += k_best * price
+        if k_best < take:
+            break
     return got
 
 

@@ -134,3 +134,27 @@ sample and cannot confirm anything.
   a one-season common-mode surprise. All 12 monthly cells and the pooled bias are reported (m = 13 for BH).
 * Also reported: the same decomposition on 2026 from the ALPHA-0002 Pinnacle odds (descriptive), to
   verify the claim "Kalshi is no more over-biased than Pinnacle".
+
+## Addendum B (registered 2026-10-27, BEFORE any maker-fill outcome was computed)
+
+**H3-H — passive (limit) entry with a measured queue, versus crossing the spread.**
+ALPHA-0002's maker simulation (264 F5-reversal episodes) had to *sweep* queue position because candles
+carry no sizes. The prospective corpus does carry them: every archived order book records the resting
+size at each price, and the trade tape records every print. So the queue ahead of a join-the-bid order at
+placement is **known**, not assumed, and a fill requires subsequent tape volume at or through the price
+after that queue is consumed. Cancellations ahead of us are ignored (conservative).
+
+* Population: every eligible (run, contract) in the H3-A panel (5 < minutes-to-start <= 240, two-sided
+  book, outcome settled), families `KXMLBF5TOTAL, KXMLBF5SPREAD, KXMLBF3, KXMLBF5, KXMLBF7, KXMLBGAME`
+  (the six with >= 60 games). One order per (ticker, side), at the first eligible run.
+* Orders: BUY YES joining the best YES bid; BUY NO joining the best NO bid (= 100 - best YES ask).
+  Size = floor($10 / (price + fee)) contracts. Order rests until first pitch, then cancels.
+* Fill rule: tape prints with the taker on the opposite side, at or through our price, after the measured
+  queue ahead is consumed (`lib.edgelab.mlb_alpha.paper.simulate_resting_fill`). A price touch alone never fills.
+* Economics: held to settlement; maker fee 0.0175 (headline, `FEE_MULTIPLIER_MAKER_DESIGNATED`) and 0
+  (sensitivity, reported only). Inference: game-cluster bootstrap of ROI on **filled** orders; BH q = 0.10
+  over {6 families x 2 sides + 2 pooled} = 14 cells.
+* Also reported (descriptive): fill rate; the unconditional "if every placed order had filled" ROI (the gap
+  between that and the filled-order ROI IS the adverse-selection cost); the taker alternative at the same
+  moment (cross the spread at the archived ask/bid-complement).
+* The postseason is reported separately and never pooled into the significance claim.

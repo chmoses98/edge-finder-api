@@ -113,3 +113,18 @@ def test_unresolved_identity_never_yields_a_game_pk():
 def test_team_split_helper_rejects_and_reports_ambiguity_honestly():
     assert split_team_pair("BOSNYY") == [("BOS", "NYY")]
     assert split_team_pair("ZZZQQQ") == []
+
+
+# ---- DST: Eastern wall-clock -> UTC must follow the calendar, not a fixed +4h ---------------------------------
+def test_edt_dates_are_unchanged_by_the_dst_fix():
+    ident = parse_event_ticker("KXMLBF5TOTAL-26AUG291915BOSNYYG2")
+    assert ident["scheduledStartUtc"].isoformat() == "2026-08-29T23:15:00"          # UTC-4, as before
+    ident = parse_event_ticker("KXMLBGAME-26OCT152000MILLAD")
+    assert ident["scheduledStartUtc"].isoformat() == "2026-10-16T00:00:00"
+
+
+def test_est_dates_use_utc_minus_five():
+    ident = parse_event_ticker("KXMLBGAME-26NOV012000MILTB")      # 2026-11-01 is the first Sunday: clocks went back at 2am
+    assert ident["scheduledStartUtc"].isoformat() == "2026-11-02T01:00:00"
+    ident = parse_event_ticker("KXMLBGAME-26MAR051305TBMIL")      # before the March change: EST
+    assert ident["scheduledStartUtc"].isoformat() == "2026-03-05T18:05:00"

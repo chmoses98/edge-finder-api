@@ -23,13 +23,15 @@ concatenation admits more than one valid (away, home) split, or none, the
 result is UNRESOLVED -- never a guess, and never an arbitrary pick of one
 doubleheader game.
 
-Times are US/Eastern in the ticker; the archive's whole reliable range is
-EDT (UTC-4), which was validated at 0.0 min median error against the
-`scheduledStart` field on 26,261 observations.
+Times are US/Eastern in the ticker. The archive's reliable range is all EDT
+(UTC-4), validated at 0.0 min median error against the `scheduledStart` field
+on 26,261 observations; conversion now follows the real DST rules so dates on
+or after the first Sunday of November (EST, UTC-5) are correct too.
 """
 
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from lib.edgelab.mlb_schedule import TEAM_ID_TO_ABBR
 
@@ -37,7 +39,16 @@ _MON = {m: i + 1 for i, m in enumerate(
     ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
      "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"])}
 
-ET_UTC_OFFSET_HOURS = 4
+ET_UTC_OFFSET_HOURS = 4          # EDT only; kept for importers. NOT used to convert: see _et_to_utc_naive.
+_ET = ZoneInfo("America/New_York")
+
+
+def _et_to_utc_naive(local):
+    """Naive US/Eastern wall-clock -> naive UTC with real DST rules. The previous fixed +4h was correct for
+    every date in the archive's reliable range (all EDT) and wrong from the first Sunday of November: a
+    World Series game on 2026-11-01 evening (EST, UTC-5) would have been placed one hour early, which breaks
+    the +/-45 minute schedule join and the T-minus window arithmetic for every such game."""
+    return local.replace(tzinfo=_ET).astimezone(timezone.utc).replace(tzinfo=None)
 
 # <SERIES>-<YY><MON><DD><HHMM><TEAMS>[G<n>]
 _EVENT_RE = re.compile(
@@ -108,7 +119,7 @@ def parse_event_ticker(event_ticker):
         "unresolvedReason": None,
         "seriesTicker": m.group("series"),
         "gameDate": "%04d-%02d-%02d" % (2000 + int(m.group("yy")), mon, int(m.group("dd"))),
-        "scheduledStartUtc": local + timedelta(hours=ET_UTC_OFFSET_HOURS),
+        "scheduledStartUtc": _et_to_utc_naive(local),
         "awayTeam": away,
         "homeTeam": home,
         "doubleheaderGame": int(dh) if dh else None,

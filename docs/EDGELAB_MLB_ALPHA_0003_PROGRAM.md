@@ -113,3 +113,24 @@ calibration baseline is descriptive (no test, no multiplicity charge).
 No file under `api/`, `app/`, `scripts/` outside `scripts/research/mlb_alpha_0003/`, or
 `lib/` outside `lib/edgelab/mlb_alpha/` is modified. The canonical-evidence hash guard
 (`tests/conftest.py`) passes unchanged.
+
+## Addendum A (registered 2026-10-27, after H3-A/H3-B/H3-C ran, BEFORE any multi-season outcome was read)
+
+**H3-F — late-season over-scoring surprise: market-wide or Kalshi-specific, and does it repeat?**
+Motivation (post hoc, from H3-C): in 2026-09-02..09-27 the over-type ladders were realized more often
+than priced (KXMLBTOTAL mid 0.566 vs 0.616 realized; TEAMTOTAL 0.451 vs 0.491; F5TOTAL 0.602 vs 0.641)
+while H3-A showed Kalshi's derivatives sit on the Pinnacle surface within about a cent. If both hold,
+the surprise belongs to the sharp market (a common-mode scoring shock), not to Kalshi, and it is
+tradable ex ante only if it recurs by season. Hypothesis generated from 2026; therefore it is tested
+**only on the independent seasons 2022-2025** (Pinnacle pre-commence totals from
+`data/research_cache/pinnacle_historical`, runs from the cached box scores). 2026 is the motivating
+sample and cannot confirm anything.
+
+* Statistic: `d = actual total runs - Pinnacle total line` (half-lines; push-free lines only) and the
+  realized Over rate versus the no-vig implied Over probability, per calendar month and for September.
+* Clustering: game date. Per-season reported separately.
+* Pre-declared decision: "seasonality supported" only if the September mean `d` is positive in >= 3 of
+  the 4 seasons AND the pooled date-clustered CI90 excludes 0. Otherwise the 2026 pattern is classed as
+  a one-season common-mode surprise. All 12 monthly cells and the pooled bias are reported (m = 13 for BH).
+* Also reported: the same decomposition on 2026 from the ALPHA-0002 Pinnacle odds (descriptive), to
+  verify the claim "Kalshi is no more over-biased than Pinnacle".

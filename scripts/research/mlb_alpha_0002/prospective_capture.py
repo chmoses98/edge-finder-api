@@ -242,12 +242,52 @@ def fetch_series_markets(series):
     return out
 
 
+def _cents(m, dollars_key, legacy_key):
+    """-> (integer cents | None, unit source). Kalshi now serves `<field>_dollars` strings ("0.4500");
+    the legacy integer-cent `<field>` is kept as a fallback. The unit comes from WHICH FIELD answered,
+    never from the magnitude of the number (lib.edgelab.price_units: a 1-cent quote must not read as $1)."""
+    v = m.get(dollars_key)
+    if v is not None:
+        try:
+            return int(round(float(v) * 100)), "dollars"
+        except (TypeError, ValueError):
+            return None, "dollars"
+    v = m.get(legacy_key)
+    if v is not None:
+        try:
+            return int(round(float(v))), "cents"
+        except (TypeError, ValueError):
+            return None, "cents"
+    return None, None
+
+
+def _num(m, *keys):
+    for k in keys:
+        v = m.get(k)
+        if v is not None:
+            try:
+                return float(v)
+            except (TypeError, ValueError):
+                return None
+    return None
+
+
 def quote_of(m):
+    """Quote row in INTEGER CENTS (the schema this store has always used).
+
+    Defect fixed here: this function read only the legacy `yes_bid`/`yes_ask`/... fields, which Kalshi's
+    /markets endpoint no longer returns (it returns `*_dollars`), so every row written from 2026-09-02 had
+    null prices: 0 of 190,780 quote rows carried any price (MLB-ALPHA-0003 capture audit)."""
+    yb, unit = _cents(m, "yes_bid_dollars", "yes_bid")
+    ya, _ = _cents(m, "yes_ask_dollars", "yes_ask")
+    nb, _ = _cents(m, "no_bid_dollars", "no_bid")
+    na, _ = _cents(m, "no_ask_dollars", "no_ask")
+    lp, _ = _cents(m, "last_price_dollars", "last_price")
     return {"marketTicker": m.get("ticker"), "eventTicker": m.get("event_ticker"),
-            "yesBid": m.get("yes_bid"), "yesAsk": m.get("yes_ask"),
-            "noBid": m.get("no_bid"), "noAsk": m.get("no_ask"),
-            "lastPrice": m.get("last_price"), "volume": m.get("volume"),
-            "openInterest": m.get("open_interest"), "liquidity": m.get("liquidity"),
+            "yesBid": yb, "yesAsk": ya, "noBid": nb, "noAsk": na, "lastPrice": lp,
+            "priceUnitSource": unit,
+            "volume": _num(m, "volume_fp", "volume"), "openInterest": _num(m, "open_interest_fp", "open_interest"),
+            "liquidity": _num(m, "liquidity_dollars", "liquidity"),
             "status": m.get("status"), "closeTime": m.get("close_time")}
 
 

@@ -8,21 +8,21 @@
   "PRODUCTION_MODEL_SUPPORT": "the production model prices it (config/rules.json market_list)"
  },
  "bankroll": {
-  "ageMinutes": 163.437,
+  "ageMinutes": 44.771,
   "consumerSizingVerdict": {
    "mayPresentDollarStakes": false,
-   "reason": "bankroll observed 163.4 minutes ago, older than the 30-minute sizing window -- this is NOT the current bankroll",
+   "reason": "bankroll observed 44.8 minutes ago, older than the 30-minute sizing window -- this is NOT the current bankroll",
    "verdict": "NO_DOLLAR_SIZING"
   },
   "currency": "USD",
   "maxAgeMinutes": 30,
   "numericBankrollAvailable": false,
-  "observedAt": "2026-10-26T23:14:17Z",
-  "resolvedAt": "2026-10-27T01:57:43Z",
+  "observedAt": "2026-10-27T02:45:06Z",
+  "resolvedAt": "2026-10-27T03:29:52Z",
   "sizingAllowed": false,
   "source": "kalshi_authenticated_balance",
   "status": "STALE",
-  "unavailableReason": "bankroll observed 163.4 minutes ago, older than the 30-minute sizing window -- this is NOT the current bankroll",
+  "unavailableReason": "bankroll observed 44.8 minutes ago, older than the 30-minute sizing window -- this is NOT the current bankroll",
   "valueType": "KALSHI_AVAILABLE_CASH_BALANCE"
  },
  "completeness": {
@@ -58,7 +58,7 @@
   "unclassifiedRawContracts": 0
  },
  "date": "2026-10-26",
- "eligibilityEvaluatedAt": "2026-10-27T01:57:43Z",
+ "eligibilityEvaluatedAt": "2026-10-27T03:29:52Z",
  "eligibilityPolicy": "Only games that have NOT started and have BOTH official lineups confirmed (lineupConfirmedOfficial on awayTeamStats AND homeTeamStats) are real-money candidates. Probable/projected lineups are never treated as confirmed. Every other game stays archived and researchable and must not produce a real-money recommendation from the normal slate card.",
  "executionConstants": {
   "_note": "Projected verbatim from config/rules.json at build time. RULES.md and MODEL_CORE.md remain authoritative for everything else; this is the subset needed to size and threshold a wager without loading them.",
@@ -189,36 +189,33 @@
    "accounted": 316,
    "bettingEligible": false,
    "bundle": "data/handicap_runtime/2026-10-26/games/849804.json",
-   "bundleBytes": 78737,
+   "bundleBytes": 78318,
    "bundleGzip": "data/handicap_runtime/2026-10-26/games/849804.json.gz",
-   "bundleGzipBytes": 15087,
-   "eligibilityReason": "game has already started -- first-pitch timestamp has passed",
+   "bundleGzipBytes": 14132,
+   "eligibilityReason": "game has already started -- status is In Progress",
    "eligibilityStatus": "BLOCKED_GAME_STARTED",
    "excludedOrUnresolved": 0,
    "gameId": 849804,
-   "gameStatus": "Scheduled",
+   "gameStatus": "In Progress",
    "invariantHolds": true,
    "isPostponed": false,
    "lineups": {
     "away": {
-     "battersResolved": 0,
-     "lineupCheckedAt": "2026-10-26T13:17:43Z",
-     "lineupConfirmedOfficial": false,
-     "reason": "official lineup not posted yet",
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-10-27T03:06:53Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
      "team": "MIL"
     },
-    "bothConfirmed": false,
+    "bothConfirmed": true,
     "home": {
-     "battersResolved": 0,
-     "lineupCheckedAt": "2026-10-26T13:17:43Z",
-     "lineupConfirmedOfficial": false,
-     "reason": "official lineup not posted yet",
+     "battersResolved": 9,
+     "lineupCheckedAt": "2026-10-27T03:06:53Z",
+     "lineupConfirmedOfficial": true,
+     "reason": null,
      "team": "TB"
     },
-    "unconfirmedSides": [
-     "away",
-     "home"
-    ]
+    "unconfirmedSides": []
    },
    "marketsByFamily": {
     "first_inning_run": 1,
@@ -248,7 +245,7 @@
    "unclassified": 0
   }
  ],
- "generatedAt": "2026-10-27T01:57:43Z",
+ "generatedAt": "2026-10-27T03:29:52Z",
  "guarantees": [
   "Only games that have NOT started and have BOTH official lineups confirmed appear under bettingEligibleGames. Everything else is researchOnly and carries realMoneyEligible=false on every market row.",
   "For a betting-eligible game, EVERY raw Kalshi contract attributable to it is accounted for in exactly one visible state: a normalized market, a registry exclusion with its reason, or an unclassified contract with the normalizer's reason. contractAccounting.silentRemainderCount is 0 on every game of a written card -- a violation aborts the build rather than publishing a falsely complete file.",

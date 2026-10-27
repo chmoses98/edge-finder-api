@@ -60,12 +60,14 @@ def _new_series_entry(series, title):
     }
 
 
-def build_registry(series_rows, market_rows, settlement_rows=(), collector_policies=None, as_of=None):
+def build_registry(series_rows, market_rows, settlement_rows=(), collector_policies=None, as_of=None, catalogue_history=None):
     """
     series_rows      iterable of {'seriesTicker','title'}   (from /series or a catalogue)
     market_rows      iterable of {'ticker','ts','yesBid','yesAsk','volume','status'} ; prices in DOLLARS (loader converts by declared unit)
     settlement_rows  iterable of {'marketTicker','settlementStatus','result','settledAt'}
     collector_policies  {'production': set(series), 'alpha0002': {series: tier}, 'mrv': {series: tier}}
+    catalogue_history   [(date, {series,...})] oldest first: lets the registry report WHEN each series first appeared, so a
+                        new market family (Kalshi added inning winner/total on 2026-08-18) is flagged the day it appears
     """
     entries = {}
     for r in series_rows or ():
@@ -210,6 +212,26 @@ def build_registry(series_rows, market_rows, settlement_rows=(), collector_polic
         if reasons and cls["membership"] in (tx.MLB, tx.UNCLASSIFIED, tx.MIXED_COMBO):
             gaps.append({"seriesTicker": s, "highestRung": rungs[-1], "reasons": reasons})
 
+    timeline = None
+    if catalogue_history:
+        first, last = {}, {}
+        for day, ss in catalogue_history:
+            for t in ss:
+                first.setdefault(t, day)
+                last[t] = day
+        base_day, newest = catalogue_history[0][0], catalogue_history[-1][0]
+        by_t = {e["seriesTicker"]: e for e in out_series}
+        for t, e in by_t.items():
+            e["firstSeenInCatalogue"] = first.get(t)
+        timeline = {
+            "firstCatalogue": base_day, "newestCatalogue": newest,
+            "seriesInFirst": len(catalogue_history[0][1]), "seriesInNewest": len(catalogue_history[-1][1]),
+            "addedSinceFirst": sorted(({"series": t, "firstSeen": d, "membership": by_t[t]["membership"] if t in by_t else None,
+                                        "researchStatus": by_t[t]["researchStatus"] if t in by_t else None}
+                                       for t, d in first.items() if d > base_day), key=lambda x: (x["firstSeen"], x["series"]),
+                                      ),
+            "droppedSinceFirst": sorted(t for t, d in last.items() if d < newest),
+        }
     by_membership = defaultdict(int)
     for e in out_series:
         by_membership[e["membership"]] += 1
@@ -218,7 +240,7 @@ def build_registry(series_rows, market_rows, settlement_rows=(), collector_polic
         "counts": {"series": len(out_series), "byMembership": dict(by_membership),
                    "mlbGameLevel": sum(1 for e in out_series if e["membership"] == tx.MLB and e["domain"] in (tx.D_GAME, tx.D_PLAYER_GAME)),
                    "unclassified": sum(1 for e in out_series if e["membership"] == tx.UNCLASSIFIED)},
-        "series": out_series, "gaps": gaps,
+        "series": out_series, "gaps": gaps, "discoveryTimeline": timeline,
     }
 
 
@@ -265,6 +287,12 @@ def render_markdown(registry):
     for e in registry["series"]:
         if e["membership"] == tx.MLB and e["domain"] not in (tx.D_GAME, tx.D_PLAYER_GAME):
             L.append("| %s | %s | %s |" % (e["seriesTicker"], e["domain"], e["family"]))
+    tl = registry.get("discoveryTimeline")
+    if tl:
+        L += ["", "## New series since %s (%d -> %d series)" % (tl["firstCatalogue"], tl["seriesInFirst"], tl["seriesInNewest"]), "",
+              "| First seen | Series | Verdict | Research status |", "|---|---|---|---|"]
+        for a in tl["addedSinceFirst"]:
+            L.append("| %s | %s | %s | %s |" % (a["firstSeen"], a["series"], a["membership"], a["researchStatus"]))
     unc = [e for e in registry["series"] if e["membership"] == tx.UNCLASSIFIED]
     L += ["", "## Unclassified (needs review)", ""] + (["- %s: %s" % (e["seriesTicker"], e["title"]) for e in unc] or ["_none_"])
     return "\n".join(L) + "\n"

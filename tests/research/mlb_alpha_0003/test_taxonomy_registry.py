@@ -118,3 +118,15 @@ def test_registry_rejects_cents_masquerading_as_dollars():
 def test_qualified_is_never_assigned_by_the_registry():
     reg = _reg()
     assert all("QUALIFIED" not in e["ladderRungs"] for e in reg["series"])
+
+
+def test_discovery_timeline_flags_new_series_by_first_catalogue_date():
+    hist = [("2026-08-01", {"KXMLBTOTAL"}), ("2026-08-18", {"KXMLBTOTAL", "KXMLBINNINGWIN"}),
+            ("2026-10-08", {"KXMLBTOTAL", "KXMLBINNINGWIN", "KXMLBBGAME"})]
+    reg = rg.build_registry([{"seriesTicker": t} for t in ("KXMLBTOTAL", "KXMLBINNINGWIN", "KXMLBBGAME")], [], [], None,
+                            catalogue_history=hist)
+    added = {a["series"]: a for a in reg["discoveryTimeline"]["addedSinceFirst"]}
+    assert added["KXMLBINNINGWIN"]["firstSeen"] == "2026-08-18"
+    assert added["KXMLBBGAME"]["membership"] == "NOT_MLB"         # the esports collision is flagged the day it appears
+    assert reg["discoveryTimeline"]["seriesInFirst"] == 1 and reg["discoveryTimeline"]["seriesInNewest"] == 3
+    assert "KXMLBINNINGWIN" in rg.render_markdown(reg)

@@ -32,6 +32,11 @@ registered before their computations). Artifacts: `data/edgelab/research_artifac
 | Multi-leg combination | 1 | `KXMVE*` — price only by leg decomposition |
 | Unclassified | 0 | an unmatched MLB-looking series is reported as `UNCLASSIFIED_NEEDS_REVIEW`, never dropped |
 
+**The universe is growing, and the registry flags it.** The daily Kalshi series catalogue went from 179 to 215 series between 2026-07-30 and
+2026-10-26 (36 added, none dropped): inning winner/total (08-18), pitcher ER/hits/walks-allowed and hitter walks (08-17), the whole postseason-series
+block (09-22), walk-offs, weather delays, starting-lineup specials (09-29…10-13), and the esports collision `KXMLBBGAME` (10-08). Each is reported
+with its first-seen date in `MARKET_REGISTRY.md`; none is silently dropped for lacking a model.
+
 Game-level families (13 priced by the one simulator; 12 player-stat series):
 
 | Family | Priced by `RunEnvSim` | Archived settlement | Sample (games) | Tested here |
@@ -139,6 +144,19 @@ TAKER_NEXT_BOOK / MAKER_TAPE fills, settlement, drawdown) → live guard (disabl
 4. A candidate must meet the bar in the program doc *and* show positive net P/L under `TAKER_NEXT_BOOK` (latency) fills at stated size.
 5. Only then: a separately approved execution component (authenticated bankroll provider, order client, reconciliation against fills, emergency stop), run in
    paper-with-real-quotes mode first. `live_guard.py` is the reviewed skeleton; the authorization file it requires does not exist and was not created.
+
+## What this program did NOT do (scope boundaries)
+
+* **No live Kalshi pull.** The sandbox has no route to `api.elections.kalshi.com` or `statsapi.mlb.com` (HTTP 403 from the egress policy), so the registry is
+  built from the archived daily catalogues, observations, snapshots and settlements (the daily catalogue is itself a Kalshi `GET /series` pull made in
+  GitHub Actions). Every number here comes from archives that were verified against each other; nothing was fabricated to stand in for a live call.
+* **No fundamentals-driven run environment.** `RunEnvSim` is a coherent *pricing* layer; `lam_away/lam_home` come from a market anchor. A model-based
+  `lam` (team offence, starters, bullpen, park, weather, Statcast) is the production input family, and its forward record against Kalshi is
+  **worse than the price** (Brier +0.0161, 687 games). A unified simulator cannot repair a worse mean. The next legitimate experiment is to model the
+  *anchor's residual* with point-in-time features, preregistered, on 2027 data.
+* **No player-level pricing.** Props are calibrated (H3-C) but not modelled; production evaluations mark them `NO_MODEL_SUPPORT`.
+* **No inference on inning winner / inning total / extras / HR** (no settlement truth), and no postseason claim (about 30 games per family).
+* **No sizing or portfolio optimisation beyond the paper-ledger limits** because nothing qualified.
 
 ## Method notes and caveats (read before trusting any number)
 

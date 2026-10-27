@@ -80,6 +80,16 @@ def _series_rows(repo_root):
     return [{"seriesTicker": s["seriesTicker"], "title": s.get("title")} for s in d.get("mlbAssociatedSeries", [])], d.get("date")
 
 
+def _catalogue_history(repo_root):
+    out = []
+    for f in sorted(glob.glob(os.path.join(repo_root, "data", "kalshi", "discovery", "*_series_catalogue.json"))):
+        d = json.load(open(f))
+        if d.get("seriesCatalogueQueryError"):
+            continue
+        out.append((d["date"], {s["seriesTicker"] for s in d.get("mlbAssociatedSeries", [])}))
+    return out
+
+
 def _market_rows(repo_root, prospective_root):
     for r in corpus.iter_observations(repo_root):
         yield {"ticker": r.get("marketTicker"), "ts": r.get("capturedAt"),
@@ -108,7 +118,8 @@ def main(argv=None):
                 "mrv": _mrv_policy(a.repo_root)}
     reg = registry.build_registry(
         series_rows, _market_rows(a.repo_root, a.prospective_root),
-        corpus.iter_settlements(a.repo_root), policies, as_of="catalogue %s + archive through newest observation" % cat_date)
+        corpus.iter_settlements(a.repo_root), policies, as_of="catalogue %s + archive through newest observation" % cat_date,
+        catalogue_history=_catalogue_history(a.repo_root))
     os.makedirs(a.out, exist_ok=True)
     with open(os.path.join(a.out, "market_registry.json"), "w") as fh:
         json.dump(reg, fh, indent=1, sort_keys=True, default=str)

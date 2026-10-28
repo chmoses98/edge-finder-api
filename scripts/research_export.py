@@ -1181,6 +1181,42 @@ def _slate_game_obs(ctx, g, d, side, team, players_by_id):
     return out
 
 
+TEAM_FORM_WINDOW_FIELDS = ("games", "mean", "median", "min", "max", "ewma", "trimmedMean", "marketRelative", "outlierDependence")
+
+
+def _team_form(form):
+    """The analysis-only team_form block of model_inputs, from a slate team's ``offenseForm``.
+
+    lib/team_offense_form.build_form() publishes a window the team cannot fill yet (fewer completed games than the
+    window needs: early season, or a postseason club whose form source is short) as ``None`` -- an explicit "not
+    enough games", never a padded window. That ``None`` is carried through unchanged (never an empty or invented
+    profile), and each such window is listed in ``unavailable_windows`` with the count that kept it empty."""
+    windows, unavailable = {}, {}
+    available = form.get("gamesAvailable")
+    for k, v in (form.get("windows") or {}).items():
+        if v is None:
+            windows[k] = None
+            need = int(k[1:]) if k[:1] == "L" and k[1:].isdigit() else None
+            unavailable[k] = {"reason": "INSUFFICIENT_COMPLETED_GAMES", "games_available": available, "games_required": need}
+        else:
+            windows[k] = {x: v.get(x) for x in TEAM_FORM_WINDOW_FIELDS}
+    return {"windows": windows, "form_label": form.get("formLabel"), "as_of_date": form.get("asOfDate"), "analysis_only": True,
+            "games_available": available, "unavailable_windows": unavailable}
+
+
+def _team_form_notes(model_inputs):
+    """One human-readable note per team whose form windows are unavailable, so the event says so in words."""
+    notes = []
+    for s in ("away", "home"):
+        side = model_inputs.get(s) or {}
+        missing = (side.get("team_form") or {}).get("unavailable_windows") or {}
+        if missing:
+            n = next(iter(missing.values()))["games_available"]
+            notes.append(f"Team form ({side.get('team')}): {', '.join(sorted(missing, key=lambda k: (len(k), k)))} unavailable "
+                         f"({n} completed games on record); those windows are null, not estimated.")
+    return notes
+
+
 def _model_inputs(g, d):
     def side(s):
         blk = g.get(s) or {}
@@ -1192,9 +1228,7 @@ def _model_inputs(g, d):
             "starter": {"id": (blk.get("pitcher") or {}).get("id"), "name": (blk.get("pitcher") or {}).get("name"),
                         "hand": (blk.get("pitcher") or {}).get("pitchHand"), "savant": blk.get("pitcherSavant")},
             "bullpen": {k: bp.get(k) for k in bp if k != "recentUsage"} | {"recentUsage": bp.get("recentUsage")},
-            "team_form": {"windows": {k: {x: v.get(x) for x in ("games", "mean", "median", "min", "max", "ewma", "trimmedMean", "marketRelative",
-                                                                  "outlierDependence")} for k, v in (form.get("windows") or {}).items()},
-                          "form_label": form.get("formLabel"), "as_of_date": form.get("asOfDate"), "analysis_only": True},
+            "team_form": _team_form(form),
             "opp_quality": {k: ts.get(k) for k in ("oppXFIPavg", "oppQualityAdj", "oppQualityGames", "oppQualityConf", "oppQualityNote")},
             "offense_baseline": {k: ts.get(k) for k in ("offenseBaselineRaw", "offenseBaselineBayes", "offenseBaselineOppAdj", "offenseBaselineAdj",
                                                         "lineupAdj", "lineupWOBADelta")},
@@ -1382,6 +1416,7 @@ def build_event_layer(ctx, teams, player_profiles, published_events):
             venue = {"name": g.get("venue") or pf.get("name"), "park_factor": pf.get("parkFactor"), "dome": pf.get("dome"),
                      "park_adjustment_formula": "park_adj = (pf-100)/100*0.5 (compute_projections)"}
             ext["model_inputs"] = _model_inputs(g, d)
+            notes.extend(_team_form_notes(ext["model_inputs"]))
         else:
             notes.append("No authoritative slate game for this event: matchup inputs unavailable.")
         notes.extend(["Weather values are not stored (dome flag only); injuries and umpires are not stored.",

@@ -1,0 +1,204 @@
+{
+ "dry_run": false,
+ "line": "MLB-PF SUMMARY: stages ['capture', 'results', 'settle', 'project', 'publish', 'score', 'guard']; archived 3; settled 138",
+ "now": "2026-10-28T06:35:35Z",
+ "sport": "MLB",
+ "stages": {
+  "capture": {
+   "duplicate": false,
+   "errors": [],
+   "games_pregame": 1,
+   "games_seen": 2,
+   "lineup_posted_share": 0.0,
+   "lineups_posted": 0,
+   "minutes_to_next_start": 1044.4,
+   "not_starting_emitted": 0,
+   "observations": 1,
+   "probable_share": 0.5,
+   "probables_listed": 1,
+   "rejected": 0,
+   "seconds": 0.4,
+   "snapshot": "/home/runner/work/_temp/archive/availability/mlb/2026-10-28/063535Z_d203b14db77a.jsonl.gz",
+   "stage": "capture",
+   "team_sides": 2,
+   "written": 1
+  },
+  "guard": {
+   "ok": true,
+   "seconds": 0.1,
+   "stage": "guard"
+  },
+  "project": {
+   "archived": {
+    "duplicates": 0,
+    "invalid": 0,
+    "late_rejected": 0,
+    "written": 3
+   },
+   "by_family": {
+    "challenger:batters_faced": 1,
+    "challenger:outs": 1,
+    "challenger:pitcher_strikeouts": 1
+   },
+   "challenger_gate": {
+    "PASS": 3
+   },
+   "challenger_participation": {
+    "LIKELY_ACTIVE": 3
+   },
+   "challenger_records": 3,
+   "challenger_unchanged_skipped": 0,
+   "coverage": {
+    "events": 1,
+    "hitter_games_with_posted_lineup": 0,
+    "hitters": 0.0,
+    "per_event_pitchers": {
+     "849799": {
+      "coverage": 1.0,
+      "expected": 1,
+      "newest_age_minutes": 0.1,
+      "newest_capture_utc": "2026-10-28T06:35:35Z",
+      "observed": 1,
+      "sources": [
+       "mlb_statsapi_schedule_probable_pitcher"
+      ]
+     }
+    },
+    "pitchers": 1.0
+   },
+   "gate_findings_all_published_rows": {
+    "lineup:REVIEW": 126,
+    "participation:REVIEW": 126
+   },
+   "history": {
+    "archived_box_games_used": 14,
+    "completeness_verified_this_run": true,
+    "inputs_through": {
+     "hitters": "2026-10-28T03:35:39Z",
+     "pitchers": "2026-10-28T03:35:39Z",
+     "teams": "2026-10-28T03:35:39Z"
+    }
+   },
+   "hitters_assumed_not_archived": 126,
+   "horizon_hours": 20.0,
+   "incumbent_records": 0,
+   "incumbent_sources": {
+    "hitters": {
+     "not_pregame": 0,
+     "rows_seen": 0,
+     "usable": 0
+    },
+    "pitchers": {
+     "after_start_or_stale": 0,
+     "rows_seen": 0,
+     "usable": 0
+    },
+    "team_runs": {
+     "files": 0,
+     "games_seen": 0,
+     "not_pregame": 0,
+     "usable": 0
+    }
+   },
+   "published_players": 132,
+   "seconds": 44.3,
+   "skipped_games": [],
+   "stage": "project",
+   "target_games": 1
+  },
+  "publish": {
+   "changed": true,
+   "games": 1,
+   "optional_values_nulled": 0,
+   "players": 132,
+   "seconds": 0.0,
+   "stage": "publish"
+  },
+  "results": {
+   "errors": [],
+   "final": 4,
+   "games_checked": 4,
+   "history_games_written": 1,
+   "not_played": 0,
+   "pending": 0,
+   "rows_written": 135,
+   "seconds": 3.0,
+   "stage": "results"
+  },
+  "score": {
+   "seconds": 1.2,
+   "stage": "score",
+   "windows": {
+    "daily": {
+     "alerts": [
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "INSUFFICIENT"
+     ],
+     "corrections": 0,
+     "settled": 1013,
+     "undefined_statistics_nulled": 0,
+     "void": 6
+    },
+    "season": {
+     "alerts": [
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "OK",
+      "OK",
+      "ALERT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "OK",
+      "OK",
+      "OK",
+      "INSUFFICIENT",
+      "OK"
+     ],
+     "corrections": 0,
+     "settled": 1013,
+     "undefined_statistics_nulled": 0,
+     "void": 6
+    },
+    "weekly": {
+     "alerts": [
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "OK",
+      "OK",
+      "ALERT",
+      "INSUFFICIENT",
+      "INSUFFICIENT",
+      "OK",
+      "OK",
+      "OK",
+      "INSUFFICIENT",
+      "OK"
+     ],
+     "corrections": 0,
+     "settled": 1013,
+     "undefined_statistics_nulled": 0,
+     "void": 6
+    }
+   }
+  },
+  "settle": {
+   "already_settled": 881,
+   "corrections": 0,
+   "pending": 0,
+   "seconds": 0.2,
+   "settled": 138,
+   "stage": "settle",
+   "void": 0
+  }
+ }
+}

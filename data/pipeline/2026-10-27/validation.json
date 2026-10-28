@@ -5,11 +5,14 @@
     "errors": [],
     "gameCount": 1,
     "status": "pass",
-    "warningCount": 0,
-    "warnings": []
+    "warningCount": 2,
+    "warnings": [
+      "MIL@TB: Kalshi NRFI/YRFI not in slate (odds.kalshi.nrfi_yrfi.nrfi_american=null) \u2014 must show Missing Data in marketLedger",
+      "MIL@TB: awayProjRuns not in allEdges \u2014 projection may have used league-average fallback (marketLedger present, game was evaluated)"
+    ]
   },
   "meta": {
-    "createdAt": "2026-10-27T22:10:14Z",
+    "createdAt": "2026-10-28T01:31:35Z",
     "producedBy": "scripts/validate_slate_final.py",
     "schemaVersion": "1.0",
     "slateDate": "2026-10-27",

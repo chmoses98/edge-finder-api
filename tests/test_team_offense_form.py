@@ -301,7 +301,7 @@ def test_incomplete_games_are_skipped_not_scored_as_zero():
 
 def test_capture_refuses_to_write_when_the_schedule_fetch_fails(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(fetch_team_offense_form.mlb_schedule, "fetch_schedule_range",
+    monkeypatch.setattr(fetch_team_offense_form.mlb_schedule, "fetch_schedule_range_all_game_types",
                         lambda start, end, **kw: None)
     monkeypatch.setattr(sys, "argv", ["fetch_team_offense_form.py", "--as-of", "2026-09-16"])
     assert fetch_team_offense_form.main() == 1
@@ -315,7 +315,7 @@ def test_capture_writes_a_form_profile_per_team(tmp_path, monkeypatch):
     for index, runs in enumerate(OUTLIER_WINDOW + [4, 3, 5], start=1):
         days.append({"date": f"2026-09-{index:02d}",
                      "games": [_schedule("", 158, 134, runs, 3, game_pk=index)]})
-    monkeypatch.setattr(fetch_team_offense_form.mlb_schedule, "fetch_schedule_range",
+    monkeypatch.setattr(fetch_team_offense_form.mlb_schedule, "fetch_schedule_range_all_game_types",
                         lambda start, end, **kw: {"dates": days})
     monkeypatch.setattr(sys, "argv",
                         ["fetch_team_offense_form.py", "--as-of", "2026-09-16", "--no-market-lines"])
@@ -328,6 +328,45 @@ def test_capture_writes_a_form_profile_per_team(tmp_path, monkeypatch):
     assert "L7" in milwaukee["formLines"]
     assert payload["marketLineSource"]["status"] == "SKIPPED_BY_FLAG"
     assert "No production model weight reads this file" in payload["note"]
+
+
+def test_capture_includes_postseason_games(tmp_path, monkeypatch):
+    # 2026-10 regression: the capture asked for gameType=R only, so in October every club's form was built from
+    # whatever regular-season games were still inside the 30-day lookback. They rolled off one by one (TB: 12
+    # games on the 10-17 slate, 2 on the 10-27 World Series slate) until every window was null, while the
+    # club's actual postseason scoring never entered its own form.
+    monkeypatch.chdir(tmp_path)
+
+    def _regular_season_only(*_a, **_k):
+        raise AssertionError("the form capture must not use the regular-season-only schedule adapter")
+
+    regular = [{"date": f"2026-09-{d:02d}", "games": [_schedule("", 158, 134, 2, 3, game_pk=d)]} for d in (26, 27)]
+    october = []
+    for index, runs in enumerate([5, 6, 4, 7, 5, 4, 6, 5], start=1):
+        game = _schedule("", 158, 139, runs, 3, game_pk=100 + index)
+        game["gameType"] = "D" if index <= 4 else "W"
+        october.append({"date": f"2026-10-{index:02d}", "games": [game]})
+    seen = {}
+
+    def _all_types(start, end, **_k):
+        seen["range"] = (start, end)
+        return {"dates": regular + october}
+
+    monkeypatch.setattr(fetch_team_offense_form.mlb_schedule, "fetch_schedule_range", _regular_season_only)
+    monkeypatch.setattr(fetch_team_offense_form.mlb_schedule, "fetch_schedule_range_all_game_types", _all_types)
+    monkeypatch.setattr(sys, "argv", ["fetch_team_offense_form.py", "--as-of", "2026-10-26", "--no-market-lines"])
+    assert fetch_team_offense_form.main() == 0
+    assert seen["range"] == ("2026-09-26", "2026-10-26")
+
+    with open(fetch_team_offense_form.OUTPUT_PATH) as f:
+        payload = json.load(f)
+    assert {"R", "F", "D", "L", "W"} <= set(payload["gameTypes"])
+    milwaukee = payload["teams"]["MIL"]
+    assert milwaukee["gamesAvailable"] == 10
+    assert milwaukee["windows"]["L5"]["scores"] == [7, 5, 4, 6, 5]
+    assert milwaukee["windows"]["L10"]["scores"] == [2, 2, 5, 6, 4, 7, 5, 4, 6, 5]
+    assert [g["gameType"] for g in milwaukee["gameLog"][-2:]] == ["W", "W"]
+    assert milwaukee["formLabel"]["label"] != "UNKNOWN"
 
 
 # ── the addition must be strictly additive ──────────────────────────────

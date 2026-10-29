@@ -1,0 +1,97 @@
+{
+ "candidateId": "MLB-ALPHA-0001-C01-PIT",
+ "doubleheaderContractsSeen": 56,
+ "pregameContractsSeen": 2625,
+ "program": "MLB-ALPHA-0003",
+ "ruleModified": false,
+ "ruleSha256": "882f16d8330af1af12aec928a561302bfe81de6a5e5716a3a7fa352bc048376b",
+ "section": "H3-B",
+ "strata": {
+  "ALL": {
+   "avgEntryAskCents": 95.0,
+   "cash": 1169.97,
+   "dates": 35,
+   "games": 108,
+   "inference": {
+    "bootstrapIterations": 2000,
+    "ci90": [
+     -0.026475,
+     0.03334
+    ],
+    "clusters": 108,
+    "method": "null_centered_game_cluster_bootstrap (primary) + restricted_wild_cluster_bootstrap (secondary)",
+    "netROIClustered": 0.006009,
+    "pNullClusterBootstrap": 0.808596,
+    "pPrimary": 0.808596,
+    "pWildClusterBootstrap": 0.778111,
+    "testsAgree": true
+   },
+   "losses": 5,
+   "minutesToStart": {
+    "p50": 24.6
+   },
+   "netPL": 7.03,
+   "opportunities": 122,
+   "wins": 117
+  },
+  "POSTSEASON": {
+   "avgEntryAskCents": 94.47,
+   "cash": 142.31,
+   "dates": 13,
+   "games": 15,
+   "inference": {
+    "bootstrapIterations": 2000,
+    "ci90": [
+     0.048511,
+     0.059621
+    ],
+    "clusters": 15,
+    "method": "null_centered_game_cluster_bootstrap (primary) + restricted_wild_cluster_bootstrap (secondary)",
+    "netROIClustered": 0.054037,
+    "pNullClusterBootstrap": 0.0005,
+    "pPrimary": 0.0005,
+    "pWildClusterBootstrap": 0.0005,
+    "testsAgree": true
+   },
+   "losses": 0,
+   "minutesToStart": {
+    "p50": 29.6
+   },
+   "netPL": 7.69,
+   "opportunities": 15,
+   "wins": 15
+  },
+  "REGULAR": {
+   "avgEntryAskCents": 95.07,
+   "cash": 1027.66,
+   "dates": 22,
+   "games": 93,
+   "inference": {
+    "bootstrapIterations": 2000,
+    "ci90": [
+     -0.040089,
+     0.030776
+    ],
+    "clusters": 93,
+    "method": "null_centered_game_cluster_bootstrap (primary) + restricted_wild_cluster_bootstrap (secondary)",
+    "netROIClustered": -0.000642,
+    "pNullClusterBootstrap": 0.969515,
+    "pPrimary": 0.969515,
+    "pWildClusterBootstrap": 0.988506,
+    "testsAgree": true
+   },
+   "losses": 5,
+   "minutesToStart": {
+    "p50": 24.6
+   },
+   "netPL": -0.66,
+   "opportunities": 107,
+   "wins": 102
+  }
+ },
+ "triggerStreamCaveat": "observation archive cadence, NOT c01pit_trigger_v1 (10-minute poll)",
+ "window": [
+  "2026-09-02",
+  "2026-10-25"
+ ]
+}

@@ -1,0 +1,571 @@
+{
+ "anchorDiagnostics": {
+  "consensus|ANCHOR_OUTSIDE_SURFACE": 23,
+  "consensus|ok": 429,
+  "pinnacle|ANCHOR_OUTSIDE_SURFACE": 27,
+  "pinnacle|ok": 425
+ },
+ "descriptive": {
+  "modelVsMidByFamily": {
+   "KXMLBF3": {
+    "meanAbsGapCents": 1.197,
+    "meanSignedGapCents(model-mid)": 0.115,
+    "medianSpreadCents": 2,
+    "n": 837,
+    "shareModelEdgeNetGE3c": 0.0
+   },
+   "KXMLBF5": {
+    "meanAbsGapCents": 1.157,
+    "meanSignedGapCents(model-mid)": -0.064,
+    "medianSpreadCents": 1,
+    "n": 837,
+    "shareModelEdgeNetGE3c": 0.0036
+   },
+   "KXMLBF5SPREAD": {
+    "meanAbsGapCents": 1.317,
+    "meanSignedGapCents(model-mid)": 0.184,
+    "medianSpreadCents": 1,
+    "n": 1116,
+    "shareModelEdgeNetGE3c": 0.0009
+   },
+   "KXMLBF5TOTAL": {
+    "meanAbsGapCents": 1.318,
+    "meanSignedGapCents(model-mid)": -0.294,
+    "medianSpreadCents": 1,
+    "n": 1625,
+    "shareModelEdgeNetGE3c": 0.0037
+   },
+   "KXMLBF7": {
+    "meanAbsGapCents": 1.036,
+    "meanSignedGapCents(model-mid)": 0.23,
+    "medianSpreadCents": 2,
+    "n": 525,
+    "shareModelEdgeNetGE3c": 0.0
+   },
+   "KXMLBGAME": {
+    "meanAbsGapCents": 0.422,
+    "meanSignedGapCents(model-mid)": -0.019,
+    "medianSpreadCents": 1,
+    "n": 180,
+    "shareModelEdgeNetGE3c": 0.0
+   },
+   "KXMLBRFI": {
+    "meanAbsGapCents": 1.416,
+    "meanSignedGapCents(model-mid)": -0.413,
+    "medianSpreadCents": 1,
+    "n": 24,
+    "shareModelEdgeNetGE3c": 0.0
+   },
+   "KXMLBSPREAD": {
+    "meanAbsGapCents": 0.619,
+    "meanSignedGapCents(model-mid)": -0.051,
+    "medianSpreadCents": 1,
+    "n": 150,
+    "shareModelEdgeNetGE3c": 0.0
+   },
+   "KXMLBTEAMTOTAL": {
+    "meanAbsGapCents": 0.764,
+    "meanSignedGapCents(model-mid)": 0.192,
+    "medianSpreadCents": 1,
+    "n": 350,
+    "shareModelEdgeNetGE3c": 0.0
+   },
+   "KXMLBTOTAL": {
+    "meanAbsGapCents": 0.64,
+    "meanSignedGapCents(model-mid)": -0.008,
+    "medianSpreadCents": 1,
+    "n": 244,
+    "shareModelEdgeNetGE3c": 0.0
+   }
+  }
+ },
+ "eligibleRows": 8838,
+ "information": {
+  "KXMLBF3|POSTSEASON": {
+   "brierCiHigh": 0.0049935444625308694,
+   "brierCiLow": -0.0026066231475308462,
+   "ciHigh": 0.01149915560663429,
+   "ciLow": -0.005847152685569603,
+   "dates": 17,
+   "games": 24,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": 0.0011072747222222311,
+   "meanDeltaLogLoss": 0.002599631151066921,
+   "p": 0.645,
+   "tickers": 72
+  },
+  "KXMLBF3|REGULAR": {
+   "brierCiHigh": 0.0010628772816848229,
+   "brierCiLow": -0.0010873183126390703,
+   "ciHigh": 0.0021006493308635423,
+   "ciLow": -0.0026473125342845296,
+   "dates": 26,
+   "games": 255,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": -1.4943119360929937e-05,
+   "meanDeltaLogLoss": -0.00029354696337316374,
+   "p": 0.868,
+   "tickers": 765
+  },
+  "KXMLBF5SPREAD|POSTSEASON": {
+   "brierCiHigh": 0.004402240615810193,
+   "brierCiLow": -0.0015632543368055438,
+   "ciHigh": 0.01310494293140246,
+   "ciLow": -0.006126333380524837,
+   "dates": 17,
+   "games": 24,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": 0.0012151790004629704,
+   "meanDeltaLogLoss": 0.0024915301940234657,
+   "p": 0.745,
+   "tickers": 96
+  },
+  "KXMLBF5SPREAD|REGULAR": {
+   "brierCiHigh": 0.001486436203150331,
+   "brierCiLow": -0.00068692633678649,
+   "ciHigh": 0.004118004111503816,
+   "ciLow": -0.002043289010072719,
+   "dates": 26,
+   "games": 255,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": 0.00043609646435730236,
+   "meanDeltaLogLoss": 0.0010823092383626892,
+   "p": 0.596,
+   "tickers": 1020
+  },
+  "KXMLBF5TOTAL|POSTSEASON": {
+   "brierCiHigh": 0.0019218232306878343,
+   "brierCiLow": -0.0031720683129365006,
+   "ciHigh": 0.0028885543018813964,
+   "ciLow": -0.008559677969378256,
+   "dates": 17,
+   "games": 24,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": -0.0005676260470899433,
+   "meanDeltaLogLoss": -0.0026524135856832547,
+   "p": 0.426,
+   "tickers": 168
+  },
+  "KXMLBF5TOTAL|REGULAR": {
+   "brierCiHigh": -0.0005873663513407685,
+   "brierCiLow": -0.0030740197302999246,
+   "ciHigh": -0.001347657827426875,
+   "ciLow": -0.00740604533802121,
+   "dates": 26,
+   "games": 210,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": -0.0018137769085640205,
+   "meanDeltaLogLoss": -0.00430718570946792,
+   "p": 0.016,
+   "tickers": 1457
+  },
+  "KXMLBF5|POSTSEASON": {
+   "brierCiHigh": 0.003155590442345673,
+   "brierCiLow": -0.004254772876111124,
+   "ciHigh": 0.007078433869403067,
+   "ciLow": -0.008606027247176398,
+   "dates": 17,
+   "games": 24,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": -0.0006552332641975424,
+   "meanDeltaLogLoss": -0.0010303361982102759,
+   "p": 0.819,
+   "tickers": 72
+  },
+  "KXMLBF5|REGULAR": {
+   "brierCiHigh": 0.002297020139648508,
+   "brierCiLow": 5.693214958314316e-05,
+   "ciHigh": 0.004975178200415513,
+   "ciLow": 0.00015094921715587834,
+   "dates": 26,
+   "games": 255,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": 0.0011605256098765372,
+   "meanDeltaLogLoss": 0.002513935364268577,
+   "p": 0.082,
+   "tickers": 765
+  },
+  "KXMLBF7|POSTSEASON": {
+   "brierCiHigh": 0.0038674383919753137,
+   "brierCiLow": -0.001585286904382706,
+   "ciHigh": 0.007345987034936951,
+   "ciLow": -0.004554640424550797,
+   "dates": 17,
+   "games": 24,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": 0.0011879356777777812,
+   "meanDeltaLogLoss": 0.0015232300593629835,
+   "p": 0.686,
+   "tickers": 72
+  },
+  "KXMLBF7|REGULAR": {
+   "brierCiHigh": 0.001410316890564052,
+   "brierCiLow": -0.0009949762771470105,
+   "ciHigh": 0.00304798705495979,
+   "ciLow": -0.002235770971120734,
+   "dates": 24,
+   "games": 152,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": 0.0002793234557763059,
+   "meanDeltaLogLoss": 0.0005473111263651468,
+   "p": 0.788,
+   "tickers": 453
+  },
+  "KXMLBGAME|POSTSEASON": {
+   "brierCiHigh": 0.0010227612372222146,
+   "brierCiLow": -0.001631849518518534,
+   "ciHigh": 0.002109977407556669,
+   "ciLow": -0.003296387110344991,
+   "dates": 17,
+   "games": 24,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": -0.0002789215296296428,
+   "meanDeltaLogLoss": -0.0005320078198990328,
+   "p": 0.753,
+   "tickers": 48
+  },
+  "KXMLBGAME|REGULAR": {
+   "brierCiHigh": -1.3224036228966164e-05,
+   "brierCiLow": -0.0020202527002020215,
+   "ciHigh": -0.00011336436564431339,
+   "ciLow": -0.0041937184733359155,
+   "dates": 12,
+   "games": 66,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": -0.0010383375693602747,
+   "meanDeltaLogLoss": -0.002189624435851613,
+   "p": 0.075,
+   "tickers": 132
+  },
+  "KXMLBRFI|POSTSEASON": {
+   "brierCiHigh": 0.004180258815555537,
+   "brierCiLow": -0.006775330261642537,
+   "ciHigh": 0.008347615179664302,
+   "ciLow": -0.014135704374769005,
+   "dates": 16,
+   "games": 23,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": -0.0011923630859903593,
+   "meanDeltaLogLoss": -0.0026854752296915944,
+   "p": 0.684,
+   "tickers": 23
+  },
+  "KXMLBRFI|REGULAR": {
+   "brierCiHigh": null,
+   "brierCiLow": null,
+   "ciHigh": null,
+   "ciLow": null,
+   "dates": 1,
+   "games": 1,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": -0.010101531600000019,
+   "meanDeltaLogLoss": -0.020491714219570856,
+   "p": null,
+   "tickers": 1
+  },
+  "KXMLBSPREAD|POSTSEASON": {
+   "brierCiHigh": 0.0025262573655864128,
+   "brierCiLow": -0.0004023126841975326,
+   "ciHigh": 0.0066335685421629025,
+   "ciLow": -0.0016729365433544475,
+   "dates": 17,
+   "games": 24,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": 0.0010520949456790103,
+   "meanDeltaLogLoss": 0.0024581674976410285,
+   "p": 0.343,
+   "tickers": 144
+  },
+  "KXMLBSPREAD|REGULAR": {
+   "brierCiHigh": null,
+   "brierCiLow": null,
+   "ciHigh": null,
+   "ciLow": null,
+   "dates": 1,
+   "games": 1,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": -0.0010774096518518452,
+   "meanDeltaLogLoss": -0.0015579335578493336,
+   "p": null,
+   "tickers": 6
+  },
+  "KXMLBTEAMTOTAL|POSTSEASON": {
+   "brierCiHigh": 0.00169379960284392,
+   "brierCiLow": -0.001183417995158727,
+   "ciHigh": 0.005203443230290998,
+   "ciLow": -0.0031129529368196015,
+   "dates": 17,
+   "games": 24,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": 0.0002006499146825443,
+   "meanDeltaLogLoss": 0.0008778669004386847,
+   "p": 0.797,
+   "tickers": 336
+  },
+  "KXMLBTEAMTOTAL|REGULAR": {
+   "brierCiHigh": null,
+   "brierCiLow": null,
+   "ciHigh": null,
+   "ciLow": null,
+   "dates": 1,
+   "games": 1,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": 0.005083657441269854,
+   "meanDeltaLogLoss": 0.011351547801727905,
+   "p": null,
+   "tickers": 14
+  },
+  "KXMLBTOTAL|POSTSEASON": {
+   "brierCiHigh": 0.00018696642066250879,
+   "brierCiLow": -0.0012282519295830742,
+   "ciHigh": 0.0009466042841094909,
+   "ciLow": -0.0038488152434757506,
+   "dates": 17,
+   "games": 23,
+   "interpretation": "positive = simulator beats market mid",
+   "meanDeltaBrier": -0.0005341190695810577,
+   "meanDeltaLogLoss": -0.0016382249959483843,
+   "p": 0.281,
+   "tickers": 244
+  }
+ },
+ "multiplicity": {
+  "bhSurvivors": [],
+  "m": 11,
+  "pvalues": {
+   "I1|KXMLBF3": 0.868,
+   "I1|KXMLBF5": 0.082,
+   "I1|KXMLBF5SPREAD": 0.596,
+   "I1|KXMLBF5TOTAL": 0.016,
+   "I1|KXMLBF7": 0.788,
+   "I1|KXMLBGAME": 0.075,
+   "R1|pooled": 0.058,
+   "SENS|consensus": 0.083,
+   "SENS|tau_0.000": 0.721,
+   "SENS|tau_0.015": 0.783,
+   "SENS|tau_0.050": null
+  },
+  "q": 0.1
+ },
+ "nSim": 150000,
+ "protocol": "docs/EDGELAB_MLB_ALPHA_0003_PROGRAM.md (H3-A)",
+ "sensitivity": {
+  "consensus_anchor": {
+   "cash": 113.19,
+   "ciHigh": 2.445945945945946,
+   "ciLow": 0.10918282652984242,
+   "dateHalves": {
+    "cutDate": "2026-09-22",
+    "dates": 5,
+    "firstHalf": 2.5515825078521384,
+    "sameSign": true,
+    "secondHalf": 0.3231197771587744
+   },
+   "dates": 5,
+   "games": 5,
+   "label": "R1 consensus anchor REGULAR",
+   "net": 128.81,
+   "p": 0.083,
+   "roi": 1.1379980563654033,
+   "trades": 11,
+   "winRate": 0.6363636363636364
+  },
+  "tau_0.000": {
+   "cash": 7966.29,
+   "ciHigh": 0.10350952685270272,
+   "ciLow": -0.15336996881038378,
+   "dateHalves": {
+    "cutDate": "2026-09-15",
+    "dates": 26,
+    "firstHalf": 0.11920095294514833,
+    "sameSign": false,
+    "secondHalf": -0.12504791206969781
+   },
+   "dates": 26,
+   "games": 201,
+   "label": "R1 tau=0.000 REGULAR",
+   "net": -229.29,
+   "p": 0.721,
+   "roi": -0.028782532395883142,
+   "trades": 778,
+   "winRate": 0.390745501285347
+  },
+  "tau_0.015": {
+   "cash": 1323.52,
+   "ciHigh": 0.2782033287326819,
+   "ciLow": -0.3377445934844991,
+   "dateHalves": {
+    "cutDate": "2026-09-16",
+    "dates": 22,
+    "firstHalf": -0.14110632112713278,
+    "sameSign": false,
+    "secondHalf": 0.04025957749028674
+   },
+   "dates": 22,
+   "games": 57,
+   "label": "R1 tau=0.015 REGULAR",
+   "net": -56.52,
+   "p": 0.783,
+   "roi": -0.042704303675048357,
+   "trades": 129,
+   "winRate": 0.3798449612403101
+  },
+  "tau_0.050": {
+   "cash": 0,
+   "ciHigh": null,
+   "ciLow": null,
+   "dateHalves": {
+    "dates": 0,
+    "firstHalf": null,
+    "sameSign": null,
+    "secondHalf": null
+   },
+   "dates": 0,
+   "games": 0,
+   "label": "R1 tau=0.050 REGULAR",
+   "net": 0,
+   "p": null,
+   "roi": null,
+   "trades": 0,
+   "winRate": null
+  }
+ },
+ "trading": {
+  "KXMLBF5SPREAD|YES|REGULAR": {
+   "cash": 10.51,
+   "ciHigh": null,
+   "ciLow": null,
+   "dateHalves": {
+    "dates": 1,
+    "firstHalf": null,
+    "sameSign": null,
+    "secondHalf": null
+   },
+   "dates": 1,
+   "games": 1,
+   "label": "R1 KXMLBF5SPREAD YES REGULAR",
+   "net": 51.49,
+   "p": null,
+   "roi": 4.899143672692674,
+   "trades": 1,
+   "winRate": 1.0
+  },
+  "KXMLBF5TOTAL|NO|REGULAR": {
+   "cash": 30.98,
+   "ciHigh": 2.3980582524271843,
+   "ciLow": -1.0,
+   "dateHalves": {
+    "cutDate": "2026-09-26",
+    "dates": 2,
+    "firstHalf": 2.3980582524271843,
+    "sameSign": false,
+    "secondHalf": -1.0
+   },
+   "dates": 2,
+   "games": 2,
+   "label": "R1 KXMLBF5TOTAL NO REGULAR",
+   "net": 4.02,
+   "p": 0.512,
+   "roi": 0.12976113621691412,
+   "trades": 3,
+   "winRate": 0.3333333333333333
+  },
+  "KXMLBF5TOTAL|YES|REGULAR": {
+   "cash": 20.68,
+   "ciHigh": null,
+   "ciLow": null,
+   "dateHalves": {
+    "dates": 1,
+    "firstHalf": null,
+    "sameSign": null,
+    "secondHalf": null
+   },
+   "dates": 1,
+   "games": 1,
+   "label": "R1 KXMLBF5TOTAL YES REGULAR",
+   "net": 39.32,
+   "p": null,
+   "roi": 1.9013539651837525,
+   "trades": 2,
+   "winRate": 1.0
+  },
+  "KXMLBF5|NO|REGULAR": {
+   "cash": 10.06,
+   "ciHigh": null,
+   "ciLow": null,
+   "dateHalves": {
+    "dates": 1,
+    "firstHalf": null,
+    "sameSign": null,
+    "secondHalf": null
+   },
+   "dates": 1,
+   "games": 1,
+   "label": "R1 KXMLBF5 NO REGULAR",
+   "net": 11.94,
+   "p": null,
+   "roi": 1.1868787276341948,
+   "trades": 1,
+   "winRate": 1.0
+  },
+  "KXMLBF5|YES|REGULAR": {
+   "cash": 20.76,
+   "ciHigh": 2.6538461538461537,
+   "ciLow": -1.0,
+   "dateHalves": {
+    "cutDate": "2026-09-16",
+    "dates": 2,
+    "firstHalf": -1.0,
+    "sameSign": false,
+    "secondHalf": 2.6538461538461537
+   },
+   "dates": 2,
+   "games": 2,
+   "label": "R1 KXMLBF5 YES REGULAR",
+   "net": 17.24,
+   "p": 0.525,
+   "roi": 0.8304431599229288,
+   "trades": 2,
+   "winRate": 0.5
+  },
+  "pooled|POSTSEASON": {
+   "cash": 20.64,
+   "ciHigh": null,
+   "ciLow": null,
+   "dateHalves": {
+    "dates": 1,
+    "firstHalf": null,
+    "sameSign": null,
+    "secondHalf": null
+   },
+   "dates": 1,
+   "games": 1,
+   "label": "R1 pooled POSTSEASON",
+   "net": 2.36,
+   "p": null,
+   "roi": 0.1143410852713178,
+   "trades": 2,
+   "winRate": 0.5
+  },
+  "pooled|REGULAR": {
+   "cash": 92.99,
+   "ciHigh": 2.5087719298245608,
+   "ciLow": 0.15231916335818727,
+   "dateHalves": {
+    "cutDate": "2026-09-22",
+    "dates": 5,
+    "firstHalf": 1.9518509557222359,
+    "sameSign": true,
+    "secondHalf": 0.8389469608981804
+   },
+   "dates": 5,
+   "games": 6,
+   "label": "R1 pooled REGULAR",
+   "net": 124.01,
+   "p": 0.058,
+   "roi": 1.333584256371653,
+   "trades": 9,
+   "winRate": 0.6666666666666666
+  }
+ }
+}

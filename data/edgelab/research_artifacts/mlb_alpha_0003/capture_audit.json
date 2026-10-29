@@ -1,0 +1,102 @@
+{
+ "alpha0002PerGamePregameCoverage": {
+  "capturesInT240ToT0": {
+   "median": 1,
+   "p10": 0,
+   "share0": 0.164,
+   "share_ge_12": 0.0
+  },
+  "gamesSeen": 385,
+  "lastCaptureMinBeforeStart": {
+   "median": 57.2,
+   "p90": 120.7
+  },
+  "maxBlindIntervalMin": {
+   "median": 146.4,
+   "p90": 240.0
+  },
+  "note": "MRV design needs >= 24 captures in T-240..T-0 (10-minute cadence); the research hypotheses that were DATA_BLOCKED (information events, sharp lead/lag at minutes) need blind intervals <= 30 min.",
+  "shareGamesWithCaptureInT60ToT0": 0.436
+ },
+ "alpha0002QuoteIntegrity": {
+  "daysWithAnyPrice": 0,
+  "firstDay": "2026-09-02",
+  "lastDay": "2026-10-26",
+  "quoteRows": 190780,
+  "rowsWithAnyPrice": 0
+ },
+ "schema": "mlb_alpha_0003_capture_audit_v1",
+ "streams": [
+  {
+   "capturesPerDay": {
+    "max": 8,
+    "median": 5.0,
+    "min": 1
+   },
+   "first": "2026-09-02T23:27:08+00:00",
+   "inWindow": {
+    "max": 279.8,
+    "median": 163.1,
+    "n": 162,
+    "p90": 230.4
+   },
+   "last": "2026-10-27T00:07:09+00:00",
+   "overall": {
+    "max": 1130.4,
+    "median": 216.3,
+    "n": 269,
+    "p90": 580.6
+   },
+   "persistedCaptures": 270,
+   "promisedCadenceMinutes": 10,
+   "stream": "ALPHA-0002 prospective",
+   "triggers": {
+    "UNKNOWN": 9,
+    "schedule": 261
+   }
+  },
+  {
+   "distinctCaptureTimes": 677,
+   "first": "2026-08-01T17:08:10+00:00",
+   "inWindow": {
+    "max": 383.9,
+    "median": 58.2,
+    "n": 478,
+    "p90": 165.7
+   },
+   "last": "2026-10-27T00:32:00+00:00",
+   "overall": {
+    "max": 4477.1,
+    "median": 73.1,
+    "n": 676,
+    "p90": 592.4
+   },
+   "promisedCadenceMinutes": 30,
+   "stream": "EdgeLab observation archive (registry snapshots)"
+  },
+  {
+   "attempts": 78,
+   "attemptsWithoutManifest": 0,
+   "captureClass": {
+    "COMPLETE": 78
+   },
+   "completedManifests": 78,
+   "first": "2026-09-23T22:27:37.878320+00:00",
+   "inWindow": {
+    "max": 10.0,
+    "median": 10.0,
+    "n": 40,
+    "p90": 10.0
+   },
+   "last": "2026-09-24T11:27:12.408603+00:00",
+   "overall": {
+    "max": 35.0,
+    "median": 10.0,
+    "n": 77,
+    "p90": 10.0
+   },
+   "promisedCadenceMinutes": 10,
+   "stream": "MRV prospective v1"
+  }
+ ]
+}

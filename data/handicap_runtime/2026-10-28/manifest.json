@@ -8,7 +8,7 @@
   "PRODUCTION_MODEL_SUPPORT": "the production model prices it (config/rules.json market_list)"
  },
  "bankroll": {
-  "ageMinutes": 25.249,
+  "ageMinutes": 19.691,
   "consumerSizingVerdict": {
    "mayPresentDollarStakes": false,
    "reason": "NO_DOLLAR_SIZING_FOR_THIS_CONSUMER: an authenticated, fresh bankroll EXISTS and the private workflow that produced this artifact was permitted to size against it -- but its numeric value is redacted from this copy, because this repository is public. You do not know the amount, so you cannot compute a dollar stake. Handicap normally, give edge, confidence and a bet-up-to fraction, and say that the bankroll exists but is redacted from this consumer.",
@@ -17,8 +17,8 @@
   "currency": "USD",
   "maxAgeMinutes": 30,
   "numericBankrollAvailable": false,
-  "observedAt": "2026-10-28T21:09:28Z",
-  "resolvedAt": "2026-10-28T21:34:42Z",
+  "observedAt": "2026-10-29T00:43:35Z",
+  "resolvedAt": "2026-10-29T01:03:16Z",
   "sizingAllowed": true,
   "source": "kalshi_authenticated_balance",
   "status": "FRESH",
@@ -42,21 +42,23 @@
   "Return the betting card."
  ],
  "counts": {
-  "bettingEligibleGames": 1,
-  "eligibleMarketsTotal": 326,
+  "bettingEligibleGames": 0,
+  "eligibleMarketsTotal": 0,
   "gamesTotal": 1,
   "normalizedRegistryValidatedMarkets": 326,
   "rawUniverseContracts": 326,
   "registryExcludedMarkets": 0,
-  "researchOnlyByReason": {},
-  "researchOnlyGames": 0,
-  "researchOnlyMarketsTotal": 0,
+  "researchOnlyByReason": {
+   "BLOCKED_GAME_STARTED": 1
+  },
+  "researchOnlyGames": 1,
+  "researchOnlyMarketsTotal": 326,
   "runtimeBundleMarketRows": 326,
   "silentRemainderTotal": 0,
   "unclassifiedRawContracts": 0
  },
  "date": "2026-10-28",
- "eligibilityEvaluatedAt": "2026-10-28T21:34:43Z",
+ "eligibilityEvaluatedAt": "2026-10-29T01:03:16Z",
  "eligibilityPolicy": "Only games that have NOT started and have BOTH official lineups confirmed (lineupConfirmedOfficial on awayTeamStats AND homeTeamStats) are real-money candidates. Probable/projected lineups are never treated as confirmed. Every other game stays archived and researchable and must not produce a real-money recommendation from the normal slate card.",
  "executionConstants": {
   "_note": "Projected verbatim from config/rules.json at build time. RULES.md and MODEL_CORE.md remain authoritative for everything else; this is the subset needed to size and threshold a wager without loading them.",
@@ -185,13 +187,13 @@
  "games": [
   {
    "accounted": 326,
-   "bettingEligible": true,
+   "bettingEligible": false,
    "bundle": "data/handicap_runtime/2026-10-28/games/849799.json",
-   "bundleBytes": 85355,
+   "bundleBytes": 86833,
    "bundleGzip": "data/handicap_runtime/2026-10-28/games/849799.json.gz",
-   "bundleGzipBytes": 15889,
-   "eligibilityReason": "not started, both official lineups confirmed, integrity gates pass",
-   "eligibilityStatus": "BETTING_ELIGIBLE",
+   "bundleGzipBytes": 16506,
+   "eligibilityReason": "game has already started -- first-pitch timestamp has passed",
+   "eligibilityStatus": "BLOCKED_GAME_STARTED",
    "excludedOrUnresolved": 0,
    "gameId": 849799,
    "gameStatus": "Pre-Game",
@@ -235,15 +237,15 @@
    "matchup": "MIL@TB",
    "normalizedMarkets": 326,
    "rawAttributableContracts": 326,
-   "realMoneyEligible": true,
+   "realMoneyEligible": false,
    "registryExcluded": 0,
    "scheduledStart": "2026-10-29T00:00:00Z",
    "silentRemainderCount": 0,
-   "started": false,
+   "started": true,
    "unclassified": 0
   }
  ],
- "generatedAt": "2026-10-28T21:34:43Z",
+ "generatedAt": "2026-10-29T01:03:16Z",
  "guarantees": [
   "Only games that have NOT started and have BOTH official lineups confirmed appear under bettingEligibleGames. Everything else is researchOnly and carries realMoneyEligible=false on every market row.",
   "For a betting-eligible game, EVERY raw Kalshi contract attributable to it is accounted for in exactly one visible state: a normalized market, a registry exclusion with its reason, or an unclassified contract with the normalizer's reason. contractAccounting.silentRemainderCount is 0 on every game of a written card -- a violation aborts the build rather than publishing a falsely complete file.",
@@ -254,7 +256,7 @@
  "playbookVersion": "1.2.0",
  "provenance": {
   "derivation": "A lossless projection of the canonical handicapping card. This layer runs no market discovery, no normalisation, no registry and no eligibility logic of its own.",
-  "rawUniverseSnapshot": "data/kalshi_registry_snapshots/kalshi_search_2026-10-28_2055.json",
+  "rawUniverseSnapshot": "data/kalshi_registry_snapshots/kalshi_search_2026-10-28_2359.json",
   "slateSource": "data/slate.json",
   "sourceArtifact": "data/handicapping_card/2026-10-28.json",
   "sourceArtifactType": "REAL_MONEY_HANDICAPPING_CARD"

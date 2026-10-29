@@ -8,26 +8,26 @@
     "PRODUCTION_MODEL_SUPPORT": "the production model prices it (config/rules.json market_list)"
   },
   "bankroll": {
-    "ageMinutes": 19.691,
+    "ageMinutes": 79.846,
     "bankroll": null,
     "bankrollRedacted": true,
     "bankrollRedactionReason": "This repository is PUBLIC. The numeric balance is delivered to the card build as an encrypted Actions secret and is used for sizing, but is never committed. Everything needed to judge whether that sizing is trustworthy is above -- but NOT the amount, so a reader of this file cannot compute dollar stakes. See consumerSizingVerdict.",
     "consumerSizingVerdict": {
       "mayPresentDollarStakes": false,
-      "reason": "NO_DOLLAR_SIZING_FOR_THIS_CONSUMER: an authenticated, fresh bankroll EXISTS and the private workflow that produced this artifact was permitted to size against it -- but its numeric value is redacted from this copy, because this repository is public. You do not know the amount, so you cannot compute a dollar stake. Handicap normally, give edge, confidence and a bet-up-to fraction, and say that the bankroll exists but is redacted from this consumer.",
-      "verdict": "NO_DOLLAR_SIZING_FOR_THIS_CONSUMER"
+      "reason": "bankroll observed 79.8 minutes ago, older than the 30-minute sizing window -- this is NOT the current bankroll",
+      "verdict": "NO_DOLLAR_SIZING"
     },
     "currency": "USD",
     "maxAgeMinutes": 30,
     "numericBankrollAvailable": false,
     "observedAt": "2026-10-29T00:43:35Z",
-    "resolvedAt": "2026-10-29T01:03:16Z",
+    "resolvedAt": "2026-10-29T02:03:25Z",
     "schemaVersion": "3",
-    "sizingAllowed": true,
+    "sizingAllowed": false,
     "sizingAuthoritativeSource": true,
     "source": "kalshi_authenticated_balance",
-    "status": "FRESH",
-    "unavailableReason": null,
+    "status": "STALE",
+    "unavailableReason": "bankroll observed 79.8 minutes ago, older than the 30-minute sizing window -- this is NOT the current bankroll",
     "valueType": "KALSHI_AVAILABLE_CASH_BALANCE"
   },
   "bettingEligibleGames": [],
@@ -53,9 +53,9 @@
     "unclassifiedRawContracts": "the normalizer could not parse them -- retained with reasons"
   },
   "date": "2026-10-28",
-  "eligibilityEvaluatedAt": "2026-10-29T01:03:16Z",
+  "eligibilityEvaluatedAt": "2026-10-29T02:03:25Z",
   "eligibilityPolicy": "Only games that have NOT started and have BOTH official lineups confirmed (lineupConfirmedOfficial on awayTeamStats AND homeTeamStats) are real-money candidates. Probable/projected lineups are never treated as confirmed. Every other game stays archived and researchable and must not produce a real-money recommendation from the normal slate card.",
-  "generatedAt": "2026-10-29T01:03:16Z",
+  "generatedAt": "2026-10-29T02:03:25Z",
   "guarantees": [
     "Only games that have NOT started and have BOTH official lineups confirmed appear under bettingEligibleGames. Everything else is researchOnly and carries realMoneyEligible=false on every market row.",
     "For a betting-eligible game, EVERY raw Kalshi contract attributable to it is accounted for in exactly one visible state: a normalized market, a registry exclusion with its reason, or an unclassified contract with the normalizer's reason. contractAccounting.silentRemainderCount is 0 on every game of a written card -- a violation aborts the build rather than publishing a falsely complete file.",

@@ -1,0 +1,966 @@
+{
+ "alerts": [
+  {
+   "family": "batters_faced",
+   "status": "INSUFFICIENT",
+   "what": "10 settled forecasts (< 100)"
+  },
+  {
+   "family": "game_total",
+   "status": "INSUFFICIENT",
+   "what": "5 settled forecasts (< 100)"
+  },
+  {
+   "family": "hits",
+   "status": "INSUFFICIENT",
+   "what": "90 settled forecasts (< 100)"
+  },
+  {
+   "family": "hits_runs_rbis",
+   "status": "INSUFFICIENT",
+   "what": "90 settled forecasts (< 100)"
+  },
+  {
+   "family": "home_runs",
+   "status": "INSUFFICIENT",
+   "what": "90 settled forecasts (< 100)"
+  },
+  {
+   "family": "outs",
+   "status": "INSUFFICIENT",
+   "what": "10 settled forecasts (< 100)"
+  },
+  {
+   "family": "pitcher_strikeouts",
+   "status": "INSUFFICIENT",
+   "what": "10 settled forecasts (< 100)"
+  },
+  {
+   "family": "plate_appearances",
+   "status": "INSUFFICIENT",
+   "what": "90 settled forecasts (< 100)"
+  },
+  {
+   "family": "rbis",
+   "status": "INSUFFICIENT",
+   "what": "90 settled forecasts (< 100)"
+  },
+  {
+   "family": "runs",
+   "status": "INSUFFICIENT",
+   "what": "90 settled forecasts (< 100)"
+  },
+  {
+   "family": "team_runs",
+   "status": "INSUFFICIENT",
+   "what": "10 settled forecasts (< 100)"
+  },
+  {
+   "family": "total_bases",
+   "status": "INSUFFICIENT",
+   "what": "90 settled forecasts (< 100)"
+  }
+ ],
+ "authority": "research_only",
+ "capture": {
+  "availability_freshness": {
+   "lineup": {
+    "events": 7,
+    "median_minutes_before_start": 125.5,
+    "p90_minutes_before_start": 188.4
+   },
+   "starter": {
+    "events": 7,
+    "median_minutes_before_start": 125.5,
+    "p90_minutes_before_start": 188.4
+   }
+  },
+  "forecasts_archived": 1372,
+  "games": 7,
+  "last_capture": {
+   "duplicate": false,
+   "errors": [],
+   "games_pregame": 0,
+   "games_seen": 1,
+   "lineup_posted_share": null,
+   "lineups_posted": 0,
+   "minutes_to_next_start": null,
+   "not_starting_emitted": 0,
+   "observations": 0,
+   "probable_share": null,
+   "probables_listed": 0,
+   "rejected": 0,
+   "seconds": 0.3,
+   "snapshot": null,
+   "stage": "capture",
+   "team_sides": 0,
+   "written": 0
+  }
+ },
+ "families": [
+  {
+   "family": "batters_faced",
+   "models": [
+    {
+     "bias": 2.1659444444444444,
+     "bias_ci95": [
+      0.7394375000000002,
+      3.374733249999997
+     ],
+     "mae": 2.7805444444444443,
+     "mean_actual": 18.22222222222222,
+     "model_id": "incumbent_pitcher_champion",
+     "model_role": "incumbent",
+     "n": 9,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "primary_metric": "mae",
+     "rmse": 3.7355609724496386
+    },
+    {
+     "bias": 0.7100415120329975,
+     "bias_ci95": [
+      -0.35667848736701,
+      1.8528623584234738
+     ],
+     "cover_50": 0.6,
+     "cover_80": 1.0,
+     "cover_90": 1.0,
+     "crps": 1.2945416775995984,
+     "mae": 1.6739969175346794,
+     "mean_actual": 17.6,
+     "model_id": "pf-mlb:E",
+     "model_role": "challenger",
+     "n": 10,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "pit_var_ratio": 0.5291614505689642,
+     "primary_metric": "crps",
+     "rmse": 2.061153012931944
+    }
+   ],
+   "outcome_type": "continuous_or_count",
+   "paired": {
+    "ambiguous_keys": 0,
+    "mae_diff": {
+     "ci95": [
+      -1.6032607136086396,
+      -0.5487493137368804
+     ],
+     "mean_diff": -1.060811569217066,
+     "n_clusters": 5,
+     "n_obs": 9,
+     "se": 0.2710648221313191,
+     "z": -3.9134977415223178
+    },
+    "n": 9,
+    "n_games": 5,
+    "primary_metric": "mae"
+   },
+   "scoring_version": "1.3.0"
+  },
+  {
+   "family": "game_total",
+   "models": [
+    {
+     "bias": -0.27875000000000005,
+     "bias_ci95": [
+      -2.4965,
+      1.939
+     ],
+     "mae": 2.21775,
+     "mean_actual": 7.5,
+     "model_id": "incumbent_team_runs",
+     "model_role": "incumbent",
+     "n": 4,
+     "n_games": 4,
+     "outcome_type": "continuous_or_count",
+     "primary_metric": "mae",
+     "rmse": 2.255746495065436
+    },
+    {
+     "bias": 0.7563962930258301,
+     "bias_ci95": [
+      -1.3195997518389473,
+      2.784563974479245
+     ],
+     "cover_50": 0.8,
+     "cover_80": 1.0,
+     "cover_90": 1.0,
+     "crps": 1.4855637498711878,
+     "mae": 2.3160053924826967,
+     "mean_actual": 7.4,
+     "model_id": "pf-mlb:D_convolution",
+     "model_role": "challenger",
+     "n": 5,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "pit_var_ratio": 0.46745770896983596,
+     "primary_metric": "crps",
+     "rmse": 2.4911060431879197
+    }
+   ],
+   "outcome_type": "continuous_or_count",
+   "paired": {
+    "ambiguous_keys": 0,
+    "mae_diff": {
+     "ci95": [
+      -0.7629068457436678,
+      1.1819078293124528
+     ],
+     "mean_diff": 0.31745960181676813,
+     "n_clusters": 4,
+     "n_obs": 4,
+     "se": 0.5170278866087827,
+     "z": 0.6140086638247019
+    },
+    "n": 4,
+    "n_games": 4,
+    "primary_metric": "mae"
+   },
+   "scoring_version": "1.3.0"
+  },
+  {
+   "family": "hits",
+   "models": [
+    {
+     "bias": 0.07231818181818182,
+     "bias_ci95": [
+      -0.06454545454545456,
+      0.20918181818181816
+     ],
+     "mae": 0.6779545454545454,
+     "mean_actual": 0.9545454545454546,
+     "model_id": "incumbent_hitter_engine",
+     "model_role": "incumbent",
+     "n": 22,
+     "n_games": 2,
+     "outcome_type": "continuous_or_count",
+     "primary_metric": "mae",
+     "rmse": 0.8580614779839497
+    },
+    {
+     "bias": -0.024936476056872936,
+     "bias_ci95": [
+      -0.1194373615331583,
+      0.07524050402332337
+     ],
+     "cover_50": 0.4777777777777778,
+     "cover_80": 0.7666666666666667,
+     "cover_90": 0.8888888888888888,
+     "crps": 0.47175396079966087,
+     "mae": 0.7286784336894881,
+     "mean_actual": 0.8777777777777778,
+     "model_id": "pf-mlb:F",
+     "model_role": "challenger",
+     "n": 90,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "pit_var_ratio": 1.0908724508443457,
+     "primary_metric": "crps",
+     "rmse": 0.9294487712276512
+    }
+   ],
+   "outcome_type": "continuous_or_count",
+   "paired": {
+    "ambiguous_keys": 0,
+    "mae_diff": {
+     "ci95": [
+      -0.026703156739142416,
+      0.05637276737745822
+     ],
+     "mean_diff": 0.014834805319157903,
+     "n_clusters": 2,
+     "n_obs": 22,
+     "se": 0.029416592743495243,
+     "z": 0.5043005982546451
+    },
+    "n": 22,
+    "n_games": 2,
+    "primary_metric": "mae"
+   },
+   "scoring_version": "1.3.0"
+  },
+  {
+   "family": "hits_runs_rbis",
+   "models": [
+    {
+     "bias": 0.1299090909090909,
+     "bias_ci95": [
+      -0.2321818181818182,
+      0.49200000000000005
+     ],
+     "mae": 1.1339090909090912,
+     "mean_actual": 1.6363636363636365,
+     "model_id": "incumbent_hitter_engine",
+     "model_role": "incumbent",
+     "n": 22,
+     "n_games": 2,
+     "outcome_type": "continuous_or_count",
+     "primary_metric": "mae",
+     "rmse": 1.2744804645601493
+    },
+    {
+     "bias": 0.0825722998858399,
+     "bias_ci95": [
+      -0.2396214706304077,
+      0.3945723356634925
+     ],
+     "cover_50": 0.4888888888888889,
+     "cover_80": 0.8555555555555555,
+     "cover_90": 0.9333333333333333,
+     "crps": 0.8817005556812759,
+     "mae": 1.3970579380749946,
+     "mean_actual": 1.6333333333333333,
+     "model_id": "pf-mlb:F",
+     "model_role": "challenger",
+     "n": 90,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "pit_var_ratio": 0.9000404232155846,
+     "primary_metric": "crps",
+     "rmse": 1.6541440031869423
+    }
+   ],
+   "outcome_type": "continuous_or_count",
+   "paired": {
+    "ambiguous_keys": 0,
+    "mae_diff": {
+     "ci95": [
+      -0.056371037246824525,
+      0.053553200654707055
+     ],
+     "mean_diff": -0.0014089182960587345,
+     "n_clusters": 2,
+     "n_obs": 22,
+     "se": 0.03892338933780558,
+     "z": -0.03619721509427438
+    },
+    "n": 22,
+    "n_games": 2,
+    "primary_metric": "mae"
+   },
+   "scoring_version": "1.3.0"
+  },
+  {
+   "family": "home_runs",
+   "models": [
+    {
+     "bias": 0.06463032378084115,
+     "bias_ci95": [
+      0.019946108454191733,
+      0.10806457334034082
+     ],
+     "cover_50": 0.5555555555555556,
+     "cover_80": 0.8222222222222222,
+     "cover_90": 0.9222222222222223,
+     "crps": 0.05018462964604666,
+     "mae": 0.1469344600933494,
+     "mean_actual": 0.044444444444444446,
+     "model_id": "pf-mlb:F",
+     "model_role": "challenger",
+     "n": 90,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "pit_var_ratio": 0.8905097556674799,
+     "primary_metric": "crps",
+     "rmse": 0.2265078238047005
+    }
+   ],
+   "outcome_type": "continuous_or_count",
+   "scoring_version": "1.3.0"
+  },
+  {
+   "family": "outs",
+   "models": [
+    {
+     "bias": 1.5091222222222225,
+     "bias_ci95": [
+      -0.3326999999999999,
+      4.104733611111108
+     ],
+     "mae": 2.706411111111111,
+     "mean_actual": 13.666666666666666,
+     "model_id": "incumbent_pitcher_champion",
+     "model_role": "incumbent",
+     "n": 9,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "primary_metric": "mae",
+     "rmse": 3.569585558421158
+    },
+    {
+     "bias": 0.874245980278142,
+     "bias_ci95": [
+      -0.7557632271574055,
+      3.2989923070538545
+     ],
+     "cover_50": 0.6,
+     "cover_80": 0.8,
+     "cover_90": 1.0,
+     "crps": 1.7701502872986492,
+     "mae": 2.3942507402448183,
+     "mean_actual": 13.2,
+     "model_id": "pf-mlb:F",
+     "model_role": "challenger",
+     "n": 10,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "pit_var_ratio": 0.8389669629282982,
+     "primary_metric": "crps",
+     "rmse": 3.0652706627382775
+    }
+   ],
+   "outcome_type": "continuous_or_count",
+   "paired": {
+    "ambiguous_keys": 0,
+    "mae_diff": {
+     "ci95": [
+      -0.5188947044342075,
+      0.4402154290419944
+     ],
+     "mean_diff": -0.0786357833161837,
+     "n_clusters": 5,
+     "n_obs": 9,
+     "se": 0.244664363707462,
+     "z": -0.32140268457815213
+    },
+    "n": 9,
+    "n_games": 5,
+    "primary_metric": "mae"
+   },
+   "scoring_version": "1.3.0"
+  },
+  {
+   "family": "pitcher_strikeouts",
+   "models": [
+    {
+     "bias": 0.9646,
+     "bias_ci95": [
+      -0.15071428571428555,
+      1.8782003055555534
+     ],
+     "mae": 1.6198888888888887,
+     "mean_actual": 3.888888888888889,
+     "model_id": "incumbent_pitcher_champion",
+     "model_role": "incumbent",
+     "n": 9,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "primary_metric": "mae",
+     "rmse": 1.845504453771079
+    },
+    {
+     "bias": 1.0311085101164688,
+     "bias_ci95": [
+      0.03621496458039637,
+      1.9789196751723723
+     ],
+     "cover_50": 0.6,
+     "cover_80": 0.8,
+     "cover_90": 1.0,
+     "crps": 1.0055265404840064,
+     "mae": 1.5438275008154814,
+     "mean_actual": 3.8,
+     "model_id": "pf-mlb:F",
+     "model_role": "challenger",
+     "n": 10,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "pit_var_ratio": 0.6831922109042713,
+     "primary_metric": "crps",
+     "rmse": 1.8521558356420993
+    }
+   ],
+   "outcome_type": "continuous_or_count",
+   "paired": {
+    "ambiguous_keys": 0,
+    "mae_diff": {
+     "ci95": [
+      -0.047306796238949414,
+      0.16482097744020227
+     ],
+     "mean_diff": 0.09145407369277114,
+     "n_clusters": 5,
+     "n_obs": 9,
+     "se": 0.052737458393539764,
+     "z": 1.7341388166702794
+    },
+    "n": 9,
+    "n_games": 5,
+    "primary_metric": "mae"
+   },
+   "scoring_version": "1.3.0"
+  },
+  {
+   "family": "plate_appearances",
+   "models": [
+    {
+     "bias": -0.04516527597569852,
+     "bias_ci95": [
+      -0.4449152766006969,
+      0.2671958042327121
+     ],
+     "cover_50": 0.37777777777777777,
+     "cover_80": 0.7444444444444445,
+     "cover_90": 0.9222222222222223,
+     "crps": 0.4040025528954728,
+     "mae": 0.6218333065278447,
+     "mean_actual": 3.988888888888889,
+     "model_id": "pf-mlb:F",
+     "model_role": "challenger",
+     "n": 90,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "pit_var_ratio": 1.1434326290973387,
+     "primary_metric": "crps",
+     "rmse": 0.774256515865273
+    }
+   ],
+   "outcome_type": "continuous_or_count",
+   "scoring_version": "1.3.0"
+  },
+  {
+   "family": "rbis",
+   "models": [
+    {
+     "bias": 0.05909523809523809,
+     "bias_ci95": [
+      -0.01881818181818183,
+      0.14479999999999998
+     ],
+     "mae": 0.4060476190476191,
+     "mean_actual": 0.2857142857142857,
+     "model_id": "incumbent_hitter_engine",
+     "model_role": "incumbent",
+     "n": 21,
+     "n_games": 2,
+     "outcome_type": "continuous_or_count",
+     "primary_metric": "mae",
+     "rmse": 0.4273417835877975
+    },
+    {
+     "bias": 0.028537984210595092,
+     "bias_ci95": [
+      -0.09629537037268514,
+      0.14442686115506942
+     ],
+     "cover_50": 0.5666666666666667,
+     "cover_80": 0.8555555555555555,
+     "cover_90": 0.9555555555555556,
+     "crps": 0.2871411183212037,
+     "mae": 0.5359202990881412,
+     "mean_actual": 0.3888888888888889,
+     "model_id": "pf-mlb:F",
+     "model_role": "challenger",
+     "n": 90,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "pit_var_ratio": 0.8851797934751107,
+     "primary_metric": "crps",
+     "rmse": 0.613993358258719
+    }
+   ],
+   "outcome_type": "continuous_or_count",
+   "paired": {
+    "ambiguous_keys": 0,
+    "mae_diff": {
+     "ci95": [
+      0.04563913976578701,
+      0.06435615310961726
+     ],
+     "mean_diff": 0.054552003262849036,
+     "n_clusters": 2,
+     "n_obs": 21,
+     "se": 0.006608235666577871,
+     "z": 8.255154025264847
+    },
+    "n": 21,
+    "n_games": 2,
+    "primary_metric": "mae"
+   },
+   "scoring_version": "1.3.0"
+  },
+  {
+   "family": "runs",
+   "models": [
+    {
+     "bias": 0.0758265529858843,
+     "bias_ci95": [
+      -0.0343867677970873,
+      0.18551161885317854
+     ],
+     "cover_50": 0.6222222222222222,
+     "cover_80": 0.8444444444444444,
+     "cover_90": 0.9555555555555556,
+     "crps": 0.2347923732296993,
+     "mae": 0.4772609919733589,
+     "mean_actual": 0.36666666666666664,
+     "model_id": "pf-mlb:F",
+     "model_role": "challenger",
+     "n": 90,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "pit_var_ratio": 0.8169272631713288,
+     "primary_metric": "crps",
+     "rmse": 0.4957645382337271
+    }
+   ],
+   "outcome_type": "continuous_or_count",
+   "scoring_version": "1.3.0"
+  },
+  {
+   "family": "team_runs",
+   "models": [
+    {
+     "bias": -0.13937499999999997,
+     "bias_ci95": [
+      -1.2482499999999999,
+      0.9694999999999999
+     ],
+     "mae": 1.9406249999999998,
+     "mean_actual": 3.75,
+     "model_id": "incumbent_team_runs",
+     "model_role": "incumbent",
+     "n": 8,
+     "n_games": 4,
+     "outcome_type": "continuous_or_count",
+     "primary_metric": "mae",
+     "rmse": 2.5123045446362586
+    },
+    {
+     "bias": 0.3781981465129157,
+     "bias_ci95": [
+      -0.6597998759194736,
+      1.3922819872396233
+     ],
+     "cover_50": 0.7,
+     "cover_80": 0.9,
+     "cover_90": 0.9,
+     "crps": 1.2708211138611696,
+     "mae": 1.7356104076847927,
+     "mean_actual": 3.7,
+     "model_id": "pf-mlb:D",
+     "model_role": "challenger",
+     "n": 10,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "pit_var_ratio": 0.6470803404339429,
+     "primary_metric": "crps",
+     "rmse": 2.40735741310773
+    }
+   ],
+   "outcome_type": "continuous_or_count",
+   "paired": {
+    "ambiguous_keys": 0,
+    "mae_diff": {
+     "ci95": [
+      -0.4119469813797186,
+      0.4084539146562266
+     ],
+     "mean_diff": 0.04845830129657991,
+     "n_clusters": 4,
+     "n_obs": 8,
+     "se": 0.21885838508521685,
+     "z": 0.22141395806110745
+    },
+    "n": 8,
+    "n_games": 4,
+    "primary_metric": "mae"
+   },
+   "scoring_version": "1.3.0"
+  },
+  {
+   "family": "total_bases",
+   "models": [
+    {
+     "bias": 0.3265909090909091,
+     "bias_ci95": [
+      0.10027272727272729,
+      0.552909090909091
+     ],
+     "mae": 0.8604090909090908,
+     "mean_actual": 1.1363636363636365,
+     "model_id": "incumbent_hitter_engine",
+     "model_role": "incumbent",
+     "n": 22,
+     "n_games": 2,
+     "outcome_type": "continuous_or_count",
+     "primary_metric": "mae",
+     "rmse": 1.0276679469025531
+    },
+    {
+     "bias": 0.13004821666859992,
+     "bias_ci95": [
+      -0.044123469234936666,
+      0.3319222593902286
+     ],
+     "cover_50": 0.5333333333333333,
+     "cover_80": 0.8111111111111111,
+     "cover_90": 0.8666666666666667,
+     "crps": 0.7233019655857321,
+     "mae": 1.135832699392121,
+     "mean_actual": 1.2222222222222223,
+     "model_id": "pf-mlb:F",
+     "model_role": "challenger",
+     "n": 90,
+     "n_games": 5,
+     "outcome_type": "continuous_or_count",
+     "pit_var_ratio": 0.952753770868623,
+     "primary_metric": "crps",
+     "rmse": 1.4624917389381002
+    }
+   ],
+   "outcome_type": "continuous_or_count",
+   "paired": {
+    "ambiguous_keys": 0,
+    "mae_diff": {
+     "ci95": [
+      -0.02616927658433721,
+      -0.026015005858664987
+     ],
+     "mean_diff": -0.026092141221501098,
+     "n_clusters": 2,
+     "n_obs": 22,
+     "se": 5.462616465119037e-05,
+     "z": -477.6491519789047
+    },
+    "n": 22,
+    "n_games": 2,
+    "primary_metric": "mae"
+   },
+   "scoring_version": "1.3.0"
+  }
+ ],
+ "generated_utc": "2026-10-29T15:34:05Z",
+ "schema": "sift.prospective_scorecard.v1",
+ "scoring_version": "1.3.0",
+ "segments": {
+  "families": {
+   "batters_faced": {
+    "early_exit(actual BF<=12)": {
+     "challenger": {
+      "bias": -1.2624,
+      "mae": 1.2624,
+      "n": 1
+     }
+    },
+    "normal_rest(>4d)": {
+     "challenger": {
+      "bias": 0.681,
+      "mae": 1.5703,
+      "n": 8
+     },
+     "incumbent": {
+      "bias": 1.4575,
+      "mae": 2.1489,
+      "n": 8
+     }
+    },
+    "opener_flag=0": {
+     "challenger": {
+      "bias": 0.71,
+      "mae": 1.674,
+      "n": 10
+     },
+     "incumbent": {
+      "bias": 2.1659,
+      "mae": 2.7805,
+      "n": 9
+     }
+    },
+    "short_rest(<=4d)": {
+     "challenger": {
+      "bias": 0.8263,
+      "mae": 2.0887,
+      "n": 2
+     },
+     "incumbent": {
+      "bias": 7.8333,
+      "mae": 7.8333,
+      "n": 1
+     }
+    },
+    "starter_CONFIRMED": {
+     "challenger": {
+      "bias": 0.71,
+      "mae": 1.674,
+      "n": 10
+     },
+     "incumbent": {
+      "bias": 2.1659,
+      "mae": 2.7805,
+      "n": 9
+     }
+    },
+    "went_deeper(actual BF>12)": {
+     "challenger": {
+      "bias": 0.9292,
+      "mae": 1.7197,
+      "n": 9
+     },
+     "incumbent": {
+      "bias": 2.1659,
+      "mae": 2.7805,
+      "n": 9
+     }
+    }
+   },
+   "outs": {
+    "early_exit(actual BF<=12)": {
+     "challenger": {
+      "bias": 0.2925,
+      "mae": 0.2925,
+      "n": 1
+     }
+    },
+    "normal_rest(>4d)": {
+     "challenger": {
+      "bias": 0.7612,
+      "mae": 2.6612,
+      "n": 8
+     },
+     "incumbent": {
+      "bias": 1.1348,
+      "mae": 2.4817,
+      "n": 8
+     }
+    },
+    "opener_flag=0": {
+     "challenger": {
+      "bias": 0.8742,
+      "mae": 2.3943,
+      "n": 10
+     },
+     "incumbent": {
+      "bias": 1.5091,
+      "mae": 2.7064,
+      "n": 9
+     }
+    },
+    "short_rest(<=4d)": {
+     "challenger": {
+      "bias": 1.3263,
+      "mae": 1.3263,
+      "n": 2
+     },
+     "incumbent": {
+      "bias": 4.5041,
+      "mae": 4.5041,
+      "n": 1
+     }
+    },
+    "starter_CONFIRMED": {
+     "challenger": {
+      "bias": 0.8742,
+      "mae": 2.3943,
+      "n": 10
+     },
+     "incumbent": {
+      "bias": 1.5091,
+      "mae": 2.7064,
+      "n": 9
+     }
+    },
+    "went_deeper(actual BF>12)": {
+     "challenger": {
+      "bias": 0.9389,
+      "mae": 2.6278,
+      "n": 9
+     },
+     "incumbent": {
+      "bias": 1.5091,
+      "mae": 2.7064,
+      "n": 9
+     }
+    }
+   },
+   "pitcher_strikeouts": {
+    "early_exit(actual BF<=12)": {
+     "challenger": {
+      "bias": 0.0362,
+      "mae": 0.0362,
+      "n": 1
+     }
+    },
+    "normal_rest(>4d)": {
+     "challenger": {
+      "bias": 1.0678,
+      "mae": 1.7087,
+      "n": 8
+     },
+     "incumbent": {
+      "bias": 0.8819,
+      "mae": 1.619,
+      "n": 8
+     }
+    },
+    "opener_flag=0": {
+     "challenger": {
+      "bias": 1.0311,
+      "mae": 1.5438,
+      "n": 10
+     },
+     "incumbent": {
+      "bias": 0.9646,
+      "mae": 1.6199,
+      "n": 9
+     }
+    },
+    "short_rest(<=4d)": {
+     "challenger": {
+      "bias": 0.8843,
+      "mae": 0.8843,
+      "n": 2
+     },
+     "incumbent": {
+      "bias": 1.6266,
+      "mae": 1.6266,
+      "n": 1
+     }
+    },
+    "starter_CONFIRMED": {
+     "challenger": {
+      "bias": 1.0311,
+      "mae": 1.5438,
+      "n": 10
+     },
+     "incumbent": {
+      "bias": 0.9646,
+      "mae": 1.6199,
+      "n": 9
+     }
+    },
+    "went_deeper(actual BF>12)": {
+     "challenger": {
+      "bias": 1.1417,
+      "mae": 1.7113,
+      "n": 9
+     },
+     "incumbent": {
+      "bias": 0.9646,
+      "mae": 1.6199,
+      "n": 9
+     }
+    }
+   }
+  },
+  "participation": {
+   "hitter_forecasts_void": 0,
+   "pitcher_forecasts_resolved": 16,
+   "starter_did_not_appear": 1,
+   "starter_relief_appearance": 1,
+   "unforecast_actual_starters": 0
+  }
+ },
+ "settlement": {
+  "corrections": 0,
+  "settled": 1157,
+  "void": 6
+ },
+ "sport": "MLB",
+ "window": {
+  "days": 7,
+  "since_utc": "2026-10-22T15:34:05Z"
+ }
+}

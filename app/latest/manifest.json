@@ -1,5 +1,5 @@
 {
-  "commit_sha": "f23fa575e67667fe9e736c17dab2102efbf42d8d",
+  "commit_sha": "1dc688041786e5098f58e804af3dbfe820f22f01",
   "counts": {
     "board": 1,
     "events": 1,
@@ -13,81 +13,81 @@
   },
   "files": {
     "board": {
-      "bytes": 1659,
+      "bytes": 1661,
       "count": 1,
       "kind": "board",
       "path": "board.json",
-      "sha256": "183b8616f90349d1ce4f0c574a3c112a21a8ee78273a1c356589ba02b96ca684"
+      "sha256": "62886f9cf75aac64ae32b3911a06eb32ae47cb3ecff9673fd73fd00900662149"
     },
     "event_detail/evt_4bca84d22c4244efc3a5": {
       "bytes": 652293,
       "count": null,
       "kind": "event_detail",
       "path": "event_detail/evt_4bca84d22c4244efc3a5.json",
-      "sha256": "68315db0b239bfc96cd2ffc2f633958a22caa80563e3be2aa78b48a34501123c"
+      "sha256": "8ddd322c5c34692a7fedd5729fe3d2949e402a7674bbdce133eb3528702470d1"
     },
     "events": {
       "bytes": 1717,
       "count": 1,
       "kind": "events",
       "path": "events.json",
-      "sha256": "c522e6575527c44748b3f99184ecedcf2e024cc96ce4b8c865cd5d117e8f2421"
+      "sha256": "5fa390eb7a3fcb622bf426b7a0836dacc1d7cdb3040476476c62d8e9591f586f"
     },
     "markets": {
       "bytes": 693580,
       "count": 488,
       "kind": "markets",
       "path": "markets.json",
-      "sha256": "146a207eed2379e4965d46b805f6d30d485fcd954a70a3ea31136b7fe7e8650b"
+      "sha256": "fd239d119903bc818191d4bcaeb3f6d168035685d70530083856dd53e12a26c4"
     },
     "model_prices": {
       "bytes": 70689,
       "count": 65,
       "kind": "model_prices",
       "path": "model_prices.json",
-      "sha256": "86b5151c112299cca8cd074cffdbd7c2d4f149fd8fb6c9807019d72426053ca3"
+      "sha256": "986ad85aff74da4791fd7eea980312908a8d542f15c25e047da09fbfaa1b7056"
     },
     "performance": {
       "bytes": 22996,
       "count": null,
       "kind": "performance",
       "path": "performance.json",
-      "sha256": "829c91be1dfa8860e537e9e98d9e3c70eb85e52f5e6591cb62142eac8a28574c"
+      "sha256": "b701a02e29e7df72b1798fcf3a8bbaf63ffbd81e7311b3d03969022d65432085"
     },
     "recommendations": {
       "bytes": 3122,
       "count": 2,
       "kind": "recommendations",
       "path": "recommendations.json",
-      "sha256": "bf0ffd224bd64a29eeee848dd6fc981c67f02c58e43f283d8188dee00c64ee1c"
+      "sha256": "8920c6d87e8c5598672c1f2f936381f91159efaf3430a24f22ddf06cd713a980"
     },
     "runs": {
-      "bytes": 1676,
+      "bytes": 2005,
       "count": 1,
       "kind": "runs",
       "path": "runs.json",
-      "sha256": "78973a0ee41524c109bf6ca076a75ee6eb93afdf1eeb7646f8e30a27e54eec59"
+      "sha256": "24df871483b664eb8dfdbe65752326f3958fa26b2ca72ba4e0951feb34bd7672"
     },
     "settlements": {
       "bytes": 112264,
       "count": 161,
       "kind": "settlements",
       "path": "settlements.json",
-      "sha256": "fb1bad01dd97e4a991142ef755471316a929bcd7a276926395fc408387c77052"
+      "sha256": "3b3875ad998f3df6dff802facc6ecac1cf3147e309fbe40644605c58b21088bb"
     },
     "theses": {
       "bytes": 1848,
       "count": 1,
       "kind": "theses",
       "path": "theses.json",
-      "sha256": "b08db9ecbd5929a59c24cf450dea76756bbba857bb6ae8e5a24ace5eabd4539d"
+      "sha256": "21e22cdaa93c95a38a9fc33a596fc4771c1b7a66bd0e54346d504d5fefc68801"
     },
     "wagers": {
       "bytes": 273321,
       "count": 166,
       "kind": "wagers",
       "path": "wagers.json",
-      "sha256": "b38b911a84c13fd0dcd10e8b823e78fe636e09755d767ed8e6a51cdf50b94d68"
+      "sha256": "138deb30fece7c16d03b9e2ded907958835550c54f6813ae7c11a306411fe3ec"
     }
   },
   "freshness": {
@@ -112,10 +112,10 @@
       "status": "FRESH"
     }
   },
-  "generated_at": "2026-10-30T09:28:38Z",
+  "generated_at": "2026-10-30T10:46:20Z",
   "kind": "manifest",
   "model_version": "1.0+78ff7d07d788",
-  "run_id": "run_eca3c2157801390af881",
+  "run_id": "run_91bf8e08981fcee8228b",
   "schema_version": "edge_finder.app.v1",
   "source_branch": "main",
   "source_repo": "chmoses98/edge-finder-api",
@@ -124,6 +124,7 @@
   "warnings": [
     "321 full-universe recommendation row(s) with status in ('INSUFFICIENT_MODEL_SUPPORT', 'NOT_EVALUATED') not exported",
     "10 recommendation row(s) skipped: ticker, event or contract side could not be established",
-    "no slate for today (2026-10-30); exporting newest slate date 2026-10-28"
+    "no slate for today (2026-10-30); exporting newest slate date 2026-10-28",
+    "market capture idle: no MLB market listed for 2026-10-30: data/kalshi_registry_snapshots/kalshi_search_2026-10-30_1041.json found 0 markets with every series endpoint complete; every event on the 2026-10-28 slate is FINAL/POSTPONED/CANCELLED; market_data and model are NOT_APPLICABLE (last market capture 2026-10-29T02:19:09Z)"
   ]
 }

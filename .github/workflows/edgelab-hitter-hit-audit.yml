@@ -1,0 +1,68 @@
+name: EdgeLab Hitter Hit Historical Audit
+
+on:
+  pull_request:
+    paths:
+      - "scripts/edgelab/audit_hitter_hit_coverage.py"
+      - "tests/edgelab/test_hitter_hit_coverage.py"
+      - ".github/workflows/edgelab-hitter-hit-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Exact ticker outcome and model-join coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      GIT_LFS_SKIP_SMUDGE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install existing CI dependencies
+        run: python -m pip install -r requirements-ci.txt
+
+      - name: Run exact-ticker audit unit tests
+        run: python -m pytest -q tests/edgelab/test_hitter_hit_coverage.py
+
+      - name: Audit original August 1-20 market and settlement archives
+        run: |
+          mkdir -p artifacts
+          python scripts/edgelab/audit_hitter_hit_coverage.py \
+            --start-date 2026-08-01 --end-date 2026-08-20 \
+            --out artifacts/hitter_hit_coverage_aug_01_20.json
+
+      - name: Publish diagnostics summary
+        if: success()
+        run: |
+          python - <<'PY'
+          import json
+          path = "artifacts/hitter_hit_coverage_aug_01_20.json"
+          r = json.load(open(path))
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write("## Historical MLB hitter-hit outcome/forecast coverage\\n\\n")
+              f.write(f"- Unique tracked tickers: **{r['uniqueMarketTickers']:,}**\\n")
+              f.write(f"- Market/checkpoint rows: **{r['checkpointRows']:,}**\\n")
+              f.write(f"- Recorded SETTLED tickers: **{r['recordedSettledTickers']:,}**\\n")
+              f.write(f"- Recorded SETTLED checkpoints: **{r['recordedSettledCheckpointRows']:,}**\\n")
+              f.write(f"- PIT model-joined tickers: **{r['modelLinkedTickers']:,}**\\n")
+              f.write(f"- PIT model-joined checkpoints: **{r['modelLinkedCheckpointRows']:,}**\\n")
+              f.write("- This is archived MLB-derived outcome evidence, not Kalshi-native exchange-result verification.\\n")
+          PY
+
+      - name: Upload exact-ticker unresolved manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hitter-hit-historical-audit
+          path: artifacts/hitter_hit_coverage_aug_01_20.json
+          if-no-files-found: warn
+          retention-days: 30

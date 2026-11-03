@@ -4,9 +4,9 @@ import unittest
 from scripts.edgelab.audit_hitter_hit_coverage import reconcile_hitter_rows
 
 
-def row(ticker, status="SETTLED", result="YES", linked=False, when="2026-08-02T12:00:00Z", reason=None):
+def row(ticker, status="SETTLED", result="YES", linked=False, when="2026-08-02T12:00:00Z", reason=None, family="hitter_hits"):
     return {
-        "marketTicker": ticker, "canonicalMarketFamily": "hitter_hits",
+        "marketTicker": ticker, "canonicalMarketFamily": family,
         "settlementStatus": status, "settlementResult": result,
         "modelEvaluationAvailable": linked, "capturedAt": when,
         "settlementUnavailableReason": reason, "gameId": 123,
@@ -21,7 +21,7 @@ class HitterResultCoverageTests(unittest.TestCase):
             row("KXMLBHIT-B", "SETTLEMENT_UNRESOLVED", None, reason="player_participation_unverified"),
             row("KXMLBHIT-C", "NOT_SETTLED", None),
             row("KXMLBHIT-D", "VOID", None),
-            row("KXMLBTB-OTHER"),
+            row("KXMLBTB-OTHER", family="hitter_total_bases"),
         ]
         r = reconcile_hitter_rows(data, generated_at="fixed")
         self.assertEqual(r["checkpointRows"], 5)
@@ -49,7 +49,7 @@ class HitterResultCoverageTests(unittest.TestCase):
             reconcile_hitter_rows([row("", "SETTLED", "YES")])
 
     def test_empty_hitter_sample(self):
-        r = reconcile_hitter_rows([row("KXMLBTB-X")])
+        r = reconcile_hitter_rows([row("KXMLBTB-X", family="hitter_total_bases")])
         self.assertEqual(r["checkpointRows"], 0)
         self.assertEqual(r["recordedSettledTickers"], 0)
 

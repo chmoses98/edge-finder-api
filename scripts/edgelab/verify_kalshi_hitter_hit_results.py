@@ -150,6 +150,16 @@ def verify_manifest(manifest, fetch_batch=_fetch_batch, batch_size=50, max_ticke
     total = len(results)
     assert sum(counts.values()) == total
     conflicts = [r for r in results if r["mismatch"]]
+    recorded_settled_without_official_binary = [
+        r for r in results
+        if r["recordedStatus"] == "SETTLED"
+        and not r["exchangeClassification"].startswith("EXCHANGE_CONFIRMED_")
+    ]
+    official_binary_missing_from_recorded = [
+        r for r in results
+        if r["exchangeClassification"].startswith("EXCHANGE_CONFIRMED_")
+        and r["recordedStatus"] != "SETTLED"
+    ]
     return {
         "schemaVersion": 1,
         "authority": "READ_ONLY_OFFICIAL_KALSHI_HISTORY_RECONCILIATION",
@@ -161,6 +171,10 @@ def verify_manifest(manifest, fetch_batch=_fetch_batch, batch_size=50, max_ticke
         "exchangeClassificationCounts": dict(sorted(counts.items())),
         "officialBinaryConfirmedTickers": sum(v for k, v in counts.items() if k.startswith("EXCHANGE_CONFIRMED_")),
         "recordedResultConflicts": len(conflicts),
+        "recordedSettledWithoutOfficialBinary": len(recorded_settled_without_official_binary),
+        "officialBinaryMissingFromRecorded": len(official_binary_missing_from_recorded),
+        "recordedSettledWithoutOfficialBinaryTickers": [r["marketTicker"] for r in recorded_settled_without_official_binary],
+        "officialBinaryMissingFromRecordedTickers": [r["marketTicker"] for r in official_binary_missing_from_recorded],
         "source": "https://external-api.kalshi.com/trade-api/v2/historical/markets",
         "sourcePageEvidence": provenance,
         "byTicker": results,
@@ -191,6 +205,8 @@ def main():
         "trackedTickers": result["uniqueTrackedTickers"],
         "officialBinaryConfirmed": result["officialBinaryConfirmedTickers"],
         "conflicts": result["recordedResultConflicts"],
+        "recordedSettledWithoutOfficialBinary": result["recordedSettledWithoutOfficialBinary"],
+        "officialBinaryMissingFromRecorded": result["officialBinaryMissingFromRecorded"],
         "classifications": result["exchangeClassificationCounts"],
     }, indent=2))
 

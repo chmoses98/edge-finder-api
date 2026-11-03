@@ -60,6 +60,22 @@ class OfficialKalshiHitterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate"):
             verify_manifest(manifest([e, e]), fetch_batch=lambda _: ({}, []))
 
+    def test_bidirectional_official_coverage_gaps(self):
+        a = entry("KXMLBHIT-26AUG01-A", recorded="YES", status="SETTLED")
+        b = entry("KXMLBHIT-26AUG01-B", recorded=None, status="NOT_SETTLED")
+        c = entry("KXMLBHIT-26AUG01-C", recorded="NO", status="SETTLED")
+        official = {
+            b["marketTicker"]: {"ticker": b["marketTicker"], "status": "finalized", "result": "yes"},
+            c["marketTicker"]: {"ticker": c["marketTicker"], "status": "finalized", "result": "no"},
+        }
+        result = verify_manifest(manifest([a, b, c]), fetch_batch=lambda _: (official, []))
+        self.assertEqual(result["recordedSettledWithoutOfficialBinary"], 1)
+        self.assertEqual(result["officialBinaryMissingFromRecorded"], 1)
+        self.assertEqual(result["recordedSettledWithoutOfficialBinaryTickers"], [a["marketTicker"]])
+        self.assertEqual(result["officialBinaryMissingFromRecordedTickers"], [b["marketTicker"]])
+        self.assertEqual(result["officialBinaryConfirmedTickers"], 2)
+        self.assertEqual(result["recordedResultConflicts"], 0)
+
     def test_exact_response_batch_checksum_and_lookup(self):
         ticker = entry()["marketTicker"]
         raw = json.dumps({"markets": [{"ticker": ticker, "result": "yes", "status": "finalized"}], "cursor": ""}).encode()

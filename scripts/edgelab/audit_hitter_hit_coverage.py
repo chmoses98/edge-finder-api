@@ -44,6 +44,7 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
     status_rows, status_tickers = Counter(), Counter()
     result_tickers = Counter()
     missing = []
+    tracked = []
     model_rows = model_tickers = 0
     for ticker, rows in sorted(by_ticker.items()):
         statuses = {r.get("settlementStatus") or "NOT_SETTLED" for r in rows}
@@ -64,20 +65,23 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
         model_rows += linked
         model_tickers += bool(linked)
 
+        reasons = sorted({str(r.get("settlementUnavailableReason"))
+                          for r in rows if r.get("settlementUnavailableReason")})
+        game_ids = sorted({str(r.get("gameId")) for r in rows if r.get("gameId") is not None})
+        entry = {
+            "marketTicker": ticker,
+            "gameIds": game_ids,
+            "checkpointRows": len(rows),
+            "settlementStatus": status,
+            "recordedResult": result,
+            "unavailableReasons": reasons,
+            "modelLinkedCheckpointRows": linked,
+            "observedAtFirst": min((r["capturedAt"] for r in rows if r.get("capturedAt")), default=None),
+            "observedAtLast": max((r["capturedAt"] for r in rows if r.get("capturedAt")), default=None),
+        }
+        tracked.append(entry)
         if status != "SETTLED":
-            reasons = sorted({str(r.get("settlementUnavailableReason"))
-                              for r in rows if r.get("settlementUnavailableReason")})
-            game_ids = sorted({str(r.get("gameId")) for r in rows if r.get("gameId") is not None})
-            missing.append({
-                "marketTicker": ticker,
-                "gameIds": game_ids,
-                "checkpointRows": len(rows),
-                "settlementStatus": status,
-                "unavailableReasons": reasons,
-                "modelLinkedCheckpointRows": linked,
-                "observedAtFirst": min((r["capturedAt"] for r in rows if r.get("capturedAt")), default=None),
-                "observedAtLast": max((r["capturedAt"] for r in rows if r.get("capturedAt")), default=None),
-            })
+            missing.append(entry)
 
     n = len(hits)
     if sum(status_rows.values()) != n or sum(status_tickers.values()) != len(by_ticker):
@@ -98,6 +102,7 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
         "statusByCheckpointRow": dict(sorted(status_rows.items())),
         "statusByUniqueTicker": dict(sorted(status_tickers.items())),
         "recordedResultByUniqueTicker": dict(sorted(result_tickers.items())),
+        "allTrackedTickers": tracked,
         "notRecordedAsSettledTickers": missing,
         "notes": [
             "NOT_SETTLED may mean no archived settlement row, including games not final at the report cutoff.",

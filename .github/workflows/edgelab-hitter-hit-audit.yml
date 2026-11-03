@@ -1,6 +1,9 @@
 name: EdgeLab Hitter Hit Historical Audit
 
 on:
+  push:
+    branches:
+      - audit/hitter-hit-outcome-reconciliation
   pull_request:
     paths:
       - "scripts/edgelab/audit_hitter_hit_coverage.py"

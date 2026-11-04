@@ -11,6 +11,8 @@ on:
       - ".github/workflows/edgelab-hitter-hit-audit.yml"
       - "scripts/edgelab/verify_kalshi_hitter_hit_results.py"
       - "tests/edgelab/test_verify_kalshi_hitter_hit_results.py"
+      - "scripts/edgelab/audit_partition_provenance.py"
+      - "tests/edgelab/test_partition_provenance.py"
   workflow_dispatch:
 
 permissions:
@@ -39,6 +41,7 @@ jobs:
         run: |
           python -m unittest discover -s tests/edgelab -p 'test_hitter_hit_coverage.py' -v
           python -m unittest discover -s tests/edgelab -p 'test_verify_kalshi_hitter_hit_results.py' -v
+          python -m unittest discover -s tests/edgelab -p 'test_partition_provenance.py' -v
 
       - name: Audit original August 1-20 market and settlement archives
         run: |
@@ -46,6 +49,12 @@ jobs:
           python scripts/edgelab/audit_hitter_hit_coverage.py \
             --start-date 2026-08-01 --end-date 2026-08-20 \
             --out artifacts/hitter_hit_coverage_aug_01_20.json
+
+      - name: Census independent archive partitions (read only)
+        run: |
+          python scripts/edgelab/audit_partition_provenance.py \\
+            --start-date 2026-08-01 --end-date 2026-08-20 \\
+            --output artifacts/hitter_hit_partition_provenance_aug_01_20.json
 
       - name: Read official exchange results for EVERY archived hitter-hit ticker (no writes)
         run: |
@@ -83,5 +92,6 @@ jobs:
           path: |
             artifacts/hitter_hit_coverage_aug_01_20.json
             artifacts/hitter_hit_exchange_reconciliation.json
+            artifacts/hitter_hit_partition_provenance_aug_01_20.json
           if-no-files-found: warn
           retention-days: 30

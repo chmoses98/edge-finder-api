@@ -26,6 +26,8 @@ class HitterResultCoverageTests(unittest.TestCase):
         r = reconcile_hitter_rows(data, generated_at="fixed")
         self.assertEqual(r["checkpointRows"], 5)
         self.assertEqual(r["uniqueMarketTickers"], 4)
+        self.assertEqual(r["checkpointRowsByCapturedDate"], {"2026-08-02": 5})
+        self.assertEqual(r["checkpointRowsMissingCapturedDate"], 0)
         self.assertEqual(r["recordedSettledCheckpointRows"], 2)
         self.assertEqual(r["recordedSettledTickers"], 1)
         self.assertEqual(r["modelLinkedCheckpointRows"], 1)
@@ -47,6 +49,12 @@ class HitterResultCoverageTests(unittest.TestCase):
             reconcile_hitter_rows([row("X", "NOT_SETTLED", "YES")])
         with self.assertRaisesRegex(ValueError, "marketTicker"):
             reconcile_hitter_rows([row("", "SETTLED", "YES")])
+
+    def test_missing_capture_timestamp_is_explicit_not_silently_dropped(self):
+        r = reconcile_hitter_rows([row("KXMLBHIT-A", when=None), row("KXMLBHIT-B")])
+        self.assertEqual(r["checkpointRows"], 2)
+        self.assertEqual(r["checkpointRowsByCapturedDate"], {"2026-08-02": 1})
+        self.assertEqual(r["checkpointRowsMissingCapturedDate"], 1)
 
     def test_empty_hitter_sample(self):
         r = reconcile_hitter_rows([row("KXMLBTB-X", family="hitter_total_bases")])

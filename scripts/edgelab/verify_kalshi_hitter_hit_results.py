@@ -129,6 +129,11 @@ def verify_manifest(manifest, fetch_batch=_fetch_batch, batch_size=50, max_ticke
     entries = manifest.get("allTrackedTickers")
     if not isinstance(entries, list) or len(entries) != manifest.get("uniqueMarketTickers"):
         raise ValueError("Missing or inconsistent full ticker inventory")
+    if any(not isinstance(row, dict) or type(row.get("checkpointRows")) is not int
+           or row["checkpointRows"] < 1 for row in entries):
+        raise ValueError("Invalid per-ticker checkpoint denominator")
+    if sum(row["checkpointRows"] for row in entries) != manifest.get("checkpointRows"):
+        raise ValueError("Inconsistent aggregate checkpoint denominator")
     tickers = [row.get("marketTicker") for row in entries]
     if not all(isinstance(t, str) and t.startswith("KXMLBHIT-") for t in tickers):
         raise ValueError("Unexpected MLB hitter-hit ticker identity; fail closed")

@@ -42,6 +42,14 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
         by_ticker[ticker].append(r)
 
     status_rows, status_tickers = Counter(), Counter()
+    capture_date_rows = Counter()
+    capture_date_missing = 0
+    for r in hits:
+        captured = r.get("capturedAt")
+        if isinstance(captured, str) and len(captured) >= 10 and captured[4:5] == "-" and captured[7:8] == "-":
+            capture_date_rows[captured[:10]] += 1
+        else:
+            capture_date_missing += 1
     result_tickers = Counter()
     missing = []
     tracked = []
@@ -84,6 +92,8 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
             missing.append(entry)
 
     n = len(hits)
+    if sum(capture_date_rows.values()) + capture_date_missing != n:
+        raise AssertionError("Capture-date checkpoint denominator drift")
     if sum(status_rows.values()) != n or sum(status_tickers.values()) != len(by_ticker):
         raise AssertionError("Hitter-hit denominator drift")
     return {
@@ -95,6 +105,8 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
         "source": "canonical EdgeLab observations + settlements + ModelEvaluation partitions",
         "checkpointRows": n,
         "uniqueMarketTickers": len(by_ticker),
+        "checkpointRowsByCapturedDate": dict(sorted(capture_date_rows.items())),
+        "checkpointRowsMissingCapturedDate": capture_date_missing,
         "recordedSettledCheckpointRows": status_rows["SETTLED"],
         "recordedSettledTickers": status_tickers["SETTLED"],
         "modelLinkedCheckpointRows": model_rows,
@@ -105,6 +117,7 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
         "allTrackedTickers": tracked,
         "notRecordedAsSettledTickers": missing,
         "notes": [
+            "Capture-date counts use observed capturedAt timestamps, not source partition names; they diagnose missing checkpoints but cannot prove recovery of missing archive partitions.",
             "NOT_SETTLED may mean no archived settlement row, including games not final at the report cutoff.",
             "SETTLEMENT_UNRESOLVED means a settlement attempt could not verify the outcome.",
             "VOID is a classified terminal disposition, not a YES/NO winner; it is included in the non-SETTLED manifest.",

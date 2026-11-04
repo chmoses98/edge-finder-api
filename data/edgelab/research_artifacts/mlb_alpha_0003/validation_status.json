@@ -1,0 +1,15 @@
+{
+  "schema": "mlb_alpha_0003_validation_status_v1",
+  "asOf": "2026-10-27",
+  "rule": "A family|side is QUALIFIED only by a registered validation program that met its frozen bar (BH survivor, post-fee CI excluding 0, >= +1% net ROI, >= 60 independent games and >= 10 dates, same sign in both date halves, a stated mechanism, no midpoint fill) AND received explicit human approval. Anything absent from this table is UNVALIDATED. Nothing is QUALIFIED today.",
+  "entries": {
+    "KXMLBF5TOTAL|YES": {
+      "status": "INCONCLUSIVE",
+      "evidence": "ALPHA-0001 C01-PIT (rule sha256 882f16d8330af1af): discovery +2.79% and the spent holdout -0.03% over 17 games; MLB-ALPHA-0003 H3-B forward score on 2026-09-02..09-27, 107 opportunities / 93 games / 22 dates, net ROI -0.06% (CI90 -4.0%..+3.1%, p=0.97). Flat and unable to separate zero from the discovery estimate; the frozen 10-minute trigger stream was never the sampling process."
+    }
+  },
+  "notes": [
+    "The unified-simulator rule R1 (H3-A) produced 9 regular-season trades at a 3c threshold (6 games) and 778 at 0c (-2.9% net ROI, CI90 -15.3%..+10.4%): no family|side earns a status from it.",
+    "Unconditional side ROIs in H3-C are descriptive and are deliberately not used to assign FAILED to a strategy."
+  ]
+}

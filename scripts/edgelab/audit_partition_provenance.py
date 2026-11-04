@@ -4,7 +4,8 @@ import argparse
 import glob
 import json
 import os
-from collections import Counter
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from lib.edgelab import storage
 
 ENTITIES = ("observations", "settlements", "model_evaluations")

@@ -64,6 +64,10 @@ jobs:
               f.write("## Historical MLB hitter-hit outcome/forecast coverage\\n\\n")
               f.write(f"- Unique tracked tickers: **{r['uniqueMarketTickers']:,}**\\n")
               f.write(f"- Market/checkpoint rows: **{r['checkpointRows']:,}**\\n")
+              baseline = 23295
+              delta = baseline - r["checkpointRows"]
+              f.write(f"- Original Aug 20 report denominator: **{baseline:,}**; currently recovered: **{r['checkpointRows']:,}**; discrepancy: **{delta:,}**\\n")
+              f.write("- Denominators are not interchangeable until source partitions and report versions are reconciled.\\n")
               f.write(f"- Recorded SETTLED tickers: **{r['recordedSettledTickers']:,}**\\n")
               f.write(f"- Recorded SETTLED checkpoints: **{r['recordedSettledCheckpointRows']:,}**\\n")
               f.write(f"- PIT model-joined tickers: **{r['modelLinkedTickers']:,}**\\n")

@@ -60,6 +60,18 @@ class OfficialKalshiHitterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate"):
             verify_manifest(manifest([e, e]), fetch_batch=lambda _: ({}, []))
 
+    def test_reject_forged_checkpoint_denominators_before_exchange_query(self):
+        e = entry()
+        def no_fetch(_):
+            self.fail("Untrusted denominator reached exchange query")
+        for bad in (
+            {**manifest([e]), "checkpointRows": 23295},
+            manifest([{**e, "checkpointRows": 0}]),
+            manifest([{**e, "checkpointRows": True}]),
+        ):
+            with self.assertRaisesRegex(ValueError, "checkpoint denominator"):
+                verify_manifest(bad, fetch_batch=no_fetch)
+
     def test_bidirectional_official_coverage_gaps(self):
         a = entry("KXMLBHIT-26AUG01-A", recorded="YES", status="SETTLED")
         b = entry("KXMLBHIT-26AUG01-B", recorded=None, status="NOT_SETTLED")

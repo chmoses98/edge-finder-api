@@ -154,7 +154,14 @@ def _select_named_checkpoint_observations(obs_list):
         if label not in NAMED_CHECKPOINTS:
             continue
         current = by_label.get(label)
-        if current is None or (obs.get("capturedAt") or "") < (current.get("capturedAt") or ""):
+        # Compare actual instants, not ISO strings: timezone offsets and Z
+        # formatting are not lexicographically chronological. An invalid
+        # timestamp must never displace a valid pregame observation.
+        captured = _parse_iso(obs.get("capturedAt"))
+        if captured is None:
+            continue
+        current_at = _parse_iso(current.get("capturedAt")) if current else None
+        if current_at is None or (captured.astimezone(timezone.utc), str(obs.get("marketObservationId") or "")) < (current_at.astimezone(timezone.utc), str(current.get("marketObservationId") or "")):
             by_label[label] = obs
     return by_label
 

@@ -55,7 +55,7 @@ jobs:
           import os, re, json, collections
           from scripts.edgelab.backfill_player_prop_settlement import _date_range
           from scripts.edgelab.settle_markets import settle_date
-          cats = collections.Counter(); games = collections.defaultdict(set); archived = collections.Counter()
+          other_shapes = collections.Counter(); nogame = set(); cats = collections.Counter(); games = collections.defaultdict(set); archived = collections.Counter()
           for d in _date_range(os.environ["START"], os.environ["END"]):
               for w in settle_date(d, dry_run=True)["warnings"]:
                   if "identity conflict" in w: k = "identity_conflict"
@@ -68,9 +68,13 @@ jobs:
                   elif "linescore" in w: k = "linescore_unavailable"
                   else: k = "other"
                   cats[k] += 1
+                  if k == "other": other_shapes[re.sub(r"[0-9]+", "N", w)[:160]] += 1
+                  if k == "no_gamepk":
+                      m2 = re.search(r"gameId=(\S+?);", w + ";")
+                      if m2: nogame.add(m2.group(1))
                   m = re.search(r"gamePk=(\d+)", w)
                   if m: games[k].add(m.group(1))
-          print(json.dumps({"warningCategories": cats, "distinctGamesByCategory": {k: len(v) for k, v in games.items()}, "archivedStatusAtFallback": archived}, indent=1))
+          print(json.dumps({"warningCategories": cats, "distinctGamesByCategory": {k: len(v) for k, v in games.items()}, "archivedStatusAtFallback": archived, "noGamePkDistinctGameIds": len(nogame), "noGamePkSampleGameIds": sorted(nogame)[:10], "otherWarningShapes": other_shapes.most_common(8)}, indent=1))
           PY
           { echo '## Settler warning categories (dry-run, no writes)'; echo '```'; cat artifacts/hitter_settlement_warnings.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Confirm the working tree is unchanged

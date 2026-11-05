@@ -1,0 +1,766 @@
+{
+ "_comment": "Trimmed verbatim from data/slates/<date>/authoritative.json: the exact records that crashed scripts/research_export.py _model_inputs (AttributeError: 'NoneType' object has no attribute 'get') in Edge Finder App Export from 2026-10-18 on. offenseForm.windows carries null for every window the team could not fill (lib/team_offense_form.build_form contract).",
+ "all_windows_null": {
+  "game": {
+   "away": {
+    "abbr": "MIL"
+   },
+   "awayTeamStats": {
+    "offenseForm": {
+     "asOfDate": "2026-10-26",
+     "formLabel": {
+      "label": "UNKNOWN",
+      "reason": "no L7 window available",
+      "window": "L7"
+     },
+     "formLines": {
+      "L10": "L10: unavailable (2 completed games on record)",
+      "L5": "L5: unavailable (2 completed games on record)",
+      "L7": "L7: unavailable (2 completed games on record)"
+     },
+     "gamesAvailable": 2,
+     "source": "mlb_stats_api_schedule",
+     "team": "MIL",
+     "unavailableReason": null,
+     "windows": {
+      "L10": null,
+      "L5": null,
+      "L7": null
+     }
+    },
+    "record": {
+     "divisionRank": "1",
+     "leagueRank": "1",
+     "losses": 59,
+     "pct": ".636",
+     "runDiff": 214,
+     "runsAllowed": 618,
+     "runsScored": 832,
+     "streak": "W5",
+     "wins": 103
+    }
+   },
+   "gameId": 849803,
+   "gameType": "W",
+   "home": {
+    "abbr": "TB"
+   },
+   "homeTeamStats": {
+    "offenseForm": {
+     "asOfDate": "2026-10-26",
+     "formLabel": {
+      "label": "UNKNOWN",
+      "reason": "no L7 window available",
+      "window": "L7"
+     },
+     "formLines": {
+      "L10": "L10: unavailable (2 completed games on record)",
+      "L5": "L5: unavailable (2 completed games on record)",
+      "L7": "L7: unavailable (2 completed games on record)"
+     },
+     "gamesAvailable": 2,
+     "source": "mlb_stats_api_schedule",
+     "team": "TB",
+     "unavailableReason": null,
+     "windows": {
+      "L10": null,
+      "L5": null,
+      "L7": null
+     }
+    },
+    "record": {
+     "divisionRank": "1",
+     "leagueRank": "1",
+     "losses": 64,
+     "pct": ".605",
+     "runDiff": 86,
+     "runsAllowed": 650,
+     "runsScored": 736,
+     "streak": "L1",
+     "wins": 98
+    }
+   },
+   "seriesDescription": "World Series"
+  },
+  "slate_date": "2026-10-27"
+ },
+ "full_windows": {
+  "game": {
+   "away": {
+    "abbr": "TB"
+   },
+   "awayTeamStats": {
+    "offenseForm": {
+     "asOfDate": "2026-10-16",
+     "formLabel": {
+      "label": "NEUTRAL",
+      "reason": "3/7 games clearing 4 runs, median 3.0, mean 4.14",
+      "window": "L7"
+     },
+     "formLines": {
+      "L10": "L10: 3.8 avg | 2.5 med | 2,2,5,0,6,2,4,2,12,3 | 4/10 >=4 | 3/10 >=5 | max 12 (32% of L10 runs)",
+      "L5": "L5: 4.6 avg | 3.0 med | 2,4,2,12,3 | 2/5 >=4 | 1/5 >=5 | max 12 (52% of L5 runs) | OUTLIER-DEPENDENT",
+      "L7": "L7: 4.1 avg | 3.0 med | 0,6,2,4,2,12,3 | 3/7 >=4 | 2/7 >=5 | max 12 (41% of L7 runs) | OUTLIER-DEPENDENT"
+     },
+     "gamesAvailable": 12,
+     "source": "mlb_stats_api_schedule",
+     "team": "TB",
+     "unavailableReason": null,
+     "windows": {
+      "L10": {
+       "ewma": 4.29,
+       "games": 10,
+       "marketRelative": {
+        "lineCoverage": {
+         "of": 10,
+         "withLine": 0
+        },
+        "meanMarginVsLine": null,
+        "medianMarginVsLine": null,
+        "overs": 0,
+        "oversPct": null
+       },
+       "max": 12,
+       "mean": 3.8,
+       "median": 2.5,
+       "min": 0,
+       "outlierDependence": {
+        "isOutlierDependent": false,
+        "meanMinusTrimmedMean": 0.55,
+        "topGameShareOfWindowRuns": 0.316
+       },
+       "scores": [
+        2,
+        2,
+        5,
+        0,
+        6,
+        2,
+        4,
+        2,
+        12,
+        3
+       ],
+       "thresholdClears": {
+        "ge3": {
+         "games": 5,
+         "of": 10,
+         "pct": 0.5
+        },
+        "ge4": {
+         "games": 4,
+         "of": 10,
+         "pct": 0.4
+        },
+        "ge5": {
+         "games": 3,
+         "of": 10,
+         "pct": 0.3
+        },
+        "ge6": {
+         "games": 2,
+         "of": 10,
+         "pct": 0.2
+        }
+       },
+       "topGameShareOfWindowRuns": 0.316,
+       "totalRuns": 38,
+       "trimmedMean": 3.25,
+       "window": 10
+      },
+      "L5": {
+       "ewma": 5.05,
+       "games": 5,
+       "marketRelative": {
+        "lineCoverage": {
+         "of": 5,
+         "withLine": 0
+        },
+        "meanMarginVsLine": null,
+        "medianMarginVsLine": null,
+        "overs": 0,
+        "oversPct": null
+       },
+       "max": 12,
+       "mean": 4.6,
+       "median": 3.0,
+       "min": 2,
+       "outlierDependence": {
+        "isOutlierDependent": true,
+        "meanMinusTrimmedMean": 1.6,
+        "topGameShareOfWindowRuns": 0.522
+       },
+       "scores": [
+        2,
+        4,
+        2,
+        12,
+        3
+       ],
+       "thresholdClears": {
+        "ge3": {
+         "games": 3,
+         "of": 5,
+         "pct": 0.6
+        },
+        "ge4": {
+         "games": 2,
+         "of": 5,
+         "pct": 0.4
+        },
+        "ge5": {
+         "games": 1,
+         "of": 5,
+         "pct": 0.2
+        },
+        "ge6": {
+         "games": 1,
+         "of": 5,
+         "pct": 0.2
+        }
+       },
+       "topGameShareOfWindowRuns": 0.522,
+       "totalRuns": 23,
+       "trimmedMean": 3.0,
+       "window": 5
+      },
+      "L7": {
+       "ewma": 4.68,
+       "games": 7,
+       "marketRelative": {
+        "lineCoverage": {
+         "of": 7,
+         "withLine": 0
+        },
+        "meanMarginVsLine": null,
+        "medianMarginVsLine": null,
+        "overs": 0,
+        "oversPct": null
+       },
+       "max": 12,
+       "mean": 4.14,
+       "median": 3.0,
+       "min": 0,
+       "outlierDependence": {
+        "isOutlierDependent": true,
+        "meanMinusTrimmedMean": 0.74,
+        "topGameShareOfWindowRuns": 0.414
+       },
+       "scores": [
+        0,
+        6,
+        2,
+        4,
+        2,
+        12,
+        3
+       ],
+       "thresholdClears": {
+        "ge3": {
+         "games": 4,
+         "of": 7,
+         "pct": 0.571
+        },
+        "ge4": {
+         "games": 3,
+         "of": 7,
+         "pct": 0.429
+        },
+        "ge5": {
+         "games": 2,
+         "of": 7,
+         "pct": 0.286
+        },
+        "ge6": {
+         "games": 2,
+         "of": 7,
+         "pct": 0.286
+        }
+       },
+       "topGameShareOfWindowRuns": 0.414,
+       "totalRuns": 29,
+       "trimmedMean": 3.4,
+       "window": 7
+      }
+     }
+    },
+    "record": {
+     "divisionRank": "1",
+     "leagueRank": "1",
+     "losses": 64,
+     "pct": ".605",
+     "runDiff": 86,
+     "runsAllowed": 650,
+     "runsScored": 736,
+     "streak": "L1",
+     "wins": 98
+    }
+   },
+   "gameId": 849816,
+   "gameType": "L",
+   "home": {
+    "abbr": "CLE"
+   },
+   "homeTeamStats": {
+    "offenseForm": {
+     "asOfDate": "2026-10-16",
+     "formLabel": {
+      "label": "COLD",
+      "reason": "median 2.0 and only 2/7 games clearing 4 runs",
+      "window": "L7"
+     },
+     "formLines": {
+      "L10": "L10: 5.3 avg | 4.0 med | 6,5,12,1,3,0,1,12,11,2 | 5/10 >=4 | 5/10 >=5 | max 12 (23% of L10 runs)",
+      "L5": "L5: 5.2 avg | 2.0 med | 0,1,12,11,2 | 2/5 >=4 | 2/5 >=5 | max 12 (46% of L5 runs) | OUTLIER-DEPENDENT",
+      "L7": "L7: 4.3 avg | 2.0 med | 1,3,0,1,12,11,2 | 2/7 >=4 | 2/7 >=5 | max 12 (40% of L7 runs) | OUTLIER-DEPENDENT"
+     },
+     "gamesAvailable": 10,
+     "source": "mlb_stats_api_schedule",
+     "team": "CLE",
+     "unavailableReason": null,
+     "windows": {
+      "L10": {
+       "ewma": 5.38,
+       "games": 10,
+       "marketRelative": {
+        "lineCoverage": {
+         "of": 10,
+         "withLine": 0
+        },
+        "meanMarginVsLine": null,
+        "medianMarginVsLine": null,
+        "overs": 0,
+        "oversPct": null
+       },
+       "max": 12,
+       "mean": 5.3,
+       "median": 4.0,
+       "min": 0,
+       "outlierDependence": {
+        "isOutlierDependent": false,
+        "meanMinusTrimmedMean": 0.18,
+        "topGameShareOfWindowRuns": 0.226
+       },
+       "scores": [
+        6,
+        5,
+        12,
+        1,
+        3,
+        0,
+        1,
+        12,
+        11,
+        2
+       ],
+       "thresholdClears": {
+        "ge3": {
+         "games": 6,
+         "of": 10,
+         "pct": 0.6
+        },
+        "ge4": {
+         "games": 5,
+         "of": 10,
+         "pct": 0.5
+        },
+        "ge5": {
+         "games": 5,
+         "of": 10,
+         "pct": 0.5
+        },
+        "ge6": {
+         "games": 4,
+         "of": 10,
+         "pct": 0.4
+        }
+       },
+       "topGameShareOfWindowRuns": 0.226,
+       "totalRuns": 53,
+       "trimmedMean": 5.12,
+       "window": 10
+      },
+      "L5": {
+       "ewma": 5.7,
+       "games": 5,
+       "marketRelative": {
+        "lineCoverage": {
+         "of": 5,
+         "withLine": 0
+        },
+        "meanMarginVsLine": null,
+        "medianMarginVsLine": null,
+        "overs": 0,
+        "oversPct": null
+       },
+       "max": 12,
+       "mean": 5.2,
+       "median": 2.0,
+       "min": 0,
+       "outlierDependence": {
+        "isOutlierDependent": true,
+        "meanMinusTrimmedMean": 0.53,
+        "topGameShareOfWindowRuns": 0.462
+       },
+       "scores": [
+        0,
+        1,
+        12,
+        11,
+        2
+       ],
+       "thresholdClears": {
+        "ge3": {
+         "games": 2,
+         "of": 5,
+         "pct": 0.4
+        },
+        "ge4": {
+         "games": 2,
+         "of": 5,
+         "pct": 0.4
+        },
+        "ge5": {
+         "games": 2,
+         "of": 5,
+         "pct": 0.4
+        },
+        "ge6": {
+         "games": 2,
+         "of": 5,
+         "pct": 0.4
+        }
+       },
+       "topGameShareOfWindowRuns": 0.462,
+       "totalRuns": 26,
+       "trimmedMean": 4.67,
+       "window": 5
+      },
+      "L7": {
+       "ewma": 5.05,
+       "games": 7,
+       "marketRelative": {
+        "lineCoverage": {
+         "of": 7,
+         "withLine": 0
+        },
+        "meanMarginVsLine": null,
+        "medianMarginVsLine": null,
+        "overs": 0,
+        "oversPct": null
+       },
+       "max": 12,
+       "mean": 4.29,
+       "median": 2.0,
+       "min": 0,
+       "outlierDependence": {
+        "isOutlierDependent": true,
+        "meanMinusTrimmedMean": 0.69,
+        "topGameShareOfWindowRuns": 0.4
+       },
+       "scores": [
+        1,
+        3,
+        0,
+        1,
+        12,
+        11,
+        2
+       ],
+       "thresholdClears": {
+        "ge3": {
+         "games": 3,
+         "of": 7,
+         "pct": 0.429
+        },
+        "ge4": {
+         "games": 2,
+         "of": 7,
+         "pct": 0.286
+        },
+        "ge5": {
+         "games": 2,
+         "of": 7,
+         "pct": 0.286
+        },
+        "ge6": {
+         "games": 2,
+         "of": 7,
+         "pct": 0.286
+        }
+       },
+       "topGameShareOfWindowRuns": 0.4,
+       "totalRuns": 30,
+       "trimmedMean": 3.6,
+       "window": 7
+      }
+     }
+    },
+    "record": {
+     "divisionRank": "1",
+     "leagueRank": "4",
+     "losses": 77,
+     "pct": ".525",
+     "runDiff": 11,
+     "runsAllowed": 667,
+     "runsScored": 678,
+     "streak": "L1",
+     "wins": 85
+    }
+   },
+   "seriesDescription": "AL Championship Series"
+  },
+  "slate_date": "2026-10-17"
+ },
+ "mixed_windows": {
+  "game": {
+   "away": {
+    "abbr": "TB"
+   },
+   "awayTeamStats": {
+    "offenseForm": {
+     "asOfDate": "2026-10-22",
+     "formLabel": {
+      "label": "NEUTRAL",
+      "reason": "3/7 games clearing 4 runs, median 3.0, mean 4.14",
+      "window": "L7"
+     },
+     "formLines": {
+      "L10": "L10: unavailable (7 completed games on record)",
+      "L5": "L5: 4.6 avg | 3.0 med | 2,4,2,12,3 | 2/5 >=4 | 1/5 >=5 | max 12 (52% of L5 runs) | OUTLIER-DEPENDENT",
+      "L7": "L7: 4.1 avg | 3.0 med | 0,6,2,4,2,12,3 | 3/7 >=4 | 2/7 >=5 | max 12 (41% of L7 runs) | OUTLIER-DEPENDENT"
+     },
+     "gamesAvailable": 7,
+     "source": "mlb_stats_api_schedule",
+     "team": "TB",
+     "unavailableReason": null,
+     "windows": {
+      "L10": null,
+      "L5": {
+       "ewma": 5.05,
+       "games": 5,
+       "marketRelative": {
+        "lineCoverage": {
+         "of": 5,
+         "withLine": 0
+        },
+        "meanMarginVsLine": null,
+        "medianMarginVsLine": null,
+        "overs": 0,
+        "oversPct": null
+       },
+       "max": 12,
+       "mean": 4.6,
+       "median": 3.0,
+       "min": 2,
+       "outlierDependence": {
+        "isOutlierDependent": true,
+        "meanMinusTrimmedMean": 1.6,
+        "topGameShareOfWindowRuns": 0.522
+       },
+       "scores": [
+        2,
+        4,
+        2,
+        12,
+        3
+       ],
+       "thresholdClears": {
+        "ge3": {
+         "games": 3,
+         "of": 5,
+         "pct": 0.6
+        },
+        "ge4": {
+         "games": 2,
+         "of": 5,
+         "pct": 0.4
+        },
+        "ge5": {
+         "games": 1,
+         "of": 5,
+         "pct": 0.2
+        },
+        "ge6": {
+         "games": 1,
+         "of": 5,
+         "pct": 0.2
+        }
+       },
+       "topGameShareOfWindowRuns": 0.522,
+       "totalRuns": 23,
+       "trimmedMean": 3.0,
+       "window": 5
+      },
+      "L7": {
+       "ewma": 4.68,
+       "games": 7,
+       "marketRelative": {
+        "lineCoverage": {
+         "of": 7,
+         "withLine": 0
+        },
+        "meanMarginVsLine": null,
+        "medianMarginVsLine": null,
+        "overs": 0,
+        "oversPct": null
+       },
+       "max": 12,
+       "mean": 4.14,
+       "median": 3.0,
+       "min": 0,
+       "outlierDependence": {
+        "isOutlierDependent": true,
+        "meanMinusTrimmedMean": 0.74,
+        "topGameShareOfWindowRuns": 0.414
+       },
+       "scores": [
+        0,
+        6,
+        2,
+        4,
+        2,
+        12,
+        3
+       ],
+       "thresholdClears": {
+        "ge3": {
+         "games": 4,
+         "of": 7,
+         "pct": 0.571
+        },
+        "ge4": {
+         "games": 3,
+         "of": 7,
+         "pct": 0.429
+        },
+        "ge5": {
+         "games": 2,
+         "of": 7,
+         "pct": 0.286
+        },
+        "ge6": {
+         "games": 2,
+         "of": 7,
+         "pct": 0.286
+        }
+       },
+       "topGameShareOfWindowRuns": 0.414,
+       "totalRuns": 29,
+       "trimmedMean": 3.4,
+       "window": 7
+      }
+     }
+    },
+    "record": {
+     "divisionRank": "1",
+     "leagueRank": "1",
+     "losses": 64,
+     "pct": ".605",
+     "runDiff": 86,
+     "runsAllowed": 650,
+     "runsScored": 736,
+     "streak": "L1",
+     "wins": 98
+    }
+   },
+   "gameId": 849805,
+   "gameType": "W",
+   "home": {
+    "abbr": "MIL"
+   },
+   "homeTeamStats": {
+    "offenseForm": {
+     "asOfDate": "2026-10-22",
+     "formLabel": {
+      "label": "UNKNOWN",
+      "reason": "no L7 window available",
+      "window": "L7"
+     },
+     "formLines": {
+      "L10": "L10: unavailable (6 completed games on record)",
+      "L5": "L5: 5.2 avg | 5.0 med | 4,5,8,3,6 | 4/5 >=4 | 3/5 >=5 | max 8 (31% of L5 runs)",
+      "L7": "L7: unavailable (6 completed games on record)"
+     },
+     "gamesAvailable": 6,
+     "source": "mlb_stats_api_schedule",
+     "team": "MIL",
+     "unavailableReason": null,
+     "windows": {
+      "L10": null,
+      "L5": {
+       "ewma": 5.28,
+       "games": 5,
+       "marketRelative": {
+        "lineCoverage": {
+         "of": 5,
+         "withLine": 0
+        },
+        "meanMarginVsLine": null,
+        "medianMarginVsLine": null,
+        "overs": 0,
+        "oversPct": null
+       },
+       "max": 8,
+       "mean": 5.2,
+       "median": 5.0,
+       "min": 3,
+       "outlierDependence": {
+        "isOutlierDependent": false,
+        "meanMinusTrimmedMean": 0.2,
+        "topGameShareOfWindowRuns": 0.308
+       },
+       "scores": [
+        4,
+        5,
+        8,
+        3,
+        6
+       ],
+       "thresholdClears": {
+        "ge3": {
+         "games": 5,
+         "of": 5,
+         "pct": 1.0
+        },
+        "ge4": {
+         "games": 4,
+         "of": 5,
+         "pct": 0.8
+        },
+        "ge5": {
+         "games": 3,
+         "of": 5,
+         "pct": 0.6
+        },
+        "ge6": {
+         "games": 2,
+         "of": 5,
+         "pct": 0.4
+        }
+       },
+       "topGameShareOfWindowRuns": 0.308,
+       "totalRuns": 26,
+       "trimmedMean": 5.0,
+       "window": 5
+      },
+      "L7": null
+     }
+    },
+    "record": {
+     "divisionRank": "1",
+     "leagueRank": "1",
+     "losses": 59,
+     "pct": ".636",
+     "runDiff": 214,
+     "runsAllowed": 618,
+     "runsScored": 832,
+     "streak": "W5",
+     "wins": 103
+    }
+   },
+   "seriesDescription": "World Series"
+  },
+  "slate_date": "2026-10-23"
+ }
+}

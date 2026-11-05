@@ -32,9 +32,14 @@ been promoted into the model).
 SOURCES
 -------
   runs        ONE ranged MLB Stats API schedule call
-              (lib.edgelab.mlb_schedule.fetch_schedule_range -- this
-              repository's single canonical schedule adapter), parsed by
-              the existing extract_team_games_from_schedule().
+              (lib.edgelab.mlb_schedule.fetch_schedule_range_all_game_types
+              -- this repository's single canonical schedule adapter),
+              regular season AND every postseason round
+              (lib.edgelab.slate_day_contract.SCHEDULE_GAME_TYPES). With
+              gameType=R alone, every October form was built only from the
+              last regular-season games still inside the lookback: they
+              rolled off one by one, the L5/L7/L10 windows went null, and a
+              club's postseason scoring never appeared in its own form.
   team totals this repository's own archived Kalshi observations
               (data/edgelab/observations/<date>.jsonl[.gz]), turned into
               a per-date implied line by lib.team_total_line_history.
@@ -57,6 +62,7 @@ if ROOT not in sys.path:
 
 from lib.edgelab import mlb_schedule, storage
 from lib.edgelab.bullpen_usage import COMPLETED_STATUSES
+from lib.edgelab.slate_day_contract import SCHEDULE_GAME_TYPES
 from lib.team_offense_form import FORM_WINDOWS, build_form, format_form_line, hot_label
 from lib.team_total_line_history import margin_vs_line, team_lines_for_date
 
@@ -91,6 +97,7 @@ def parse_team_game_log(schedule_json):
                 by_team.setdefault(abbr, []).append({
                     "date": date,
                     "gamePk": game.get("gamePk"),
+                    "gameType": game.get("gameType"),
                     "gameNumber": game.get("gameNumber") or 1,
                     "side": side,
                     "runsScored": int(own["score"]),
@@ -167,7 +174,7 @@ def main():
     start = end - timedelta(days=max(1, args.lookback_days))
     start_s, end_s = start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
 
-    schedule_json = mlb_schedule.fetch_schedule_range(start_s, end_s)
+    schedule_json = mlb_schedule.fetch_schedule_range_all_game_types(start_s, end_s)
     if schedule_json is None:
         print(f"ERROR: MLB schedule fetch failed for {start_s}..{end_s} -- writing nothing", file=sys.stderr)
         return 1
@@ -193,6 +200,7 @@ def main():
         "lookbackDays": args.lookback_days,
         "formWindows": list(FORM_WINDOWS),
         "runsSource": "mlb_stats_api_schedule",
+        "gameTypes": list(SCHEDULE_GAME_TYPES),
         "marketLineSource": {
             "source": "data/edgelab/observations (archived Kalshi team-total ladder)",
             **line_coverage,

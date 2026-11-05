@@ -46,10 +46,18 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
     capture_date_missing = 0
     for r in hits:
         captured = r.get("capturedAt")
-        if isinstance(captured, str) and len(captured) >= 10 and captured[4:5] == "-" and captured[7:8] == "-":
-            capture_date_rows[captured[:10]] += 1
-        else:
+        if captured is None or captured == "":
             capture_date_missing += 1
+        else:
+            if not isinstance(captured, str):
+                raise ValueError("Non-string hitter-hit capturedAt timestamp")
+            try:
+                parsed = datetime.fromisoformat(captured.replace("Z", "+00:00"))
+            except ValueError as exc:
+                raise ValueError("Invalid hitter-hit capturedAt timestamp: " + captured) from exc
+            if parsed.tzinfo is None or parsed.utcoffset() is None:
+                raise ValueError("Hitter-hit capturedAt missing timezone: " + captured)
+            capture_date_rows[parsed.astimezone(timezone.utc).date().isoformat()] += 1
     result_tickers = Counter()
     missing = []
     tracked = []
@@ -59,6 +67,11 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
         results = {r.get("settlementResult") for r in rows}
         if len(statuses) != 1 or len(results) != 1:
             raise ValueError("Contradictory per-ticker archived settlement: " + ticker)
+        # A ticker must identify one contract/game. Multiple game IDs can
+        # indicate a doubleheader collision or an unsafe source join.
+        game_ids = sorted({str(r.get("gameId")) for r in rows if r.get("gameId") is not None})
+        if len(game_ids) > 1:
+            raise ValueError("Conflicting gameIds for exact hitter-hit ticker: " + ticker)
         status = next(iter(statuses))
         result = next(iter(results))
         if status == "SETTLED" and result not in TERMINAL_RESULT:
@@ -75,7 +88,6 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
 
         reasons = sorted({str(r.get("settlementUnavailableReason"))
                           for r in rows if r.get("settlementUnavailableReason")})
-        game_ids = sorted({str(r.get("gameId")) for r in rows if r.get("gameId") is not None})
         entry = {
             "marketTicker": ticker,
             "gameIds": game_ids,

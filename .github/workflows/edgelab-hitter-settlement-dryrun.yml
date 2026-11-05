@@ -1,0 +1,55 @@
+name: EdgeLab Hitter Settlement Dry-Run (#309)
+
+# READ-ONLY. Runs the existing canonical market settler (scripts/edgelab/backfill_player_prop_settlement.py ->
+# settle_markets.settle_date) with --dry-run over the Aug 1-20 pilot window and records per-family
+# observed/settled/void/unresolved counts plus the unresolved-reason breakdown. Writes nothing to the
+# repository (contents: read); output goes to the job summary and a run artifact only. This is NOT the wager
+# ledger reconciler (edgelab-settlement-reconcile.yml) and places/changes no bets.
+on:
+  push:
+    branches:
+      - audit/hitter-hit-settlement-dryrun
+    paths:
+      - ".github/workflows/edgelab-hitter-settlement-dryrun.yml"
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: "First date (YYYY-MM-DD)"
+        default: "2026-08-01"
+      end_date:
+        description: "Last date (YYYY-MM-DD)"
+        default: "2026-08-20"
+
+permissions:
+  contents: read
+
+jobs:
+  dryrun:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      GIT_LFS_SKIP_SMUDGE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements-ci.txt
+      - name: Dry-run the canonical settler (no writes)
+        env:
+          START: ${{ inputs.start_date || '2026-08-01' }}
+          END: ${{ inputs.end_date || '2026-08-20' }}
+        run: |
+          set -o pipefail
+          mkdir -p artifacts
+          python3 scripts/edgelab/backfill_player_prop_settlement.py --start-date "$START" --end-date "$END" --dry-run | tee artifacts/hitter_settlement_dryrun.txt
+          { echo '## Hitter settlement dry-run (no writes)'; echo '```'; cat artifacts/hitter_settlement_dryrun.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Confirm the working tree is unchanged
+        run: git diff --quiet && echo "no tracked changes" || { git status --short | head; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hitter-settlement-dryrun
+          path: artifacts/hitter_settlement_dryrun.txt

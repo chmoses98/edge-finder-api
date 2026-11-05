@@ -72,6 +72,21 @@ class HitterResultCoverageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Conflicting gameIds"):
             reconcile_hitter_rows([first, second])
 
+    def test_first_last_observation_use_absolute_utc_time(self):
+        # Lexical ISO sorting incorrectly puts the +02:00 capture after Z.
+        report = reconcile_hitter_rows([
+            row("SAME", when="2026-08-03T01:00:00+02:00"),
+            row("SAME", when="2026-08-03T00:30:00Z"),
+            row("NO-CAPTURE", when=None),
+        ])
+        by_ticker = {r["marketTicker"]: r for r in report["allTrackedTickers"]}
+        self.assertEqual(by_ticker["SAME"]["observedAtFirst"], "2026-08-02T23:00:00Z")
+        self.assertEqual(by_ticker["SAME"]["observedAtLast"], "2026-08-03T00:30:00Z")
+        self.assertIsNone(by_ticker["NO-CAPTURE"]["observedAtFirst"])
+        self.assertIsNone(by_ticker["NO-CAPTURE"]["observedAtLast"])
+        self.assertEqual(report["checkpointRowsByCapturedDate"], {"2026-08-02": 1, "2026-08-03": 1})
+        self.assertEqual(report["checkpointRowsMissingCapturedDate"], 1)
+
     def test_empty_hitter_sample(self):
         r = reconcile_hitter_rows([row("KXMLBTB-X", family="hitter_total_bases")])
         self.assertEqual(r["checkpointRows"], 0)

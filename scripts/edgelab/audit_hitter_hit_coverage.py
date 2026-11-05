@@ -44,6 +44,7 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
     status_rows, status_tickers = Counter(), Counter()
     capture_date_rows = Counter()
     capture_date_missing = 0
+    captured_utc_by_ticker = defaultdict(list)
     for r in hits:
         captured = r.get("capturedAt")
         if captured is None or captured == "":
@@ -57,7 +58,9 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
                 raise ValueError("Invalid hitter-hit capturedAt timestamp: " + captured) from exc
             if parsed.tzinfo is None or parsed.utcoffset() is None:
                 raise ValueError("Hitter-hit capturedAt missing timezone: " + captured)
-            capture_date_rows[parsed.astimezone(timezone.utc).date().isoformat()] += 1
+            captured_utc = parsed.astimezone(timezone.utc)
+            capture_date_rows[captured_utc.date().isoformat()] += 1
+            captured_utc_by_ticker[r["marketTicker"]].append(captured_utc)
     result_tickers = Counter()
     missing = []
     tracked = []
@@ -88,6 +91,7 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
 
         reasons = sorted({str(r.get("settlementUnavailableReason"))
                           for r in rows if r.get("settlementUnavailableReason")})
+        observed_times = captured_utc_by_ticker[ticker]
         entry = {
             "marketTicker": ticker,
             "gameIds": game_ids,
@@ -96,8 +100,8 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
             "recordedResult": result,
             "unavailableReasons": reasons,
             "modelLinkedCheckpointRows": linked,
-            "observedAtFirst": min((r["capturedAt"] for r in rows if r.get("capturedAt")), default=None),
-            "observedAtLast": max((r["capturedAt"] for r in rows if r.get("capturedAt")), default=None),
+            "observedAtFirst": min(observed_times).isoformat().replace("+00:00", "Z") if observed_times else None,
+            "observedAtLast": max(observed_times).isoformat().replace("+00:00", "Z") if observed_times else None,
         }
         tracked.append(entry)
         if status != "SETTLED":

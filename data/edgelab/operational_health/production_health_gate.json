@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-04T20:26:34Z",
+  "checkedAt": "2026-11-05T21:08:48Z",
   "summary": {
     "overall": "HEALTHY",
     "criticalFailureCount": 0,
@@ -12,10 +12,10 @@
       "id": "PROD-1",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "No MLB game day missed: last slate 2026-10-28 (7 calendar day(s) old), and the MLB schedule shows no playable game on 7 day(s) since (2026-10-29, 2026-10-30, 2026-10-31, 2026-11-01, 2026-11-02, 2026-11-03, 2026-11-04) -- off-day/offseason gap, not an outage",
+      "summary": "No MLB game day missed: last slate 2026-10-28 (8 calendar day(s) old), and the MLB schedule shows no playable game on 8 day(s) since (2026-10-29, 2026-10-30, 2026-10-31, 2026-11-01, 2026-11-02, 2026-11-03, 2026-11-04, 2026-11-05) -- off-day/offseason gap, not an outage",
       "detail": {
         "slateDate": "2026-10-28",
-        "lagDays": 7,
+        "lagDays": 8,
         "effectiveLagDays": 2,
         "verifiedOffDays": [
           "2026-10-29",
@@ -24,7 +24,8 @@
           "2026-11-01",
           "2026-11-02",
           "2026-11-03",
-          "2026-11-04"
+          "2026-11-04",
+          "2026-11-05"
         ]
       }
     },
@@ -32,10 +33,10 @@
       "id": "PROD-2",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Settlement corpus current: latest partition 2026-11-03 (-4 day(s) old)",
+      "summary": "Settlement corpus current: latest partition 2026-11-04 (-5 day(s) old)",
       "detail": {
-        "latestPartition": "2026-11-03",
-        "lagDays": -4,
+        "latestPartition": "2026-11-04",
+        "lagDays": -5,
         "maxLagDays": 2
       }
     },
@@ -43,10 +44,10 @@
       "id": "PROD-3",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Recommendation ledger current: latest partition 2026-11-03 (-4 day(s) old)",
+      "summary": "Recommendation ledger current: latest partition 2026-11-04 (-5 day(s) old)",
       "detail": {
-        "latestPartition": "2026-11-03",
-        "lagDays": -4,
+        "latestPartition": "2026-11-04",
+        "lagDays": -5,
         "maxLagDays": 2
       }
     },
@@ -54,7 +55,7 @@
       "id": "PROD-4",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Prediction and settlement partitions are in step (evaluations 2026-11-03, settlements 2026-11-03)",
+      "summary": "Prediction and settlement partitions are in step (evaluations 2026-11-04, settlements 2026-11-04)",
       "detail": {
         "divergenceDays": 0
       }
@@ -73,10 +74,10 @@
       "id": "PROD-6",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Model-evaluation corpus current: latest partition 2026-11-03 (-4 day(s) old)",
+      "summary": "Model-evaluation corpus current: latest partition 2026-11-04 (-5 day(s) old)",
       "detail": {
-        "latestPartition": "2026-11-03",
-        "lagDays": -4,
+        "latestPartition": "2026-11-04",
+        "lagDays": -5,
         "maxLagDays": 2
       }
     },
@@ -103,8 +104,8 @@
       "status": "PASS",
       "summary": "Every authenticated MLB wager the router holds is on the canonical ledger (router newest game date 2026-10-28, canonical 2026-10-28, 131 eligible)",
       "detail": {
-        "latestRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/41898151405",
-        "judgedRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/41867756313",
+        "latestRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/42105483501",
+        "judgedRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/42067309626",
         "routerCoverage": {
           "eligible": 131,
           "newestFirstFillUtc": "2026-10-29",
@@ -126,12 +127,11 @@
       "id": "RSCH-1",
       "severity": "RESEARCH_DEGRADATION",
       "status": "PASS",
-      "summary": "Research heartbeat current (latest 2026-11-03)",
+      "summary": "Research heartbeat current (latest 2026-11-04)",
       "detail": {}
     }
   ],
   "verifiedOffDays": [
-    "2026-10-21",
     "2026-10-22",
     "2026-10-25",
     "2026-10-29",
@@ -140,7 +140,8 @@
     "2026-11-01",
     "2026-11-02",
     "2026-11-03",
-    "2026-11-04"
+    "2026-11-04",
+    "2026-11-05"
   ],
   "thresholds": {
     "maxSettlementLagDays": 2,

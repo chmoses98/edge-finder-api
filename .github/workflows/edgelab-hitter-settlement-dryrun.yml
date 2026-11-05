@@ -46,10 +46,37 @@ jobs:
           mkdir -p artifacts
           python3 scripts/edgelab/backfill_player_prop_settlement.py --start-date "$START" --end-date "$END" --dry-run | tee artifacts/hitter_settlement_dryrun.txt
           { echo '## Hitter settlement dry-run (no writes)'; echo '```'; cat artifacts/hitter_settlement_dryrun.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Categorize settler warnings (why game_not_final / boxscore_fetch_failed) - no writes
+        env:
+          START: ${{ inputs.start_date || '2026-08-01' }}
+          END: ${{ inputs.end_date || '2026-08-20' }}
+        run: |
+          python3 - <<'PY' | tee artifacts/hitter_settlement_warnings.txt
+          import os, re, json, collections
+          from scripts.edgelab.backfill_player_prop_settlement import _date_range
+          from scripts.edgelab.settle_markets import settle_date
+          cats = collections.Counter(); games = collections.defaultdict(set); archived = collections.Counter()
+          for d in _date_range(os.environ["START"], os.environ["END"]):
+              for w in settle_date(d, dry_run=True)["warnings"]:
+                  if "identity conflict" in w: k = "identity_conflict"
+                  elif "feed unavailable" in w:
+                      k = "feed_unavailable_fell_back_to_archived_status"
+                      m = re.search(r"archived status '([^']*)'", w)
+                      if m: archived[m.group(1)] += 1
+                  elif "fetch failed" in w: k = "feed_fetch_exception"
+                  elif "no MLB gamePk" in w: k = "no_gamepk"
+                  elif "linescore" in w: k = "linescore_unavailable"
+                  else: k = "other"
+                  cats[k] += 1
+                  m = re.search(r"gamePk=(\d+)", w)
+                  if m: games[k].add(m.group(1))
+          print(json.dumps({"warningCategories": cats, "distinctGamesByCategory": {k: len(v) for k, v in games.items()}, "archivedStatusAtFallback": archived}, indent=1))
+          PY
+          { echo '## Settler warning categories (dry-run, no writes)'; echo '```'; cat artifacts/hitter_settlement_warnings.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Confirm the working tree is unchanged
         run: git diff --quiet && echo "no tracked changes" || { git status --short | head; exit 1; }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: hitter-settlement-dryrun
-          path: artifacts/hitter_settlement_dryrun.txt
+          path: artifacts/

@@ -173,6 +173,24 @@ class TestProductionEquivalence:
             lineup_fetch_fn=lambda *a, **k: None, batter_woba_map={}, team_woba_map={},
         )
 
+    @staticmethod
+    def _without_ingestion_wallclock(records):
+        """Compare core outputs independent of the non-semantic ingest clock.
+
+        Separate prospective cycles can legitimately cross a UTC second.
+        Preserve every modeling/status/provenance field except the ingestion
+        timestamps, which are not part of the capture-isolation contract.
+        """
+        from copy import deepcopy
+
+        normalized = deepcopy(records)
+        for record in normalized:
+            record.pop("createdAt", None)
+            provenance = record.get("provenance")
+            if isinstance(provenance, dict):
+                provenance.pop("ingestedAt", None)
+        return normalized
+
     def test_core_outputs_unaffected_by_capture_succeeding_failing_or_disabled(self):
         from lib.edgelab.research.uncertainty_prospective_capture import build_uncertainty_capture_records_for_snapshot_cycle
 
@@ -180,7 +198,7 @@ class TestProductionEquivalence:
 
         # "disabled": simply never call the capture step at all.
         new_records_b, run_log_b, evaluated_b = self._run_core_cycle()
-        assert new_records_a == new_records_b
+        assert self._without_ingestion_wallclock(new_records_a) == self._without_ingestion_wallclock(new_records_b)
         assert run_log_a == run_log_b
 
         # "succeeding": call the capture step after computing core outputs, on a fresh run.
@@ -188,7 +206,7 @@ class TestProductionEquivalence:
         build_uncertainty_capture_records_for_snapshot_cycle(
             evaluated_c, compute_projection_context_fn=_fake_ctx_fn, run_id="RUN1", now="2027-03-30T18:00:00Z",
         )
-        assert new_records_a == new_records_c
+        assert self._without_ingestion_wallclock(new_records_a) == self._without_ingestion_wallclock(new_records_c)
         assert run_log_a == run_log_c
 
         # "failing": capture step raises internally -- core outputs from THIS run were already
@@ -200,7 +218,7 @@ class TestProductionEquivalence:
             )
         except Exception:
             pass  # even if it somehow escaped isolation, core outputs below are from BEFORE this call
-        assert new_records_a == new_records_d
+        assert self._without_ingestion_wallclock(new_records_a) == self._without_ingestion_wallclock(new_records_d)
         assert run_log_a == run_log_d
 
     def test_capture_module_never_imports_recommendation_or_staking_logic(self):

@@ -56,6 +56,22 @@ class HitterResultCoverageTests(unittest.TestCase):
         self.assertEqual(r["checkpointRowsByCapturedDate"], {"2026-08-02": 1})
         self.assertEqual(r["checkpointRowsMissingCapturedDate"], 1)
 
+    def test_timestamp_utc_day_and_fail_closed_invalid_time(self):
+        report = reconcile_hitter_rows([
+            row("A", when="2026-08-02T23:30:00-05:00"),
+            row("B", when="2026-08-03T01:00:00Z"),
+        ])
+        self.assertEqual(report["checkpointRowsByCapturedDate"], {"2026-08-03": 2})
+        for invalid in ("2026-99-99T00:00:00Z", "2026-08-02T12:00:00", 123):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                reconcile_hitter_rows([row("A", when=invalid)])
+
+    def test_reject_doubleheader_game_identity_collision(self):
+        first = row("SAME-TICKER")
+        second = dict(row("SAME-TICKER", when="2026-08-02T13:00:00Z"), gameId=456)
+        with self.assertRaisesRegex(ValueError, "Conflicting gameIds"):
+            reconcile_hitter_rows([first, second])
+
     def test_empty_hitter_sample(self):
         r = reconcile_hitter_rows([row("KXMLBTB-X", family="hitter_total_bases")])
         self.assertEqual(r["checkpointRows"], 0)

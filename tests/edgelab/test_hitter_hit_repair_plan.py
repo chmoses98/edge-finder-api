@@ -32,6 +32,11 @@ class RepairPlanTests(unittest.TestCase):
         self.assertEqual(len(plan["reviewQueue"]), 3)
         self.assertTrue(all(x["writeAuthorized"] is False for x in plan["reviewQueue"]))
         self.assertEqual(plan["historicalPITForecastsRecovered"], 0)
+    def test_binary_classification_must_match_official_direction(self):
+        a, b = sample()
+        b["byTicker"][0]["officialResult"] = "no"  # class still EXCHANGE_CONFIRMED_YES
+        with self.assertRaisesRegex(ValueError, "Contradictory official binary evidence"):
+            build_plan(a, b)
     def test_checkpoint_mismatch_rejected(self):
         a, b = sample()
         b["byTicker"][0]["checkpointRows"] = 3

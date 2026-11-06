@@ -103,14 +103,14 @@ jobs:
               assert sum(entity["byPartitionDate"].values()) == entity["recordCount"], f"{name} partition count drift"
               assert len(entity["byPartitionDate"]) == entity["partitionCount"], f"{name} partition inventory drift"
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
-              summary.write("\\n### Independent cross-artifact reconciliation\\n")
-              summary.write(f"- Exchange-confirmed binary tickers: **{exchange['officialBinaryConfirmedTickers']:,}**\\n")
-              summary.write(f"- Recorded outcome conflicts: **{exchange['recordedResultConflicts']:,}**\\n")
-              summary.write(f"- Official binary missing in recorded settlements: **{exchange['officialBinaryMissingFromRecorded']:,}**\\n")
-              summary.write(f"- Recorded settled without official binary confirmation: **{exchange['recordedSettledWithoutOfficialBinary']:,}**\\n")
+              summary.write("\n### Independent cross-artifact reconciliation\n")
+              summary.write(f"- Exchange-confirmed binary tickers: **{exchange['officialBinaryConfirmedTickers']:,}**\n")
+              summary.write(f"- Recorded outcome conflicts: **{exchange['recordedResultConflicts']:,}**\n")
+              summary.write(f"- Official binary missing in recorded settlements: **{exchange['officialBinaryMissingFromRecorded']:,}**\n")
+              summary.write(f"- Recorded settled without official binary confirmation: **{exchange['recordedSettledWithoutOfficialBinary']:,}**\n")
               for name, entity in partitions["entities"].items():
-                  summary.write(f"- {name}: **{entity['recordCount']:,} raw records** in **{entity['partitionCount']} partitions**\\n")
-              summary.write("- Raw records, unique tickers, and checkpoint rows are distinct denominators. This check does not establish historical PIT model joins.\\n")
+                  summary.write(f"- {name}: **{entity['recordCount']:,} raw records** in **{entity['partitionCount']} partitions**\n")
+              summary.write("- Raw records, unique tickers, and checkpoint rows are distinct denominators. This check does not establish historical PIT model joins.\n")
           PY
 
       - name: Upload exact-ticker unresolved manifest

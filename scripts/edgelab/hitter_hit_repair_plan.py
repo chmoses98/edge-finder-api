@@ -30,11 +30,14 @@ def build_plan(coverage, exchange):
     official = index(exchange.get("byTicker"))
     if local.keys() != official.keys() or len(local) != coverage.get("uniqueMarketTickers") or len(official) != exchange.get("uniqueTrackedTickers"):
         raise ValueError("Ticker denominator drift")
+    if any(type(row.get("checkpointRows")) is not int or row["checkpointRows"] < 1 for row in local.values()):
+        raise ValueError("Invalid checkpoint count")
     checkpoints = sum(row["checkpointRows"] for row in local.values())
     if checkpoints != coverage.get("checkpointRows") or checkpoints != exchange.get("checkpointRows") or checkpoints > BASELINE:
         raise ValueError("Checkpoint denominator drift")
-    if sum(exchange.get("exchangeClassificationCounts", {}).values()) != len(official):
-        raise ValueError("Exchange classification denominator drift")
+    declared_classes = exchange.get("exchangeClassificationCounts")
+    if not isinstance(declared_classes, dict) or Counter(row.get("exchangeClassification") for row in official.values()) != Counter(declared_classes):
+        raise ValueError("Exchange classification evidence drift")
     counts, queue = Counter(), []
     for ticker in sorted(local):
         a, b = local[ticker], official[ticker]

@@ -44,6 +44,15 @@ class RepairPlanTests(unittest.TestCase):
         a, b = sample()
         b["byTicker"][1]["officialResult"] = "scalar"
         with self.assertRaises(ValueError): build_plan(a, b)
+    def test_classification_totals_must_match_per_ticker_evidence(self):
+        a, b = sample()
+        b["exchangeClassificationCounts"]["EXCHANGE_CONFIRMED_YES"] = 1
+        b["exchangeClassificationCounts"]["EXCHANGE_CONFIRMED_NO"] = 2
+        with self.assertRaisesRegex(ValueError, "classification evidence drift"): build_plan(a, b)
+    def test_invalid_checkpoint_count_rejected(self):
+        a, b = sample()
+        a["allTrackedTickers"][0]["checkpointRows"] = -1
+        with self.assertRaisesRegex(ValueError, "Invalid checkpoint count"): build_plan(a, b)
     def test_baseline_drift_rejected(self):
         a, b = sample()
         a["checkpointRows"] = b["checkpointRows"] = 23296

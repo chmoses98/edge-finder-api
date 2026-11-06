@@ -19,33 +19,15 @@ import glob
 import gzip
 import json
 import os
-import re
 import sys
 from collections import Counter, defaultdict
-from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from lib.edgelab.hitter_snapshot_join import parse_utc, select_pit_snapshot
+from lib.edgelab.hitter_snapshot_join import parse_utc, select_pit_snapshot, ticker_event_start_utc
 
 HITTER_FAMILIES = ("hitter_hits", "hitter_total_bases", "hitter_rbis", "hitter_hits_runs_rbis")
 DATA = "data/edgelab"
-_MONTHS = {m: i for i, m in enumerate(["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"], 1)}
-_EVENT = re.compile(r"^[A-Z0-9]+-(\d{2})([A-Z]{3})(\d{2})(\d{2})(\d{2})")
-_ET = ZoneInfo("America/New_York")
-
-
-def ticker_event_start_utc(ticker):
-    """Scheduled first pitch encoded in the ticker (ET wall clock) as a UTC instant, or None if it doesn't parse."""
-    m = _EVENT.match(ticker or "")
-    if not m or m.group(2) not in _MONTHS:
-        return None
-    yy, mon, dd, hh, mi = int(m.group(1)), _MONTHS[m.group(2)], int(m.group(3)), int(m.group(4)), int(m.group(5))
-    try:
-        return datetime(2000 + yy, mon, dd, hh, mi, tzinfo=_ET).astimezone(timezone.utc)
-    except ValueError:
-        return None
 
 
 def _rows(path):

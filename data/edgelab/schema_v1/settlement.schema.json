@@ -49,6 +49,7 @@
         "gamePk": {"type": ["integer", "null"]},
         "gameStatus": {"type": ["string", "null"], "description": "Authoritative MLB Stats API detailedState at fetch time, e.g. 'Final'"},
         "sourceSystem": {"type": ["string", "null"]},
+        "gameStatusSource": {"type": ["string", "null"], "enum": ["LIVE_FEED", "ARCHIVED_NO_GAMEPK", "ARCHIVED_FEED_UNAVAILABLE", "ARCHIVED_IDENTITY_CONFLICT", "ARCHIVED_FEED_STATUS_MISSING", null], "description": "Where gameStatus came from: the live MLB feed, or an archived value inherited because the live status could not be used. A non-final status from a non-LIVE_FEED source is reported as game_status_unverified_<source>, never game_not_final."},
         "sourceEndpoint": {"type": ["string", "null"], "description": "e.g. /api/v1.1/game/{gamePk}/feed/live"},
         "sourcePayloadHash": {"type": ["string", "null"], "description": "sha1 of the raw feed payload actually used -- lets a settlement be traced back to the exact response without committing the full feed"},
         "fetchedAt": {"type": ["string", "null"], "format": "date-time"},

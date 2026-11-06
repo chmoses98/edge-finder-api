@@ -90,6 +90,13 @@ def build_game_outcome_from_linescore(linescore, game_status):
     }
 
 
+STATUS_SOURCE_LIVE_FEED = "LIVE_FEED"
+STATUS_SOURCE_ARCHIVED_NO_GAMEPK = "ARCHIVED_NO_GAMEPK"
+STATUS_SOURCE_ARCHIVED_FEED_UNAVAILABLE = "ARCHIVED_FEED_UNAVAILABLE"
+STATUS_SOURCE_ARCHIVED_IDENTITY_CONFLICT = "ARCHIVED_IDENTITY_CONFLICT"
+STATUS_SOURCE_ARCHIVED_FEED_STATUS_MISSING = "ARCHIVED_FEED_STATUS_MISSING"
+
+
 def _fetch_authoritative_game_context(game, warnings):
     """
     Fetches (at most once per gamePk, for EVERY game that has one -- not
@@ -132,7 +139,12 @@ def _fetch_authoritative_game_context(game, warnings):
     """
     game_pk = (game or {}).get("mlbGamePk")
     archived_status = (game or {}).get("status")
-    empty_context = {"gameStatus": archived_status, "boxscoreTeams": {}, "boxscoreFetchMeta": {}}
+    def _fallback(source, meta=None):
+        # Every non-live status is labeled with WHY the live feed was not used, so "game_not_final" can never be
+        # reported for a game whose status is merely unknown/stale (no gamePk, feed unavailable, identity conflict).
+        return {"gameStatus": archived_status, "boxscoreTeams": {}, "boxscoreFetchMeta": meta or {}, "statusSource": source}
+
+    empty_context = _fallback(STATUS_SOURCE_ARCHIVED_NO_GAMEPK)
     if not game_pk:
         # The existing "no MLB gamePk resolved for gameId=..." warning
         # (below, in the linescore-fetch block) already covers this case
@@ -147,7 +159,7 @@ def _fetch_authoritative_game_context(game, warnings):
 
     if feed is None:
         warnings.append(f"authoritative game feed unavailable for gamePk={game_pk}; falling back to archived status {archived_status!r}")
-        return {**empty_context, "boxscoreFetchMeta": {"gamePk": game_pk}}
+        return _fallback(STATUS_SOURCE_ARCHIVED_FEED_UNAVAILABLE, {"gamePk": game_pk})
 
     live_away, live_home = mlb_boxscore.extract_teams(feed)
     archived_away, archived_home = (game or {}).get("awayTeam"), (game or {}).get("homeTeam")
@@ -157,10 +169,12 @@ def _fetch_authoritative_game_context(game, warnings):
             f"does not match live feed matchup {live_away}@{live_home} -- keeping archived status "
             f"{archived_status!r}, never settling against a mismatched game"
         )
-        return {**empty_context, "boxscoreFetchMeta": {"gamePk": game_pk, "identityConflict": True}}
+        return _fallback(STATUS_SOURCE_ARCHIVED_IDENTITY_CONFLICT, {"gamePk": game_pk, "identityConflict": True})
 
+    live_status = mlb_boxscore.extract_game_status(feed)
     return {
-        "gameStatus": mlb_boxscore.extract_game_status(feed) or archived_status,
+        "gameStatus": live_status or archived_status,
+        "statusSource": STATUS_SOURCE_LIVE_FEED if live_status else STATUS_SOURCE_ARCHIVED_FEED_STATUS_MISSING,
         "boxscoreTeams": mlb_boxscore.extract_boxscore_teams(feed),
         "boxscoreFetchMeta": {
             "gamePk": game_pk,
@@ -242,6 +256,7 @@ def settle_date(date, dry_run=False):
     bet_updates = []
     by_family = {}
     unresolved_reasons_by_family = {}
+    unresolved_games_by_reason = {}  # family -> reason -> set(gameId): observations are NOT distinct games
     meaningful_settlement_changes = 0
     terminal_regressions_prevented = 0
 
@@ -285,6 +300,7 @@ def settle_date(date, dry_run=False):
             game_outcome.update({
                 "boxscoreTeams": game_context["boxscoreTeams"],
                 "playerPropGameStatus": game_context["gameStatus"],
+                "playerPropStatusSource": game_context.get("statusSource"),
                 "boxscoreFetchMeta": game_context["boxscoreFetchMeta"],
             })
 
@@ -303,6 +319,7 @@ def settle_date(date, dry_run=False):
             family_counts["unresolved"] += 1
             unresolved_reasons_by_family.setdefault(family, {}).setdefault(reason, 0)
             unresolved_reasons_by_family[family][reason] += 1
+            unresolved_games_by_reason.setdefault(family, {}).setdefault(reason, set()).add(game_id)
 
         checkpoint_prices = [
             {"checkpoint": q["checkpoint"], "clvQuoteId": q["clvQuoteId"],
@@ -477,6 +494,10 @@ def settle_date(date, dry_run=False):
         },
         "byFamily": by_family,
         "unresolvedReasonsByFamily": unresolved_reasons_by_family,
+        "unresolvedDistinctGamesByReason": {
+            fam: {reason: len(games) for reason, games in reasons.items()}
+            for fam, reasons in unresolved_games_by_reason.items()
+        },
     }
 
 

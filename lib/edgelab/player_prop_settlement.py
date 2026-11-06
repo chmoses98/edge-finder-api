@@ -110,7 +110,7 @@ def _evidence_candidates(candidates):
 
 
 def settle_player_prop_market(market, game_status, boxscore_teams, away_abbr=None, home_abbr=None,
-                               kalshi_official_result=None, fetch_meta=None):
+                               kalshi_official_result=None, fetch_meta=None, game_status_source=None):
     """
     market: a Market dimension record dict for one player-prop ticker
       (must have marketFamily/marketTicker/eventTicker/title/gameId).
@@ -147,6 +147,7 @@ def settle_player_prop_market(market, game_status, boxscore_teams, away_abbr=Non
     evidence = {
         "gamePk": fetch_meta.get("gamePk"),
         "gameStatus": game_status,
+        "gameStatusSource": game_status_source,
         "sourceSystem": "MLB_STATS_API",
         "sourceEndpoint": fetch_meta.get("sourceEndpoint"),
         "sourcePayloadHash": fetch_meta.get("sourcePayloadHash"),
@@ -172,7 +173,11 @@ def settle_player_prop_market(market, game_status, boxscore_teams, away_abbr=Non
         return SETTLEMENT_UNRESOLVED, None, "unrecognized_player_prop_family", evidence
 
     if not mlb_boxscore.is_final_status(game_status):
-        return SETTLEMENT_UNRESOLVED, None, "game_not_final", evidence
+        # "game_not_final" is reserved for a status that came from the live feed. A status inherited from a stale
+        # archive (no gamePk, feed unavailable, identity conflict, feed without a status) is UNKNOWN, not "not final".
+        if game_status_source in (None, "LIVE_FEED"):
+            return SETTLEMENT_UNRESOLVED, None, "game_not_final", evidence
+        return SETTLEMENT_UNRESOLVED, None, f"game_status_unverified_{game_status_source.lower()}", evidence
 
     if not boxscore_teams:
         return SETTLEMENT_UNRESOLVED, None, "boxscore_fetch_failed", evidence

@@ -91,11 +91,15 @@ def test_counts_by_family_and_unresolved_reasons_aggregate_across_dates(tmp_path
     for date in dates:
         _seed_date(date)
     monkeypatch.setattr(settle_markets_module, "fetch_mlb_linescore", None)
-    # No network -- feed fetch fails both days -> both unresolved with the same reason.
+    # No network -- feed fetch fails both days -> both unresolved with the same reason. A failed feed is an UNKNOWN
+    # status (archived fallback), not a genuinely unfinished game, so it is no longer reported as game_not_final (#309).
     monkeypatch.setattr(mlb_boxscore, "fetch_game_feed", lambda game_pk, timeout=15: None)
 
     summary = run_backfill(dates, dry_run=True)
     assert summary["byFamily"]["pitcher_strikeouts"]["observed"] == 2
     assert summary["byFamily"]["pitcher_strikeouts"]["unresolved"] == 2
-    assert summary["unresolvedReasonsByFamily"]["pitcher_strikeouts"]["game_not_final"] == 2
+    assert summary["unresolvedReasonsByFamily"]["pitcher_strikeouts"] == {"game_status_unverified_archived_feed_unavailable": 2}
+    assert "game_not_final" not in summary["unresolvedReasonsByFamily"]["pitcher_strikeouts"]
+    # one game per date -> 2 distinct (date, game) pairs behind the 2 observations
+    assert summary["unresolvedDistinctGamesByReason"]["pitcher_strikeouts"] == {"game_status_unverified_archived_feed_unavailable": 2}
     assert len(summary["perDate"]) == 2

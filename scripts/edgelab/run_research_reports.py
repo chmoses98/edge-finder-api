@@ -65,6 +65,9 @@ def _load_universe(dates):
         observations.extend(storage.read_records(storage.partition_path("observations", date, compressed=False)))
         settlements.extend(storage.read_partition("settlements", date))
         evaluations.extend(storage.read_partition("model_evaluations", date))
+        # PIT-valid evaluations built from prospective hitter snapshots (#309); empty where none exist. pipelineRunId is the
+        # snapshot's own generation time, so lib.edgelab.temporal_alignment keeps every join no-look-ahead.
+        evaluations.extend(storage.read_partition("model_evaluations_hitter_snapshot", date))
         recommendations.extend(storage.read_partition("recommendations", date))
         games.extend(storage.read_records(storage.partition_path("games", date)))
         research_runs.extend(storage.read_records(storage.partition_path("research_runs", date)))

@@ -22,9 +22,27 @@ Rules (never relaxed to raise coverage):
     generated at or before it;
   * every rejection carries an explicit reason; nothing is fabricated and a rejected observation stays unjoined.
 """
+import re
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 STATUS_PROJECTED = "PROJECTED"
+
+_MONTHS = {m: i for i, m in enumerate(["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"], 1)}
+_EVENT = re.compile(r"^[A-Z0-9]+-(\d{2})([A-Z]{3})(\d{2})(\d{2})(\d{2})")
+_ET = ZoneInfo("America/New_York")
+
+
+def ticker_event_start_utc(ticker):
+    """Scheduled first pitch encoded in the exact ticker (US/Eastern wall clock) as a UTC instant, or None if it doesn't parse."""
+    m = _EVENT.match(ticker or "")
+    if not m or m.group(2) not in _MONTHS:
+        return None
+    yy, mon, dd, hh, mi = int(m.group(1)), _MONTHS[m.group(2)], int(m.group(3)), int(m.group(4)), int(m.group(5))
+    try:
+        return datetime(2000 + yy, mon, dd, hh, mi, tzinfo=_ET).astimezone(timezone.utc)
+    except ValueError:
+        return None
 
 R_NO_SNAPSHOT = "NO_SNAPSHOT_FOR_TICKER"
 R_IDENTITY = "IDENTITY_MISMATCH"

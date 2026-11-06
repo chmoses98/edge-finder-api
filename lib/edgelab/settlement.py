@@ -222,6 +222,7 @@ def settle_market_full(market, game_outcome):
                 market.get("marketTicker")
             ),
             fetch_meta=game_outcome.get("boxscoreFetchMeta"),
+            game_status_source=game_outcome.get("playerPropStatusSource"),
         )
     status, result, reason = settle_market(market, game_outcome)
     return status, result, reason, None

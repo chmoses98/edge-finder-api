@@ -56,6 +56,15 @@ def _merge_family_counts(total_by_family, date_by_family):
             totals[key] += value
 
 
+def _merge_distinct_games(total, per_date, date):
+    """Distinct games are counted per (date, gameId): the same gameId on two dates is two games, and observations are
+    never games (one game carries dozens of markets)."""
+    for family, reasons in per_date.items():
+        for reason, n in reasons.items():
+            total.setdefault(family, {}).setdefault(reason, 0)
+            total[family][reason] += n
+
+
 def _merge_unresolved_reasons(total_reasons, date_reasons):
     for family, reasons in date_reasons.items():
         totals = total_reasons.setdefault(family, {})
@@ -72,6 +81,7 @@ def run_backfill(dates, dry_run=False):
     """
     by_family = {}
     unresolved_reasons_by_family = {}
+    distinct_games_by_reason = {}
     per_date = []
 
     for date in dates:
@@ -82,6 +92,11 @@ def run_backfill(dates, dry_run=False):
             if family in PLAYER_PROP_FAMILIES
         }
         _merge_family_counts(by_family, player_prop_family_counts)
+        _merge_distinct_games(
+            distinct_games_by_reason,
+            {f: r for f, r in summary.get("unresolvedDistinctGamesByReason", {}).items() if f in PLAYER_PROP_FAMILIES},
+            date,
+        )
         _merge_unresolved_reasons(
             unresolved_reasons_by_family,
             {f: r for f, r in summary["unresolvedReasonsByFamily"].items() if f in PLAYER_PROP_FAMILIES},
@@ -92,6 +107,7 @@ def run_backfill(dates, dry_run=False):
         "dryRun": dry_run,
         "byFamily": by_family,
         "unresolvedReasonsByFamily": unresolved_reasons_by_family,
+        "unresolvedDistinctGamesByReason": distinct_games_by_reason,
         "perDate": per_date,
     }
 
@@ -123,6 +139,9 @@ def main():
     print("Unresolved-reason breakdown:")
     for family in sorted(summary["unresolvedReasonsByFamily"]):
         print(f"  {family}: {json.dumps(summary['unresolvedReasonsByFamily'][family])}")
+    print("Distinct games behind each unresolved reason (summed per date; observations are NOT games):")
+    for family in sorted(summary["unresolvedDistinctGamesByReason"]):
+        print(f"  {family}: {json.dumps(summary['unresolvedDistinctGamesByReason'][family])}")
 
     return 0
 

@@ -48,7 +48,7 @@ def build_plan(coverage, exchange):
         cls = b["exchangeClassification"]
         outcome = b.get("officialResult")
         recorded = a["settlementStatus"] == "SETTLED"
-        if cls in BINARY and outcome not in ("yes", "no"):
+        if cls in BINARY and outcome != ("yes" if cls == "EXCHANGE_CONFIRMED_YES" else "no"):
             raise ValueError("Contradictory official binary evidence")
         if cls in BINARY and recorded and a.get("recordedResult") != outcome.upper():
             category = "CONFLICT_REQUIRES_RULE_REVIEW"

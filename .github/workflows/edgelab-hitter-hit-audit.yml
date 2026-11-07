@@ -61,8 +61,8 @@ jobs:
 
       - name: Trace raw market observations into standardized hitter-hit checkpoints
         run: |
-          python scripts/edgelab/audit_hitter_hit_funnel.py \\
-            --start-date 2026-08-01 --end-date 2026-08-20 \\
+          python scripts/edgelab/audit_hitter_hit_funnel.py \
+            --start-date 2026-08-01 --end-date 2026-08-20 \
             --output artifacts/hitter_hit_checkpoint_funnel_aug_01_20.json
 
       - name: Read official exchange results for EVERY archived hitter-hit ticker (no writes)

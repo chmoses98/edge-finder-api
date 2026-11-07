@@ -4,6 +4,8 @@ import argparse
 from collections import Counter
 import json
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from datetime import datetime, timezone
 
 from scripts.edgelab.run_research_reports import _discover_dates, _load_universe

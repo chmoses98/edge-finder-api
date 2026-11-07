@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-06T21:52:16Z",
+  "checkedAt": "2026-11-07T18:33:20Z",
   "summary": {
     "overall": "HEALTHY",
     "criticalFailureCount": 0,
@@ -12,10 +12,10 @@
       "id": "PROD-1",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "No MLB game day missed: last slate 2026-10-28 (9 calendar day(s) old), and the MLB schedule shows no playable game on 9 day(s) since (2026-10-29, 2026-10-30, 2026-10-31, 2026-11-01, 2026-11-02, 2026-11-03, 2026-11-04, 2026-11-05, 2026-11-06) -- off-day/offseason gap, not an outage",
+      "summary": "No MLB game day missed: last slate 2026-10-28 (10 calendar day(s) old), and the MLB schedule shows no playable game on 10 day(s) since (2026-10-29, 2026-10-30, 2026-10-31, 2026-11-01, 2026-11-02, 2026-11-03, 2026-11-04, 2026-11-05, 2026-11-06, 2026-11-07) -- off-day/offseason gap, not an outage",
       "detail": {
         "slateDate": "2026-10-28",
-        "lagDays": 9,
+        "lagDays": 10,
         "effectiveLagDays": 2,
         "verifiedOffDays": [
           "2026-10-29",
@@ -26,7 +26,8 @@
           "2026-11-03",
           "2026-11-04",
           "2026-11-05",
-          "2026-11-06"
+          "2026-11-06",
+          "2026-11-07"
         ]
       }
     },
@@ -34,10 +35,10 @@
       "id": "PROD-2",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Settlement corpus current: latest partition 2026-11-05 (-6 day(s) old)",
+      "summary": "Settlement corpus current: latest partition 2026-11-06 (-7 day(s) old)",
       "detail": {
-        "latestPartition": "2026-11-05",
-        "lagDays": -6,
+        "latestPartition": "2026-11-06",
+        "lagDays": -7,
         "maxLagDays": 2
       }
     },
@@ -45,10 +46,10 @@
       "id": "PROD-3",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Recommendation ledger current: latest partition 2026-11-05 (-6 day(s) old)",
+      "summary": "Recommendation ledger current: latest partition 2026-11-06 (-7 day(s) old)",
       "detail": {
-        "latestPartition": "2026-11-05",
-        "lagDays": -6,
+        "latestPartition": "2026-11-06",
+        "lagDays": -7,
         "maxLagDays": 2
       }
     },
@@ -56,7 +57,7 @@
       "id": "PROD-4",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Prediction and settlement partitions are in step (evaluations 2026-11-05, settlements 2026-11-05)",
+      "summary": "Prediction and settlement partitions are in step (evaluations 2026-11-06, settlements 2026-11-06)",
       "detail": {
         "divergenceDays": 0
       }
@@ -75,10 +76,10 @@
       "id": "PROD-6",
       "severity": "CRITICAL_PRODUCTION",
       "status": "PASS",
-      "summary": "Model-evaluation corpus current: latest partition 2026-11-05 (-6 day(s) old)",
+      "summary": "Model-evaluation corpus current: latest partition 2026-11-06 (-7 day(s) old)",
       "detail": {
-        "latestPartition": "2026-11-05",
-        "lagDays": -6,
+        "latestPartition": "2026-11-06",
+        "lagDays": -7,
         "maxLagDays": 2
       }
     },
@@ -105,8 +106,8 @@
       "status": "PASS",
       "summary": "Every authenticated MLB wager the router holds is on the canonical ledger (router newest game date 2026-10-28, canonical 2026-10-28, 131 eligible)",
       "detail": {
-        "latestRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/42283468269",
-        "judgedRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/42255545234",
+        "latestRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/42394599715",
+        "judgedRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/42377077830",
         "routerCoverage": {
           "eligible": 131,
           "newestFirstFillUtc": "2026-10-29",
@@ -128,7 +129,7 @@
       "id": "RSCH-1",
       "severity": "RESEARCH_DEGRADATION",
       "status": "PASS",
-      "summary": "Research heartbeat current (latest 2026-11-05)",
+      "summary": "Research heartbeat current (latest 2026-11-06)",
       "detail": {}
     }
   ],
@@ -142,7 +143,8 @@
     "2026-11-03",
     "2026-11-04",
     "2026-11-05",
-    "2026-11-06"
+    "2026-11-06",
+    "2026-11-07"
   ],
   "thresholds": {
     "maxSettlementLagDays": 2,

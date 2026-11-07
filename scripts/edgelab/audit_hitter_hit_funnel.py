@@ -30,7 +30,7 @@ def summarize(observations, opportunity_rows, source_dates):
     for obs in observations:
         day = utc_date(obs.get("capturedAt"))
         raw_by_day[day] += 1
-        family = canonicalize_market_family(obs)
+        family = canonicalize_market_family(obs.get("marketFamily"))
         raw_family[str(family)] += 1
         if family == "hitter_hits":
             raw_hit_by_day[day] += 1

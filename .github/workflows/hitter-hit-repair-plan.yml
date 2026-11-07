@@ -1,0 +1,44 @@
+name: MLB Hitter-Hit Repair Plan (Read Only)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/edgelab/hitter_hit_repair_plan.py"
+      - "tests/edgelab/test_hitter_hit_repair_plan.py"
+      - ".github/workflows/hitter-hit-repair-plan.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  repair-plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      GIT_LFS_SKIP_SMUDGE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements-ci.txt
+      - name: Run independent fail-closed tests
+        run: python -m unittest discover -s tests/edgelab -p 'test_hitter_hit_repair_plan.py' -v
+      - name: Reconstruct original observed checkpoint inventory
+        run: |
+          mkdir -p artifacts
+          python scripts/edgelab/audit_hitter_hit_coverage.py --start-date 2026-08-01 --end-date 2026-08-20 --out artifacts/hitter_hit_coverage.json
+      - name: Verify each exact ticker against Kalshi (no settlement writes)
+        run: python scripts/edgelab/verify_kalshi_hitter_hit_results.py --manifest artifacts/hitter_hit_coverage.json --out artifacts/hitter_hit_exchange.json
+      - name: Generate rule-review queue, never write canonical outcomes
+        run: |
+          python scripts/edgelab/hitter_hit_repair_plan.py --coverage artifacts/hitter_hit_coverage.json --exchange artifacts/hitter_hit_exchange.json --out artifacts/hitter_hit_repair_plan.json
+      - name: Upload evidence and review queue
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hitter-hit-readonly-repair-plan
+          path: artifacts/hitter_hit_*.json
+          if-no-files-found: warn
+          retention-days: 30

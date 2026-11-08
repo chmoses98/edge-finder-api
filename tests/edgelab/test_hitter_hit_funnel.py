@@ -35,6 +35,20 @@ class FunnelTests(unittest.TestCase):
         self.assertEqual(result["rawObservationRows"], 2)
         self.assertEqual(result["rawHitterTickersWithoutStandardizedCheckpoint"], 0)
 
+    def test_exact_ticker_gap_samples_are_bounded_and_sorted(self):
+        raw = [{"marketTicker": f"KXMLBHIT-{i:03d}", "marketFamily": "hitter_hits",
+                "capturedAt": "2026-08-03T05:00:00Z"} for i in range(110)]
+        rows = [{"marketTicker": "KXMLBHIT-109", "canonicalMarketFamily": "hitter_hits",
+                 "capturedAt": "2026-08-03T05:00:00Z"},
+                {"marketTicker": "STANDARD-ONLY", "canonicalMarketFamily": "hitter_hits",
+                 "capturedAt": "2026-08-03T05:00:00Z"}]
+        report = summarize(raw, rows, ["2026-08-03"])
+        self.assertEqual(report["rawHitterTickersWithoutStandardizedCheckpoint"], 109)
+        self.assertEqual(len(report["rawHitterTickersWithoutStandardizedCheckpointSample"]), 100)
+        self.assertEqual(report["rawHitterTickersWithoutStandardizedCheckpointSample"][0], "KXMLBHIT-000")
+        self.assertEqual(report["standardizedHitterTickersAbsentFromRawHitterClassification"], 1)
+        self.assertEqual(report["standardizedHitterTickersAbsentFromRawHitterClassificationSample"], ["STANDARD-ONLY"])
+
     def test_invalid_capture_time_is_visible(self):
         result = summarize([{"marketTicker": "X", "capturedAt": "not-a-date"}], [], ["2026-08-01"])
         self.assertEqual(result["byCaptureUTCDate"]["MISSING_OR_INVALID"]["rawAll"], 1)

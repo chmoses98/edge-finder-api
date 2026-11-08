@@ -51,6 +51,23 @@ class FunnelTests(unittest.TestCase):
         self.assertEqual(report["standardizedHitterTickersAbsentFromRawHitterClassification"], 1)
         self.assertEqual(report["standardizedHitterTickersAbsentFromRawHitterClassificationSample"], ["STANDARD-ONLY"])
 
+    def test_shared_ticker_checkpoint_multiplicity_gap_is_visible(self):
+        raw = [
+            {"marketTicker": "A", "marketFamily": "hitter_hits", "capturedAt": "2026-08-03T05:00:00Z", "checkpoint": "T_MINUS_90"},
+            {"marketTicker": "A", "marketFamily": "hitter_hits", "capturedAt": "2026-08-03T06:00:00Z", "checkpoint": "T_MINUS_90"},
+            {"marketTicker": "A", "marketFamily": "hitter_hits", "capturedAt": "2026-08-03T07:00:00Z", "checkpoint": "T_MINUS_30"},
+        ]
+        rows = [{"marketTicker": "A", "canonicalMarketFamily": "hitter_hits",
+                 "capturedAt": "2026-08-03T05:00:00Z", "checkpoint": "T_MINUS_90"}]
+        report = summarize(raw, rows, ["2026-08-03"])
+        self.assertEqual(report["sharedHitterHitTickers"], 1)
+        self.assertEqual(report["rawHitterTickersWithoutStandardizedCheckpoint"], 0)
+        self.assertEqual(report["sharedTickerCheckpointMultiplicityDeltaRawMinusStandardized"],
+                         {"T_MINUS_30": 1, "T_MINUS_90": 1})
+        self.assertEqual(report["sharedTickerRawCheckpointLabels"],
+                         {"T_MINUS_30": 1, "T_MINUS_90": 2})
+        self.assertEqual(report["sharedTickerStandardizedCheckpointLabels"], {"T_MINUS_90": 1})
+
     def test_invalid_capture_time_is_visible(self):
         result = summarize([{"marketTicker": "X", "capturedAt": "not-a-date"}], [], ["2026-08-01"])
         self.assertEqual(result["byCaptureUTCDate"]["MISSING_OR_INVALID"]["rawAll"], 1)

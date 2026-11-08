@@ -40,10 +40,12 @@ def summarize(observations, opportunity_rows, source_dates):
             if obs.get("marketTicker"):
                 raw_hit_tickers.add(obs["marketTicker"])
     standardized = Counter()
+    standardized_checkpoints = Counter()
     standard_tickers = set()
     for row in opportunity_rows:
         if row.get("canonicalMarketFamily") == "hitter_hits":
             standardized[utc_date(row.get("capturedAt"))] += 1
+            standardized_checkpoints[str(row.get("checkpoint"))] += 1
             if row.get("marketTicker"):
                 standard_tickers.add(row["marketTicker"])
     days = sorted(set(raw_by_day) | set(raw_hit_by_day) | set(standardized))
@@ -58,6 +60,9 @@ def summarize(observations, opportunity_rows, source_dates):
         "standardizedHitterHitUniqueTickers": len(standard_tickers),
         "rawFamilyClassification": dict(sorted(raw_family.items())),
         "rawHitterHitCheckpointLabels": dict(sorted(raw_checkpoint.items())),
+        "standardizedHitterHitCheckpointLabels": dict(sorted(standardized_checkpoints.items())),
+        "historicalReportCheckpointRows": 23295,
+        "historicalReportUnreconstructedRows": 23295 - sum(standardized.values()),
         "byCaptureUTCDate": {day: {
             "rawAll": raw_by_day[day],
             "rawHitterHits": raw_hit_by_day[day],

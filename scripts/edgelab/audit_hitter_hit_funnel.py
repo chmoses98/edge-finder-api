@@ -48,6 +48,8 @@ def summarize(observations, opportunity_rows, source_dates):
             standardized_checkpoints[str(row.get("checkpoint"))] += 1
             if row.get("marketTicker"):
                 standard_tickers.add(row["marketTicker"])
+    missing_tickers = sorted(raw_hit_tickers - standard_tickers)
+    standardized_only_tickers = sorted(standard_tickers - raw_hit_tickers)
     days = sorted(set(raw_by_day) | set(raw_hit_by_day) | set(standardized))
     return {
         "schemaVersion": 1,
@@ -68,7 +70,10 @@ def summarize(observations, opportunity_rows, source_dates):
             "rawHitterHits": raw_hit_by_day[day],
             "standardizedHitterHits": standardized[day],
         } for day in days},
-        "rawHitterTickersWithoutStandardizedCheckpoint": len(raw_hit_tickers - standard_tickers),
+        "rawHitterTickersWithoutStandardizedCheckpoint": len(missing_tickers),
+        "rawHitterTickersWithoutStandardizedCheckpointSample": missing_tickers[:100],
+        "standardizedHitterTickersAbsentFromRawHitterClassification": len(standardized_only_tickers),
+        "standardizedHitterTickersAbsentFromRawHitterClassificationSample": standardized_only_tickers[:100],
         "notes": [
             "Raw observations and standardized market/checkpoint rows are different denominators.",
             "Capture UTC date can differ from archive partition date; this does not reconstruct the August 20 report.",

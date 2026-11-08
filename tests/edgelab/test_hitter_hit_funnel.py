@@ -28,6 +28,9 @@ class FunnelTests(unittest.TestCase):
         ]
         result = summarize(raw, standardized, ["2026-08-03"])
         self.assertEqual(result["standardizedHitterHitRows"], 2)
+        self.assertEqual(result["standardizedHitterHitCheckpointLabels"], {"None": 2})
+        self.assertEqual(result["historicalReportCheckpointRows"], 23295)
+        self.assertEqual(result["historicalReportUnreconstructedRows"], 23293)
         self.assertEqual(result["standardizedHitterHitUniqueTickers"], 1)
         self.assertEqual(result["rawObservationRows"], 2)
         self.assertEqual(result["rawHitterTickersWithoutStandardizedCheckpoint"], 0)

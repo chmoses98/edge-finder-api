@@ -29,6 +29,7 @@ def summarize(observations, opportunity_rows, source_dates):
     raw_family = Counter()
     raw_checkpoint = Counter()
     raw_hit_tickers = set()
+    raw_labels_by_ticker = {}
     for obs in observations:
         day = utc_date(obs.get("capturedAt"))
         raw_by_day[day] += 1
@@ -39,17 +40,26 @@ def summarize(observations, opportunity_rows, source_dates):
             raw_checkpoint[str(obs.get("checkpoint"))] += 1
             if obs.get("marketTicker"):
                 raw_hit_tickers.add(obs["marketTicker"])
+                raw_labels_by_ticker.setdefault(obs["marketTicker"], Counter())[str(obs.get("checkpoint"))] += 1
     standardized = Counter()
     standardized_checkpoints = Counter()
     standard_tickers = set()
+    standard_labels_by_ticker = {}
     for row in opportunity_rows:
         if row.get("canonicalMarketFamily") == "hitter_hits":
             standardized[utc_date(row.get("capturedAt"))] += 1
             standardized_checkpoints[str(row.get("checkpoint"))] += 1
             if row.get("marketTicker"):
                 standard_tickers.add(row["marketTicker"])
+                standard_labels_by_ticker.setdefault(row["marketTicker"], Counter())[str(row.get("checkpoint"))] += 1
     missing_tickers = sorted(raw_hit_tickers - standard_tickers)
     standardized_only_tickers = sorted(standard_tickers - raw_hit_tickers)
+    missing_labels = Counter()
+    for ticker in missing_tickers:
+        missing_labels.update(raw_labels_by_ticker[ticker])
+    standard_only_labels = Counter()
+    for ticker in standardized_only_tickers:
+        standard_only_labels.update(standard_labels_by_ticker[ticker])
     days = sorted(set(raw_by_day) | set(raw_hit_by_day) | set(standardized))
     return {
         "schemaVersion": 1,
@@ -72,8 +82,10 @@ def summarize(observations, opportunity_rows, source_dates):
         } for day in days},
         "rawHitterTickersWithoutStandardizedCheckpoint": len(missing_tickers),
         "rawHitterTickersWithoutStandardizedCheckpointSample": missing_tickers[:100],
+        "rawCheckpointLabelsForUnstandardizedTickers": dict(sorted(missing_labels.items())),
         "standardizedHitterTickersAbsentFromRawHitterClassification": len(standardized_only_tickers),
         "standardizedHitterTickersAbsentFromRawHitterClassificationSample": standardized_only_tickers[:100],
+        "standardizedCheckpointLabelsAbsentFromRawHitterClassification": dict(sorted(standard_only_labels.items())),
         "notes": [
             "Raw observations and standardized market/checkpoint rows are different denominators.",
             "Capture UTC date can differ from archive partition date; this does not reconstruct the August 20 report.",

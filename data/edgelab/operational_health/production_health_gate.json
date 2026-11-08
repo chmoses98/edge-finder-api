@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-07T18:33:20Z",
+  "checkedAt": "2026-11-08T19:20:57Z",
   "summary": {
     "overall": "HEALTHY",
     "criticalFailureCount": 0,
@@ -11,76 +11,52 @@
     {
       "id": "PROD-1",
       "severity": "CRITICAL_PRODUCTION",
-      "status": "PASS",
-      "summary": "No MLB game day missed: last slate 2026-10-28 (10 calendar day(s) old), and the MLB schedule shows no playable game on 10 day(s) since (2026-10-29, 2026-10-30, 2026-10-31, 2026-11-01, 2026-11-02, 2026-11-03, 2026-11-04, 2026-11-05, 2026-11-06, 2026-11-07) -- off-day/offseason gap, not an outage",
+      "status": "NOT_APPLICABLE",
+      "summary": "Production pipeline inactive for 11 days (last slate 2026-10-28) -- treating as offseason/paused; downstream freshness assertions suspended",
       "detail": {
         "slateDate": "2026-10-28",
-        "lagDays": 10,
-        "effectiveLagDays": 2,
-        "verifiedOffDays": [
-          "2026-10-29",
-          "2026-10-30",
-          "2026-10-31",
-          "2026-11-01",
-          "2026-11-02",
-          "2026-11-03",
-          "2026-11-04",
-          "2026-11-05",
-          "2026-11-06",
-          "2026-11-07"
-        ]
+        "lagDays": 11
       }
     },
     {
       "id": "PROD-2",
       "severity": "CRITICAL_PRODUCTION",
-      "status": "PASS",
-      "summary": "Settlement corpus current: latest partition 2026-11-06 (-7 day(s) old)",
+      "status": "NOT_APPLICABLE",
+      "summary": "Settlement corpus freshness not evaluated: production pipeline is inactive",
       "detail": {
-        "latestPartition": "2026-11-06",
-        "lagDays": -7,
-        "maxLagDays": 2
+        "latestPartition": "2026-11-07"
       }
     },
     {
       "id": "PROD-3",
       "severity": "CRITICAL_PRODUCTION",
-      "status": "PASS",
-      "summary": "Recommendation ledger current: latest partition 2026-11-06 (-7 day(s) old)",
+      "status": "NOT_APPLICABLE",
+      "summary": "Recommendation ledger freshness not evaluated: production pipeline is inactive",
       "detail": {
-        "latestPartition": "2026-11-06",
-        "lagDays": -7,
-        "maxLagDays": 2
+        "latestPartition": "2026-11-07"
       }
     },
     {
       "id": "PROD-4",
       "severity": "CRITICAL_PRODUCTION",
-      "status": "PASS",
-      "summary": "Prediction and settlement partitions are in step (evaluations 2026-11-06, settlements 2026-11-06)",
-      "detail": {
-        "divergenceDays": 0
-      }
+      "status": "NOT_APPLICABLE",
+      "summary": "Skip-cascade check not evaluated: pipeline inactive",
+      "detail": {}
     },
     {
       "id": "PROD-5",
       "severity": "CRITICAL_PRODUCTION",
-      "status": "PASS",
-      "summary": "Ledger persisted recently: data/edgelab/bets/bets.jsonl last committed 2026-10-29 (2 day(s) ago)",
-      "detail": {
-        "lagDays": 2,
-        "legacyBetsJsonCommitDate": "2026-09-18"
-      }
+      "status": "NOT_APPLICABLE",
+      "summary": "Ledger persistence not evaluated: pipeline inactive",
+      "detail": {}
     },
     {
       "id": "PROD-6",
       "severity": "CRITICAL_PRODUCTION",
-      "status": "PASS",
-      "summary": "Model-evaluation corpus current: latest partition 2026-11-06 (-7 day(s) old)",
+      "status": "NOT_APPLICABLE",
+      "summary": "Model-evaluation corpus freshness not evaluated: production pipeline is inactive",
       "detail": {
-        "latestPartition": "2026-11-06",
-        "lagDays": -7,
-        "maxLagDays": 2
+        "latestPartition": "2026-11-07"
       }
     },
     {
@@ -96,8 +72,8 @@
     {
       "id": "PROD-8",
       "severity": "CRITICAL_PRODUCTION",
-      "status": "PASS",
-      "summary": "Production and feedback halves of the loop are both live",
+      "status": "NOT_APPLICABLE",
+      "summary": "Blind-but-green check not evaluated: pipeline inactive",
       "detail": {}
     },
     {
@@ -106,8 +82,8 @@
       "status": "PASS",
       "summary": "Every authenticated MLB wager the router holds is on the canonical ledger (router newest game date 2026-10-28, canonical 2026-10-28, 131 eligible)",
       "detail": {
-        "latestRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/42394599715",
-        "judgedRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/42377077830",
+        "latestRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/42507024176",
+        "judgedRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/42485678574",
         "routerCoverage": {
           "eligible": 131,
           "newestFirstFillUtc": "2026-10-29",
@@ -128,8 +104,8 @@
     {
       "id": "RSCH-1",
       "severity": "RESEARCH_DEGRADATION",
-      "status": "PASS",
-      "summary": "Research heartbeat current (latest 2026-11-06)",
+      "status": "NOT_APPLICABLE",
+      "summary": "Research heartbeat not evaluated: pipeline inactive",
       "detail": {}
     }
   ],
@@ -144,7 +120,8 @@
     "2026-11-04",
     "2026-11-05",
     "2026-11-06",
-    "2026-11-07"
+    "2026-11-07",
+    "2026-11-08"
   ],
   "thresholds": {
     "maxSettlementLagDays": 2,

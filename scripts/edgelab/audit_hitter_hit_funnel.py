@@ -54,6 +54,19 @@ def summarize(observations, opportunity_rows, source_dates):
                 standard_labels_by_ticker.setdefault(row["marketTicker"], Counter())[str(row.get("checkpoint"))] += 1
     missing_tickers = sorted(raw_hit_tickers - standard_tickers)
     standardized_only_tickers = sorted(standard_tickers - raw_hit_tickers)
+    # Shared tickers can still lose checkpoints; ticker-only set differences miss this.
+    # These are observation multiplicities, not proof of missing historical rows.
+    shared = raw_hit_tickers & standard_tickers
+    raw_shared = Counter()
+    standard_shared = Counter()
+    for ticker in shared:
+        raw_shared.update(raw_labels_by_ticker[ticker])
+        standard_shared.update(standard_labels_by_ticker[ticker])
+    checkpoint_delta = {
+        label: raw_shared[label] - standard_shared[label]
+        for label in sorted(set(raw_shared) | set(standard_shared))
+        if raw_shared[label] != standard_shared[label]
+    }
     missing_labels = Counter()
     for ticker in missing_tickers:
         missing_labels.update(raw_labels_by_ticker[ticker])
@@ -80,6 +93,10 @@ def summarize(observations, opportunity_rows, source_dates):
             "rawHitterHits": raw_hit_by_day[day],
             "standardizedHitterHits": standardized[day],
         } for day in days},
+        "sharedHitterHitTickers": len(shared),
+        "sharedTickerRawCheckpointLabels": dict(sorted(raw_shared.items())),
+        "sharedTickerStandardizedCheckpointLabels": dict(sorted(standard_shared.items())),
+        "sharedTickerCheckpointMultiplicityDeltaRawMinusStandardized": checkpoint_delta,
         "rawHitterTickersWithoutStandardizedCheckpoint": len(missing_tickers),
         "rawHitterTickersWithoutStandardizedCheckpointSample": missing_tickers[:100],
         "rawCheckpointLabelsForUnstandardizedTickers": dict(sorted(missing_labels.items())),
@@ -88,6 +105,7 @@ def summarize(observations, opportunity_rows, source_dates):
         "standardizedCheckpointLabelsAbsentFromRawHitterClassification": dict(sorted(standard_only_labels.items())),
         "notes": [
             "Raw observations and standardized market/checkpoint rows are different denominators.",
+            "Shared-ticker checkpoint multiplicity deltas are diagnostic, not recovered historical rows.",
             "Capture UTC date can differ from archive partition date; this does not reconstruct the August 20 report.",
             "No settlement, model evaluation, or historical forecast is inferred."
         ]

@@ -46,6 +46,8 @@ class FunnelTests(unittest.TestCase):
         self.assertEqual(report["rawHitterTickersWithoutStandardizedCheckpoint"], 109)
         self.assertEqual(len(report["rawHitterTickersWithoutStandardizedCheckpointSample"]), 100)
         self.assertEqual(report["rawHitterTickersWithoutStandardizedCheckpointSample"][0], "KXMLBHIT-000")
+        self.assertEqual(report["rawCheckpointLabelsForUnstandardizedTickers"], {"None": 109})
+        self.assertEqual(report["standardizedCheckpointLabelsAbsentFromRawHitterClassification"], {"None": 1})
         self.assertEqual(report["standardizedHitterTickersAbsentFromRawHitterClassification"], 1)
         self.assertEqual(report["standardizedHitterTickersAbsentFromRawHitterClassificationSample"], ["STANDARD-ONLY"])
 

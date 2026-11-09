@@ -38,7 +38,7 @@ def build_plan(coverage, exchange):
     declared_classes = exchange.get("exchangeClassificationCounts")
     if not isinstance(declared_classes, dict) or Counter(row.get("exchangeClassification") for row in official.values()) != Counter(declared_classes):
         raise ValueError("Exchange classification evidence drift")
-    counts, queue = Counter(), []
+    counts, checkpoint_counts, queue = Counter(), Counter(), []
     for ticker in sorted(local):
         a, b = local[ticker], official[ticker]
         if (a["checkpointRows"] != b["checkpointRows"] or
@@ -67,6 +67,7 @@ def build_plan(coverage, exchange):
         else:
             category = "EXCHANGE_RESULT_UNKNOWN"
         counts[category] += 1
+        checkpoint_counts[category] += a["checkpointRows"]
         if category != "BINARY_AGREES_NO_CHANGE":
             queue.append({"marketTicker": ticker, "checkpointRows": a["checkpointRows"],
                           "category": category, "recordedStatus": a["settlementStatus"],
@@ -76,6 +77,8 @@ def build_plan(coverage, exchange):
                           "exchangeRulesSecondary": b.get("exchangeRulesSecondary"),
                           "gameIds": a.get("gameIds", []), "writeAuthorized": False,
                           "nextEvidence": "Verify exact contract rules, player/game identity and participation"})
+    if sum(checkpoint_counts.values()) != checkpoints:
+        raise AssertionError("Checkpoint classification drift")
     if sum(counts.values()) != len(local):
         raise AssertionError("Classification drift")
     return {"schemaVersion": 1, "authority": "READ_ONLY_REPAIR_PLAN_NO_SETTLEMENT_WRITES",
@@ -83,6 +86,7 @@ def build_plan(coverage, exchange):
             "reconstructedCheckpointRows": checkpoints,
             "unreconstructedCheckpointRows": BASELINE - checkpoints,
             "uniqueTrackedTickers": len(local), "classificationCounts": dict(sorted(counts.items())),
+            "checkpointClassificationCounts": dict(sorted(checkpoint_counts.items())),
             "reviewQueue": queue, "historicalPITForecastsRecovered": 0,
             "caveats": ["No settlement writes or historical forecast reconstruction.",
                         "Exchange payout does not independently prove DNP/VOID source rules.",

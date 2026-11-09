@@ -29,9 +29,25 @@ class RepairPlanTests(unittest.TestCase):
             "BINARY_MISSING_LOCAL_REQUIRES_RULE_REVIEW": 1,
             "CONFLICT_REQUIRES_RULE_REVIEW": 1,
             "SCALAR_OR_VOID_RULES_UNKNOWN": 1})
+        self.assertEqual(plan["checkpointClassificationCounts"], {
+            "BINARY_AGREES_NO_CHANGE": 2,
+            "BINARY_MISSING_LOCAL_REQUIRES_RULE_REVIEW": 2,
+            "CONFLICT_REQUIRES_RULE_REVIEW": 2,
+            "SCALAR_OR_VOID_RULES_UNKNOWN": 2})
+        self.assertEqual(sum(plan["checkpointClassificationCounts"].values()), plan["reconstructedCheckpointRows"])
         self.assertEqual(len(plan["reviewQueue"]), 3)
         self.assertTrue(all(x["writeAuthorized"] is False for x in plan["reviewQueue"]))
         self.assertEqual(plan["historicalPITForecastsRecovered"], 0)
+    def test_weighted_checkpoint_counts_are_not_unique_contracts(self):
+        a, b = sample()
+        a["allTrackedTickers"][1]["checkpointRows"] = 7
+        b["byTicker"][1]["checkpointRows"] = 7
+        a["checkpointRows"] = b["checkpointRows"] = 13
+        plan = build_plan(a, b)
+        self.assertEqual(plan["uniqueTrackedTickers"], 4)
+        self.assertEqual(plan["reconstructedCheckpointRows"], 13)
+        self.assertEqual(plan["checkpointClassificationCounts"]["BINARY_MISSING_LOCAL_REQUIRES_RULE_REVIEW"], 7)
+        self.assertEqual(plan["classificationCounts"]["BINARY_MISSING_LOCAL_REQUIRES_RULE_REVIEW"], 1)
     def test_binary_classification_must_match_official_direction(self):
         a, b = sample()
         b["byTicker"][0]["officialResult"] = "no"  # class still EXCHANGE_CONFIRMED_YES

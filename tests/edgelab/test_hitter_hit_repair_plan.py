@@ -53,6 +53,14 @@ class RepairPlanTests(unittest.TestCase):
         b["byTicker"][0]["officialResult"] = "no"  # class still EXCHANGE_CONFIRMED_YES
         with self.assertRaisesRegex(ValueError, "Contradictory official binary evidence"):
             build_plan(a, b)
+    def test_unrecognized_exchange_classification_fails_closed(self):
+        a, b = sample()
+        b["byTicker"][3]["exchangeClassification"] = "EXCHANGE_VOID_UNVERIFIED"
+        b["exchangeClassificationCounts"] = {
+            "EXCHANGE_CONFIRMED_YES": 2, "EXCHANGE_CONFIRMED_NO": 1,
+            "EXCHANGE_VOID_UNVERIFIED": 1}
+        with self.assertRaisesRegex(ValueError, "Unrecognized exchange classifications"):
+            build_plan(a, b)
     def test_checkpoint_mismatch_rejected(self):
         a, b = sample()
         b["byTicker"][0]["checkpointRows"] = 3

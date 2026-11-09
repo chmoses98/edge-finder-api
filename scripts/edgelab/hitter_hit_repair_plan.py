@@ -8,6 +8,7 @@ from pathlib import Path
 
 BASELINE = 23295
 BINARY = {"EXCHANGE_CONFIRMED_YES", "EXCHANGE_CONFIRMED_NO"}
+KNOWN_EXCHANGE_CLASSES = BINARY | {"EXCHANGE_NON_BINARY_SCALAR", "EXCHANGE_NOT_FINAL", "EXCHANGE_MARKET_NOT_RETURNED", "EXCHANGE_RESULT_UNKNOWN"}
 
 def build_plan(coverage, exchange):
     if coverage.get("family") != "hitter_hits" or exchange.get("marketFamily") != "hitter_hits":
@@ -38,6 +39,9 @@ def build_plan(coverage, exchange):
     declared_classes = exchange.get("exchangeClassificationCounts")
     if not isinstance(declared_classes, dict) or Counter(row.get("exchangeClassification") for row in official.values()) != Counter(declared_classes):
         raise ValueError("Exchange classification evidence drift")
+    unknown_classes = set(declared_classes) - KNOWN_EXCHANGE_CLASSES
+    if unknown_classes:
+        raise ValueError("Unrecognized exchange classifications: " + ", ".join(sorted(unknown_classes)))
     counts, checkpoint_counts, queue = Counter(), Counter(), []
     for ticker in sorted(local):
         a, b = local[ticker], official[ticker]

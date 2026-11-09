@@ -1,0 +1,31 @@
+name: Hitter Hit Repair Plan CI
+
+on:
+  push:
+    branches:
+      - audit/hitter-hit-readonly-repair-plan-20261105
+    paths:
+      - 'scripts/edgelab/hitter_hit_repair_plan.py'
+      - 'tests/edgelab/test_hitter_hit_repair_plan.py'
+      - '.github/workflows/hitter-hit-repair-plan-ci.yml'
+  pull_request:
+    paths:
+      - 'scripts/edgelab/hitter_hit_repair_plan.py'
+      - 'tests/edgelab/test_hitter_hit_repair_plan.py'
+      - '.github/workflows/hitter-hit-repair-plan-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repair-plan-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run independent fail-closed repair-plan regression tests
+        run: python -m unittest discover -s tests/edgelab -p 'test_hitter_hit_repair_plan.py' -v

@@ -8,8 +8,8 @@ observation, not PROJECTED, ...). Unjoinable observations stay unjoined; no pred
 
 Pregame guard: the exact contract ticker encodes the scheduled first pitch in US/Eastern
 (e.g. KXMLBHIT-26AUG191235DETPIT-... = 2026-08-19 12:35 ET). A snapshot generated after that instant is rejected
-(SNAPSHOT_GENERATED_AFTER_GAME_START); a ticker whose start cannot be parsed is joined without the guard and counted
-in pregameCrossCheck.tickerStartUnparseable. The violations counter re-asserts the guard and must be 0.
+(SNAPSHOT_GENERATED_AFTER_GAME_START); a ticker whose start cannot be parsed is quarantined as TICKER_START_UNPARSEABLE and cannot
+contribute to pitJoinedRows. This is a conservative measurement, not a reconstructed forecast. The violations counter re-asserts the guard and must be 0.
 
 Usage:
   python3 scripts/edgelab/audit_hitter_snapshot_join.py --start-date 2026-08-19 --end-date 2026-10-31 --out artifacts/hitter_snapshot_join.json
@@ -91,6 +91,8 @@ def audit(start_date, end_date, root=DATA, snapshots=None):
             start = ticker_event_start_utc(tk)
             if start is None:
                 no_start += 1
+                reasons["TICKER_START_UNPARSEABLE"] += 1
+                continue
             snap, reason, diag = select_pit_snapshot(snapshots.get(tk, []), o, game_start=start)
             if snap is None:
                 reasons[reason] += 1
@@ -100,7 +102,7 @@ def audit(start_date, end_date, root=DATA, snapshots=None):
             per_date[d]["joined"] += 1
             joined_tickers.add(tk)
             ages.append(diag["snapshotAgeSeconds"])
-            if start is not None and parse_utc(snap["projectionGeneratedAt"]) > start:
+            if parse_utc(snap["projectionGeneratedAt"]) > start:
                 violations += 1  # unreachable by construction (guard above); kept as an independent assertion
     ages.sort()
     q = lambda p: round(ages[int(p * (len(ages) - 1))], 1) if ages else None

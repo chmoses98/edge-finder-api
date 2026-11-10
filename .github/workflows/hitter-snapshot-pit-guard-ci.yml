@@ -1,0 +1,37 @@
+name: Hitter snapshot PIT guard CI
+
+on:
+  push:
+    branches:
+      - fix/hitter-snapshot-pit-join
+    paths:
+      - 'lib/edgelab/hitter_snapshot_join.py'
+      - 'scripts/edgelab/audit_hitter_snapshot_join.py'
+      - 'tests/edgelab/test_hitter_snapshot_join.py'
+      - 'tests/edgelab/test_hitter_snapshot_audit_pregame_guard.py'
+      - '.github/workflows/hitter-snapshot-pit-guard-ci.yml'
+  pull_request:
+    paths:
+      - 'lib/edgelab/hitter_snapshot_join.py'
+      - 'scripts/edgelab/audit_hitter_snapshot_join.py'
+      - 'tests/edgelab/test_hitter_snapshot_join.py'
+      - 'tests/edgelab/test_hitter_snapshot_audit_pregame_guard.py'
+      - '.github/workflows/hitter-snapshot-pit-guard-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pit-guard-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pytest
+        run: python -m pip install pytest
+      - name: Run isolated PIT guard regressions
+        run: python -m pytest -q tests/edgelab/test_hitter_snapshot_join.py tests/edgelab/test_hitter_snapshot_audit_pregame_guard.py

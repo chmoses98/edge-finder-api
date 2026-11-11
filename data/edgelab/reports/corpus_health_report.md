@@ -1,5 +1,5 @@
 # EdgeLab Forward Replay Corpus Health Report
-Generated: 2026-11-10T15:53:23Z
+Generated: 2026-11-11T14:58:55Z
 
 ## Operational health: **FAILED**
 - Reasons: HARD_FAIL:FORWARD_MISSING_SNAPSHOT
@@ -9,7 +9,7 @@ Generated: 2026-11-10T15:53:23Z
 - Boundary date: 2026-08-03
 - Activated at: 2026-08-04T09:38:45Z
 - Exit should fail: True
-- Exit-code reason: 17 forward-era date(s) with an unacknowledged hard-fail gate status: [('2026-10-09', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-20', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-21', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-22', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-25', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-29', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-30', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-31', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-01', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-02', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-03', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-04', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-05', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-06', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-07', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-08', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-09', 'FORWARD_MISSING_SNAPSHOT')] (plus 5 acknowledged legacy gap(s), excluded from this failure per data/edgelab/corpus_acknowledged_forward_gaps.json: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15'])
+- Exit-code reason: 18 forward-era date(s) with an unacknowledged hard-fail gate status: [('2026-10-09', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-20', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-21', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-22', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-25', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-29', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-30', 'FORWARD_MISSING_SNAPSHOT'), ('2026-10-31', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-01', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-02', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-03', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-04', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-05', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-06', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-07', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-08', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-09', 'FORWARD_MISSING_SNAPSHOT'), ('2026-11-10', 'FORWARD_MISSING_SNAPSHOT')] (plus 5 acknowledged legacy gap(s), excluded from this failure per data/edgelab/corpus_acknowledged_forward_gaps.json: ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15'])
 
 ## Historical corpus quality (descriptive only -- never fails this check)
 - Historical/backfill dates: 4
@@ -18,29 +18,29 @@ Generated: 2026-11-10T15:53:23Z
 
 ## Forward operational health (drives pass/fail)
 - Population note: expectedRuns/snapshotsCaptured/snapshotsMissing/incompleteCaptures/provenanceCoverage all share ONE population: every known forward-era date (from production OR snapshot evidence) excluding pendingTodayDates and noSlateDates (schedule-verified days with no MLB games). snapshotsCaptured + len(snapshotsMissing) == expectedRuns always; incompleteCaptures is a SUBSET of dates counted inside snapshotsCaptured (they have a manifest, it's just incomplete), never inside snapshotsMissing.
-- Expected forward runs: 97
+- Expected forward runs: 98
 - Forward snapshots captured: 75
-- Forward snapshots missing (no manifest at all): 22 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15', '2026-10-09', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-25', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01', '2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07', '2026-11-08', '2026-11-09']
+- Forward snapshots missing (no manifest at all): 23 ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15', '2026-10-09', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-25', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01', '2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07', '2026-11-08', '2026-11-09', '2026-11-10']
 - Forward incomplete captures (manifest exists, missing a required component): 0 []
-- Forward dates pending today (not yet due): 1 ['2026-11-10']
+- Forward dates pending today (not yet due): 1 ['2026-11-11']
 - Forward no-slate dates (MLB schedule verified no games; no production expected): 2 ['2026-09-28', '2026-10-02']
-- Forward provenance coverage: 75/97
+- Forward provenance coverage: 75/98
 - Forward replay: attempted 301, completed 134, failed 167
 - Forward CLV-linked markets: 44
 - Forward settlement-linked markets: 89
-- Consecutive degraded forward runs: 12
-- Hard-fail dates (drive exitShouldFail): ['2026-10-09', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-25', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01', '2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07', '2026-11-08', '2026-11-09']
+- Consecutive degraded forward runs: 13
+- Hard-fail dates (drive exitShouldFail): ['2026-10-09', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-25', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01', '2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07', '2026-11-08', '2026-11-09', '2026-11-10']
 - Acknowledged legacy gap dates (excluded from exitShouldFail, see data/edgelab/corpus_acknowledged_forward_gaps.json): ['2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15']
 - FORWARD_HEALTHY: 41
-- FORWARD_MISSING_SNAPSHOT: 22
+- FORWARD_MISSING_SNAPSHOT: 23
 - FORWARD_NO_SLATE: 2
 - FORWARD_PENDING_TODAY: 1
 - FORWARD_RESEARCH_ONLY_NO_DECISION: 34
 
 ## Storage
-- Snapshots: 390,638,370 bytes
+- Snapshots: 390,644,706 bytes
 - Replay runs: 28,009,702 bytes
-- Total: 418,648,072 bytes
+- Total: 418,654,408 bytes
 
 ## Per-date detail
 | Date | Era | Gate Status | Forward Gate Status | Stored Completeness | Effective Completeness | Research-Only | Commit SHA Known | Replay | Runs | Acknowledged Gap |
@@ -148,4 +148,5 @@ Generated: 2026-11-10T15:53:23Z
 | 2026-11-07 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | None | False | False | None | 0 |  |
 | 2026-11-08 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | None | False | False | None | 0 |  |
 | 2026-11-09 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | None | False | False | None | 0 |  |
-| 2026-11-10 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |
+| 2026-11-10 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_MISSING_SNAPSHOT | None | None | False | False | None | 0 |  |
+| 2026-11-11 | FORWARD | DEGRADED_MISSING_SNAPSHOT | FORWARD_PENDING_TODAY | None | None | False | False | None | 0 |  |

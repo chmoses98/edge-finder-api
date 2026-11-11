@@ -1,6 +1,6 @@
 # Near-close capture health
 
-_generated 2026-11-10T16:38:07Z (schema `capture_health_v1`)_
+_generated 2026-11-11T14:09:04Z (schema `capture_health_v1`)_
 
 **Requested** is what the schedule asked for. **Delivered** is what the
 archive proves arrived. They are separate columns on purpose.
@@ -21,13 +21,13 @@ archive proves arrived. They are separate columns on purpose.
 
 | date | games | requested | delivered | missed | markets | TRUE_CLOSE | median s to start |
 |---|---|---|---|---|---|---|---|
+| 2026-11-10 | 0 | 0 | 0 (None%) | 0 | 0 | 0 | None |
 | 2026-11-09 | 0 | 0 | 0 (None%) | 0 | 0 | 0 | None |
 | 2026-11-08 | 0 | 0 | 0 (None%) | 0 | 0 | 0 | None |
 | 2026-11-07 | 0 | 0 | 0 (None%) | 0 | 0 | 0 | None |
 | 2026-11-06 | 0 | 0 | 0 (None%) | 0 | 0 | 0 | None |
 | 2026-11-05 | 0 | 0 | 0 (None%) | 0 | 0 | 0 | None |
 | 2026-11-04 | 0 | 0 | 0 (None%) | 0 | 0 | 0 | None |
-| 2026-11-03 | 0 | 0 | 0 (None%) | 0 | 0 | 0 | None |
 
 > windowsTargeted is what the schedule ASKED for; windowsDelivered is what the ARCHIVE proves arrived. They are reported separately on purpose: cron configuration is not coverage, and for 13 consecutive days the two differed by an order of magnitude without anything surfacing it.
 

@@ -132,7 +132,7 @@ def ticker_event_start_utc(ticker):
     if not isinstance(ticker, str):
         return None
     match = re.fullmatch(
-        r"KXMLBHIT-(\\d{2})([A-Z]{3})(\\d{2})(\\d{2})(\\d{2})[A-Z0-9]+-[A-Z0-9-]+",
+        r"KXMLBHIT-(\d{2})([A-Z]{3})(\d{2})(\d{2})(\d{2})[A-Z0-9]+-[A-Z0-9-]+",
         ticker,
     )
     if match is None:

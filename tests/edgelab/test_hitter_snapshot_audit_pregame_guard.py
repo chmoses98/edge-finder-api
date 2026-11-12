@@ -46,3 +46,32 @@ def test_unparseable_start_with_no_snapshot_is_still_quarantined(tmp_path):
     result = audit("2026-08-19", "2026-08-19", root=str(tmp_path), snapshots={})
     assert result["pitJoinedRows"] == 0
     assert result["unjoinedReasonsByRow"] == {"TICKER_START_UNPARSEABLE": 1}
+
+
+
+def test_post_start_observation_is_quarantined_despite_pregame_snapshot(tmp_path):
+    ticker = "KXMLBHIT-26AUG191235DETPIT-PLAYER"
+    _write(tmp_path / "observations" / "2026-08-19.jsonl.gz", [
+        {"marketTicker": ticker, "marketFamily": "hitter_hits",
+         "capturedAt": "2026-08-19T17:00:00Z"}
+    ])
+    snaps = {ticker: [{"marketTicker": ticker, "marketFamily": "hitter_hits",
+                       "projectionStatus": "PROJECTED", "modelProbability": 0.4,
+                       "projectionGeneratedAt": "2026-08-19T14:00:00Z"}]}
+    result = audit("2026-08-19", "2026-08-19", root=str(tmp_path), snapshots=snaps)
+    assert result["hitterObservationRows"] == 1
+    assert result["pitJoinedRows"] == 0
+    assert result["unjoinedReasonsByRow"] == {"OBSERVATION_AFTER_TICKER_START": 1}
+    assert sum(result["unjoinedReasonsByRow"].values()) + result["pitJoinedRows"] == 1
+
+
+def test_invalid_observation_clock_is_quarantined(tmp_path):
+    ticker = "KXMLBHIT-26AUG191235DETPIT-PLAYER"
+    _write(tmp_path / "observations" / "2026-08-19.jsonl.gz", [
+        {"marketTicker": ticker, "marketFamily": "hitter_hits",
+         "capturedAt": "not-a-timestamp"}
+    ])
+    result = audit("2026-08-19", "2026-08-19", root=str(tmp_path), snapshots={})
+    assert result["hitterObservationRows"] == 1
+    assert result["pitJoinedRows"] == 0
+    assert result["unjoinedReasonsByRow"] == {"OBSERVATION_TIMESTAMP_INVALID": 1}

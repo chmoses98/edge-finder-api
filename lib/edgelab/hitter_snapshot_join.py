@@ -119,3 +119,38 @@ def select_pit_snapshot(snapshots_for_ticker, observation, game_start=None):
 
     best = max(diag["reasonCounts"], key=lambda r: (progress.index(r), diag["reasonCounts"][r]))
     return None, best, diag
+
+def ticker_event_start_utc(ticker):
+    """Parse the encoded ET scheduled start only for the known MLB hitter ticker form.
+
+    Unknown formats and invalid or ambiguous local wall times fail closed. The
+    encoded schedule is not independent proof of actual first pitch.
+    """
+    import re
+    from zoneinfo import ZoneInfo
+
+    if not isinstance(ticker, str):
+        return None
+    match = re.fullmatch(
+        r"KXMLBHIT-(\\d{2})([A-Z]{3})(\\d{2})(\\d{2})(\\d{2})[A-Z0-9]+-[A-Z0-9-]+",
+        ticker,
+    )
+    if match is None:
+        return None
+    year, mon, day, hour, minute = match.groups()
+    months = {"JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6,
+              "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12}
+    if mon not in months:
+        return None
+    try:
+        wall = datetime(2000 + int(year), months[mon], int(day), int(hour), int(minute))
+        eastern = ZoneInfo("America/New_York")
+        candidates = []
+        for fold in (0, 1):
+            aware = wall.replace(tzinfo=eastern, fold=fold)
+            utc = aware.astimezone(timezone.utc)
+            if utc.astimezone(eastern).replace(tzinfo=None) == wall:
+                candidates.append(utc)
+        return candidates[0] if len(set(candidates)) == 1 else None
+    except (ValueError, OverflowError):
+        return None

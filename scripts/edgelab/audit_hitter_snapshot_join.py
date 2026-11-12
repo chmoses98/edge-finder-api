@@ -9,7 +9,7 @@ observation, not PROJECTED, ...). Unjoinable observations stay unjoined; no pred
 Pregame guard: the exact contract ticker encodes the scheduled first pitch in US/Eastern
 (e.g. KXMLBHIT-26AUG191235DETPIT-... = 2026-08-19 12:35 ET). A snapshot generated after that instant is rejected
 (SNAPSHOT_GENERATED_AFTER_GAME_START); a ticker whose start cannot be parsed is quarantined as TICKER_START_UNPARSEABLE and cannot
-contribute to pitJoinedRows. This is a conservative measurement, not a reconstructed forecast. The violations counter re-asserts the guard and must be 0.
+contribute to pitJoinedRows. Observations captured after the encoded scheduled start are also quarantined as OBSERVATION_AFTER_TICKER_START, even when a valid earlier projection exists. This is a conservative measurement, not a reconstructed forecast. The violations counter re-asserts the guard and must be 0.
 
 Usage:
   python3 scripts/edgelab/audit_hitter_snapshot_join.py --start-date 2026-08-19 --end-date 2026-10-31 --out artifacts/hitter_snapshot_join.json
@@ -72,6 +72,13 @@ def audit(start_date, end_date, root=DATA, snapshots=None):
             if start is None:
                 no_start += 1
                 reasons["TICKER_START_UNPARSEABLE"] += 1
+                continue
+            observed_at = parse_utc(o.get("capturedAt"))
+            if observed_at is None:
+                reasons["OBSERVATION_TIMESTAMP_INVALID"] += 1
+                continue
+            if observed_at > start:
+                reasons["OBSERVATION_AFTER_TICKER_START"] += 1
                 continue
             snap, reason, diag = select_pit_snapshot(snapshots.get(tk, []), o, game_start=start)
             if snap is None:

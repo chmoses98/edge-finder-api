@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-12T20:44:42Z",
+  "checkedAt": "2026-11-13T20:40:22Z",
   "summary": {
     "overall": "HEALTHY",
     "criticalFailureCount": 0,
@@ -12,10 +12,10 @@
       "id": "PROD-1",
       "severity": "CRITICAL_PRODUCTION",
       "status": "NOT_APPLICABLE",
-      "summary": "Production pipeline inactive for 15 days (last slate 2026-10-28) -- treating as offseason/paused; downstream freshness assertions suspended",
+      "summary": "Production pipeline inactive for 16 days (last slate 2026-10-28) -- treating as offseason/paused; downstream freshness assertions suspended",
       "detail": {
         "slateDate": "2026-10-28",
-        "lagDays": 15
+        "lagDays": 16
       }
     },
     {
@@ -24,7 +24,7 @@
       "status": "NOT_APPLICABLE",
       "summary": "Settlement corpus freshness not evaluated: production pipeline is inactive",
       "detail": {
-        "latestPartition": "2026-11-11"
+        "latestPartition": "2026-11-12"
       }
     },
     {
@@ -33,7 +33,7 @@
       "status": "NOT_APPLICABLE",
       "summary": "Recommendation ledger freshness not evaluated: production pipeline is inactive",
       "detail": {
-        "latestPartition": "2026-11-11"
+        "latestPartition": "2026-11-12"
       }
     },
     {
@@ -56,7 +56,7 @@
       "status": "NOT_APPLICABLE",
       "summary": "Model-evaluation corpus freshness not evaluated: production pipeline is inactive",
       "detail": {
-        "latestPartition": "2026-11-11"
+        "latestPartition": "2026-11-12"
       }
     },
     {
@@ -82,8 +82,8 @@
       "status": "PASS",
       "summary": "Every authenticated MLB wager the router holds is on the canonical ledger (router newest game date 2026-10-28, canonical 2026-10-28, 131 eligible)",
       "detail": {
-        "latestRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/43285446643",
-        "judgedRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/43249011791",
+        "latestRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/43494022586",
+        "judgedRun": "https://github.com/chmoses98/kalshi-bet-router/actions/runs/43460546829",
         "routerCoverage": {
           "eligible": 131,
           "newestFirstFillUtc": "2026-10-29",
@@ -110,7 +110,6 @@
     }
   ],
   "verifiedOffDays": [
-    "2026-10-29",
     "2026-10-30",
     "2026-10-31",
     "2026-11-01",
@@ -124,7 +123,8 @@
     "2026-11-09",
     "2026-11-10",
     "2026-11-11",
-    "2026-11-12"
+    "2026-11-12",
+    "2026-11-13"
   ],
   "thresholds": {
     "maxSettlementLagDays": 2,

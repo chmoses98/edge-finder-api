@@ -81,8 +81,8 @@ def audit(start_date, end_date, root=DATA, snapshots=None):
             if captured is None:
                 reasons["OBSERVATION_TIMESTAMP_INVALID"] += 1
                 continue
-            if captured > start:
-                reasons["OBSERVATION_AFTER_TICKER_START"] += 1
+            if captured >= start:
+                reasons["OBSERVATION_AT_OR_AFTER_TICKER_START"] += 1
                 continue
             snap, reason, diag = select_pit_snapshot(snapshots.get(tk, []), o, game_start=start)
             if snap is None:

@@ -11,6 +11,7 @@ def test_audit_quarantines_unknown_start_and_post_start_observation(tmp_path):
     rows = [
         {"marketTicker": BAD, "marketFamily": "hitter_hits", "capturedAt": "2026-08-19T16:00:00Z"},
         {"marketTicker": T, "marketFamily": "hitter_hits", "capturedAt": "2026-08-19T17:00:00Z"},
+        {"marketTicker": T, "marketFamily": "hitter_hits", "capturedAt": "2026-08-19T16:35:00Z"},
         {"marketTicker": T, "marketFamily": "hitter_hits", "capturedAt": "bad-time"},
         {"marketTicker": T, "marketFamily": "hitter_hits", "capturedAt": "2026-08-19T16:00:00Z"},
     ]
@@ -23,11 +24,11 @@ def test_audit_quarantines_unknown_start_and_post_start_observation(tmp_path):
                 "projectionGeneratedAt": "2026-08-19T15:00:00Z"}
     result = audit("2026-08-19", "2026-08-19", root=str(root),
                    snapshots={BAD: [snap(BAD)], T: [snap(T)]})
-    assert result["hitterObservationRows"] == 4
+    assert result["hitterObservationRows"] == 5
     assert result["pitJoinedRows"] == 1
     assert result["unjoinedReasonsByRow"] == {
         "TICKER_START_UNPARSEABLE": 1,
-        "OBSERVATION_AFTER_TICKER_START": 1,
+        "OBSERVATION_AT_OR_AFTER_TICKER_START": 2,
         "OBSERVATION_TIMESTAMP_INVALID": 1,
     }
     assert result["pregameCrossCheck"]["tickerStartUnparseable"] == 1

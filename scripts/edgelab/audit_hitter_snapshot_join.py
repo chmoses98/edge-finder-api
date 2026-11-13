@@ -8,7 +8,7 @@ observation, not PROJECTED, ...). Unjoinable observations stay unjoined; no pred
 
 Pregame guard: the exact contract ticker encodes the scheduled first pitch in US/Eastern
 (e.g. KXMLBHIT-26AUG191235DETPIT-... = 2026-08-19 12:35 ET). A snapshot generated after that instant is rejected
-(SNAPSHOT_GENERATED_AFTER_GAME_START); a ticker whose start cannot be parsed is joined without the guard and counted
+(SNAPSHOT_GENERATED_AFTER_GAME_START); a ticker whose start cannot be parsed is quarantined and counted
 in pregameCrossCheck.tickerStartUnparseable. The violations counter re-asserts the guard and must be 0.
 
 Usage:
@@ -73,6 +73,17 @@ def audit(start_date, end_date, root=DATA, snapshots=None):
             start = ticker_event_start_utc(tk)
             if start is None:
                 no_start += 1
+            # No verified pregame boundary means no eligible PIT join. Keep the row in the denominator.
+            if start is None:
+                reasons["TICKER_START_UNPARSEABLE"] += 1
+                continue
+            captured = parse_utc(o.get("capturedAt"))
+            if captured is None:
+                reasons["OBSERVATION_TIMESTAMP_INVALID"] += 1
+                continue
+            if captured > start:
+                reasons["OBSERVATION_AFTER_TICKER_START"] += 1
+                continue
             snap, reason, diag = select_pit_snapshot(snapshots.get(tk, []), o, game_start=start)
             if snap is None:
                 reasons[reason] += 1

@@ -36,6 +36,22 @@ class HitterResultCoverageTests(unittest.TestCase):
         self.assertEqual(len(r["notRecordedAsSettledTickers"]), 3)
         self.assertEqual(r["notRecordedAsSettledTickers"][1]["marketTicker"], "KXMLBHIT-C")
 
+    def test_unresolved_tickers_never_have_empty_reason_manifest(self):
+        report = reconcile_hitter_rows([
+            row("KXMLBHIT-UNKNOWN", "NOT_SETTLED", None),
+            row("KXMLBHIT-VOID", "VOID", None),
+            row("KXMLBHIT-KNOWN", "SETTLEMENT_UNRESOLVED", None,
+                reason="player_participation_unverified"),
+        ])
+        by_ticker = {r["marketTicker"]: r for r in report["notRecordedAsSettledTickers"]}
+        fallback = "ARCHIVED_UNAVAILABLE_REASON_MISSING_REQUIRES_SOURCE_ADJUDICATION"
+        self.assertEqual(by_ticker["KXMLBHIT-UNKNOWN"]["unavailableReasons"], [fallback])
+        self.assertEqual(by_ticker["KXMLBHIT-VOID"]["unavailableReasons"], [fallback])
+        self.assertEqual(by_ticker["KXMLBHIT-KNOWN"]["unavailableReasons"],
+                         ["player_participation_unverified"])
+        self.assertEqual(report["checkpointRows"], 3)
+        self.assertEqual(report["uniqueMarketTickers"], 3)
+
     def test_reject_contradictory_outcomes(self):
         with self.assertRaisesRegex(ValueError, "Contradictory"):
             reconcile_hitter_rows([row("X"), row("X", "SETTLED", "NO")])

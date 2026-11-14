@@ -62,6 +62,12 @@ jobs:
             --manifest artifacts/hitter_hit_coverage_aug_01_20.json \
             --out artifacts/hitter_hit_exchange_reconciliation.json
 
+      - name: Audit point-in-time hitter projection joins (read only)
+        run: |
+          python scripts/edgelab/audit_hitter_snapshot_join.py \
+            --start-date 2026-08-01 --end-date 2026-08-20 \
+            --out artifacts/hitter_snapshot_join_aug_01_20.json
+
       - name: Publish diagnostics summary
         if: success()
         run: |
@@ -95,6 +101,9 @@ jobs:
           coverage = json.loads(Path("artifacts/hitter_hit_coverage_aug_01_20.json").read_text())
           exchange = json.loads(Path("artifacts/hitter_hit_exchange_reconciliation.json").read_text())
           partitions = json.loads(Path("artifacts/hitter_hit_partition_provenance_aug_01_20.json").read_text())
+          pit = json.loads(Path("artifacts/hitter_snapshot_join_aug_01_20.json").read_text())
+          assert pit["hitterObservationRows"] == pit["pitJoinedRows"] + sum(pit["unjoinedReasonsByRow"].values()), "PIT row accounting drift"
+          assert pit["pregameCrossCheck"]["selectedSnapshotsGeneratedAfterTickerStart"] == 0, "post-start snapshot selected"
           assert exchange["uniqueTrackedTickers"] == coverage["uniqueMarketTickers"], "ticker denominator drift"
           assert exchange["checkpointRows"] == coverage["checkpointRows"], "checkpoint denominator drift"
           assert sum(exchange["exchangeClassificationCounts"].values()) == exchange["uniqueTrackedTickers"], "exchange classification drift"
@@ -110,7 +119,9 @@ jobs:
               summary.write(f"- Recorded settled without official binary confirmation: **{exchange['recordedSettledWithoutOfficialBinary']:,}**\\n")
               for name, entity in partitions["entities"].items():
                   summary.write(f"- {name}: **{entity['recordCount']:,} raw records** in **{entity['partitionCount']} partitions**\\n")
-              summary.write("- Raw records, unique tickers, and checkpoint rows are distinct denominators. This check does not establish historical PIT model joins.\\n")
+              summary.write(f"- PIT eligible joined hitter observations (all hitter families): **{pit['pitJoinedRows']:,} / {pit['hitterObservationRows']:,}**\\n")
+              summary.write("- PIT eligibility is a read-only candidate measurement, not a persisted ModelEvaluation join.\\n")
+              summary.write("- Raw records, unique tickers, and checkpoint rows are distinct denominators.\\n")
           PY
 
       - name: Upload exact-ticker unresolved manifest
@@ -122,5 +133,6 @@ jobs:
             artifacts/hitter_hit_coverage_aug_01_20.json
             artifacts/hitter_hit_exchange_reconciliation.json
             artifacts/hitter_hit_partition_provenance_aug_01_20.json
+            artifacts/hitter_snapshot_join_aug_01_20.json
           if-no-files-found: warn
           retention-days: 30

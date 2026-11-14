@@ -91,6 +91,10 @@ def reconcile_hitter_rows(opportunity_rows, dates=None, generated_at=None):
 
         reasons = sorted({str(r.get("settlementUnavailableReason"))
                           for r in rows if r.get("settlementUnavailableReason")})
+        # Do not turn absent source evidence into a fabricated settlement reason.
+        # Make the evidence gap explicit for every nonterminal contract.
+        if status != "SETTLED" and not reasons:
+            reasons = ["ARCHIVED_UNAVAILABLE_REASON_MISSING_REQUIRES_SOURCE_ADJUDICATION"]
         observed_times = captured_utc_by_ticker[ticker]
         entry = {
             "marketTicker": ticker,
